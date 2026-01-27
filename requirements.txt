@@ -1,0 +1,13 @@
+# LIFEE 依赖
+
+# 核心
+anthropic>=0.40.0      # Claude API
+pydantic>=2.0          # 数据验证
+pydantic-settings>=2.0 # 配置管理
+python-dotenv>=1.0.0   # 环境变量
+
+# 后续添加
+# google-generativeai  # Gemini API
+# openai               # OpenAI embedding API
+# aiosqlite            # 异步 SQLite
+# numpy                # 向量计算
