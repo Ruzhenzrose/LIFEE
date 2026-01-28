@@ -38,7 +38,10 @@ env/
 
 # Data
 data/
+
+# 忽略一般数据库，但保留角色知识库
 *.db
+!lifee/roles/*/knowledge.db
 
 # OS
 .DS_Store

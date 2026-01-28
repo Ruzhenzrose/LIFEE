@@ -163,9 +163,24 @@ class RoleManager:
         db_path = self.get_knowledge_db_path(role_name)
         manager = MemoryManager(db_path, embedding)
 
-        # 自动索引
+        # 自动索引（支持 .md 和 .txt 文件）
         if auto_index:
-            await manager.index_directory(knowledge_dir)
+            # 收集所有待索引文件
+            files = list(knowledge_dir.rglob("*.md")) + list(knowledge_dir.rglob("*.txt"))
+            files = [f for f in files if f.is_file()]
+
+            if files:
+                # 检查是否需要索引（对比数据库中已有的文件数）
+                stats = manager.get_stats()
+                if stats["file_count"] < len(files):
+                    total = len(files)
+                    print(f"  索引知识库: 0/{total}", end="", flush=True)
+                    indexed = 0
+                    for f in files:
+                        await manager.index_file(f)
+                        indexed += 1
+                        print(f"\r  索引知识库: {indexed}/{total}", end="", flush=True)
+                    print()  # 换行
 
         return manager
 
