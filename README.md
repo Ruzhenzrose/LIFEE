@@ -151,7 +151,7 @@ python -m lifee.main
 
 ### 知识库最佳实践
 
-1. **文本格式**：纯文本最佳，PDF/EPUB 需先提取文本（见 `scripts/extract_books.py`）
+1. **文本格式**：纯文本最佳，PDF/EPUB 需先提取文本（见 `tools/extract_books.py`）
 2. **分块大小**：默认 400 token，适合大多数场景
 3. **文件命名**：使用有意义的文件名，搜索结果会显示来源
 4. **预构建数据库**：仓库已包含预构建的 `knowledge.db`，队友克隆后可直接使用
