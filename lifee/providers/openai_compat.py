@@ -221,7 +221,7 @@ class OllamaProvider(OpenAICompatProvider):
 class OpenCodeZenProvider(OpenAICompatProvider):
     """OpenCode Zen Provider
 
-    多模型代理服务，支持多种模型
+    多模型代理服务，GLM-4.7 模型免费
     API 端点与 clawdbot 一致
     """
 
@@ -230,14 +230,14 @@ class OpenCodeZenProvider(OpenAICompatProvider):
     def __init__(
         self,
         api_key: str,
-        model: str = "claude-opus-4-5",
+        model: str = "glm-4.7",
     ):
         """
         初始化 OpenCode Zen Provider
 
         Args:
             api_key: OpenCode API Key
-            model: 模型名称
+            model: 模型名称 (glm-4.7 免费，其他需要 $200/月订阅)
         """
         super().__init__(
             api_key=api_key,

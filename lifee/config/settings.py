@@ -67,9 +67,9 @@ class Settings(BaseSettings):
         description="Ollama API 地址",
     )
 
-    # OpenCode Zen
+    # OpenCode Zen (GLM-4.7 免费)
     opencode_api_key: str = Field(default="", description="OpenCode API Key")
-    opencode_model: str = Field(default="claude-opus-4-5", description="OpenCode 模型名称")
+    opencode_model: str = Field(default="glm-4.7", description="OpenCode 模型 (glm-4.7 免费)")
 
     # OpenAI Embedding (用于 RAG)
     openai_api_key: str = Field(default="", description="OpenAI API Key")
