@@ -1,14 +1,45 @@
 """
 辩论主持者 - 调度辩论流程
 """
+import asyncio
 import random
+import re
 from typing import AsyncIterator, Optional, Tuple
 
 from lifee.providers.base import Message
 from lifee.sessions import Session
 
+# 重试配置
+MAX_RETRIES = 2  # 最大重试次数
+RETRY_DELAY = 1.5  # 重试延迟（秒）
+
 from .context import DebateContext, REPLY_SKIP_TOKEN
+from .filter import StreamingFilter
 from .participant import Participant, ParticipantInfo
+
+
+def clean_response(text: str) -> str:
+    """
+    清理 LLM 响应中可能泄露的格式标记
+
+    移除：
+    - <msg from="..."> 开头/结尾
+    - </msg> 标签
+    - --- 分隔线
+    """
+    # 移除 <msg from="..."> 开头
+    text = re.sub(r'^<msg from="[^"]*">\s*', '', text)
+    # 移除 </msg> 结尾
+    text = re.sub(r'\s*</msg>$', '', text)
+    # 移除 <msg from="..."> 在任意位置（有时会在中间出现）
+    text = re.sub(r'<msg from="[^"]*">', '', text)
+    # 移除 </msg> 在任意位置
+    text = re.sub(r'</msg>', '', text)
+    # 移除开头的 ---
+    text = re.sub(r'^---\s*\n?', '', text)
+    # 移除结尾的 ---
+    text = re.sub(r'\n?---\s*$', '', text)
+    return text.strip()
 
 
 class SpeakerRotation:
@@ -23,31 +54,38 @@ class SpeakerRotation:
         self.participants = participants
         self._count = len(participants)
         self._index = random.randrange(self._count) if randomize_first else 0
-        self._started = False
+        self._prev_index: Optional[int] = None  # 明确追踪上一个发言者
 
     def next(self) -> Participant:
         """获取下一个发言者，并移动指针"""
-        if self._started:
+        # 保存当前位置作为"上一个"
+        if self._prev_index is not None:
+            # 已经开始了，移动到下一个
+            self._prev_index = self._index
             self._index = (self._index + 1) % self._count
-        self._started = True
+        else:
+            # 第一次调用，不移动，只记录
+            self._prev_index = self._index  # 第一次的 prev 就是自己（会在后续被覆盖）
         return self.participants[self._index]
 
     @property
     def current(self) -> Optional[Participant]:
         """当前发言者（如果还没开始则为 None）"""
-        return self.participants[self._index] if self._started else None
+        return self.participants[self._index] if self._prev_index is not None else None
 
     @property
     def previous(self) -> Optional[Participant]:
-        """上一个发言者"""
-        if not self._started:
+        """上一个发言者（真正的上一次 next() 返回的人）"""
+        if self._prev_index is None:
             return None
+        # 在第一次 next() 后，prev 就是上一轮的发言者
+        # 计算真正的上一个：当前 index 的前一个位置
         prev = (self._index - 1) % self._count
         return self.participants[prev]
 
     def peek_next(self) -> Participant:
         """预览下一个发言者（不移动指针）"""
-        if not self._started:
+        if self._prev_index is None:
             return self.participants[self._index]
         next_idx = (self._index + 1) % self._count
         return self.participants[next_idx]
@@ -105,19 +143,58 @@ class Moderator:
             # 获取当前对话历史
             messages = self.session.get_messages()
 
-            # 生成回应（传入辩论上下文）
-            full_response = ""
-            async for chunk in participant.respond(
-                messages=messages,
-                user_query=user_input,
-                debate_context=debate_context,
-            ):
-                yield (participant, chunk)
-                full_response += chunk
+            # 带重试的响应生成
+            final_response = ""
+            yielded_anything = False  # 追踪是否 yield 过任何内容
 
-            # 添加到会话历史（带上角色名字）
+            for retry in range(MAX_RETRIES + 1):
+                full_response = ""
+                stream_filter = StreamingFilter()
+                chunk_count = 0
+
+                async for chunk in participant.respond(
+                    messages=messages,
+                    user_query=user_input,
+                    debate_context=debate_context,
+                ):
+                    chunk_count += 1
+                    full_response += chunk
+                    filtered = stream_filter.process(chunk)
+
+                    # 第一次 yield 时确保 debate.py 能检测到参与者切换
+                    if not yielded_anything:
+                        yield (participant, filtered)
+                        yielded_anything = True
+                    elif filtered:
+                        yield (participant, filtered)
+
+                # 刷新过滤器缓冲区
+                remaining = stream_filter.flush()
+                if remaining:
+                    if not yielded_anything:
+                        yield (participant, remaining)
+                        yielded_anything = True
+                    else:
+                        yield (participant, remaining)
+
+                # 检查是否成功获取响应
+                if chunk_count > 0:
+                    final_response = full_response
+                    break
+
+                # 空响应，尝试重试
+                if retry < MAX_RETRIES:
+                    await asyncio.sleep(RETRY_DELAY)
+                else:
+                    final_response = ""
+
+            # 确保至少 yield 一次（如果所有重试都失败）
+            if not yielded_anything:
+                yield (participant, "")
+
+            # 添加到会话历史（带上角色名字，清理可能的格式泄露）
             self.session.add_assistant_message(
-                content=full_response,
+                content=clean_response(final_response),
                 name=participant.info.display_name,
             )
 
@@ -169,23 +246,62 @@ class Moderator:
             # 获取对话历史
             messages = self.session.get_messages()
 
-            # 生成回应
-            full_response = ""
-            async for chunk in current_participant.respond(
-                messages=messages,
-                user_query="",  # ping-pong 模式不需要用户查询
-                debate_context=debate_context,
-            ):
-                full_response += chunk
-                yield (current_participant, chunk, False)
+            # 带重试的响应生成
+            final_response = ""
+            yielded_anything = False
+
+            for retry in range(MAX_RETRIES + 1):
+                full_response = ""
+                stream_filter = StreamingFilter()
+                chunk_count = 0
+
+                async for chunk in current_participant.respond(
+                    messages=messages,
+                    user_query="",  # ping-pong 模式不需要用户查询
+                    debate_context=debate_context,
+                ):
+                    chunk_count += 1
+                    full_response += chunk
+                    filtered = stream_filter.process(chunk)
+
+                    # 第一次 yield 时确保 debate.py 能检测到参与者切换
+                    if not yielded_anything:
+                        yield (current_participant, filtered, False)
+                        yielded_anything = True
+                    elif filtered:
+                        yield (current_participant, filtered, False)
+
+                # 刷新过滤器缓冲区
+                remaining = stream_filter.flush()
+                if remaining:
+                    if not yielded_anything:
+                        yield (current_participant, remaining, False)
+                        yielded_anything = True
+                    else:
+                        yield (current_participant, remaining, False)
+
+                # 检查是否成功获取响应
+                if chunk_count > 0:
+                    final_response = full_response
+                    break
+
+                # 空响应，尝试重试
+                if retry < MAX_RETRIES:
+                    await asyncio.sleep(RETRY_DELAY)
+                else:
+                    final_response = ""
+
+            # 确保至少 yield 一次（如果所有重试都失败）
+            if not yielded_anything:
+                yield (current_participant, "", False)
 
             # 检查是否是跳过令牌
-            if REPLY_SKIP_TOKEN in full_response:
+            if REPLY_SKIP_TOKEN in final_response:
                 yield (current_participant, "", True)
                 break
 
-            # 添加到会话历史
+            # 添加到会话历史（清理可能的格式泄露）
             self.session.add_assistant_message(
-                content=full_response,
+                content=clean_response(final_response),
                 name=current_participant.info.display_name,
             )

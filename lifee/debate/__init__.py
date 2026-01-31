@@ -19,7 +19,16 @@
 """
 
 from .context import DebateContext, REPLY_SKIP_TOKEN
-from .moderator import Moderator
+from .filter import StreamingFilter
+from .moderator import Moderator, clean_response
 from .participant import Participant, ParticipantInfo
 
-__all__ = ["Moderator", "Participant", "ParticipantInfo", "DebateContext", "REPLY_SKIP_TOKEN"]
+__all__ = [
+    "Moderator",
+    "Participant",
+    "ParticipantInfo",
+    "DebateContext",
+    "REPLY_SKIP_TOKEN",
+    "clean_response",
+    "StreamingFilter",
+]

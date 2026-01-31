@@ -85,7 +85,8 @@ class RoleManager:
         if not parts:
             return None
 
-        return "\n\n---\n\n".join(parts)
+        # 不用 --- 分隔符，避免 LLM 模仿输出
+        return "\n\n".join(parts)
 
     def get_role_info(self, role_name: str) -> dict:
         """获取角色的基本信息"""

@@ -7,7 +7,7 @@ from lifee.config.settings import settings
 from lifee.providers import LLMProvider
 from lifee.sessions import Session
 from lifee.roles import RoleManager
-from lifee.debate import Moderator, Participant, DebateContext
+from lifee.debate import Moderator, Participant, DebateContext, clean_response
 
 
 def collect_user_input_nonblocking() -> str:
@@ -241,7 +241,6 @@ async def debate_loop(
 
             # Ping-pong 模式：角色之间自动继续对话
             if len(participants) >= 2:
-                print("--- 角色对话 (按任意键插话) ---")
                 current_participant = None
                 skip_happened = False
                 user_interjected = False  # 用户是否插话
@@ -251,7 +250,7 @@ async def debate_loop(
 
                 async for participant, chunk, is_skip in moderator.run_pingpong(max_turns=5):
                     if is_skip:
-                        print(f"\n{participant.info.emoji} {participant.info.display_name} 选择不再继续对话")
+                        print(f"\n{participant.info.emoji} {participant.info.display_name} 选择保持沉默")
                         skip_happened = True
                         break
 
@@ -283,7 +282,7 @@ async def debate_loop(
                                 print(resp_chunk, end="", flush=True)
                                 response += resp_chunk
 
-                            session.add_assistant_message(response, name=current_participant.info.display_name)
+                            session.add_assistant_message(clean_response(response), name=current_participant.info.display_name)
                             print("\n")
                             pending_user_input = ""
                             user_interjected = True
@@ -317,7 +316,7 @@ async def debate_loop(
                                     print(resp_chunk, end="", flush=True)
                                     response += resp_chunk
 
-                                session.add_assistant_message(response, name=current_participant.info.display_name)
+                                session.add_assistant_message(clean_response(response), name=current_participant.info.display_name)
                                 print("\n")
                                 user_interjected = True
                                 break  # 停止 ping-pong，让用户继续主导

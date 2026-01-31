@@ -114,31 +114,12 @@ class Participant:
         """
         parts = [self.system_prompt]
 
-        # 注入辩论上下文（类似 clawdbot 的 extraSystemPrompt 机制）
+        # 注入辩论上下文
         if debate_context:
-            parts.append("---")
             parts.append(debate_context.build_context_prompt())
-        else:
-            # 兼容旧的调用方式（无 debate_context）
-            fallback_context = f"""---
-
-## 多角度讨论规则
-
-你正在参与一场多角度讨论。你是 {self.info.display_name}。
-
-- **保持人格**：始终保持你的思考方式和说话风格
-- **回应他人**：你可以回应对话中其他参与者的观点，用你自己的视角
-- **不同意见**：你可以提出不同意见，这正是讨论的意义
-- **有实质内容**：回应要有深度，避免泛泛而谈
-- **简洁有力**：控制回复长度，留给其他参与者空间"""
-            parts.append(fallback_context)
 
         # 知识库上下文
         if knowledge_context:
-            parts.append(f"""---
-
-## 相关知识（供参考）
-
-{knowledge_context}""")
+            parts.append(f"相关知识：{knowledge_context}")
 
         return "\n\n".join(parts)
