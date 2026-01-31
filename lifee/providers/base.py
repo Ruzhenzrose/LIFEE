@@ -26,6 +26,20 @@ class Message:
             d["name"] = self.name
         return d
 
+    def format_content(self) -> str:
+        """
+        获取带 XML 标签的内容（用于多智能体对话）
+
+        - 有 name 的消息: <msg from="name">content</msg>
+        - 用户消息: <user>content</user>
+        - 其他: 原内容
+        """
+        if self.name:
+            return f'<msg from="{self.name}">{self.content}</msg>'
+        elif self.role == MessageRole.USER:
+            return f'<user>{self.content}</user>'
+        return self.content
+
 
 @dataclass
 class ChatResponse:

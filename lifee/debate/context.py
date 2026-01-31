@@ -54,7 +54,7 @@ class DebateContext:
 你现在是 {self.current_participant.display_name}，正在与用户和 {others_str} 进行一场讨论。这是第 {self.round_number} 轮对话。
 
 在对话历史中：
-- 用户说的话没有特殊标记
+- 用户说的话会显示为 `<user>...</user>`
 - 你之前说过的话会显示为 `<msg from="{self.current_participant.display_name}">...</msg>`"""
 
         # 说明其他人的消息格式

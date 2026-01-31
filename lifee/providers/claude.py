@@ -91,13 +91,9 @@ class ClaudeProvider(LLMProvider):
             if msg.role == MessageRole.SYSTEM:
                 system_prompt = msg.content
             else:
-                # Claude API 不支持 name 字段，用 XML 标签标记发言者
-                # 使用 XML 而非 [name]: 前缀，因为 LLM 不易模仿 XML 结构
-                content = msg.content
-                if msg.name:
-                    content = f'<msg from="{msg.name}">{content}</msg>'
-                # 防御：确保 assistant 消息不以空白结尾（必须在添加 name 前缀之后）
-                # 因为 f"[name]: {empty_content}" 会产生 "[name]: " 以空格结尾
+                # 使用 Message.format_content() 添加 XML 标签
+                content = msg.format_content()
+                # 防御：确保 assistant 消息不以空白结尾
                 # Claude API 要求："final assistant content cannot end with trailing whitespace"
                 if msg.role == MessageRole.ASSISTANT:
                     content = content.rstrip()
