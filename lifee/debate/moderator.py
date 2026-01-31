@@ -1,13 +1,56 @@
 """
 辩论主持者 - 调度辩论流程
 """
-from typing import AsyncIterator, Tuple
+import random
+from typing import AsyncIterator, Optional, Tuple
 
 from lifee.providers.base import Message
 from lifee.sessions import Session
 
 from .context import DebateContext, REPLY_SKIP_TOKEN
 from .participant import Participant, ParticipantInfo
+
+
+class SpeakerRotation:
+    """发言顺序轮换器 - 自动管理谁下一个说话"""
+
+    def __init__(self, participants: list[Participant], randomize_first: bool = True):
+        """
+        Args:
+            participants: 参与者列表
+            randomize_first: 是否随机选择第一个发言者
+        """
+        self.participants = participants
+        self._count = len(participants)
+        self._index = random.randrange(self._count) if randomize_first else 0
+        self._started = False
+
+    def next(self) -> Participant:
+        """获取下一个发言者，并移动指针"""
+        if self._started:
+            self._index = (self._index + 1) % self._count
+        self._started = True
+        return self.participants[self._index]
+
+    @property
+    def current(self) -> Optional[Participant]:
+        """当前发言者（如果还没开始则为 None）"""
+        return self.participants[self._index] if self._started else None
+
+    @property
+    def previous(self) -> Optional[Participant]:
+        """上一个发言者"""
+        if not self._started:
+            return None
+        prev = (self._index - 1) % self._count
+        return self.participants[prev]
+
+    def peek_next(self) -> Participant:
+        """预览下一个发言者（不移动指针）"""
+        if not self._started:
+            return self.participants[self._index]
+        next_idx = (self._index + 1) % self._count
+        return self.participants[next_idx]
 
 
 class Moderator:
@@ -21,7 +64,7 @@ class Moderator:
         self.participants = participants
         self.session = session
         self.round_number = 0  # 轮次计数
-        self.last_speaker_index = -1  # 追踪最后发言者的索引
+        self.rotation = SpeakerRotation(participants, randomize_first=True)
 
     async def run_round(
         self,
@@ -46,13 +89,9 @@ class Moderator:
         all_participants_info = [p.info for p in self.participants]
         num_participants = len(self.participants)
 
-        # 计算本轮起点：从上一轮最后发言者的下一个开始
-        start_index = (self.last_speaker_index + 1) % num_participants
-
-        # 2. 依次让每个参与者发言（轮换顺序）
+        # 2. 依次让每个参与者发言（使用 rotation 管理顺序）
         for i in range(num_participants):
-            current_index = (start_index + i) % num_participants
-            participant = self.participants[current_index]
+            participant = self.rotation.next()
 
             # 构建辩论上下文（类似 clawdbot 的 extraSystemPrompt）
             debate_context = DebateContext(
@@ -82,9 +121,6 @@ class Moderator:
                 name=participant.info.display_name,
             )
 
-            # 更新最后发言者索引
-            self.last_speaker_index = current_index
-
     def get_participants_info(self) -> list[ParticipantInfo]:
         """获取所有参与者信息"""
         return [p.info for p in self.participants]
@@ -97,7 +133,7 @@ class Moderator:
         运行 ping-pong 对话 - 角色之间自动持续对话
 
         在 run_round 之后调用，让角色之间继续交流。
-        自动从最后发言者的下一个开始。
+        自动从最后发言者的下一个开始（由 rotation 管理）。
 
         Args:
             max_turns: 最大轮次（默认 5）
@@ -111,18 +147,11 @@ class Moderator:
         all_participants_info = [p.info for p in self.participants]
         num_participants = len(self.participants)
 
-        # 自动计算起点：从最后发言者的下一个开始
-        if self.last_speaker_index >= 0:
-            current_index = (self.last_speaker_index + 1) % num_participants
-        else:
-            current_index = 0
-
         for turn in range(1, max_turns + 1):
-            # 当前发言者
-            current_participant = self.participants[current_index]
+            # 获取下一个发言者（rotation 自动管理顺序）
+            current_participant = self.rotation.next()
             # 上一个发言者（被回复的人）
-            prev_index = (current_index - 1) % num_participants
-            prev_participant = self.participants[prev_index]
+            prev_participant = self.rotation.previous
 
             # 构建 ping-pong 上下文
             debate_context = DebateContext(
@@ -134,7 +163,7 @@ class Moderator:
                 is_pingpong=True,
                 pingpong_turn=turn,
                 pingpong_max_turns=max_turns,
-                reply_to=prev_participant.info,
+                reply_to=prev_participant.info if prev_participant else None,
             )
 
             # 获取对话历史
@@ -160,9 +189,3 @@ class Moderator:
                 content=full_response,
                 name=current_participant.info.display_name,
             )
-
-            # 更新最后发言者索引
-            self.last_speaker_index = current_index
-
-            # 切换到下一个参与者
-            current_index = (current_index + 1) % num_participants
