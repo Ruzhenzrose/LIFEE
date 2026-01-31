@@ -32,6 +32,35 @@ from .chat import chat_loop
 from .debate import debate_loop
 
 
+# Provider 配置表：简化 API Key 获取逻辑
+PROVIDER_REGISTRY = {
+    "qwen": {
+        "class": QwenProvider,
+        "key_attr": "qwen_api_key",
+        "model_attr": "qwen_model",
+        "prompt_name": "Qwen (通义千问)",
+        "env_key": "QWEN_API_KEY",
+        "get_url": "https://dashscope.console.aliyun.com/",
+    },
+    "gemini": {
+        "class": GeminiProvider,
+        "key_attr": "google_api_key",
+        "model_attr": "gemini_model",
+        "prompt_name": "Google Gemini",
+        "env_key": "GOOGLE_API_KEY",
+        "get_url": "https://aistudio.google.com/apikey",
+    },
+    "opencode": {
+        "class": OpenCodeZenProvider,
+        "key_attr": "opencode_api_key",
+        "model_attr": "opencode_model",
+        "prompt_name": "OpenCode Zen (GLM-4.7 免费)",
+        "env_key": "OPENCODE_API_KEY",
+        "get_url": "https://opencode.ai/",
+    },
+}
+
+
 def reload_settings():
     """重新加载配置"""
     from importlib import reload
@@ -86,25 +115,18 @@ def create_provider(provider_name: str = None) -> LLMProvider:
             model=current_settings.synthetic_model,
         )
 
-    elif provider_name == "qwen":
-        api_key = current_settings.qwen_api_key
+    # 使用配置表处理通用 Provider
+    elif provider_name in PROVIDER_REGISTRY:
+        config = PROVIDER_REGISTRY[provider_name]
+        api_key = getattr(current_settings, config["key_attr"])
         if not api_key:
             api_key = prompt_for_api_key(
-                "Qwen (通义千问)",
-                "QWEN_API_KEY",
-                "https://dashscope.console.aliyun.com/"
+                config["prompt_name"],
+                config["env_key"],
+                config["get_url"],
             )
-        return QwenProvider(api_key=api_key, model=current_settings.qwen_model)
-
-    elif provider_name == "gemini":
-        api_key = current_settings.google_api_key
-        if not api_key:
-            api_key = prompt_for_api_key(
-                "Google Gemini",
-                "GOOGLE_API_KEY",
-                "https://aistudio.google.com/apikey"
-            )
-        return GeminiProvider(api_key=api_key, model=current_settings.gemini_model)
+        model = getattr(current_settings, config["model_attr"])
+        return config["class"](api_key=api_key, model=model)
 
     elif provider_name == "ollama":
         # 检查是否需要选择模型（首次使用或模型未设置）
@@ -121,19 +143,6 @@ def create_provider(provider_name: str = None) -> LLMProvider:
         return OllamaProvider(
             model=model,
             base_url=current_settings.ollama_base_url,
-        )
-
-    elif provider_name == "opencode":
-        api_key = current_settings.opencode_api_key
-        if not api_key:
-            api_key = prompt_for_api_key(
-                "OpenCode Zen (GLM-4.7 免费)",
-                "OPENCODE_API_KEY",
-                "https://opencode.ai/"
-            )
-        return OpenCodeZenProvider(
-            api_key=api_key,
-            model=current_settings.opencode_model,
         )
 
     else:

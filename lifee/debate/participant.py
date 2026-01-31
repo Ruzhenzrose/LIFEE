@@ -42,22 +42,11 @@ class Participant:
     def _load_info(self):
         """加载角色的显示信息"""
         info = self.role_manager.get_role_info(self.role_name)
-        role_dir = self.role_manager.roles_dir / self.role_name
-
-        # 提取 emoji
-        emoji = "🤖"
-        identity_file = role_dir / "IDENTITY.md"
-        if identity_file.exists():
-            content = identity_file.read_text(encoding="utf-8")
-            for line in content.split("\n"):
-                if "**Emoji:**" in line:
-                    emoji = line.split(":**")[1].strip()
-                    break
 
         self.info = ParticipantInfo(
             name=self.role_name,
             display_name=info.get("display_name", self.role_name),
-            emoji=emoji,
+            emoji=self.role_manager.get_role_emoji(self.role_name),
         )
 
         # 加载 system prompt

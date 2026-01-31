@@ -68,16 +68,7 @@ async def debate_loop(
     for role_name in roles:
         info = role_manager.get_role_info(role_name)
         display_name = info.get("display_name", role_name)
-        # 获取 emoji
-        role_dir = role_manager.roles_dir / role_name
-        emoji = "🤖"
-        identity_file = role_dir / "IDENTITY.md"
-        if identity_file.exists():
-            content = identity_file.read_text(encoding="utf-8")
-            for line in content.split("\n"):
-                if "**Emoji:**" in line:
-                    emoji = line.split(":**")[1].strip()
-                    break
+        emoji = role_manager.get_role_emoji(role_name)
         role_choices.append([role_name, display_name, emoji, False])  # 默认不选
 
     # 交互式选择界面（支持方向键、空格、数字）

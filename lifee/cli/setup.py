@@ -1,8 +1,58 @@
 """Provider/Model/Role 选择 UI"""
 import sys
 from pathlib import Path
+from typing import Callable, Optional
 
 import httpx
+
+
+def prompt_for_choice(
+    options: list,
+    prompt_text: str = "请选择",
+    allow_zero: bool = False,
+    zero_label: str = "",
+    allow_quit: bool = True,
+    on_select: Optional[Callable[[int, any], any]] = None,
+) -> tuple[int, any]:
+    """
+    通用选择交互 UI
+
+    Args:
+        options: 选项列表
+        prompt_text: 提示文本
+        allow_zero: 是否允许选择 0（特殊选项）
+        zero_label: 0 选项的标签
+        allow_quit: 是否允许 q 取消
+        on_select: 选择后的回调函数 (idx, item) -> result
+
+    Returns:
+        (idx, item) 选中的索引和项目，取消返回 (-1, None)
+    """
+    min_idx = 0 if allow_zero else 1
+    max_idx = len(options)
+    range_text = f"{min_idx}-{max_idx}" if allow_zero else f"1-{len(options)}"
+    quit_hint = "，或 q 取消" if allow_quit else ""
+
+    while True:
+        choice = input(f"{prompt_text} ({range_text}{quit_hint}): ").strip()
+
+        if allow_quit and choice.lower() == 'q':
+            print("已取消")
+            return (-1, None)
+
+        try:
+            idx = int(choice)
+            if allow_zero and idx == 0:
+                return (0, None)
+            if 1 <= idx <= len(options):
+                item = options[idx - 1]
+                if on_select:
+                    return (idx, on_select(idx - 1, item))
+                return (idx, item)
+        except ValueError:
+            pass
+
+        print("无效选择，请重新输入")
 
 
 def save_api_key_to_env(key_name: str, key_value: str) -> bool:
@@ -134,24 +184,14 @@ def select_model_for_provider(provider_id: str, current_model: str) -> str:
         print(f"     {desc}")
         print()
 
-    while True:
-        choice = input(f"请选择模型 (1-{len(models)}，或 q 取消): ").strip()
+    idx, item = prompt_for_choice(models, "请选择模型")
+    if idx == -1:
+        return ""
 
-        if choice.lower() == 'q':
-            print("已取消")
-            return ""
-
-        try:
-            idx = int(choice) - 1
-            if 0 <= idx < len(models):
-                selected = models[idx][0]
-                save_api_key_to_env(env_key, selected)
-                print(f"\n已选择: {selected}")
-                return selected
-        except ValueError:
-            pass
-
-        print("无效选择，请重新输入")
+    selected = item[0]
+    save_api_key_to_env(env_key, selected)
+    print(f"\n已选择: {selected}")
+    return selected
 
 
 def select_ollama_model() -> str:
@@ -355,32 +395,16 @@ def select_provider_interactive(show_welcome: bool = True) -> str:
         print(f"     {opt['desc']}")
         print()
 
-    while True:
-        choice = input("请输入序号 (1-7，或 q 取消): ").strip()
+    idx, item = prompt_for_choice(PROVIDER_OPTIONS, "请输入序号")
+    if idx == -1:
+        if show_welcome:
+            sys.exit(0)
+        return ""
 
-        if choice.lower() == 'q':
-            if show_welcome:
-                print("已取消")
-                sys.exit(0)
-            else:
-                print("已取消切换")
-                return ""
-
-        try:
-            idx = int(choice) - 1
-            if 0 <= idx < len(PROVIDER_OPTIONS):
-                selected = PROVIDER_OPTIONS[idx]
-                provider_id = selected["id"]
-
-                # 保存选择到 .env
-                save_api_key_to_env("LLM_PROVIDER", provider_id)
-                print(f"\n已选择: {selected['name']}")
-
-                return provider_id
-            else:
-                print("无效的序号，请重新输入")
-        except ValueError:
-            print("请输入有效的数字")
+    provider_id = item["id"]
+    save_api_key_to_env("LLM_PROVIDER", provider_id)
+    print(f"\n已选择: {item['name']}")
+    return provider_id
 
 
 def select_role_interactive(role_manager, current_role: str) -> str:
@@ -405,23 +429,12 @@ def select_role_interactive(role_manager, current_role: str) -> str:
 
     print()
 
-    while True:
-        choice = input(f"请选择角色 (0-{len(roles)}，或 q 取消): ").strip()
+    idx, item = prompt_for_choice(roles, "请选择角色", allow_zero=True)
+    if idx == -1:
+        return current_role
+    if idx == 0:
+        print("\n已切换到: [无角色]")
+        return ""
 
-        if choice.lower() == 'q':
-            print("已取消")
-            return current_role
-
-        try:
-            idx = int(choice)
-            if idx == 0:
-                print("\n已切换到: [无角色]")
-                return ""
-            if 1 <= idx <= len(roles):
-                selected = roles[idx - 1]
-                print(f"\n已切换到: {selected}")
-                return selected
-        except ValueError:
-            pass
-
-        print("无效选择，请重新输入")
+    print(f"\n已切换到: {item}")
+    return item
