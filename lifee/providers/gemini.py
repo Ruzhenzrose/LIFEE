@@ -44,20 +44,34 @@ class GeminiProvider(LLMProvider):
     def _convert_messages(
         self, messages: List[Message], system: Optional[str] = None
     ) -> tuple[Optional[str], List[types.Content]]:
-        """转换消息格式为 Gemini 格式"""
+        """
+        转换消息格式为 Gemini 格式
+
+        Gemini API 不支持 message.name 字段，把它嵌入到 content 中
+        """
         system_instruction = system
         contents = []
 
         for msg in messages:
+            # Gemini 不支持 name 字段，用 XML 标签标记发言者
+            # 使用 XML 而非 [name]: 前缀，因为 LLM 不易模仿 XML 结构
+            content = msg.content
+            if msg.name:
+                content = f'<msg from="{msg.name}">{content}</msg>'
+            # 防御：确保 assistant 消息不以空白结尾（必须在添加 name 前缀之后）
+            # 因为 f"[name]: {empty_content}" 会产生 "[name]: " 以空格结尾
+            if msg.role == MessageRole.ASSISTANT:
+                content = content.rstrip()
+
             if msg.role == MessageRole.SYSTEM:
-                system_instruction = msg.content
+                system_instruction = content
             elif msg.role == MessageRole.USER:
                 contents.append(
-                    types.Content(role="user", parts=[types.Part(text=msg.content)])
+                    types.Content(role="user", parts=[types.Part(text=content)])
                 )
             elif msg.role == MessageRole.ASSISTANT:
                 contents.append(
-                    types.Content(role="model", parts=[types.Part(text=msg.content)])
+                    types.Content(role="model", parts=[types.Part(text=content)])
                 )
 
         return system_instruction, contents

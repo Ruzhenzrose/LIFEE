@@ -63,7 +63,12 @@ class OpenAICompatProvider(LLMProvider):
     def _convert_messages(
         self, messages: List[Message], system: Optional[str] = None
     ) -> List[dict]:
-        """转换消息格式"""
+        """
+        转换消息格式
+
+        虽然 OpenAI 支持 message.name 字段，但 Ollama/Qwen 等兼容 API 可能不支持
+        为了统一处理，把 name 嵌入到 content 中
+        """
         converted = []
 
         # 添加系统消息
@@ -71,10 +76,20 @@ class OpenAICompatProvider(LLMProvider):
             converted.append({"role": "system", "content": system})
 
         for msg in messages:
+            # 用 XML 标签标记发言者
+            # 使用 XML 而非 [name]: 前缀，因为 LLM 不易模仿 XML 结构
+            content = msg.content
+            if msg.name:
+                content = f'<msg from="{msg.name}">{content}</msg>'
+            # 防御：确保 assistant 消息不以空白结尾（必须在添加 name 前缀之后）
+            # 因为 f"[name]: {empty_content}" 会产生 "[name]: " 以空格结尾
+            if msg.role == MessageRole.ASSISTANT:
+                content = content.rstrip()
+
             if msg.role == MessageRole.SYSTEM:
-                converted.append({"role": "system", "content": msg.content})
+                converted.append({"role": "system", "content": content})
             else:
-                converted.append(msg.to_dict())
+                converted.append({"role": msg.role.value, "content": content})
 
         return converted
 

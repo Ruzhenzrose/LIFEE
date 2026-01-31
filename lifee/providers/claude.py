@@ -79,6 +79,7 @@ class ClaudeProvider(LLMProvider):
         转换消息格式为 Claude API 格式
 
         Claude API 需要 system 参数单独传递，不在 messages 中
+        Claude API 不支持 message.name 字段，所以我们把名字嵌入到 content 中
 
         Returns:
             (system_prompt, messages_list)
@@ -90,7 +91,17 @@ class ClaudeProvider(LLMProvider):
             if msg.role == MessageRole.SYSTEM:
                 system_prompt = msg.content
             else:
-                converted.append(msg.to_dict())
+                # Claude API 不支持 name 字段，用 XML 标签标记发言者
+                # 使用 XML 而非 [name]: 前缀，因为 LLM 不易模仿 XML 结构
+                content = msg.content
+                if msg.name:
+                    content = f'<msg from="{msg.name}">{content}</msg>'
+                # 防御：确保 assistant 消息不以空白结尾（必须在添加 name 前缀之后）
+                # 因为 f"[name]: {empty_content}" 会产生 "[name]: " 以空格结尾
+                # Claude API 要求："final assistant content cannot end with trailing whitespace"
+                if msg.role == MessageRole.ASSISTANT:
+                    content = content.rstrip()
+                converted.append({"role": msg.role.value, "content": content})
 
         return system_prompt, converted
 
