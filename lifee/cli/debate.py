@@ -13,7 +13,7 @@ from lifee.debate import Moderator, Participant, DebateContext, clean_response
 def collect_user_input_nonblocking() -> str:
     """非阻塞收集用户输入（直到按回车）
 
-    在 ping-pong 模式中，当检测到用户按键时调用此函数。
+    在对话过程中，当检测到用户按键时调用此函数。
     用户输入会实时回显到屏幕上。
     """
     chars = []
@@ -227,56 +227,52 @@ async def debate_loop(
                     print(f"--- 共 {len(session.history)} 条消息 ---\n")
                 continue
 
-            # 运行一轮辩论（每个角色回应用户）
+            # 运行对话（统一的循环，包含所有角色的发言）
             current_participant = None
-            async for participant, chunk in moderator.run_round(user_input):
+            skip_happened = False
+            user_interjected = False
+            all_participants_info = [p.info for p in participants]
+
+            # 追踪当前角色输出的内容（用于 skip 时清除）
+            current_output_lines = 0
+            current_output_chars = 0
+
+            async for participant, chunk, is_skip in moderator.run(user_input, max_turns=10):
+                if is_skip:
+                    # 清除当前角色之前输出的内容
+                    if current_output_chars > 0:
+                        # 回到行首，向上移动到标题行，清除所有输出
+                        sys.stdout.write(f"\r\033[{current_output_lines + 1}A\033[J")
+                        sys.stdout.flush()
+                    print(f"{participant.info.emoji} {participant.info.display_name} 选择保持沉默")
+                    skip_happened = True
+                    break
+
+                # 检测参与者切换
                 if participant != current_participant:
-                    if current_participant is not None:
-                        print("\n")
-                    print(f"\n{participant.info.emoji} {participant.info.display_name}: ", end="", flush=True)
-                    current_participant = participant
-                print(chunk, end="", flush=True)
+                    # 检查是否有用户按键（插话）
+                    if current_participant is not None and msvcrt.kbhit():
+                        # 收集用户输入
+                        pending_input = collect_user_input_nonblocking()
+                        if pending_input:
+                            # 让刚完成发言的角色回应用户
+                            session.add_user_message(pending_input)
 
-            print("\n")
-
-            # Ping-pong 模式：角色之间自动继续对话
-            if len(participants) >= 2:
-                current_participant = None
-                skip_happened = False
-                user_interjected = False  # 用户是否插话
-                last_participant = None  # 记录上一个完成发言的参与者
-                pending_user_input = ""  # 待处理的用户输入
-                all_participants_info = [p.info for p in participants]
-
-                async for participant, chunk, is_skip in moderator.run_pingpong(max_turns=5):
-                    if is_skip:
-                        print(f"\n{participant.info.emoji} {participant.info.display_name} 选择保持沉默")
-                        skip_happened = True
-                        break
-
-                    # 检测参与者切换（上一个角色说完了）
-                    if participant != current_participant:
-                        # 如果有待处理的用户输入，让刚完成的角色（current_participant）回应
-                        if pending_user_input and current_participant is not None:
-                            # 添加用户消息到会话
-                            session.add_user_message(pending_user_input)
-
-                            # 构建上下文让同一角色回应用户
                             interjection_context = DebateContext(
                                 current_participant=current_participant.info,
                                 all_participants=all_participants_info,
                                 round_number=moderator.round_number,
                                 speaking_order=1,
                                 total_speakers=len(participants),
-                                is_pingpong=False,  # 这是回应用户，不是 ping-pong
+                                reply_to=None,  # 回复用户
                             )
 
-                            print(f"\n\n{current_participant.info.emoji} {current_participant.info.display_name}: ", end="", flush=True)
+                            print(f"\n{current_participant.info.emoji} {current_participant.info.display_name}: ", end="", flush=True)
 
                             response = ""
                             async for resp_chunk in current_participant.respond(
                                 messages=session.get_messages(),
-                                user_query=pending_user_input,
+                                user_query=pending_input,
                                 debate_context=interjection_context,
                             ):
                                 print(resp_chunk, end="", flush=True)
@@ -284,54 +280,26 @@ async def debate_loop(
 
                             session.add_assistant_message(clean_response(response), name=current_participant.info.display_name)
                             print("\n")
-                            pending_user_input = ""
                             user_interjected = True
-                            break  # 停止 ping-pong，让用户继续主导
+                            break  # 停止当前对话，让用户继续主导
 
-                        # 检查是否有用户按键（开始收集输入）
-                        if current_participant is not None and msvcrt.kbhit():
-                            # 收集用户输入（会阻塞直到用户按回车）
-                            pending_user_input = collect_user_input_nonblocking()
-                            if pending_user_input:
-                                # 立即让刚完成发言的角色（current_participant）回应
-                                session.add_user_message(pending_user_input)
+                    if current_participant is not None:
+                        print("\n")
+                    print(f"\n{participant.info.emoji} {participant.info.display_name}: ", end="", flush=True)
+                    current_participant = participant
+                    # 重置当前角色的输出追踪
+                    current_output_lines = 0
+                    current_output_chars = 0
 
-                                interjection_context = DebateContext(
-                                    current_participant=current_participant.info,
-                                    all_participants=all_participants_info,
-                                    round_number=moderator.round_number,
-                                    speaking_order=1,
-                                    total_speakers=len(participants),
-                                    is_pingpong=False,
-                                )
+                # 追踪输出的行数（用于 skip 时清除）
+                if chunk:
+                    current_output_chars += len(chunk)
+                    current_output_lines += chunk.count('\n')
+                print(chunk, end="", flush=True)
 
-                                print(f"\n{current_participant.info.emoji} {current_participant.info.display_name}: ", end="", flush=True)
-
-                                response = ""
-                                async for resp_chunk in current_participant.respond(
-                                    messages=session.get_messages(),
-                                    user_query=pending_user_input,
-                                    debate_context=interjection_context,
-                                ):
-                                    print(resp_chunk, end="", flush=True)
-                                    response += resp_chunk
-
-                                session.add_assistant_message(clean_response(response), name=current_participant.info.display_name)
-                                print("\n")
-                                user_interjected = True
-                                break  # 停止 ping-pong，让用户继续主导
-
-                        if current_participant is not None:
-                            print("\n")
-                        print(f"\n{participant.info.emoji} {participant.info.display_name}: ", end="", flush=True)
-                        last_participant = current_participant
-                        current_participant = participant
-
-                    print(chunk, end="", flush=True)
-
-                if not user_interjected and not skip_happened:
-                    print("\n\n--- 达到对话轮次上限 ---")
-                print()
+            if not user_interjected and not skip_happened:
+                print("\n\n--- 达到对话轮次上限 ---")
+            print()
 
         except KeyboardInterrupt:
             print("\n\n[中断] 退出讨论模式")

@@ -104,18 +104,26 @@ class Moderator:
         self.round_number = 0  # 轮次计数
         self.rotation = SpeakerRotation(participants, randomize_first=True)
 
-    async def run_round(
+    async def run(
         self,
         user_input: str,
-    ) -> AsyncIterator[Tuple[Participant, str]]:
+        max_turns: int = 10,
+    ) -> AsyncIterator[Tuple[Participant, str, bool]]:
         """
-        运行一轮辩论
+        运行对话 - 统一的对话循环
+
+        流程：
+        1. 添加用户消息
+        2. 第一个角色回复用户（reply_to=None）
+        3. 后续角色回复上一个发言者（reply_to=上一个角色）
+        4. 直到达到 max_turns 或某个角色返回 [[PASS]]
 
         Args:
             user_input: 用户输入
+            max_turns: 最大发言轮次（默认 10）
 
         Yields:
-            (participant, chunk) - 参与者和文本片段
+            (participant, chunk, is_skip) - 参与者、文本片段、是否跳过
         """
         # 增加轮次计数
         self.round_number += 1
@@ -127,17 +135,21 @@ class Moderator:
         all_participants_info = [p.info for p in self.participants]
         num_participants = len(self.participants)
 
-        # 2. 依次让每个参与者发言（使用 rotation 管理顺序）
-        for i in range(num_participants):
+        # 2. 循环让角色发言
+        for turn in range(1, max_turns + 1):
+            # 获取下一个发言者
             participant = self.rotation.next()
+            # 上一个发言者（第一个角色时为 None，表示回复用户）
+            prev_participant = self.rotation.previous if turn > 1 else None
 
-            # 构建辩论上下文（类似 clawdbot 的 extraSystemPrompt）
+            # 构建辩论上下文
             debate_context = DebateContext(
                 current_participant=participant.info,
                 all_participants=all_participants_info,
                 round_number=self.round_number,
-                speaking_order=i + 1,
+                speaking_order=turn,
                 total_speakers=num_participants,
+                reply_to=prev_participant.info if prev_participant else None,
             )
 
             # 获取当前对话历史
@@ -154,7 +166,7 @@ class Moderator:
 
                 async for chunk in participant.respond(
                     messages=messages,
-                    user_query=user_input,
+                    user_query=user_input if turn == 1 else "",
                     debate_context=debate_context,
                 ):
                     chunk_count += 1
@@ -163,34 +175,40 @@ class Moderator:
 
                     # 第一次 yield 时确保 debate.py 能检测到参与者切换
                     if not yielded_anything:
-                        yield (participant, filtered)
+                        yield (participant, filtered, False)
                         yielded_anything = True
                     elif filtered:
-                        yield (participant, filtered)
+                        yield (participant, filtered, False)
 
                 # 刷新过滤器缓冲区
                 remaining = stream_filter.flush()
                 if remaining:
                     if not yielded_anything:
-                        yield (participant, remaining)
+                        yield (participant, remaining, False)
                         yielded_anything = True
                     else:
-                        yield (participant, remaining)
+                        yield (participant, remaining, False)
 
-                # 检查是否成功获取响应
-                if chunk_count > 0:
+                # 检查是否成功获取响应（必须有实际内容，不只是空白）
+                if chunk_count > 0 and full_response.strip():
                     final_response = full_response
                     break
 
-                # 空响应，尝试重试
+                # 空响应或只有空白，尝试重试
                 if retry < MAX_RETRIES:
                     await asyncio.sleep(RETRY_DELAY)
+                    yielded_anything = False  # 重置，允许下次重试时重新 yield
                 else:
                     final_response = ""
 
             # 确保至少 yield 一次（如果所有重试都失败）
             if not yielded_anything:
-                yield (participant, "")
+                yield (participant, "", False)
+
+            # 检查是否是跳过令牌
+            if REPLY_SKIP_TOKEN in final_response:
+                yield (participant, "", True)
+                break
 
             # 添加到会话历史（带上角色名字，清理可能的格式泄露）
             self.session.add_assistant_message(
@@ -201,107 +219,3 @@ class Moderator:
     def get_participants_info(self) -> list[ParticipantInfo]:
         """获取所有参与者信息"""
         return [p.info for p in self.participants]
-
-    async def run_pingpong(
-        self,
-        max_turns: int = 5,
-    ) -> AsyncIterator[Tuple[Participant, str, bool]]:
-        """
-        运行 ping-pong 对话 - 角色之间自动持续对话
-
-        在 run_round 之后调用，让角色之间继续交流。
-        自动从最后发言者的下一个开始（由 rotation 管理）。
-
-        Args:
-            max_turns: 最大轮次（默认 5）
-
-        Yields:
-            (participant, chunk, is_skip) - 参与者、文本片段、是否跳过
-        """
-        if len(self.participants) < 2:
-            return  # 至少需要 2 个参与者
-
-        all_participants_info = [p.info for p in self.participants]
-        num_participants = len(self.participants)
-
-        for turn in range(1, max_turns + 1):
-            # 获取下一个发言者（rotation 自动管理顺序）
-            current_participant = self.rotation.next()
-            # 上一个发言者（被回复的人）
-            prev_participant = self.rotation.previous
-
-            # 构建 ping-pong 上下文
-            debate_context = DebateContext(
-                current_participant=current_participant.info,
-                all_participants=all_participants_info,
-                round_number=self.round_number,
-                speaking_order=turn,
-                total_speakers=num_participants,
-                is_pingpong=True,
-                pingpong_turn=turn,
-                pingpong_max_turns=max_turns,
-                reply_to=prev_participant.info if prev_participant else None,
-            )
-
-            # 获取对话历史
-            messages = self.session.get_messages()
-
-            # 带重试的响应生成
-            final_response = ""
-            yielded_anything = False
-
-            for retry in range(MAX_RETRIES + 1):
-                full_response = ""
-                stream_filter = StreamingFilter()
-                chunk_count = 0
-
-                async for chunk in current_participant.respond(
-                    messages=messages,
-                    user_query="",  # ping-pong 模式不需要用户查询
-                    debate_context=debate_context,
-                ):
-                    chunk_count += 1
-                    full_response += chunk
-                    filtered = stream_filter.process(chunk)
-
-                    # 第一次 yield 时确保 debate.py 能检测到参与者切换
-                    if not yielded_anything:
-                        yield (current_participant, filtered, False)
-                        yielded_anything = True
-                    elif filtered:
-                        yield (current_participant, filtered, False)
-
-                # 刷新过滤器缓冲区
-                remaining = stream_filter.flush()
-                if remaining:
-                    if not yielded_anything:
-                        yield (current_participant, remaining, False)
-                        yielded_anything = True
-                    else:
-                        yield (current_participant, remaining, False)
-
-                # 检查是否成功获取响应
-                if chunk_count > 0:
-                    final_response = full_response
-                    break
-
-                # 空响应，尝试重试
-                if retry < MAX_RETRIES:
-                    await asyncio.sleep(RETRY_DELAY)
-                else:
-                    final_response = ""
-
-            # 确保至少 yield 一次（如果所有重试都失败）
-            if not yielded_anything:
-                yield (current_participant, "", False)
-
-            # 检查是否是跳过令牌
-            if REPLY_SKIP_TOKEN in final_response:
-                yield (current_participant, "", True)
-                break
-
-            # 添加到会话历史（清理可能的格式泄露）
-            self.session.add_assistant_message(
-                content=clean_response(final_response),
-                name=current_participant.info.display_name,
-            )
