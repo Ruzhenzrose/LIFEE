@@ -16,6 +16,7 @@
     body {
       font-family: 'Noto Sans SC', sans-serif;
       background-color: #FDFBF7;
+      color: #5D576B;
     }
     .font-serif { font-family: 'Noto Serif SC', serif; }
 
@@ -36,6 +37,13 @@
     .text-blue-brand { color: #98A6D4; }
     .bg-blue-brand { background-color: #98A6D4; }
     .border-blue-brand { border-color: #98A6D4; }
+
+    /* Sidebar base + smooth transition */
+    .sidebar {
+      background-color: #F8F6F2;
+      border-right: 1px solid #E8E6E0;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
   </style>
 </head>
 
@@ -160,6 +168,108 @@
             ? <img src={avatar} alt="Avatar" className="w-full h-full object-cover grayscale" />
             : <span className="text-current leading-none">{avatar}</span>
           }
+        </div>
+      );
+    };
+
+    // --- App Layout (Sidebar + Header) ---
+    const AppLayout = ({ children, activeView, setView, isLoggedIn, onLogin, onNewChat }) => {
+      const [isCollapsed, setIsCollapsed] = useState(false);
+
+      return (
+        <div className="flex h-screen overflow-hidden">
+          {/* Sidebar */}
+          <aside className={`sidebar flex flex-col p-4 z-20 shrink-0 ${isCollapsed ? 'w-[72px]' : 'w-[260px]'}`}>
+            <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col">
+              {/* Expand/Collapse */}
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-3 mb-4 rounded-xl hover:bg-white/60 transition-all text-blue-brand self-start"
+                title={isCollapsed ? "Expand Menu" : "Collapse Menu"}
+              >
+                <Icon name="Menu" size={20} />
+              </button>
+
+              {/* New Chat */}
+              <button
+                onClick={onNewChat}
+                className={`flex items-center gap-3 bg-white border border-[#E8E6E0] rounded-2xl shadow-sm hover:shadow-md transition-all font-bold text-[#5D576B] ${isCollapsed ? 'p-3 justify-center mb-8' : 'px-6 py-4 mb-8 text-sm'}`}
+                title="New Chat"
+              >
+                <Icon name="Plus" size={20} className="text-blue-brand" />
+                {!isCollapsed && <span>New Chat</span>}
+              </button>
+
+              <nav className="space-y-1">
+                {!isCollapsed && <div className="text-[10px] uppercase font-bold tracking-widest opacity-30 px-4 mb-2 animate-in">History</div>}
+
+                <button
+                  className={`w-full text-left rounded-xl hover:bg-white/60 transition-colors flex items-center ${isCollapsed ? 'p-3 justify-center' : 'px-4 py-3 text-xs opacity-60 italic truncate'}`}
+                >
+                  <Icon name="MessageSquare" size={isCollapsed ? 18 : 14} className={isCollapsed ? "text-blue-brand" : "mr-2 opacity-40"} />
+                  {!isCollapsed && <span>"Career confused after..."</span>}
+                </button>
+
+                <button
+                  className={`w-full text-left rounded-xl hover:bg-white/60 transition-colors flex items-center ${isCollapsed ? 'p-3 justify-center' : 'px-4 py-3 text-xs opacity-60 italic truncate'}`}
+                >
+                  <Icon name="MessageSquare" size={isCollapsed ? 18 : 14} className={isCollapsed ? "text-blue-brand" : "mr-2 opacity-40"} />
+                  {!isCollapsed && <span>"Leaving my hometown..."</span>}
+                </button>
+              </nav>
+            </div>
+
+            {/* Bottom Action Area */}
+            <div className="pt-4 border-t border-[#E8E6E0] space-y-1">
+              <button className={`w-full flex items-center font-bold hover:bg-white/60 rounded-xl transition-all ${isCollapsed ? 'p-3 justify-center' : 'gap-3 px-4 py-2.5 text-xs'}`}>
+                <Icon name="HelpCircle" size={18} />
+                {!isCollapsed && <span>Help</span>}
+              </button>
+              <button className={`w-full flex items-center font-bold hover:bg-white/60 rounded-xl transition-all ${isCollapsed ? 'p-3 justify-center' : 'gap-3 px-4 py-2.5 text-xs'}`}>
+                <Icon name="Settings" size={18} />
+                {!isCollapsed && <span>Settings</span>}
+              </button>
+            </div>
+          </aside>
+
+          {/* Main */}
+          <div className="flex-1 flex flex-col overflow-hidden relative bg-[#FDFBF7]">
+            <header className="h-16 flex items-center justify-between px-6 md:px-8 bg-[#FDFBF7]/80 backdrop-blur-md z-10 sticky top-0 border-b border-[#E8E6E0]/30">
+              <div className="flex items-center gap-4 cursor-pointer" onClick={() => setView('home')}>
+                <span className="font-serif italic font-black text-blue-brand tracking-tighter text-2xl">LIFEE</span>
+              </div>
+
+              <div className="flex items-center gap-6 md:gap-8">
+                <button
+                  onClick={() => setView('community')}
+                  className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:text-blue-brand ${activeView === 'community' ? 'text-blue-brand border-b-2 border-blue-brand pb-1' : 'text-[#5D576B]/60'}`}
+                >
+                  Community
+                </button>
+
+                {isLoggedIn ? (
+                  <div className="group relative">
+                    <div className="w-9 h-9 rounded-full bg-blue-brand text-white border-2 border-white shadow-lg flex items-center justify-center cursor-pointer transition-transform hover:scale-105">
+                      <Icon name="User" size={18} />
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={onLogin}
+                    className="px-8 py-2.5 bg-blue-brand text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#8795c4] transition-all active:scale-95"
+                  >
+                    Sign In
+                  </button>
+                )}
+              </div>
+            </header>
+
+            <main className="flex-1 overflow-y-auto no-scrollbar">
+              <div className="w-full max-w-[1400px] mx-auto px-4">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
       );
     };
@@ -383,8 +493,8 @@
       }, []);
 
       return (
-        <div className="h-screen bg-[#FDFBF7] flex flex-col overflow-hidden font-sans">
-          <header className="p-4 border-b border-[#F0EDEA] bg-white flex items-center justify-between z-10 shadow-sm">
+        <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden font-sans animate-in">
+          <header className="p-4 border-b border-[#F0EDEA] bg-white flex items-center justify-between z-10">
             <div className="flex -space-x-2">
               {selectedPersonas.map(p => (
                 <div key={p.id} className="w-8 h-8 rounded-full border-2 border-white overflow-hidden shadow-sm">
@@ -400,7 +510,7 @@
             </button>
           </header>
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-10 pb-60 no-scrollbar">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-12 pb-64 no-scrollbar">
             {history.map((m, idx) => {
               const isUser = m.personaId === 'user';
 
@@ -432,15 +542,15 @@
             )}
           </div>
 
-          <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7] to-transparent z-20">
-            <div className="max-w-2xl mx-auto space-y-4">
+          <div className="p-8 bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7] to-transparent">
+            <div className="max-w-3xl mx-auto space-y-5">
               {options.length > 0 && !isDebating && (
                 <div className="flex flex-wrap justify-center gap-2 mb-4 animate-in">
                   {options.map((opt, i) => (
                     <button
                       key={i}
                       onClick={() => { setOptions([]); runRound(opt); }}
-                      className="px-4 py-2 bg-white/90 border-2 border-blue-brand/20 rounded-full text-xs font-medium hover:bg-blue-brand hover:text-white transition-all shadow-sm"
+                      className="px-5 py-2.5 bg-white/90 border border-blue-brand/20 rounded-full text-xs font-bold hover:bg-blue-brand hover:text-white transition-all shadow-sm"
                     >
                       {opt}
                     </button>
@@ -452,17 +562,17 @@
                 <button
                   disabled={isDebating}
                   onClick={() => runRound("")}
-                  className="flex-1 py-5 bg-blue-brand text-white rounded-full font-bold shadow-xl transition-all hover:translate-y-[-2px] disabled:opacity-50"
+                  className="flex-1 py-5 bg-blue-brand text-white rounded-full font-bold shadow-xl transition-all hover:translate-y-[-2px] disabled:opacity-50 uppercase tracking-widest text-xs"
                 >
                   STAY SILENT
                 </button>
 
-                <div className="relative flex-[1.5] group">
+                <div className="relative flex-[2] group">
                   <input
                     type="text"
                     placeholder="..."
                     disabled={isDebating}
-                    className="w-full h-14 bg-white rounded-full shadow-xl border-2 border-[#F0EDEA] transition-all duration-300 px-6 focus-blue-brand text-sm"
+                    className="w-full h-14 bg-white rounded-full shadow-xl border-2 border-transparent focus:border-blue-brand transition-all duration-300 px-8 focus:outline-none text-sm"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && e.target.value.trim()) {
                         runRound(e.target.value);
@@ -488,6 +598,15 @@
       const [personas, setPersonas] = useState(INITIAL_PERSONAS);
       const [selectedIds, setSelectedIds] = useState([]);
       const [detailPersona, setDetailPersona] = useState(null);
+      const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+      const handleNewChat = () => {
+        setContext({ situation: '', landingPeriods: [] });
+        setSelectedIds([]);
+        setDetailPersona(null);
+        setCategory('ALL');
+        setView('home');
+      };
 
       const toggleSelect = (e, p) => {
         e.stopPropagation();
@@ -496,175 +615,219 @@
 
       const filtered = category === 'ALL' ? personas : personas.filter(p => p.category === category);
 
-      if (view === 'builder') return (
-        <PersonaBuilder
-          onSave={(newP) => { setPersonas([...personas, { ...newP, id: `custom-${Date.now()}`, category: 'CUSTOM' }]); setView('persona-selection'); }}
-          onCancel={() => setView('persona-selection')}
-        />
-      );
-
-      if (view === 'persona-detail') return (
-        <PersonaExpandedPage
-          persona={detailPersona}
-          onBack={() => setView('persona-selection')}
-          onInvite={(p) => { if (!selectedIds.includes(p.id)) setSelectedIds([...selectedIds, p.id]); setView('persona-selection'); }}
-          isSelected={selectedIds.includes(detailPersona?.id)}
-        />
-      );
-
-      if (view === 'persona-selection') return (
-        <PageWrapper bgClass="bg-[#FDFBF7]">
-          <div className="mb-12 flex justify-between items-center px-4 w-full">
-            <button onClick={() => setView('home')} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] opacity-40 hover:opacity-100 transition-all">
-              <Icon name="ChevronLeft" size={14} /> Retreat
-            </button>
-            <div className="text-[10px] uppercase tracking-[0.25em] opacity-40 font-bold">Panel: {selectedIds.length}</div>
-          </div>
-
-          <div className="flex justify-center mb-16 px-4">
-            <div className="inline-flex bg-[#E8E8E8]/50 backdrop-blur-md p-1.5 rounded-full border-2 border-white shadow-lg">
-              {['ALL', 'CREATIVE', 'RATIONAL', 'SUPPORT', 'CUSTOM'].map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  className={`px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${category === cat ? 'bg-blue-brand text-white shadow-lg scale-105' : 'text-[#5D576B]/60 hover:text-blue-brand'}`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <h2 className="text-4xl md:text-5xl font-serif italic mb-16 text-[#5D576B] px-4 tracking-tight text-center animate-in">Assemble the Voices</h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-40 px-4 w-full animate-in">
-            {filtered.map(p => {
-              const isSel = selectedIds.includes(p.id);
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => { setDetailPersona(p); setView('persona-detail'); }}
-                  className={`relative p-8 bg-white rounded-[40px] shadow-2xl border-2 transition-all transform hover:scale-[1.03] flex flex-col aspect-[3/4] min-h-[320px] overflow-hidden group ${isSel ? 'border-blue-brand' : 'border-[#F0EDEA]'}`}
-                >
-                  <button
-                    onClick={(e) => toggleSelect(e, p)}
-                    className={`absolute top-6 right-6 w-11 h-11 rounded-full border-2 flex items-center justify-center z-30 transition-all ${isSel ? 'bg-blue-brand border-blue-brand shadow-lg scale-110' : 'bg-transparent border-slate-100 group-hover:border-blue-brand/40'}`}
-                  >
-                    {isSel && <Icon name="Check" size={18} className="text-white" />}
-                  </button>
-
-                  <div className="mb-6 flex items-center justify-center w-16 h-16 relative overflow-hidden group-hover:scale-110 transition-transform origin-center">
-                    <div className="absolute inset-0 bg-slate-50 rounded-[24px] transform rotate-6 scale-90 opacity-40" />
-                    <AvatarDisplay avatar={p.avatar} className="w-12 h-12 text-4xl relative z-10" />
-                  </div>
-
-                  <div className="mt-auto text-left">
-                    <h4 className="font-bold text-xl text-[#1A1A1A] tracking-tighter mb-1 leading-tight">{p.name}</h4>
-                    <p className="text-[8px] uppercase font-black tracking-[0.1em] text-blue-brand mb-3">{p.role}</p>
-                    <p className="text-xs italic leading-relaxed text-black/40 line-clamp-2">“{p.worldview}”</p>
-                  </div>
-
-                  {p.id.startsWith('custom-') && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setPersonas(personas.filter(x => x.id !== p.id)); }}
-                      className="absolute bottom-6 left-6 p-2 text-neutral-200 hover:text-red-400 transition-all z-20"
-                    >
-                      <Icon name="Trash2" size={16} />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-
-            {(category === 'ALL' || category === 'CUSTOM') && (
-              <div
-                onClick={() => setView('builder')}
-                className="relative p-6 bg-white/30 backdrop-blur-sm rounded-[40px] border-2 border-dashed border-[#D1CEC7] cursor-pointer transition-all hover:bg-white/50 flex flex-col items-center justify-center gap-4 aspect-[3/4] min-h-[320px] text-center group"
-              >
-                <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-blue-brand group-hover:scale-110 transition-transform">
-                  <Icon name="Plus" size={24} />
-                </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#5D576B] opacity-40">Create Voice</p>
+      const renderContent = () => {
+        if (view === 'community') {
+          return (
+            <div className="p-12 max-w-5xl mx-auto animate-in space-y-12">
+              <div className="space-y-2">
+                <h2 className="text-5xl font-serif italic tracking-tight">Community Archives</h2>
+                <p className="text-xs uppercase tracking-[0.4em] opacity-40 font-bold">Public Thought Patterns</p>
               </div>
-            )}
-          </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="bg-white p-8 rounded-[48px] border border-[#E8E6E0] shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group">
+                    <div className="flex items-center gap-5 mb-6">
+                      <div className="w-12 h-12 rounded-2xl bg-[#FDFBF7] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🎭</div>
+                      <div>
+                        <h4 className="font-bold text-lg text-[#1A1A1A]">Shared Reflection #{i}204</h4>
+                        <p className="text-[10px] uppercase font-bold text-blue-brand tracking-widest">3 Voices Engaging</p>
+                      </div>
+                    </div>
+                    <p className="text-sm italic opacity-60 leading-relaxed line-clamp-2">"Exploring the complex tension between safety and personal growth..."</p>
+                    <div className="mt-8 pt-6 border-t border-slate-50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-30">
+                      <span>Reflected 2 days ago</span>
+                      <span className="group-hover:text-blue-brand transition-colors">Enter Archive →</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
 
-          {selectedIds.length >= 2 && (
-            <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-30 animate-in">
-              <button
-                onClick={() => setView('debate')}
-                className="w-full py-6 bg-black text-white rounded-full font-bold text-[10px] tracking-[0.3em] shadow-2xl hover:scale-105 active:scale-95 transition-all uppercase"
-              >
-                Commence Dialogue
+        if (view === 'builder') return (
+          <PersonaBuilder
+            onSave={(newP) => { setPersonas([...personas, { ...newP, id: `custom-${Date.now()}`, category: 'CUSTOM' }]); setView('persona-selection'); }}
+            onCancel={() => setView('persona-selection')}
+          />
+        );
+
+        if (view === 'persona-detail') return (
+          <PersonaExpandedPage
+            persona={detailPersona}
+            onBack={() => setView('persona-selection')}
+            onInvite={(p) => { if (!selectedIds.includes(p.id)) setSelectedIds([...selectedIds, p.id]); setView('persona-selection'); }}
+            isSelected={selectedIds.includes(detailPersona?.id)}
+          />
+        );
+
+        if (view === 'persona-selection') return (
+          <PageWrapper bgClass="bg-transparent">
+            <div className="mb-12 flex justify-between items-center px-4 w-full">
+              <button onClick={() => setView('home')} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] opacity-40 hover:opacity-100 transition-all">
+                <Icon name="ChevronLeft" size={14} /> Retreat
               </button>
-            </div>
-          )}
-        </PageWrapper>
-      );
-
-      if (view === 'debate') return (
-        <DebateArena
-          context={context}
-          selectedPersonas={personas.filter(p => selectedIds.includes(p.id))}
-          setView={setView}
-        />
-      );
-
-      if (view === 'summary') return (
-        <PageWrapper bgClass="bg-[#FDFBF7]">
-          <div className="text-center py-40 animate-in">
-            <div className="text-6xl mb-12">🌱</div>
-            <h2 className="text-4xl font-serif italic mb-6 text-[#1A1A1A]">Your Decision</h2>
-            <button onClick={() => window.location.reload()} className="w-full py-5 bg-blue-brand text-white rounded-full font-bold shadow-xl uppercase tracking-widest text-xs">
-              Start New Chapter
-            </button>
-          </div>
-        </PageWrapper>
-      );
-
-      return (
-        <PageWrapper bgClass="bg-[#FDFBF7]">
-          <header className="mb-20 text-center animate-in">
-            <h1 className="text-6xl font-bold tracking-[0.1em] text-blue-brand mb-3 uppercase italic">LIFEE</h1>
-            <p className="italic text-[10px] text-[#C1C1C1] uppercase tracking-[0.4em] font-black font-sans">YOUR LIFE & FRIEND COACH</p>
-          </header>
-
-          <section className="space-y-12 mb-20 max-w-3xl mx-auto w-full animate-in font-sans">
-            <div className="bg-white p-12 rounded-[60px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-10 opacity-5"><Icon name="Sparkles" size={48} /></div>
-              <h2 className="text-2xl font-serif italic mb-6 text-[#1A1A1A]">“Let them argue, you decide.”</h2>
-              <textarea
-                className="w-full h-40 p-6 bg-white rounded-3xl border-2 border-[#F0EDEA] transition-all focus-blue-brand text-base leading-relaxed placeholder:italic"
-                placeholder="Where are you right now? Share your situation..."
-                value={context.situation}
-                onChange={(e) => setContext({ ...context, situation: e.target.value })}
-              />
+              <div className="text-[10px] uppercase tracking-[0.25em] opacity-40 font-bold">Panel: {selectedIds.length}</div>
             </div>
 
-            <div className="space-y-6 px-4 text-center">
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-blue-brand opacity-80 mb-4 uppercase">When is this landing?</h3>
-              <div className="flex flex-wrap justify-center gap-3">
-                {PRESET_PERIODS.map(p => (
+            <div className="flex justify-center mb-16 px-4">
+              <div className="inline-flex bg-[#E8E8E8]/50 backdrop-blur-md p-1.5 rounded-full border-2 border-white shadow-lg">
+                {['ALL', 'CREATIVE', 'RATIONAL', 'SUPPORT', 'CUSTOM'].map(cat => (
                   <button
-                    key={p}
-                    onClick={() => setContext(prev => ({ ...prev, landingPeriods: prev.landingPeriods.includes(p) ? prev.landingPeriods.filter(x => x !== p) : [...prev.landingPeriods, p] }))}
-                    className={`px-6 py-3 rounded-full text-[11px] font-bold transition-all border-2 ${context.landingPeriods.includes(p) ? 'bg-blue-brand text-white border-blue-brand shadow-lg scale-105' : 'bg-white text-neutral-300 border-[#F0EDEA] hover:border-blue-brand/40'}`}
+                    key={cat}
+                    onClick={() => setCategory(cat)}
+                    className={`px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${category === cat ? 'bg-blue-brand text-white shadow-lg scale-105' : 'text-[#5D576B]/60 hover:text-blue-brand'}`}
                   >
-                    {p}
+                    {cat}
                   </button>
                 ))}
               </div>
             </div>
 
-            <button
-              disabled={!context.situation}
-              onClick={() => setView('persona-selection')}
-              className="w-full py-6 bg-blue-brand text-white rounded-full font-bold shadow-xl transition-all hover:translate-y-[-1px] uppercase tracking-widest text-sm disabled:opacity-40"
-            >
-              Step Forward
-            </button>
-          </section>
-        </PageWrapper>
+            <h2 className="text-4xl md:text-5xl font-serif italic mb-16 text-[#5D576B] px-4 tracking-tight text-center animate-in">Assemble the Voices</h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-40 px-4 w-full animate-in">
+              {filtered.map(p => {
+                const isSel = selectedIds.includes(p.id);
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => { setDetailPersona(p); setView('persona-detail'); }}
+                    className={`relative p-8 bg-white rounded-[40px] shadow-2xl border-2 transition-all transform hover:scale-[1.03] flex flex-col aspect-[3/4] min-h-[320px] overflow-hidden group ${isSel ? 'border-blue-brand' : 'border-[#F0EDEA]'}`}
+                  >
+                    <button
+                      onClick={(e) => toggleSelect(e, p)}
+                      className={`absolute top-6 right-6 w-11 h-11 rounded-full border-2 flex items-center justify-center z-30 transition-all ${isSel ? 'bg-blue-brand border-blue-brand shadow-lg scale-110' : 'bg-transparent border-slate-100 group-hover:border-blue-brand/40'}`}
+                    >
+                      {isSel && <Icon name="Check" size={18} className="text-white" />}
+                    </button>
+
+                    <div className="mb-6 flex items-center justify-center w-16 h-16 relative overflow-hidden group-hover:scale-110 transition-transform origin-center">
+                      <div className="absolute inset-0 bg-slate-50 rounded-[24px] transform rotate-6 scale-90 opacity-40" />
+                      <AvatarDisplay avatar={p.avatar} className="w-12 h-12 text-4xl relative z-10" />
+                    </div>
+
+                    <div className="mt-auto text-left">
+                      <h4 className="font-bold text-xl text-[#1A1A1A] tracking-tighter mb-1 leading-tight">{p.name}</h4>
+                      <p className="text-[8px] uppercase font-black tracking-[0.1em] text-blue-brand mb-3">{p.role}</p>
+                      <p className="text-xs italic leading-relaxed text-black/40 line-clamp-2">“{p.worldview}”</p>
+                    </div>
+
+                    {p.id.startsWith('custom-') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setPersonas(personas.filter(x => x.id !== p.id)); }}
+                        className="absolute bottom-6 left-6 p-2 text-neutral-200 hover:text-red-400 transition-all z-20"
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+
+              {(category === 'ALL' || category === 'CUSTOM') && (
+                <div
+                  onClick={() => setView('builder')}
+                  className="relative p-6 bg-white/30 backdrop-blur-sm rounded-[40px] border-2 border-dashed border-[#D1CEC7] cursor-pointer transition-all hover:bg-white/50 flex flex-col items-center justify-center gap-4 aspect-[3/4] min-h-[320px] text-center group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-blue-brand group-hover:scale-110 transition-transform">
+                    <Icon name="Plus" size={24} />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#5D576B] opacity-40">Create Voice</p>
+                </div>
+              )}
+            </div>
+
+            {selectedIds.length >= 2 && (
+              <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-30 animate-in">
+                <button
+                  onClick={() => setView('debate')}
+                  className="w-full py-6 bg-black text-white rounded-full font-bold text-[10px] tracking-[0.3em] shadow-2xl hover:scale-105 active:scale-95 transition-all uppercase"
+                >
+                  Commence Dialogue
+                </button>
+              </div>
+            )}
+          </PageWrapper>
+        );
+
+        if (view === 'debate') return (
+          <DebateArena
+            context={context}
+            selectedPersonas={personas.filter(p => selectedIds.includes(p.id))}
+            setView={setView}
+          />
+        );
+
+        if (view === 'summary') return (
+          <PageWrapper bgClass="bg-transparent">
+            <div className="text-center py-40 animate-in">
+              <div className="text-6xl mb-12">🌱</div>
+              <h2 className="text-4xl font-serif italic mb-6 text-[#1A1A1A]">Your Decision</h2>
+              <button onClick={handleNewChat} className="w-full py-5 bg-blue-brand text-white rounded-full font-bold shadow-xl uppercase tracking-widest text-xs">
+                Start New Chapter
+              </button>
+            </div>
+          </PageWrapper>
+        );
+
+        // Home
+        return (
+          <PageWrapper bgClass="bg-transparent">
+            <header className="mb-20 text-center animate-in">
+              <h1 className="text-6xl font-bold tracking-[0.1em] text-blue-brand mb-3 uppercase italic">LIFEE</h1>
+              <p className="italic text-[10px] text-[#C1C1C1] uppercase tracking-[0.4em] font-black font-sans">YOUR LIFE & FRIEND COACH</p>
+            </header>
+
+            <section className="space-y-12 mb-20 max-w-3xl mx-auto w-full animate-in font-sans">
+              <div className="bg-white p-12 rounded-[60px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-10 opacity-5"><Icon name="Sparkles" size={48} /></div>
+                <h2 className="text-2xl font-serif italic mb-6 text-[#1A1A1A]">“Let them argue, you decide.”</h2>
+                <textarea
+                  className="w-full h-40 p-6 bg-white rounded-3xl border-2 border-[#F0EDEA] transition-all focus-blue-brand text-base leading-relaxed placeholder:italic"
+                  placeholder="Where are you right now? Share your situation..."
+                  value={context.situation}
+                  onChange={(e) => setContext({ ...context, situation: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-6 px-4 text-center">
+                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-blue-brand opacity-80 mb-4 uppercase">When is this landing?</h3>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {PRESET_PERIODS.map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setContext(prev => ({ ...prev, landingPeriods: prev.landingPeriods.includes(p) ? prev.landingPeriods.filter(x => x !== p) : [...prev.landingPeriods, p] }))}
+                      className={`px-6 py-3 rounded-full text-[11px] font-bold transition-all border-2 ${context.landingPeriods.includes(p) ? 'bg-blue-brand text-white border-blue-brand shadow-lg scale-105' : 'bg-white text-neutral-300 border-[#F0EDEA] hover:border-blue-brand/40'}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                disabled={!context.situation}
+                onClick={() => setView('persona-selection')}
+                className="w-full py-6 bg-blue-brand text-white rounded-full font-bold shadow-xl transition-all hover:translate-y-[-1px] uppercase tracking-widest text-sm disabled:opacity-40"
+              >
+                Step Forward
+              </button>
+            </section>
+          </PageWrapper>
+        );
+      };
+
+      return (
+        <AppLayout
+          activeView={view}
+          setView={setView}
+          isLoggedIn={isLoggedIn}
+          onLogin={() => setIsLoggedIn(true)}
+          onNewChat={handleNewChat}
+        >
+          {renderContent()}
+        </AppLayout>
       );
     }
 
