@@ -42,7 +42,6 @@
         .bg-blue-brand { background-color: #98A6D4; }
         .border-blue-brand { border-color: #98A6D4; }
 
-        /* 侧边栏过渡 */
         .sidebar-transition {
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -75,12 +74,12 @@
                 category: 'CREATIVE',
                 worldview: 'A quiet dignity is built from the fragments of a storm.',
                 avatar: '✨',
-                decisionStyle: "She prioritizes the essential over the urgent.",
+                decisionStyle: "She prioritizes the essential over the urgent, rejecting vanity in favor of structural integrity and emotional honesty.",
                 lifeContext: [
-                    { period: "Shadows of the 1940s", detail: "Found resilience in silence during scarcity." },
-                    { period: "Breakout Grace", detail: "Navigated visibility with grounded intelligence." }
+                    { period: "Shadows of the 1940s", detail: "Found resilience in silence during years of profound scarcity and shared hardship." },
+                    { period: "Breakout Grace", detail: "Navigated sudden, worldwide visibility with a grounded sense of self and quiet intelligence." }
                 ],
-                voice: "The simplest plate of pasta and a long walk are anchors of a life well-observed."
+                voice: "The simplest plate of pasta, a small square of chocolate, and a long walk are not escapes; they are the anchors of a life well-observed."
             },
             {
                 id: 'architect',
@@ -157,183 +156,26 @@
             } catch (e) { return "{}"; }
         }
 
-        // ✅ LIFEE API (保留原有的 API 调用，供 DebateArena 使用)
-        const LIFEE_API = "https://lifee-api.guolinn.workers.dev/decision";
-
-        async function fetchLifeeDecision(payload) {
-            const res = await fetch(LIFEE_API, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error("LIFEE API failed: " + text);
-            }
-
-            return res.json(); // { messages, options }
-        }
-
-        // ✅ Debate Arena (保留原有的辩论组件)
-        const DebateArena = ({ context, selectedPersonas, setView }) => {
-            const [history, setHistory] = useState([]);
-            const [options, setOptions] = useState([]);
-            const [isDebating, setIsDebating] = useState(false);
-            const scrollRef = useRef(null);
-
-            useEffect(() => {
-                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-            }, [history]);
-
-            const runRound = async (userInput = null) => {
-                setIsDebating(true);
-
-                const cleanInput = (userInput ?? "").toString().trim();
-
-                // 1) 用户输入先写入历史（如果有）
-                if (cleanInput) {
-                    setHistory(prev => [...prev, { personaId: "user", text: cleanInput }]);
-                }
-
-                try {
-                    // 2) 发给后端：situation + userInput + personas
-                    const payload = {
-                        situation: (context.situation || "").trim() || "Start the internal debate.",
-                        userInput: cleanInput, // 空也可以（stay silent）
-                        personas: selectedPersonas.map(p => ({ id: p.id, name: p.name }))
-                    };
-
-                    const data = await fetchLifeeDecision(payload); // { messages, options }
-
-                    // 3) append messages
-                    if (Array.isArray(data.messages)) {
-                        setHistory(prev => [...prev, ...data.messages]);
-                    }
-
-                    // 4) set options
-                    if (Array.isArray(data.options)) {
-                        setOptions(data.options);
-                    } else {
-                        setOptions([]);
-                    }
-                } catch (e) {
-                    console.error(e);
-                    setHistory(prev => [...prev, { personaId: "system", text: "（请求失败）请检查 API / CORS / 返回格式" }]);
-                    setOptions([]);
-                } finally {
-                    setIsDebating(false);
-                }
-            };
-
-            // 首轮：自动触发（无 userInput，但有 situation/personas）
-            useEffect(() => {
-                if (history.length === 0) runRound("");
-            }, []);
-
-            return (
-                <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden font-sans animate-in">
-                    <header className="p-4 border-b border-[#F0EDEA] bg-white flex items-center justify-between z-10">
-                        <div className="flex -space-x-2">
-                            {selectedPersonas.map(p => (
-                                <div key={p.id} className="w-8 h-8 rounded-full border-2 border-white overflow-hidden shadow-sm">
-                                    <AvatarDisplay avatar={p.avatar} className="w-full h-full text-xs" />
-                                </div>
-                            ))}
-                        </div>
-                        <button
-                            onClick={() => setView('summary')}
-                            className="flex items-center gap-2 text-xs font-bold text-[#E6C6C1] px-4 py-2 border border-[#E6C6C1] rounded-full hover:bg-[#E6C6C1] hover:text-white transition-all"
-                        >
-                            <Icon name="PauseCircle" size={14} /> STOP & DECIDE
-                        </button>
-                    </header>
-
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 md:space-y-12 pb-64 no-scrollbar">
-                        {history.map((m, idx) => {
-                            const isUser = m.personaId === 'user';
-
-                            const persona = isUser
-                                ? { name: "YOU", avatar: "👤" }
-                                : (selectedPersonas.find(p => p.id === m.personaId) ||
-                                    (m.personaId === "system" ? { name: "SYSTEM", avatar: "⚠️" } : { name: "Voice", avatar: "☁️" }));
-
-                            return (
-                                <div key={idx} className={`flex gap-3 md:gap-4 ${isUser ? 'flex-row-reverse' : 'items-start'} animate-in`}>
-                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full border flex items-center justify-center shadow-sm shrink-0 bg-white overflow-hidden ${isUser ? 'border-blue-brand/20' : 'border-[#F0EDEA]'}`}>
-                                        <AvatarDisplay avatar={persona.avatar} className="w-full h-full text-xl md:text-2xl" />
-                                    </div>
-                                    <div className={`max-w-[85%] md:max-w-[75%] flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-                                        <span className="text-[9px] md:text-[10px] font-bold opacity-30 tracking-widest uppercase mb-1">{persona.name}</span>
-                                        <div className={`p-3 md:p-4 rounded-3xl text-sm shadow-sm transition-all duration-300 ${isUser ? 'bg-blue-brand text-white rounded-tr-none' : 'bg-white border border-[#F0EDEA] rounded-tl-none'}`}>
-                                            {m.text}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {isDebating && (
-                            <div className="animate-pulse flex gap-4 mt-10">
-                                <div className="w-10 h-10 bg-slate-100 rounded-full" />
-                                <div className="h-12 w-48 bg-white border rounded-3xl" />
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="p-4 md:p-8 bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7] to-transparent">
-                        <div className="max-w-3xl mx-auto space-y-4 md:space-y-5">
-                            {options.length > 0 && !isDebating && (
-                                <div className="flex flex-wrap justify-center gap-2 mb-4 animate-in">
-                                    {options.map((opt, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => { setOptions([]); runRound(opt); }}
-                                            className="px-4 py-2 md:px-5 md:py-2.5 bg-white/90 border border-blue-brand/20 rounded-full text-xs font-bold hover:bg-blue-brand hover:text-white transition-all shadow-sm"
-                                        >
-                                            {opt}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-
-                            <div className="flex gap-2 md:gap-4">
-                                <button
-                                    disabled={isDebating}
-                                    onClick={() => runRound("")}
-                                    className="flex-1 py-4 md:py-5 bg-blue-brand text-white rounded-full font-bold shadow-xl transition-all hover:translate-y-[-2px] disabled:opacity-50 uppercase tracking-widest text-[10px] md:text-xs"
-                                >
-                                    STAY SILENT
-                                </button>
-
-                                <div className="relative flex-[2] group">
-                                    <input
-                                        type="text"
-                                        placeholder="..."
-                                        disabled={isDebating}
-                                        className="w-full h-12 md:h-14 bg-white rounded-full shadow-xl border-2 border-transparent focus:border-blue-brand transition-all duration-300 px-6 md:px-8 focus:outline-none text-sm"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && e.target.value.trim()) {
-                                                runRound(e.target.value);
-                                                e.target.value = '';
-                                            }
-                                        }}
-                                    />
-                                    <div className="absolute inset-y-0 right-4 md:right-6 flex items-center pointer-events-none group-focus-within:opacity-0 transition-opacity">
-                                        <Icon name="MessageCircle" size={20} className="text-blue-brand" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- 响应式布局组件 ---
         const AppLayout = ({ children, activeView, setView, isLoggedIn, onLogin, onNewChat }) => {
-            const [isCollapsed, setIsCollapsed] = useState(true);
+            const [isCollapsed, setIsCollapsed] = useState(false);
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+            const scrollContainerRef = useRef(null);
+
+            useEffect(() => {
+                const el = scrollContainerRef.current;
+                if (!el) return;
+
+                // 先立即回顶（同步）
+                el.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+                el.scrollTop = 0;
+
+                // 再在下一帧回顶一次，避免切页后布局/字体加载导致回弹
+                requestAnimationFrame(() => {
+                    if (!scrollContainerRef.current) return;
+                    scrollContainerRef.current.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+                    scrollContainerRef.current.scrollTop = 0;
+                });
+            }, [activeView]);
 
             const handleMobileNewChat = () => {
                 onNewChat();
@@ -342,47 +184,15 @@
 
             return (
                 <div className="flex h-screen overflow-hidden bg-[#FDFBF7]">
-                    {/* 背景遮罩 (仅移动端可见) */}
-                    {isMobileMenuOpen && (
-                        <div 
-                            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                        />
-                    )}
-
-                    {/* Sidebar */}
-                    <aside className={`
-                        sidebar-transition fixed inset-y-0 left-0 z-50 bg-[#F8F6F2] border-r border-[#E8E6E0] flex flex-col p-4
-                        md:relative md:translate-x-0
-                        ${isMobileMenuOpen ? 'translate-x-0 w-[280px]' : '-translate-x-full w-[280px] md:translate-x-0'}
-                        ${!isCollapsed ? 'md:w-[260px]' : 'md:w-[72px]'}
-                    `}>
+                    {isMobileMenuOpen && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
+                    <aside className={`sidebar-transition fixed inset-y-0 left-0 z-50 bg-[#F8F6F2] border-r border-[#E8E6E0] flex flex-col p-4 md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0 w-[280px]' : '-translate-x-full w-[280px] md:translate-x-0'} ${!isCollapsed ? 'md:w-[260px]' : 'md:w-[72px]'}`}>
                         <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col">
-                            {/* Expand/Collapse Menu 按钮 */}
-                            <button 
-                                onClick={() => setIsCollapsed(!isCollapsed)}
-                                className="p-3 mb-4 rounded-xl hover:bg-white/60 transition-all text-blue-brand self-start hidden md:block"
-                            >
-                                <Icon name="Menu" size={20} />
-                            </button>
-
-                            {/* 移动端关闭按钮 */}
-                            <button 
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="p-3 mb-4 rounded-xl hover:bg-white/60 text-blue-brand md:hidden self-end"
-                            >
-                                <Icon name="X" size={20} />
-                            </button>
-
-                            {/* New Chat */}
-                            <button 
-                                onClick={handleMobileNewChat}
-                                className={`flex items-center gap-3 bg-white border border-[#E8E6E0] rounded-2xl shadow-sm hover:shadow-md transition-all font-bold text-[#5D576B] ${isCollapsed ? 'md:p-3 md:justify-center mb-8' : 'px-6 py-4 mb-8 text-sm'}`}
-                            >
+                            <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-3 mb-4 rounded-xl hover:bg-white/60 transition-all text-blue-brand self-start hidden md:block"><Icon name="Menu" size={20} /></button>
+                            <button onClick={() => setIsMobileMenuOpen(false)} className="p-3 mb-4 rounded-xl hover:bg-white/60 text-blue-brand md:hidden self-end"><Icon name="X" size={20} /></button>
+                            <button onClick={handleMobileNewChat} className={`flex items-center gap-3 bg-white border border-[#E8E6E0] rounded-2xl shadow-sm hover:shadow-md transition-all font-bold text-[#5D576B] ${isCollapsed ? 'md:p-3 md:justify-center mb-8' : 'px-6 py-4 mb-8 text-sm'}`}>
                                 <Icon name="Plus" size={20} className="text-blue-brand" />
                                 <span className={isCollapsed ? 'md:hidden' : 'block'}>New Chat</span>
                             </button>
-                            
                             <nav className="space-y-1">
                                 <div className={`text-[10px] uppercase font-bold tracking-widest opacity-30 px-4 mb-2 ${isCollapsed ? 'md:hidden' : 'block'}`}>History</div>
                                 <button className={`w-full text-left rounded-xl hover:bg-white/60 transition-colors flex items-center ${isCollapsed ? 'md:p-3 md:justify-center' : 'px-4 py-3 text-xs opacity-60 italic truncate'}`}>
@@ -391,71 +201,37 @@
                                 </button>
                             </nav>
                         </div>
-
                         <div className="pt-4 border-t border-[#E8E6E0] space-y-1">
-                            <button className={`w-full flex items-center font-bold hover:bg-white/60 rounded-xl transition-all ${isCollapsed ? 'md:p-3 md:justify-center' : 'gap-3 px-4 py-2.5 text-xs'}`}>
-                                <Icon name="HelpCircle" size={18} />
-                                <span className={isCollapsed ? 'md:hidden' : 'block'}>Help</span>
-                            </button>
-                            <button className={`w-full flex items-center font-bold hover:bg-white/60 rounded-xl transition-all ${isCollapsed ? 'md:p-3 md:justify-center' : 'gap-3 px-4 py-2.5 text-xs'}`}>
-                                <Icon name="Settings" size={18} />
-                                <span className={isCollapsed ? 'md:hidden' : 'block'}>Settings</span>
-                            </button>
+                            <button className={`w-full flex items-center font-bold hover:bg-white/60 rounded-xl transition-all ${isCollapsed ? 'p-3 justify-center' : 'gap-3 px-4 py-2.5 text-xs'}`}><Icon name="HelpCircle" size={18} /><span className={isCollapsed ? 'md:hidden' : 'block'}>Help</span></button>
+                            <button className={`w-full flex items-center font-bold hover:bg-white/60 rounded-xl transition-all ${isCollapsed ? 'p-3 justify-center' : 'gap-3 px-4 py-2.5 text-xs'}`}><Icon name="Settings" size={18} /><span className={isCollapsed ? 'md:hidden' : 'block'}>Settings</span></button>
                         </div>
                     </aside>
 
-                    {/* Main Area */}
                     <div className="flex-1 flex flex-col overflow-hidden relative">
                         <header className="h-16 flex items-center justify-between px-4 md:px-8 bg-[#FDFBF7]/80 backdrop-blur-md z-30 sticky top-0 border-b border-[#E8E6E0]/30">
                             <div className="flex items-center gap-3">
-                                {/* 移动端菜单开关 */}
-                                <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 md:hidden text-blue-brand">
-                                    <Icon name="Menu" size={24} />
-                                </button>
-                                <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
-                                    <span className="font-serif italic font-black text-blue-brand tracking-tighter text-xl md:text-2xl">LIFEE</span>
-                                </div>
+                                <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 md:hidden text-blue-brand"><Icon name="Menu" size={24} /></button>
+                                <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}><span className="font-serif italic font-black text-blue-brand tracking-tighter text-xl md:text-2xl">LIFEE</span></div>
                             </div>
-
                             <div className="flex items-center gap-3 md:gap-8">
-                                <button 
-                                    onClick={() => setView('community')}
-                                    className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] transition-all hover:text-blue-brand ${activeView === 'community' ? 'text-blue-brand underline underline-offset-8' : 'text-[#5D576B]/60'}`}
-                                >
-                                    Community
-                                </button>
-                                
+                                <button onClick={() => setView('community')} className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] transition-all hover:text-blue-brand ${activeView === 'community' ? 'text-blue-brand underline underline-offset-8 font-bold' : 'text-[#5D576B]/60'}`}>Community</button>
                                 {isLoggedIn ? (
-                                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-blue-brand text-white border-2 border-white shadow-lg flex items-center justify-center">
-                                        <Icon name="User" size={16} />
-                                    </div>
+                                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-blue-brand text-white border-2 border-white shadow-lg flex items-center justify-center"><Icon name="User" size={16} /></div>
                                 ) : (
-                                    <button 
-                                        onClick={onLogin}
-                                        className="px-4 py-1.5 md:px-8 md:py-2.5 bg-blue-brand text-white rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95"
-                                    >
-                                        Sign In
-                                    </button>
+                                    <button onClick={onLogin} className="px-4 py-1.5 md:px-8 md:py-2.5 bg-blue-brand text-white rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all hover:bg-[#8795c4]">Sign In</button>
                                 )}
                             </div>
                         </header>
-
-                        <main className="flex-1 overflow-y-auto no-scrollbar">
-                            <div className="w-full max-w-[1400px] mx-auto">
-                                {children}
-                            </div>
-                        </main>
+                        <main key={activeView} ref={scrollContainerRef} className="flex-1 overflow-y-auto no-scrollbar"><div className="w-full max-w-[1400px] mx-auto">{children}</div></main>
                     </div>
                 </div>
             );
         };
 
-        // --- 子页面组件 (响应式优化) ---
         const PersonaBuilder = ({ onSave, onCancel }) => {
             const [step, setStep] = useState(1);
             const [newP, setNewP] = useState({ name: '', role: '', worldview: '', avatar: '👤', voice: '', knowledge: '' });
             const emojis = ['👤', '🎭', '🛡️', '🌱', '🦉', '💎', '🌩️', '🌊', '🔥', '🎀', '🧸', '☁️'];
-
             return (
                 <div className="max-w-2xl mx-auto w-full pt-8 md:pt-12 px-4 font-sans animate-in">
                     <div className="mb-8 flex items-center justify-between">
@@ -470,9 +246,7 @@
                                 <h2 className="text-xl md:text-2xl font-serif italic text-center uppercase text-[#1A1A1A]">Step 1: Identity</h2>
                                 <input placeholder="Name..." className="w-full p-4 bg-[#FDFBF7] rounded-2xl border border-[#F0EDEA] focus-blue-brand" value={newP.name} onChange={e => setNewP({...newP, name: e.target.value})} />
                                 <input placeholder="Role / Identity" className="w-full p-4 bg-[#FDFBF7] rounded-2xl border border-[#F0EDEA] uppercase text-xs focus-blue-brand" value={newP.role} onChange={e => setNewP({...newP, role: e.target.value})} />
-                                <div className="flex flex-wrap gap-2 justify-center pt-2">
-                                    {emojis.map(e => <button key={e} onClick={() => setNewP({...newP, avatar: e})} className={`p-3 rounded-xl transition-all border-2 ${newP.avatar === e ? 'border-blue-brand bg-white' : 'border-transparent bg-slate-50'}`}>{e}</button>)}
-                                </div>
+                                <div className="flex flex-wrap gap-2 justify-center pt-2">{emojis.map(e => <button key={e} onClick={() => setNewP({...newP, avatar: e})} className={`p-3 rounded-xl transition-all border-2 ${newP.avatar === e ? 'border-blue-brand bg-white' : 'border-transparent bg-slate-50'}`}>{e}</button>)}</div>
                             </div>
                         )}
                         {step === 2 && (
@@ -484,14 +258,121 @@
                         )}
                         <div className="flex gap-3">
                             {step > 1 && <button onClick={() => setStep(step-1)} className="flex-1 py-4 bg-slate-50 text-neutral-400 rounded-full font-bold text-xs uppercase border">Back</button>}
-                            <button onClick={() => step < 2 ? setStep(step+1) : onSave(newP)} disabled={step === 1 ? (!newP.name || !newP.role) : !newP.worldview} className="flex-[2] py-4 bg-[#1A1A1A] text-white rounded-full font-bold text-xs uppercase shadow-xl disabled:opacity-20 transition-all">
-                                {step < 2 ? 'CONTINUE' : 'ARCHIVE VOICE'}
-                            </button>
+                            <button onClick={() => step < 2 ? setStep(step+1) : onSave(newP)} disabled={step === 1 ? (!newP.name || !newP.role) : !newP.worldview} className="flex-[2] py-4 bg-[#1A1A1A] text-white rounded-full font-bold text-xs uppercase shadow-xl disabled:opacity-20 transition-all">{step < 2 ? 'CONTINUE' : 'ARCHIVE VOICE'}</button>
                         </div>
                     </div>
                 </div>
             );
         };
+
+        const DebateArena = ({ context, selectedPersonas, setView }) => {
+            const [history, setHistory] = useState([]);
+            const [options, setOptions] = useState([]);
+            const [isDebating, setIsDebating] = useState(false);
+            const [inputValue, setInputValue] = useState('');
+            const scrollRef = useRef(null);
+            const inputFieldRef = useRef(null);
+
+            useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [history]);
+
+            const runRound = async (userInput = null) => {
+                const textToSend = userInput || inputValue;
+                if (!textToSend && !userInput) return;
+                setIsDebating(true);
+                if (textToSend) { setHistory(prev => [...prev, { personaId: 'user', text: textToSend }]); setInputValue(''); }
+                const sys = ` facilite internal debate. Situation: ${context.situation}. Personas: ${selectedPersonas.map(p => p.id).join(', ')}. Return JSON ONLY: { "messages": [{ "personaId": string, "text": string }], "options": [string, string, string] }`;
+                try {
+                    const res = await fetchGemini(textToSend || "Start dialogue.", sys);
+                    const data = JSON.parse(res.replace(/```json|```/g, ''));
+                    if (data.messages) setHistory(prev => [...prev, ...data.messages]);
+                    if (data.options) setOptions(data.options);
+                } catch (e) { console.error(e); } finally { setIsDebating(false); }
+            };
+
+            const copyText = (text) => {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            };
+
+            const quoteText = (text, name) => {
+                const quote = `"${text}" — ${name}\n\n`;
+                setInputValue(prev => quote + prev);
+                inputFieldRef.current?.focus();
+            };
+
+            useEffect(() => { if (history.length === 0) runRound("Start conversation."); }, []);
+
+            return (
+                <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden font-sans animate-in">
+                    <div className="p-4 border-b border-[#F0EDEA] bg-white flex items-center justify-between z-10">
+                        <div className="flex -space-x-2">{selectedPersonas.map(p => <div key={p.id} className="w-8 h-8 rounded-full border-2 border-white overflow-hidden shadow-sm"><AvatarDisplay avatar={p.avatar} className="w-full h-full text-xs" /></div>)}</div>
+                        <button onClick={() => setView('summary')} className="flex items-center gap-2 text-xs font-bold text-[#E6C6C1] px-4 py-2 border border-[#E6C6C1] rounded-full hover:bg-[#E6C6C1] hover:text-white transition-all"><Icon name="PauseCircle" size={14} /> STOP & DECIDE</button>
+                    </div>
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-10 pb-64 no-scrollbar">
+                        {history.map((m, idx) => {
+                            const isUser = m.personaId === 'user';
+                            const p = isUser ? { name: 'YOU', avatar: '👤' } : (selectedPersonas.find(x => x.id === m.personaId) || { name: 'Voice', avatar: '☁️' });
+                            return (
+                                <div key={idx} className={`flex gap-4 md:gap-5 ${isUser ? 'flex-row-reverse' : 'items-start'} animate-in`}>
+                                    <div className={`w-10 h-10 md:w-11 md:h-11 rounded-full border flex items-center justify-center shadow-sm shrink-0 bg-white overflow-hidden ${isUser ? 'border-blue-brand/30' : 'border-[#F0EDEA]'}`}><AvatarDisplay avatar={p.avatar} className="w-full h-full text-2xl" /></div>
+                                    <div className={`max-w-[85%] md:max-w-[70%] flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+                                        <span className="text-[10px] font-black opacity-30 tracking-widest uppercase mb-1.5">{p.name}</span>
+                                        <div className={`p-4 md:p-5 rounded-[24px] md:rounded-[28px] text-sm shadow-sm transition-all duration-300 leading-relaxed ${isUser ? 'bg-blue-brand text-white rounded-tr-none' : 'bg-white border border-[#F0EDEA] rounded-tl-none'}`}>{m.text}</div>
+                                        
+                                        {/* 发言框下方的操作按钮并列布局 */}
+                                        <div className={`flex gap-4 mt-2 px-1 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                                            <button 
+                                                onClick={() => copyText(m.text)}
+                                                className="flex items-center gap-1.5 text-[10px] font-bold text-blue-brand/60 hover:text-blue-brand transition-colors uppercase tracking-widest"
+                                            >
+                                                <Icon name="Copy" size={12} /> Copy
+                                            </button>
+                                            <button 
+                                                onClick={() => quoteText(m.text, p.name)}
+                                                className="flex items-center gap-1.5 text-[10px] font-bold text-blue-brand/60 hover:text-blue-brand transition-colors uppercase tracking-widest"
+                                            >
+                                                <Icon name="Quote" size={12} /> Quote
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {isDebating && <div className="animate-pulse flex gap-4"><div className="w-10 h-10 bg-slate-200 rounded-full" /><div className="h-14 w-64 bg-white border rounded-3xl" /></div>}
+                    </div>
+                    <div className="p-4 md:p-8 bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7] to-transparent">
+                        <div className="max-w-3xl mx-auto space-y-4">
+                            {options.length > 0 && !isDebating && <div className="flex flex-wrap justify-center gap-2 mb-2 animate-in">{options.map((opt, i) => <button key={i} onClick={() => runRound(opt)} className="px-4 py-2 bg-white/90 border border-blue-brand/20 rounded-full text-xs font-bold hover:bg-blue-brand hover:text-white transition-all shadow-sm">{opt}</button>)}</div>}
+                            <div className="flex gap-3">
+                                <button disabled={isDebating} onClick={() => runRound(null)} className="hidden md:block flex-1 py-5 bg-blue-brand text-white rounded-full font-bold shadow-xl transition-all hover:translate-y-[-2px] disabled:opacity-50 uppercase tracking-widest text-xs">STAY SILENT</button>
+                                <div className="relative flex-[3] group">
+                                    <input ref={inputFieldRef} type="text" placeholder="..." disabled={isDebating} className="w-full h-14 bg-white rounded-full shadow-xl border-2 border-transparent focus:border-blue-brand transition-all duration-300 px-6 md:px-8 focus:outline-none text-sm" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && inputValue) runRound(); }} />
+                                    <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none group-focus-within:opacity-0 transition-opacity"><Icon name="MessageCircle" size={22} className="text-blue-brand" /></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const CommunityView = ({ communityTab, setCommunityTab }) => (
+            <div className="p-6 md:p-12 max-w-[1200px] mx-auto animate-in space-y-12">
+                <div className="flex flex-col items-center space-y-6">
+                    <h2 className="text-3xl md:text-5xl font-serif italic tracking-tight text-center">Community Archives</h2>
+                    <div className="flex justify-center px-4 w-full"><div className="inline-flex bg-white/60 backdrop-blur-md p-1.5 rounded-full border-2 border-white shadow-lg whitespace-nowrap">{['DEBATE', 'PERSONA'].map(tab => <button key={tab} onClick={() => setCommunityTab(tab)} className={`px-8 md:px-12 py-2.5 md:py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${communityTab === tab ? 'bg-blue-brand text-white shadow-lg scale-105' : 'text-[#5D576B]/40 hover:text-blue-brand'}`}>{tab}</button>)}</div></div>
+                </div>
+                {communityTab === 'DEBATE' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 animate-in">{[1, 2, 3, 4].map(i => <div key={i} className="bg-white p-8 rounded-[48px] border border-[#E8E6E0] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"><div className="flex items-center gap-5 mb-6"><div className="w-12 h-12 rounded-2xl bg-[#FDFBF7] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🎭</div><div><h4 className="font-bold text-lg text-[#1A1A1A]">Shared Reflection #{i}204</h4><p className="text-[10px] uppercase font-bold text-blue-brand tracking-widest">3 Voices Engaging</p></div></div><p className="text-sm italic opacity-60 leading-relaxed line-clamp-2">"Exploring the complex tension between the safety of the known and the fear of the unknown during graduation..."</p><div className="mt-8 pt-6 border-t border-slate-50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-30"><span>Reflected 2 days ago</span><span className="group-hover:text-blue-brand transition-colors">Enter Archive →</span></div></div>)}</div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 animate-in">{INITIAL_PERSONAS.map(p => <div key={p.id} className="relative p-6 md:p-8 bg-white rounded-[40px] shadow-xl border-2 border-white/20 hover:scale-[1.03] transition-all flex flex-col aspect-[3/4] overflow-hidden cursor-pointer group"><div className="mb-6 flex items-center justify-center w-14 h-14 md:w-18 md:h-18 relative overflow-hidden group-hover:scale-110 transition-transform origin-center"><div className="absolute inset-0 bg-slate-50 rounded-[24px] transform rotate-6 scale-90 opacity-40 group-hover:bg-blue-brand/10 transition-colors" /><AvatarDisplay avatar={p.avatar} className="w-10 h-10 md:w-14 md:h-14 text-4xl md:text-5xl relative z-10" /></div><div className="mt-auto text-left space-y-2"><h4 className="font-black text-xl md:text-2xl text-[#1A1A1A] tracking-tighter uppercase italic">{p.name}</h4><p className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-blue-brand/80">COMMUNITY CREATION</p><p className="text-[10px] md:text-xs italic opacity-40 leading-relaxed line-clamp-2">“{p.worldview}”</p></div></div>)}</div>
+                )}
+            </div>
+        );
 
         function App() {
             const [view, setView] = useState('home'); 
@@ -503,244 +384,72 @@
             const [category, setCategory] = useState('ALL');
             const [communityTab, setCommunityTab] = useState('DEBATE');
 
-            const handleNewChat = () => {
-                setContext({ situation: '', landingPeriods: [] });
-                setSelectedIds([]);
-                setView('home');
-            };
-
-            const toggleSelect = (e, p) => {
-                e.stopPropagation();
-                setSelectedIds(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]);
-            };
+            const handleNewChat = () => { setContext({ situation: '', landingPeriods: [] }); setSelectedIds([]); setView('home'); };
+            const toggleSelect = (e, p) => { e.stopPropagation(); setSelectedIds(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]); };
 
             const renderContent = () => {
-                if (view === 'community') return (
-                    <div className="p-6 md:p-12 max-w-[1200px] mx-auto animate-in space-y-12">
-                        <div className="flex flex-col items-center space-y-6">
-                            <h2 className="text-3xl md:text-5xl font-serif italic tracking-tight text-center">Community Archives</h2>
-                            
-                            {/* 社区页面分类条 */}
-                            <div className="flex justify-center px-4 w-full">
-                                <div className="inline-flex bg-white/60 backdrop-blur-md p-1.5 rounded-full border-2 border-white shadow-lg whitespace-nowrap">
-                                    {[
-                                        {id: 'DEBATE', label: 'DEBATE', desc: 'Chat reflections'},
-                                        {id: 'PERSONA', label: 'PERSONA', desc: 'Shared voices'}
-                                    ].map(tab => (
-                                        <button 
-                                            key={tab.id} 
-                                            onClick={() => setCommunityTab(tab.id)} 
-                                            className={`px-8 md:px-12 py-2.5 md:py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${communityTab === tab.id ? 'bg-blue-brand text-white shadow-lg scale-105' : 'text-[#5D576B]/40 hover:text-blue-brand'}`}
-                                        >
-                                            {tab.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {communityTab === 'DEBATE' ? (
-                            /* 辩论存档卡片 */
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 animate-in">
-                                {[1, 2, 3, 4].map(i => (
-                                    <div key={i} className="bg-white p-8 rounded-[48px] border border-[#E8E6E0] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group">
-                                        <div className="flex items-center gap-5 mb-6">
-                                            <div className="w-12 h-12 rounded-2xl bg-[#FDFBF7] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🎭</div>
-                                            <div>
-                                                <h4 className="font-bold text-lg text-[#1A1A1A]">Shared Reflection #{i}204</h4>
-                                                <p className="text-[10px] uppercase font-bold text-blue-brand tracking-widest">3 Voices Engaging</p>
-                                            </div>
-                                        </div>
-                                        <p className="text-sm italic opacity-60 leading-relaxed line-clamp-2">"Exploring the complex tension between the safety of the known and the fear of the unknown during graduation..."</p>
-                                        <div className="mt-8 pt-6 border-t border-slate-50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-30">
-                                            <span>Reflected 2 days ago</span>
-                                            <span className="group-hover:text-blue-brand transition-colors">Enter Archive →</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            /* 社区分享的 Persona 卡片 */
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 animate-in">
-                                {INITIAL_PERSONAS.map(p => (
-                                    <div key={p.id} className="relative p-6 md:p-8 bg-white rounded-[40px] shadow-xl border-2 border-white/20 hover:scale-[1.03] transition-all flex flex-col aspect-[3/4] overflow-hidden cursor-pointer group">
-                                        <div className="mb-6 flex items-center justify-center w-14 h-14 md:w-18 md:h-18 relative overflow-hidden group-hover:scale-110 transition-transform origin-center">
-                                            <div className="absolute inset-0 bg-slate-50 rounded-[24px] transform rotate-6 scale-90 opacity-40 group-hover:bg-blue-brand/10 transition-colors" />
-                                            <AvatarDisplay avatar={p.avatar} className="w-10 h-10 md:w-14 md:h-14 text-4xl md:text-5xl relative z-10" />
-                                        </div>
-                                        <div className="mt-auto text-left space-y-2">
-                                            <h4 className="font-black text-xl md:text-2xl text-[#1A1A1A] tracking-tighter uppercase italic">{p.name}</h4>
-                                            <p className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-blue-brand/80">COMMUNITY CREATION</p>
-                                            <p className="text-[10px] md:text-xs italic opacity-40 leading-relaxed line-clamp-2">“{p.worldview}”</p>
-                                        </div>
-                                    </div>
-                                ))}
-                                <div className="relative p-6 bg-blue-brand/5 border-2 border-dashed border-blue-brand/30 rounded-[40px] flex flex-col items-center justify-center gap-4 aspect-[3/4]">
-                                     <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-blue-brand"><Icon name="Plus" size={24} /></div>
-                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Share Yours</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-                
+                if (view === 'community') return <CommunityView communityTab={communityTab} setCommunityTab={setCommunityTab} />;
                 if (view === 'builder') return <PersonaBuilder onSave={(newP) => { setPersonas([...personas, {...newP, id: `custom-${Date.now()}`, category: 'CUSTOM'}]); setView('persona-selection'); }} onCancel={() => setView('persona-selection')} />;
-                
                 if (view === 'persona-detail') return (
                     <div className="p-4 md:p-8 animate-in pb-20 overflow-y-auto no-scrollbar h-[calc(100vh-64px)]">
                         <div className="max-w-4xl mx-auto bg-white rounded-[40px] md:rounded-[60px] p-6 md:p-12 shadow-2xl border border-[#F0EDEA] relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-brand/5 rounded-bl-full" />
-                            <div className="flex justify-between mb-8 md:mb-16 relative z-10">
-                                <button onClick={() => setView('persona-selection')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-all"><Icon name="ChevronLeft" size={14} /> Back</button>
-                                <span className="text-[10px] uppercase font-bold opacity-30 tracking-[0.2em]">Archive ID: {detailPersona?.id.toUpperCase()}</span>
-                            </div>
-                            {/* 移动端堆叠布局 */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 mb-12 md:mb-16">
-                                <div className="bg-white p-4 shadow-lg border border-[#F0EDEA] rotate-[-2deg] rounded-2xl">
-                                    <AvatarDisplay avatar={detailPersona?.avatar} className="aspect-[3/4] bg-slate-50 text-7xl md:text-9xl rounded-xl" />
-                                </div>
-                                <div className="flex flex-col justify-center space-y-4 md:space-y-6 text-center md:text-left">
-                                    <h1 className="text-4xl md:text-6xl font-black text-[#1A1A1A] italic tracking-tighter uppercase leading-tight">{detailPersona?.name}</h1>
-                                    <p className="text-xs md:text-sm font-bold text-blue-brand uppercase tracking-[0.4em]">{detailPersona?.role}</p>
-                                    <div className="h-px w-20 bg-blue-brand/30 mx-auto md:mx-0" />
-                                    <p className="text-lg md:text-xl italic opacity-70 leading-relaxed">“{detailPersona?.worldview}”</p>
-                                </div>
-                            </div>
+                            <div className="flex justify-between mb-8 md:mb-16 relative z-10"><button onClick={() => setView('persona-selection')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-all"><Icon name="ChevronLeft" size={14} /> Back</button><span className="text-[10px] uppercase font-bold opacity-30 tracking-[0.3em]">Archive ID: {detailPersona?.id.toUpperCase()}</span></div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 mb-12 md:mb-16"><div className="bg-white p-4 shadow-lg border border-[#F0EDEA] rotate-[-2deg] rounded-2xl overflow-hidden"><AvatarDisplay avatar={detailPersona?.avatar} className="aspect-[3/4] bg-slate-50 text-7xl md:text-9xl rounded-xl" /></div><div className="flex flex-col justify-center space-y-4 md:space-y-6 text-center md:text-left"><h1 className="text-4xl md:text-6xl font-black text-[#1A1A1A] italic tracking-tighter uppercase leading-tight">{detailPersona?.name}</h1><p className="text-xs md:text-sm font-bold text-blue-brand uppercase tracking-[0.4em]">{detailPersona?.role}</p><div className="h-px w-20 bg-blue-brand/30 mx-auto md:mx-0" /><p className="text-lg md:text-xl italic opacity-70 leading-relaxed">“{detailPersona?.worldview}”</p></div></div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12 font-sans text-left">
-                                <div className="md:col-span-2 p-6 md:p-10 bg-[#FDFBF7] border-2 border-dashed border-[#D1CEC7] rounded-3xl space-y-6">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest opacity-30">Soul & Wisdom</h3>
-                                    <p className="text-sm italic leading-relaxed">{detailPersona?.decisionStyle || "Grounded and reflective."}</p>
+                                <div className="md:col-span-2 p-6 md:p-10 bg-[#FDFBF7] border-2 border-dashed border-[#D1CEC7] rounded-3xl space-y-8">
+                                    <div><h3 className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-6">Soul & Wisdom</h3><h4 className="text-[10px] font-black uppercase text-[#D1CEC7] tracking-widest mb-2">Decision Priorities</h4><p className="text-sm italic leading-relaxed">{detailPersona?.decisionStyle || "Grounded and reflective."}</p></div>
+                                    <div className="space-y-4 pt-2">
+                                        {detailPersona?.lifeContext?.map((item, idx) => (
+                                            <div key={idx} className="flex gap-4"><span className="text-xs font-mono opacity-20 mt-1">[{idx+1}]</span><div><h5 className="font-bold text-sm text-[#1A1A1A]">{item.period}</h5><p className="text-xs opacity-50 italic">{item.detail}</p></div></div>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="p-6 md:p-8 bg-white border border-[#F0EDEA] rounded-3xl shadow-sm">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-6">Voice</h3>
-                                    <p className="text-xs md:text-sm italic text-neutral-600 border-l-2 border-blue-brand/20 pl-4">{detailPersona?.voice}</p>
+                                <div className="p-6 md:p-8 bg-white border border-[#F0EDEA] rounded-3xl shadow-sm text-center">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-8">Voice</h3>
+                                    <p className="text-xs md:text-sm italic text-neutral-600 border-l-2 border-blue-brand/20 pl-4 py-2 text-left">{detailPersona?.voice}</p>
                                 </div>
                             </div>
-                            <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-[#F0EDEA] gap-4">
-                                <p className="text-[10px] italic opacity-40 uppercase tracking-widest text-center">Observation over noise.</p>
-                                <button 
-                                    onClick={() => { if(!selectedIds.includes(detailPersona?.id)) setSelectedIds([...selectedIds, detailPersona?.id]); setView('persona-selection'); }}
-                                    className={`w-full md:w-auto px-10 py-4 rounded-full font-black uppercase tracking-widest text-[10px] transition-all shadow-xl ${selectedIds.includes(detailPersona?.id) ? 'bg-slate-200 text-slate-500' : 'bg-blue-brand text-white shadow-blue-brand/20'}`}
-                                >
-                                    {selectedIds.includes(detailPersona?.id) ? 'In Panel' : 'Invite to Debate'}
-                                </button>
-                            </div>
+                            <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-[#F0EDEA] gap-4"><p className="text-[10px] italic opacity-40 uppercase tracking-widest text-center">Observation over noise.</p><button onClick={() => { if(!selectedIds.includes(detailPersona?.id)) setSelectedIds([...selectedIds, detailPersona?.id]); setView('persona-selection'); }} className={`w-full md:w-auto px-10 py-4 rounded-full font-black uppercase tracking-widest text-[10px] transition-all shadow-xl ${selectedIds.includes(detailPersona?.id) ? 'bg-slate-200 text-slate-50' : 'bg-blue-brand text-white shadow-blue-brand/20'}`}>{selectedIds.includes(detailPersona?.id) ? 'In Panel' : 'Invite to Debate'}</button></div>
                         </div>
                     </div>
                 );
-
                 if (view === 'persona-selection') {
                     const filtered = category === 'ALL' ? personas : personas.filter(p => p.category === category);
                     return (
                         <div className="w-full flex flex-col items-center pt-8 md:pt-12 animate-in pb-32">
-                            {/* 响应式分类栏 */}
-                            <div className="flex justify-center mb-10 px-4 w-full overflow-x-auto no-scrollbar">
-                                <div className="inline-flex bg-white/60 backdrop-blur-md p-1.5 rounded-full border-2 border-white shadow-lg whitespace-nowrap">
-                                    {['ALL', 'CREATIVE', 'RATIONAL', 'SUPPORT', 'CUSTOM'].map(cat => (
-                                        <button key={cat} onClick={() => setCategory(cat)} className={`px-4 md:px-8 py-2 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] transition-all duration-300 ${category === cat ? 'bg-blue-brand text-white shadow-lg scale-105' : 'text-[#5D576B]/40 hover:text-blue-brand'}`}>{cat}</button>
-                                    ))}
-                                </div>
-                            </div>
+                            <div className="flex justify-center mb-10 px-4 w-full overflow-x-auto no-scrollbar"><div className="inline-flex bg-white/60 backdrop-blur-md p-1.5 rounded-full border-2 border-white shadow-lg whitespace-nowrap">{['ALL', 'CREATIVE', 'RATIONAL', 'SUPPORT', 'CUSTOM'].map(cat => <button key={cat} onClick={() => setCategory(cat)} className={`px-4 md:px-8 py-2 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] transition-all duration-300 ${category === cat ? 'bg-blue-brand text-white shadow-lg scale-105' : 'text-[#5D576B]/40 hover:text-blue-brand'}`}>{cat}</button>)}</div></div>
                             <h2 className="text-3xl md:text-5xl font-serif italic mb-12 md:mb-20 text-[#5D576B] text-center tracking-tight px-4">Assemble the Voices</h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-10 px-4 md:px-8 w-full max-w-[1250px]">
-                                {filtered.map(p => (
-                                    <div key={p.id} onClick={() => { setDetailPersona(p); setView('persona-detail'); }} className={`relative p-6 md:p-8 bg-white rounded-[40px] shadow-xl border-2 transition-all transform hover:scale-[1.03] flex flex-col aspect-[3/4] min-h-[300px] overflow-hidden group ${selectedIds.includes(p.id) ? 'border-blue-brand shadow-blue-brand/10' : 'border-white/20'}`}>
-                                        <button onClick={(e) => toggleSelect(e, p)} className={`absolute top-6 right-6 w-10 h-10 rounded-full border-2 flex items-center justify-center z-30 transition-all ${selectedIds.includes(p.id) ? 'bg-blue-brand border-blue-brand shadow-lg scale-105' : 'bg-transparent border-slate-100 hover:border-blue-brand/40'}`}>
-                                            {selectedIds.includes(p.id) && <Icon name="Check" size={18} className="text-white" />}
-                                        </button>
-                                        <div className="mb-6 flex items-center justify-center w-14 h-14 md:w-18 md:h-18 relative overflow-hidden group-hover:scale-110 transition-transform origin-center">
-                                            <div className="absolute inset-0 bg-slate-50 rounded-[24px] transform rotate-6 scale-90 opacity-40 group-hover:bg-blue-brand/10 transition-colors" />
-                                            <AvatarDisplay avatar={p.avatar} className="w-10 h-10 md:w-14 md:h-14 text-4xl md:text-5xl relative z-10" />
+                                {filtered.map(p => {
+                                    const isSel = selectedIds.includes(p.id);
+                                    return (
+                                        <div key={p.id} onClick={() => { setDetailPersona(p); setView('persona-detail'); }} className={`relative p-6 md:p-8 bg-white rounded-[40px] shadow-xl border-2 transition-all transform hover:scale-[1.03] flex flex-col aspect-[3/4] min-h-[300px] overflow-hidden group ${isSel ? 'border-blue-brand shadow-blue-brand/10' : 'border-white/20'}`}>
+                                            <button onClick={(e) => toggleSelect(e, p)} className={`absolute top-6 right-6 w-10 h-10 rounded-full border-2 flex items-center justify-center z-30 transition-all ${isSel ? 'bg-blue-brand border-blue-brand shadow-lg scale-110' : 'bg-transparent border-slate-100 group-hover:border-blue-brand/40'}`}>{isSel && <Icon name="Check" size={18} className="text-white" />}</button>
+                                            <div className="mb-6 flex items-center justify-center w-14 h-14 md:w-18 md:h-18 relative overflow-hidden group-hover:scale-110 transition-transform origin-center"><div className="absolute inset-0 bg-slate-50 rounded-[24px] transform rotate-6 scale-90 opacity-40 group-hover:bg-blue-brand/10 transition-colors" /><AvatarDisplay avatar={p.avatar} className="w-10 h-10 md:w-14 md:h-14 text-4xl md:text-5xl relative z-10" /></div>
+                                            <div className="mt-auto text-left space-y-2"><h4 className="font-black text-xl md:text-2xl text-[#1A1A1A] tracking-tighter uppercase italic">{p.name}</h4><p className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-blue-brand/80">{p.role}</p><p className="text-[10px] md:text-xs italic opacity-40 leading-relaxed line-clamp-2">“{p.worldview}”</p></div>
                                         </div>
-                                        <div className="mt-auto text-left space-y-2">
-                                            <h4 className="font-black text-xl md:text-2xl text-[#1A1A1A] tracking-tighter uppercase italic">{p.name}</h4>
-                                            <p className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-blue-brand/80">{p.role}</p>
-                                            <p className="text-[10px] md:text-xs italic opacity-40 leading-relaxed line-clamp-2">“{p.worldview}”</p>
-                                        </div>
-                                    </div>
-                                ))}
-                                <div onClick={() => setView('builder')} className="relative p-6 bg-white/30 backdrop-blur-sm rounded-[40px] border-2 border-dashed border-blue-brand/30 cursor-pointer transition-all hover:bg-white hover:border-blue-brand flex flex-col items-center justify-center gap-4 aspect-[3/4] min-h-[300px] text-center group">
-                                    <div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-brand group-hover:scale-110 transition-transform"><Icon name="Plus" size={24} /></div>
-                                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-80 transition-opacity">Create Voice</p>
-                                </div>
+                                    );
+                                })}
+                                <div onClick={() => setView('builder')} className="relative p-6 bg-white/30 backdrop-blur-sm rounded-[40px] border-2 border-dashed border-blue-brand/30 cursor-pointer transition-all hover:bg-white hover:border-blue-brand flex flex-col items-center justify-center gap-4 aspect-[3/4] min-h-[300px] text-center group"><div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-brand group-hover:scale-110 transition-transform"><Icon name="Plus" size={24} /></div><p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-80 transition-opacity">Create Voice</p></div>
                             </div>
-                            {selectedIds.length >= 2 && (
-                                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 animate-in w-[90%] md:w-auto">
-                                    <button onClick={() => setView('debate')} className="w-full md:w-auto px-12 md:px-16 py-5 md:py-6 bg-[#1A1A1A] text-white rounded-full font-black text-[10px] md:text-xs tracking-[0.3em] md:tracking-[0.4em] shadow-2xl hover:scale-105 transition-all uppercase">Commence Dialogue</button>
-                                </div>
-                            )}
+                            {selectedIds.length >= 2 && <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 animate-in w-[90%] md:w-auto text-center"><button onClick={() => setView('debate')} className="px-12 md:px-16 py-5 md:py-6 bg-[#1A1A1A] text-white rounded-full font-black text-[10px] md:text-xs tracking-[0.3em] md:tracking-[0.4em] shadow-2xl hover:scale-105 transition-all uppercase">Commence Dialogue</button></div>}
                         </div>
                     );
                 }
-
                 if (view === 'debate') return <DebateArena context={context} selectedPersonas={personas.filter(p => selectedIds.includes(p.id))} setView={setView} />;
-
-                if (view === 'summary') return (
-                    <div className="text-center py-32 md:py-48 px-4 animate-in space-y-8 md:space-y-10 max-w-2xl mx-auto">
-                        <div className="text-5xl md:text-7xl animate-bounce">🌱</div>
-                        <h2 className="text-3xl md:text-5xl font-serif italic text-[#1A1A1A] tracking-tight">Pattern Observed</h2>
-                        <button onClick={handleNewChat} className="px-12 md:px-16 py-5 md:py-6 bg-blue-brand text-white rounded-full font-black shadow-xl uppercase tracking-widest text-[9px] md:text-[10px] hover:shadow-2xl transition-all">Start New Chapter</button>
-                    </div>
-                );
-
-                // Default Home
+                if (view === 'summary') return <div className="text-center py-32 md:py-48 px-4 animate-in space-y-8 md:space-y-10 max-w-2xl mx-auto"><div className="text-5xl md:text-7xl animate-bounce">🌱</div><h2 className="text-3xl md:text-5xl font-serif italic text-[#1A1A1A] tracking-tight">Pattern Observed</h2><button onClick={handleNewChat} className="px-12 md:px-16 py-5 md:py-6 bg-blue-brand text-white rounded-full font-black shadow-xl uppercase tracking-widest text-[9px] md:text-[10px] hover:shadow-2xl transition-all">Start New Chapter</button></div>;
                 return (
                     <section className="space-y-10 md:space-y-16 py-10 md:py-20 px-4 max-w-3xl mx-auto w-full animate-in flex flex-col items-center">
-                        <header className="mb-6 md:mb-10 text-center space-y-3">
-                            <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-blue-brand uppercase italic leading-none">LIFEE</h1>
-                            <p className="italic text-[8px] md:text-[10px] text-[#C1C1C1] uppercase tracking-[0.4em] md:tracking-[0.6em] font-black font-sans">YOUR LIFE & FRIEND COACH</p>
-                        </header>
-                        
-                        <div className="w-full bg-white p-8 md:p-16 rounded-[40px] md:rounded-[70px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden transition-all hover:shadow-xl">
-                            <div className="absolute top-0 right-0 p-8 md:p-12 opacity-5"><Icon name="Sparkles" size={64} /></div>
-                            <h2 className="text-xl md:text-3xl font-serif italic mb-6 md:mb-10 text-[#1A1A1A] tracking-tight">“Let them argue, you decide.”</h2>
-                            <textarea 
-                                className="w-full h-40 md:h-52 p-6 md:p-8 bg-[#FDFBF7]/50 rounded-[30px] md:rounded-[40px] border-2 border-transparent focus-blue-brand transition-all duration-300 focus:outline-none text-base md:text-xl leading-relaxed placeholder:italic no-scrollbar" 
-                                placeholder="Describe the current tension..." 
-                                value={context.situation} 
-                                onChange={(e) => setContext({...context, situation: e.target.value})} 
-                            />
-                        </div>
-
-                        <div className="space-y-6 md:space-y-8 px-4 text-center w-full">
-                            <h3 className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-blue-brand/50 uppercase">When is this landing?</h3>
-                            <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-                                {PRESET_PERIODS.map(p => {
-                                    const isSel = context.landingPeriods.includes(p);
-                                    return (
-                                        <button 
-                                            key={p} 
-                                            onClick={() => setContext(prev => ({...prev, landingPeriods: isSel ? prev.landingPeriods.filter(x => x !== p) : [...prev.landingPeriods, p]}))} 
-                                            className={`px-4 md:px-8 py-2.5 md:py-3.5 rounded-full text-[9px] md:text-[11px] font-black transition-all border-2 uppercase tracking-widest ${isSel ? 'bg-blue-brand text-white border-blue-brand shadow-lg scale-105' : 'bg-white text-[#5D576B]/40 border-[#F0EDEA] hover:border-blue-brand/30 hover:text-blue-brand'}`}
-                                        >
-                                            {p}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                        <button 
-                            disabled={!context.situation} 
-                            onClick={() => setView('persona-selection')} 
-                            className="w-full max-w-lg py-5 md:py-7 bg-blue-brand text-white rounded-full font-black shadow-2xl transition-all hover:translate-y-[-2px] uppercase tracking-[0.3em] text-[10px] md:text-xs disabled:opacity-10 active:scale-95"
-                        >
-                            Step Forward
-                        </button>
+                        <header className="mb-6 md:mb-10 text-center space-y-3"><h1 className="text-6xl md:text-8xl font-black tracking-tighter text-blue-brand uppercase italic leading-none">LIFEE</h1><p className="italic text-[8px] md:text-[10px] text-[#C1C1C1] uppercase tracking-[0.4em] md:tracking-[0.6em] font-black font-sans">YOUR LIFE & FRIEND COACH</p></header>
+                        <div className="w-full bg-white p-8 md:p-16 rounded-[40px] md:rounded-[70px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden transition-all hover:shadow-xl"><div className="absolute top-0 right-0 p-8 md:p-12 opacity-5"><Icon name="Sparkles" size={64} /></div><h2 className="text-xl md:text-3xl font-serif italic mb-6 md:mb-10 text-[#1A1A1A] tracking-tight">“Let them argue, you decide.”</h2><textarea className="w-full h-40 md:h-52 p-6 md:p-8 bg-[#FDFBF7]/50 rounded-[30px] md:rounded-[40px] border-2 border-transparent focus-blue-brand transition-all duration-300 focus:outline-none text-base md:text-xl leading-relaxed placeholder:italic no-scrollbar" placeholder="Describe the current tension..." value={context.situation} onChange={(e) => setContext({...context, situation: e.target.value})} /></div>
+                        <div className="space-y-6 md:space-y-8 px-4 text-center w-full"><h3 className="text-[10px] md:text-xs font-black uppercase tracking-[0.4em] text-blue-brand/50 uppercase">When is this landing?</h3><div className="flex flex-wrap justify-center gap-2 md:gap-3">{PRESET_PERIODS.map(p => { const isSel = context.landingPeriods.includes(p); return <button key={p} onClick={() => setContext(prev => ({...prev, landingPeriods: isSel ? prev.landingPeriods.filter(x => x !== p) : [...prev.landingPeriods, p]}))} className={`px-4 md:px-8 py-2.5 md:py-3.5 rounded-full text-[9px] md:text-[11px] font-black transition-all border-2 uppercase tracking-widest ${isSel ? 'bg-blue-brand text-white border-blue-brand shadow-lg scale-105' : 'bg-white text-[#5D576B]/40 border-[#F0EDEA] hover:border-blue-brand/30 hover:text-blue-brand'}`}>{p}</button>; })}</div></div>
+                        <button disabled={!context.situation} onClick={() => setView('persona-selection')} className="w-full max-w-lg py-5 md:py-7 bg-blue-brand text-white rounded-full font-black shadow-2xl transition-all hover:translate-y-[-2px] uppercase tracking-[0.3em] text-[10px] md:text-xs disabled:opacity-10 active:scale-95">Step Forward</button>
                     </section>
                 );
             };
 
-            return (
-                <AppLayout 
-                    activeView={view} 
-                    setView={setView} 
-                    isLoggedIn={isLoggedIn} 
-                    onLogin={() => setIsLoggedIn(true)}
-                    onNewChat={handleNewChat}
-                >
-                    {renderContent()}
-                </AppLayout>
-            );
+            return ( <AppLayout activeView={view} setView={setView} isLoggedIn={isLoggedIn} onLogin={() => setIsLoggedIn(true)} onNewChat={handleNewChat}>{renderContent()}</AppLayout> );
         }
 
         const container = document.getElementById('root');
