@@ -1,0 +1,29 @@
+name: Deploy lifee-api to Cloudflare Workers
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "lifee-api/**"
+      - ".github/workflows/deploy-lifee-api.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lifee-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - name: Deploy
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
