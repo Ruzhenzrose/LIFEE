@@ -8,7 +8,7 @@ from typing import AsyncIterator, List, Optional
 from google import genai
 from google.genai import types
 
-from .base import ChatResponse, LLMProvider, Message, MessageRole
+from .base import ChatResponse, LLMProvider, Message, MessageRole, ServiceUnavailableError
 
 
 class GeminiProvider(LLMProvider):
@@ -44,20 +44,30 @@ class GeminiProvider(LLMProvider):
     def _convert_messages(
         self, messages: List[Message], system: Optional[str] = None
     ) -> tuple[Optional[str], List[types.Content]]:
-        """转换消息格式为 Gemini 格式"""
+        """
+        转换消息格式为 Gemini 格式
+
+        Gemini API 不支持 message.name 字段，把它嵌入到 content 中
+        """
         system_instruction = system
         contents = []
 
         for msg in messages:
+            # 使用 Message.format_content() 添加 XML 标签
+            content = msg.format_content()
+            # 防御：确保 assistant 消息不以空白结尾
+            if msg.role == MessageRole.ASSISTANT:
+                content = content.rstrip()
+
             if msg.role == MessageRole.SYSTEM:
-                system_instruction = msg.content
+                system_instruction = content
             elif msg.role == MessageRole.USER:
                 contents.append(
-                    types.Content(role="user", parts=[types.Part(text=msg.content)])
+                    types.Content(role="user", parts=[types.Part(text=content)])
                 )
             elif msg.role == MessageRole.ASSISTANT:
                 contents.append(
-                    types.Content(role="model", parts=[types.Part(text=msg.content)])
+                    types.Content(role="model", parts=[types.Part(text=content)])
                 )
 
         return system_instruction, contents
@@ -79,11 +89,18 @@ class GeminiProvider(LLMProvider):
             temperature=temperature,
         )
 
-        response = await self._client.aio.models.generate_content(
-            model=self._model_name,
-            contents=contents,
-            config=config,
-        )
+        try:
+            response = await self._client.aio.models.generate_content(
+                model=self._model_name,
+                contents=contents,
+                config=config,
+            )
+        except Exception as e:
+            # 检查是否是 503 服务不可用错误
+            error_str = str(e).lower()
+            if "503" in error_str or "unavailable" in error_str or "overloaded" in error_str:
+                raise ServiceUnavailableError(f"Gemini 服务不可用: {e}") from e
+            raise
 
         return ChatResponse(
             content=response.text or "",
@@ -112,11 +129,18 @@ class GeminiProvider(LLMProvider):
             temperature=temperature,
         )
 
-        stream = await self._client.aio.models.generate_content_stream(
-            model=self._model_name,
-            contents=contents,
-            config=config,
-        )
-        async for chunk in stream:
-            if chunk.text:
-                yield chunk.text
+        try:
+            stream = await self._client.aio.models.generate_content_stream(
+                model=self._model_name,
+                contents=contents,
+                config=config,
+            )
+            async for chunk in stream:
+                if chunk.text:
+                    yield chunk.text
+        except Exception as e:
+            # 检查是否是 503 服务不可用错误
+            error_str = str(e).lower()
+            if "503" in error_str or "unavailable" in error_str or "overloaded" in error_str:
+                raise ServiceUnavailableError(f"Gemini 服务不可用: {e}") from e
+            raise

@@ -1,9 +1,19 @@
 """LLM Providers"""
-from .base import ChatResponse, LLMProvider, Message, MessageRole
+from .base import (
+    ChatResponse,
+    LLMProvider,
+    Message,
+    MessageRole,
+    RetryableError,
+    ServiceUnavailableError,
+    RateLimitError,
+    ConnectionError,
+)
 from .claude import ClaudeProvider
 from .openai_compat import QwenPortalProvider, QwenProvider, OllamaProvider, OpenCodeZenProvider, ProviderConnectionError, ModelNotFoundError
 from .gemini import GeminiProvider
 from .synthetic import SyntheticProvider
+from .fallback import FallbackProvider
 from .auth import (
     OAuthCredentials,
     read_claude_code_credentials,
@@ -27,7 +37,12 @@ __all__ = [
     "OpenCodeZenProvider",
     "GeminiProvider",
     "SyntheticProvider",
+    "FallbackProvider",
     # 异常
+    "RetryableError",
+    "ServiceUnavailableError",
+    "RateLimitError",
+    "ConnectionError",
     "ProviderConnectionError",
     "ModelNotFoundError",
     # 认证

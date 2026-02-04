@@ -9,13 +9,21 @@
 from typing import AsyncIterator, List, Optional
 
 import httpx
-from openai import AsyncOpenAI, APIConnectionError, NotFoundError
+from openai import AsyncOpenAI, APIConnectionError, NotFoundError, APIStatusError
 
-from .base import ChatResponse, LLMProvider, Message, MessageRole
+from .base import (
+    ChatResponse,
+    LLMProvider,
+    Message,
+    MessageRole,
+    ServiceUnavailableError,
+    RateLimitError,
+    ConnectionError as BaseConnectionError,
+)
 
 
-class ProviderConnectionError(Exception):
-    """Provider 连接错误"""
+class ProviderConnectionError(BaseConnectionError):
+    """Provider 连接错误（可触发 fallback）"""
     pass
 
 
@@ -63,7 +71,12 @@ class OpenAICompatProvider(LLMProvider):
     def _convert_messages(
         self, messages: List[Message], system: Optional[str] = None
     ) -> List[dict]:
-        """转换消息格式"""
+        """
+        转换消息格式
+
+        虽然 OpenAI 支持 message.name 字段，但 Ollama/Qwen 等兼容 API 可能不支持
+        为了统一处理，把 name 嵌入到 content 中
+        """
         converted = []
 
         # 添加系统消息
@@ -71,10 +84,16 @@ class OpenAICompatProvider(LLMProvider):
             converted.append({"role": "system", "content": system})
 
         for msg in messages:
+            # 使用 Message.format_content() 添加 XML 标签
+            content = msg.format_content()
+            # 防御：确保 assistant 消息不以空白结尾
+            if msg.role == MessageRole.ASSISTANT:
+                content = content.rstrip()
+
             if msg.role == MessageRole.SYSTEM:
-                converted.append({"role": "system", "content": msg.content})
+                converted.append({"role": "system", "content": content})
             else:
-                converted.append(msg.to_dict())
+                converted.append({"role": msg.role.value, "content": content})
 
         return converted
 
@@ -113,6 +132,17 @@ class OpenAICompatProvider(LLMProvider):
                     f"模型 '{self._model}' 未找到。请先运行: ollama pull {self._model}"
                 ) from e
             raise ModelNotFoundError(f"模型 '{self._model}' 未找到") from e
+        except APIStatusError as e:
+            # 检查 HTTP 状态码
+            if e.status_code == 503:
+                raise ServiceUnavailableError(
+                    f"{self._provider_name} 服务不可用: {e}"
+                ) from e
+            if e.status_code == 429:
+                raise RateLimitError(
+                    f"{self._provider_name} 速率限制: {e}"
+                ) from e
+            raise
 
         choice = response.choices[0]
         return ChatResponse(
@@ -161,6 +191,17 @@ class OpenAICompatProvider(LLMProvider):
                     f"模型 '{self._model}' 未找到。请先运行: ollama pull {self._model}"
                 ) from e
             raise ModelNotFoundError(f"模型 '{self._model}' 未找到") from e
+        except APIStatusError as e:
+            # 检查 HTTP 状态码
+            if e.status_code == 503:
+                raise ServiceUnavailableError(
+                    f"{self._provider_name} 服务不可用: {e}"
+                ) from e
+            if e.status_code == 429:
+                raise RateLimitError(
+                    f"{self._provider_name} 速率限制: {e}"
+                ) from e
+            raise
 
         async for chunk in stream:
             if chunk.choices and chunk.choices[0].delta.content:

@@ -29,8 +29,13 @@ class Session:
         self.add_message(MessageRole.USER, content)
 
     def add_assistant_message(self, content: str, name: Optional[str] = None):
-        """添加助手消息"""
-        self.add_message(MessageRole.ASSISTANT, content, name=name)
+        """添加助手消息
+
+        注意：Claude API 要求助手消息内容不能以空白字符结尾，
+        因此这里会自动 rstrip() 内容。
+        """
+        # Claude API: "final assistant content cannot end with trailing whitespace"
+        self.add_message(MessageRole.ASSISTANT, content.rstrip(), name=name)
 
     def get_messages(self, limit: Optional[int] = None) -> List[Message]:
         """

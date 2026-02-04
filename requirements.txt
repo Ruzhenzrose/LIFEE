@@ -12,6 +12,7 @@ google-genai>=1.0.0    # Google Gemini API
 
 # 工具
 httpx>=0.25.0          # HTTP 客户端
+questionary>=2.0.0     # 交互式命令行选择
 
 # 知识库/RAG
 numpy>=1.24.0          # 向量计算（余弦相似度）

@@ -85,7 +85,8 @@ class RoleManager:
         if not parts:
             return None
 
-        return "\n\n---\n\n".join(parts)
+        # 不用 --- 分隔符，避免 LLM 模仿输出
+        return "\n\n".join(parts)
 
     def get_role_info(self, role_name: str) -> dict:
         """获取角色的基本信息"""
@@ -99,16 +100,22 @@ class RoleManager:
             "has_knowledge": (role_dir / "knowledge").is_dir() if role_dir.exists() else False,
         }
 
-        # 尝试从 IDENTITY.md 提取显示名称
+        # 尝试从 IDENTITY.md 提取显示名称和 emoji
         if info["has_identity"]:
             identity_file = role_dir / "IDENTITY.md"
             content = identity_file.read_text(encoding="utf-8")
             for line in content.split("\n"):
                 if line.startswith("- **Name:**") or line.startswith("- **名字:**"):
                     info["display_name"] = line.split(":**")[1].strip()
-                    break
+                elif "**Emoji:**" in line:
+                    info["emoji"] = line.split(":**")[1].strip()
 
         return info
+
+    def get_role_emoji(self, role_name: str) -> str:
+        """获取角色的 emoji 标识"""
+        info = self.get_role_info(role_name)
+        return info.get("emoji", "🤖")
 
     def get_knowledge_dir(self, role_name: str) -> Optional[Path]:
         """获取角色的知识库目录"""

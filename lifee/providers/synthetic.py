@@ -86,15 +86,26 @@ class SyntheticProvider(LLMProvider):
     def _convert_messages(
         self, messages: List[Message]
     ) -> tuple[Optional[str], List[dict]]:
-        """转换消息格式"""
+        """
+        转换消息格式
+
+        Synthetic 使用 Anthropic API 格式，不支持 message.name 字段
+        把 name 嵌入到 content 中
+        """
         system_prompt = None
         converted = []
 
         for msg in messages:
+            # 使用 Message.format_content() 添加 XML 标签
+            content = msg.format_content()
+            # 防御：确保 assistant 消息不以空白结尾
+            if msg.role == MessageRole.ASSISTANT:
+                content = content.rstrip()
+
             if msg.role == MessageRole.SYSTEM:
-                system_prompt = msg.content
+                system_prompt = content
             else:
-                converted.append(msg.to_dict())
+                converted.append({"role": msg.role.value, "content": content})
 
         return system_prompt, converted
 

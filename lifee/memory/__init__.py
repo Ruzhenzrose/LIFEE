@@ -28,8 +28,11 @@ from .embeddings import (
 )
 from .manager import MemoryManager, format_search_results
 from .search import SearchResult, cosine_similarity, hybrid_search
+from .user_memory import UserMemory
 
 __all__ = [
+    # 用户记忆
+    "UserMemory",
     # 管理器
     "MemoryManager",
     "format_search_results",

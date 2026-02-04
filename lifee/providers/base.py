@@ -5,6 +5,40 @@ from enum import Enum
 from typing import AsyncIterator, List, Optional
 
 
+# =============================================================================
+# 可重试的错误类型（用于 Provider Fallback）
+# =============================================================================
+
+
+class RetryableError(Exception):
+    """可重试的错误（应触发 fallback）"""
+
+    pass
+
+
+class ServiceUnavailableError(RetryableError):
+    """服务不可用（503）"""
+
+    pass
+
+
+class RateLimitError(RetryableError):
+    """速率限制（429）"""
+
+    pass
+
+
+class ConnectionError(RetryableError):
+    """连接错误"""
+
+    pass
+
+
+# =============================================================================
+# 消息和响应数据类
+# =============================================================================
+
+
 class MessageRole(str, Enum):
     """消息角色"""
     SYSTEM = "system"
@@ -25,6 +59,20 @@ class Message:
         if self.name:
             d["name"] = self.name
         return d
+
+    def format_content(self) -> str:
+        """
+        获取带 XML 标签的内容（用于多智能体对话）
+
+        - 有 name 的消息: <msg from="name">content</msg>
+        - 用户消息: <user>content</user>
+        - 其他: 原内容
+        """
+        if self.name:
+            return f'<msg from="{self.name}">{self.content}</msg>'
+        elif self.role == MessageRole.USER:
+            return f'<user>{self.content}</user>'
+        return self.content
 
 
 @dataclass

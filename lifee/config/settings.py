@@ -20,6 +20,10 @@ class Settings(BaseSettings):
         default="claude",
         description="LLM Provider: claude, synthetic, qwen-portal, qwen, gemini, ollama, opencode",
     )
+    llm_fallback: str = Field(
+        default="",
+        description="备用 Provider 列表（逗号分隔，按优先级），如: qwen,ollama",
+    )
 
     # Claude API
     anthropic_api_key: str = Field(default="", description="Anthropic API Key")
