@@ -1140,8 +1140,7 @@
                 setInputValue(prev => quote + prev);
                 inputFieldRef.current?.focus();
             };
-
-            useEffect(() => { if (history.length === 0) runRound("Start conversation."); }, []);
+            // Removed auto-start round; first user input will start the debate.
 
             return (
                 <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden font-sans animate-in">
@@ -1231,6 +1230,7 @@
             const [landingTab, setLandingTab] = useState('scenario');
             const [personas, setPersonas] = useState(INITIAL_PERSONAS);
             const [personaKnowledge, setPersonaKnowledge] = useState({});
+            const [personaCatalogKnowledge, setPersonaCatalogKnowledge] = useState({});
             const [selectedIds, setSelectedIds] = useState([]);
             const [detailPersona, setDetailPersona] = useState(null);
             const [category, setCategory] = useState('ALL');
@@ -1275,6 +1275,32 @@
                         if (clipped) setPersonaKnowledge(prev => ({ ...(prev || {}), 'audrey-hepburn': clipped }));
                     } catch (e) {
                         console.warn('persona knowledge load failed', e);
+                    }
+                })();
+                return () => { cancelled = true; };
+            }, []);
+
+            useEffect(() => {
+                // Load default persona knowledge from Supabase persona_catalog (decision_style).
+                let cancelled = false;
+                (async () => {
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('persona_catalog')
+                            .select('id, decision_style');
+                        if (error) {
+                            console.warn('persona_catalog load failed', error);
+                            return;
+                        }
+                        if (cancelled) return;
+                        const map = {};
+                        (data || []).forEach((row) => {
+                            const ds = (row?.decision_style || '').trim();
+                            if (ds) map[row.id] = ds;
+                        });
+                        setPersonaCatalogKnowledge(map);
+                    } catch (e) {
+                        console.warn('persona_catalog load error', e);
                     }
                 })();
                 return () => { cancelled = true; };
@@ -1508,7 +1534,8 @@
                 const override = personaAvatarOverrides?.[p.id];
                 const nextAvatar = override || asset?.avatar_url || p.avatar;
                 const nextCover = personaCoverOverrides?.[p.id] || asset?.cover_url || p.cover_url || null;
-                const knowledge = personaKnowledge?.[p.id] || p.knowledge || '';
+                const catalogKnowledge = personaCatalogKnowledge?.[p.id] || '';
+                const knowledge = (personaKnowledge?.[p.id] || '').trim() || (catalogKnowledge || '').trim() || p.knowledge || '';
                 return { ...p, avatar: nextAvatar, cover_url: nextCover, knowledge };
             });
 
