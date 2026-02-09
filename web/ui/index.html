@@ -49,7 +49,7 @@
         .bg-blue-brand { background-color: #98A6D4; }
         .border-blue-brand { border-color: #98A6D4; }
 
-        /* 胶囊切换条 (SCENARIO / PROBLEM TYPE) */
+        /* Capsule toggle bar (SCENARIO / PROBLEM TYPE) */
         .capsule-container {
             background-color: #F1F3F4;
             padding: 5px;
@@ -82,7 +82,7 @@
             background-color: rgba(255,255,255,0.6);
         }
 
-        /* Landing 分类选项按钮 - 未选中：白底、细灰边、浅灰字 */
+        /* Landing category option button — unselected: white bg, thin gray border, light gray text */
         .landing-opt {
             background-color: white;
             border: 1px solid #E8E6E0;
@@ -113,7 +113,7 @@
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* 建议问题滚动条样式 */
+        /* Suggested questions scrollbar style */
         .suggested-questions-scroll {
             width: 100%;
             overflow-x: auto;
@@ -133,7 +133,7 @@
             min-width: 100%;
         }
         .question-capsule {
-            /* Tailwind preflight 可能会把 button 背景设为 transparent，这里用 !important 保证实心按钮 */
+            /* Tailwind preflight may set button background to transparent; use !important to ensure a solid button */
             background: #FFFFFF !important;
             background-color: #FFFFFF !important;
             border: 1px solid rgba(232, 230, 224, 0.85);
@@ -258,7 +258,7 @@
                 avatar: '📐',
                 decisionStyle: "Calm under pressure: name the key constraints and pursue the fastest feedback loop.",
                 lifeContext: [
-                    { period: "Operator Mode", detail: "在不确定里做决策：用数据、节奏与复盘扛住压力。" }
+                    { period: "Operator Mode", detail: "Make decisions amid uncertainty: use data, cadence, and retrospectives to withstand pressure." }
                 ],
                 voice: "I'll be direct: you don't lack answers — you lack a testable hypothesis and the next step. Let's make this real."
             },
@@ -416,7 +416,7 @@
             try {
                 const reader = new FileReader();
                 reader.onload = () => resolve(String(reader.result || ''));
-                reader.onerror = () => reject(new Error('读取文件失败'));
+                reader.onerror = () => reject(new Error('Failed to read file'));
                 reader.readAsDataURL(file);
             } catch (e) {
                 reject(e);
@@ -511,11 +511,11 @@
                         const { data, error } = await supabaseClient.auth.signUp({ email, password });
                         if (error) throw error;
                         if (data?.user) {
-                            setMessage('注册成功，请检查邮箱确认后登录。');
+                            setMessage('Sign-up successful. Please verify your email, then sign in.');
                         }
                     }
                 } catch (err) {
-                    setMessage(err?.message || '操作失败，请重试');
+                    setMessage(err?.message || 'Operation failed. Please try again.');
                 } finally {
                     setLoading(false);
                 }
@@ -526,7 +526,7 @@
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose}></div>
                     <div className="relative w-full max-w-md bg-white rounded-[36px] shadow-2xl border border-[#F0EDEA] p-10 animate-in">
                         <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-serif italic text-[#1A1A1A]">{mode === 'login' ? '登录' : '注册'}</h2>
+                            <h2 className="text-xl font-serif italic text-[#1A1A1A]">{mode === 'login' ? 'Sign in' : 'Sign up'}</h2>
                             <button onClick={onClose} className="text-xs font-bold uppercase tracking-widest opacity-40 hover:opacity-100">
                                 <Icon name="X" size={14} />
                             </button>
@@ -538,10 +538,10 @@
                                 <div className="text-xs text-[#C97A7A] bg-[#FDF1F1] border border-[#F7D7D7] px-4 py-3 rounded-2xl">{message}</div>
                             )}
                             <button onClick={handleAuth} disabled={loading || !email || !password} className="w-full py-4 bg-blue-brand text-white rounded-full font-bold uppercase text-xs tracking-[0.2em] shadow-xl disabled:opacity-40">
-                                {loading ? '处理中...' : (mode === 'login' ? '登录' : '注册')}
+                                {loading ? 'Working...' : (mode === 'login' ? 'Sign in' : 'Sign up')}
                             </button>
                             <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="w-full text-xs uppercase tracking-[0.2em] opacity-50 hover:opacity-100">
-                                {mode === 'login' ? '没有账号？去注册' : '已有账号？去登录'}
+                                {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
                             </button>
                         </div>
                     </div>
@@ -578,7 +578,7 @@
 
                     const { data: publicData } = supabaseClient.storage.from('persona-assets').getPublicUrl(path);
                     const url = publicData?.publicUrl || null;
-                    if (!url) throw new Error('无法获取公开URL');
+                    if (!url) throw new Error('Unable to get public URL');
 
                     const payload = {
                         id: selected.id,
@@ -590,10 +590,10 @@
                     const { error: upsertError } = await supabaseClient.from('personas').upsert(payload, { onConflict: 'id' });
                     if (upsertError) throw upsertError;
 
-                    setStatus('上传成功');
+                    setStatus('Upload succeeded');
                     await onRefresh?.();
                 } catch (err) {
-                    setStatus(err?.message || '上传失败');
+                    setStatus(err?.message || 'Upload failed');
                 } finally {
                     setUploading(false);
                 }
@@ -604,14 +604,14 @@
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose}></div>
                     <div className="relative w-full max-w-2xl bg-white rounded-[36px] shadow-2xl border border-[#F0EDEA] p-8 animate-in">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-serif italic text-[#1A1A1A]">管理员面板</h2>
+                            <h2 className="text-xl font-serif italic text-[#1A1A1A]">Admin panel</h2>
                             <button onClick={onClose} className="text-xs font-bold uppercase tracking-widest opacity-40 hover:opacity-100">
                                 <Icon name="X" size={14} />
                             </button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-3">
-                                <div className="text-[10px] uppercase tracking-[0.2em] opacity-50">选择角色</div>
+                                <div className="text-[10px] uppercase tracking-[0.2em] opacity-50">Select persona</div>
                                 <select
                                     className="w-full p-3 rounded-2xl border border-[#F0EDEA] bg-[#FDFBF7] focus-blue-brand"
                                     value={selectedId}
@@ -621,19 +621,19 @@
                                         <option key={p.id} value={p.id}>{p.name || p.id}</option>
                                     ))}
                                 </select>
-                                <div className="text-xs opacity-60">当前：{selected?.name || selected?.id || '-'}</div>
+                                <div className="text-xs opacity-60">Current: {selected?.name || selected?.id || '-'}</div>
                             </div>
                             <div className="space-y-4">
                                 <div className="flex items-center gap-4">
                                     <div className="w-16 h-16 rounded-2xl overflow-hidden border border-[#F0EDEA] bg-[#FDFBF7]">
                                         <AvatarDisplay avatar={selected?.avatar} className="w-full h-full text-3xl" />
                                     </div>
-                                    <div className="text-xs opacity-60">头像预览</div>
+                                    <div className="text-xs opacity-60">Avatar preview</div>
                                 </div>
-                                <label className="block text-xs uppercase tracking-[0.2em] opacity-60">上传头像</label>
+                                <label className="block text-xs uppercase tracking-[0.2em] opacity-60">Upload avatar</label>
                                 <input type="file" accept="image/*" disabled={uploading} onChange={(e) => uploadAsset(e.target.files?.[0], 'avatar')} />
 
-                                <label className="block text-xs uppercase tracking-[0.2em] opacity-60 mt-4">上传封面</label>
+                                <label className="block text-xs uppercase tracking-[0.2em] opacity-60 mt-4">Upload cover</label>
                                 <input type="file" accept="image/*" disabled={uploading} onChange={(e) => uploadAsset(e.target.files?.[0], 'cover')} />
 
                                 {status && <div className="text-xs text-blue-brand">{status}</div>}
@@ -995,7 +995,7 @@
                     }
                 } catch (e) {
                     console.error(e);
-                    setHistory(prev => [...prev, { personaId: "system", text: "（请求失败）请检查 API / CORS / 返回格式" }]);
+                    setHistory(prev => [...prev, { personaId: "system", text: "(Request failed) Check API / CORS / response format" }]);
                     setOptions([]);
                 } finally {
                     setIsDebating(false);
@@ -1794,8 +1794,8 @@
                         {user ? renderContent() : (
                             <div className="min-h-screen flex items-center justify-center">
                                 <div className="text-center px-6">
-                                    <h1 className="text-4xl font-serif italic text-[#1A1A1A] mb-4">欢迎来到 LIFEE</h1>
-                                    <p className="text-xs uppercase tracking-[0.3em] opacity-40">请先登录以继续</p>
+                                    <h1 className="text-4xl font-serif italic text-[#1A1A1A] mb-4">Welcome to LIFEE</h1>
+                                    <p className="text-xs uppercase tracking-[0.3em] opacity-40">Please sign in to continue</p>
                                 </div>
                             </div>
                         )}

@@ -20,20 +20,20 @@
           <div className="text-[10px] font-black uppercase tracking-[0.25em] opacity-40">Quick guide</div>
           <div className="space-y-4 text-sm leading-relaxed">
             <div>
-              <div className="font-bold text-[#1A1A1A] mb-1">如何开始对话？</div>
-              <div className="opacity-70">在首页填写情境并邀请至少 2 个 Voices，然后点击底部的 “Commence Dialogue”。</div>
+              <div className="font-bold text-[#1A1A1A] mb-1">How do I start a conversation?</div>
+              <div className="opacity-70">On the home screen, fill in the scenario, invite at least two Voices, then click “Commence Dialogue” at the bottom.</div>
             </div>
             <div>
-              <div className="font-bold text-[#1A1A1A] mb-1">如何更换 Persona 头像？</div>
-              <div className="opacity-70">进入某个 Persona 的二级页面：左侧“卡片背景”用于上传背景图；点击下方的头像 icon 会弹出“Icon 编辑”，用于上传/选择 icon（用于列表左上角）。</div>
+              <div className="font-bold text-[#1A1A1A] mb-1">How do I change a Persona avatar?</div>
+              <div className="opacity-70">Open a Persona’s detail page: use “Card background” on the left to upload a cover image; click the avatar icon below to open “Icon editor” to upload/choose an icon (used in the list top-left).</div>
             </div>
             <div>
-              <div className="font-bold text-[#1A1A1A] mb-1">如何导出聊天记录？</div>
-              <div className="opacity-70">进入 Settings → Share chat history，可复制或下载。</div>
+              <div className="font-bold text-[#1A1A1A] mb-1">How do I export chat history?</div>
+              <div className="opacity-70">Go to Settings → Share chat history to copy or download.</div>
             </div>
           </div>
           <div className="pt-4 border-t border-[#F0EDEA] text-xs opacity-60">
-            如需更详细的帮助内容，可以继续在 <code className="px-1 py-0.5 rounded bg-[#FDFBF7] border border-[#F0EDEA]">web/ui/data/navigation.js</code> 扩展成更多条目。
+            For more detailed help, you can extend the entries in <code className="px-1 py-0.5 rounded bg-[#FDFBF7] border border-[#F0EDEA]">web/ui/data/navigation.js</code>.
           </div>
         </div>
       </div>

@@ -34,9 +34,9 @@
           .from('profiles')
           .upsert({ id: user.id, email: user.email, display_name: next }, { onConflict: 'id' });
         if (error) throw error;
-        setStatus('已保存');
+        setStatus('Saved');
       } catch (e) {
-        setStatus(e?.message || '保存失败');
+        setStatus(e?.message || 'Save failed');
       } finally {
         setLoading(false);
       }
@@ -49,9 +49,9 @@
       try {
         const { error } = await supabaseClient.auth.resetPasswordForEmail(user.email, { redirectTo: window.location.href });
         if (error) throw error;
-        setStatus('已发送重置密码邮件');
+        setStatus('Password reset email sent');
       } catch (e) {
-        setStatus(e?.message || '发送失败');
+        setStatus(e?.message || 'Send failed');
       } finally {
         setLoading(false);
       }
@@ -72,7 +72,7 @@
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-2">Avatar</div>
-                  <div className="text-xs opacity-60">上传图片或使用随机默认 icon（用于对话头像）。</div>
+                  <div className="text-xs opacity-60">Upload an image or use a random default icon (used as your chat avatar).</div>
                 </div>
                 <div className="w-14 h-14 rounded-2xl overflow-hidden border border-[#F0EDEA] bg-white shadow-sm shrink-0">
                   <${AvatarDisplay} avatar=${userAvatar || '👤'} className="w-full h-full text-3xl" />
@@ -94,9 +94,9 @@
                         const url = await fileToDataURL(file);
                         saveUserAvatar(url);
                         onUserAvatarChange?.(url);
-                        setStatus('头像已更新（本地保存）');
+                        setStatus('Avatar updated (saved locally)');
                       } catch (err) {
-                        setStatus(err?.message || '头像更新失败');
+                        setStatus(err?.message || 'Avatar update failed');
                       } finally {
                         e.target.value = '';
                       }
@@ -111,7 +111,7 @@
                     saveUserAvatar(null);
                     const next = rotateUserDefaultAvatar();
                     onUserAvatarChange?.(next);
-                    setStatus('已切换随机默认 icon');
+                    setStatus('Switched to a random default icon');
                   }}
                   className="py-3 bg-white border border-[#E8E6E0] rounded-full font-bold uppercase text-[10px] tracking-[0.2em] hover:shadow-md disabled:opacity-40"
                 >
@@ -134,7 +134,7 @@
                 placeholder="Your name..."
               />
               <button onClick=${saveProfile} disabled=${loading} className="w-full py-4 bg-blue-brand text-white rounded-full font-bold uppercase text-xs tracking-[0.2em] shadow-xl disabled:opacity-40">
-                ${loading ? '处理中...' : 'Save'}
+                ${loading ? 'Working...' : 'Save'}
               </button>
             </div>
 
@@ -161,7 +161,7 @@
     const doCopy = async () => {
       setStatus('');
       const ok = await copyToClipboard(shareText || '');
-      setStatus(ok ? '已复制到剪贴板' : '复制失败（请手动复制）');
+      setStatus(ok ? 'Copied to clipboard' : 'Copy failed (please copy manually)');
     };
 
     const doDownload = () => {
@@ -175,9 +175,9 @@
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-        setStatus('已下载');
+        setStatus('Downloaded');
       } catch (e) {
-        setStatus(e?.message || '下载失败');
+        setStatus(e?.message || 'Download failed');
       }
     };
 
@@ -245,7 +245,7 @@
               </div>
               <div className="text-xs font-black uppercase tracking-[0.2em] opacity-60">Manage account</div>
             </div>
-            <div className="text-sm italic opacity-60 leading-relaxed">更新昵称、重置密码、退出登录。</div>
+            <div className="text-sm italic opacity-60 leading-relaxed">Update your display name, reset your password, and sign out.</div>
             <div className="mt-5 text-[10px] font-black uppercase tracking-widest opacity-30 group-hover:text-blue-brand transition-colors">Open →</div>
           </button>
 
@@ -256,7 +256,7 @@
               </div>
               <div className="text-xs font-black uppercase tracking-[0.2em] opacity-60">Share chat history</div>
             </div>
-            <div className="text-sm italic opacity-60 leading-relaxed">生成可复制/下载的聊天记录摘要。</div>
+            <div className="text-sm italic opacity-60 leading-relaxed">Generate a shareable chat summary you can copy or download.</div>
             <div className="mt-5 text-[10px] font-black uppercase tracking-widest opacity-30 group-hover:text-blue-brand transition-colors">Open →</div>
           </button>
 
@@ -267,7 +267,7 @@
               </div>
               <div className="text-xs font-black uppercase tracking-[0.2em] opacity-60">Persona</div>
             </div>
-            <div className="text-sm italic opacity-60 leading-relaxed">管理你的 Voices / 进入社区 Persona 档案。</div>
+            <div className="text-sm italic opacity-60 leading-relaxed">Manage your Voices / browse community Personas.</div>
             <div className="mt-auto pt-5 flex flex-col gap-2">
               <button onClick=${onOpenPersona} className="w-full py-3 bg-blue-brand text-white rounded-full font-bold uppercase text-[10px] tracking-[0.2em] shadow-xl">
                 Manage personas
