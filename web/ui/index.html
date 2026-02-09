@@ -43,6 +43,66 @@
         .bg-blue-brand { background-color: #98A6D4; }
         .border-blue-brand { border-color: #98A6D4; }
 
+        /* 胶囊切换条 (SCENARIO / PROBLEM TYPE) */
+        .capsule-container {
+            background-color: #F1F3F4;
+            padding: 5px;
+            border-radius: 9999px;
+            display: inline-flex;
+            gap: 4px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .capsule-item {
+            padding: 10px 36px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .capsule-item-active {
+            background-color: #98A6D4;
+            color: white;
+            box-shadow: 0 4px 12px rgba(152, 166, 212, 0.35);
+        }
+        .capsule-item-inactive {
+            color: #5D576B;
+            opacity: 0.5;
+        }
+        .capsule-item-inactive:hover {
+            opacity: 1;
+            background-color: rgba(255,255,255,0.6);
+        }
+
+        /* Landing 分类选项按钮 - 未选中：白底、细灰边、浅灰字 */
+        .landing-opt {
+            background-color: white;
+            border: 1px solid #E8E6E0;
+            color: #5D576B;
+            opacity: 0.85;
+            border-radius: 9999px;
+            padding: 10px 20px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            transition: all 0.25s ease;
+        }
+        .landing-opt:hover {
+            border-color: #98A6D4;
+            color: #98A6D4;
+            opacity: 1;
+        }
+        .landing-opt.selected {
+            background-color: #98A6D4;
+            color: white;
+            border-color: #98A6D4;
+            box-shadow: 0 4px 12px rgba(152, 166, 212, 0.35);
+            opacity: 1;
+        }
+
         .sidebar-transition {
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -98,6 +158,23 @@
             "Starting over in a new city",
             "Becoming independent"
         ];
+
+        const LANDING_CATEGORIES = {
+            scenario: [
+                "First time studying abroad",
+                "First year after graduation",
+                "Career transition",
+                "Relationship turning point",
+                "Starting over in a new city",
+                "Becoming independent"
+            ],
+            problemType: [
+                "Early career confusion",
+                "Around 30 — feeling stuck",
+                "Creative burnout",
+                "Major failure or loss"
+            ]
+        };
 
         const INITIAL_PERSONAS = [
             {
@@ -858,6 +935,7 @@
         function App() {
             const [view, setView] = useState('home');
             const [context, setContext] = useState({ situation: '', landingPeriods: [] });
+            const [landingTab, setLandingTab] = useState('scenario');
             const [personas, setPersonas] = useState(INITIAL_PERSONAS);
             const [selectedIds, setSelectedIds] = useState([]);
             const [detailPersona, setDetailPersona] = useState(null);
@@ -1186,8 +1264,42 @@
                     <section className="space-y-10 md:space-y-16 py-10 md:py-20 px-4 max-w-3xl mx-auto w-full animate-in flex flex-col items-center">
                         <header className="mb-6 md:mb-10 text-center space-y-3"><h1 className="text-6xl md:text-8xl font-black tracking-tighter text-blue-brand uppercase italic leading-none">LIFEE</h1><p className="italic text-[8px] md:text-[10px] text-[#C1C1C1] uppercase tracking-[0.4em] md:tracking-[0.6em] font-black font-sans">YOUR LIFE & FRIEND COACH</p></header>
                         <div className="w-full bg-white p-8 md:p-16 rounded-[40px] md:rounded-[70px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden transition-all hover:shadow-xl"><div className="absolute top-0 right-0 p-8 md:p-12 opacity-5"><Icon name="Sparkles" size={64} /></div><h2 className="text-xl md:text-3xl font-serif italic mb-6 md:mb-10 text-[#1A1A1A] tracking-tight">“Let them argue, you decide.”</h2><textarea className="w-full h-40 md:h-52 p-6 md:p-8 bg-[#FDFBF7]/50 rounded-[30px] md:rounded-[40px] border-2 border-transparent focus-blue-brand transition-all duration-300 focus:outline-none text-base md:text-xl leading-relaxed placeholder:italic no-scrollbar" placeholder="Describe the current tension..." value={context.situation} onChange={(e) => setContext({...context, situation: e.target.value})} /></div>
-                        <div className="space-y-6 md:space-y-8 px-4 text-center w-full"><h3 className="text-[10px] md:text-xs font-black uppercase tracking-[0.4em] text-blue-brand/50 uppercase">When is this landing?</h3><div className="flex flex-wrap justify-center gap-2 md:gap-3">{PRESET_PERIODS.map(p => { const isSel = context.landingPeriods.includes(p); return <button key={p} onClick={() => setContext(prev => ({...prev, landingPeriods: isSel ? prev.landingPeriods.filter(x => x !== p) : [...prev.landingPeriods, p]}))} className={`px-4 md:px-8 py-2.5 md:py-3.5 rounded-full text-[9px] md:text-[11px] font-black transition-all border-2 uppercase tracking-widest ${isSel ? 'bg-blue-brand text-white border-blue-brand shadow-lg scale-105' : 'bg-white text-[#5D576B]/40 border-[#F0EDEA] hover:border-blue-brand/30 hover:text-blue-brand'}`}>{p}</button>; })}</div></div>
-                        <button disabled={!context.situation} onClick={() => setView('persona-selection')} className="w-full max-w-lg py-5 md:py-7 bg-blue-brand text-white rounded-full font-black shadow-2xl transition-all hover:translate-y-[-2px] uppercase tracking-[0.3em] text-[10px] md:text-xs disabled:opacity-10 active:scale-95">Step Forward</button>
+                        <div className="space-y-6 md:space-y-8 px-4 text-center w-full">
+                            <h3 className="text-xs md:text-sm font-black uppercase tracking-[0.3em] text-[#5D576B]/70">WHEN IS THIS LANDING?</h3>
+                            <div className="capsule-container shadow-sm">
+                                {[
+                                    { key: 'scenario', label: 'SCENARIO' },
+                                    { key: 'problemType', label: 'PROBLEM TYPE' }
+                                ].map(({ key, label }) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => setLandingTab(key)}
+                                        className={`capsule-item ${landingTab === key ? 'capsule-item-active' : 'capsule-item-inactive'}`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="animate-in pb-4" key={landingTab}>
+                                <div className="flex flex-wrap justify-center gap-2 md:gap-3">
+                                    {LANDING_CATEGORIES[landingTab].map(opt => {
+                                        const isSel = (context.landingPeriods || []).includes(opt);
+                                        return (
+                                            <button
+                                                key={opt}
+                                                type="button"
+                                                onClick={() => setContext(prev => ({ ...prev, landingPeriods: isSel ? (prev.landingPeriods || []).filter(x => x !== opt) : [...(prev.landingPeriods || []), opt] }))}
+                                                className={`landing-opt ${isSel ? 'selected' : ''}`}
+                                            >
+                                                {opt.toUpperCase()}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                        <button disabled={!context.situation} onClick={() => setView('persona-selection')} className="w-full max-w-lg py-5 md:py-7 bg-blue-brand text-white rounded-full font-black shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all hover:translate-y-[-2px] uppercase tracking-[0.3em] text-[10px] md:text-xs disabled:opacity-20 active:scale-95">STEP FORWARD</button>
                     </section>
                 );
             };
