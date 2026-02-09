@@ -281,6 +281,26 @@
                 voice: "First, steady the emotions; then look at the facts and options. You've been trying hard — we can break the confusion into smaller, doable pieces."
             },
             {
+                id: 'audrey-hepburn',
+                name: 'AUDREY HEPBURN',
+                role: 'ELEGANT MUSE',
+                category: 'CREATIVE',
+                worldview: "Elegance is the quiet courage to be kind, even when the world is loud.",
+                avatar: '🕊️',
+                cover_url: 'https://upload.wikimedia.org/wikipedia/commons/e/ed/My_Fair_Lady_Audrey_Hepburn.jpg',
+                cover_fit: 'cover',
+                cover_position: '50% 20%',
+                decisionStyle: "Choose the simplest graceful option: protect your dignity, keep your promise, and make one small act of kindness that moves the story forward.",
+                lifeContext: [
+                    { period: "Carrying grace through hard years", detail: "Raised in Europe during WWII, she learned restraint, gratitude, and the art of standing tall without becoming hard." },
+                    { period: "Roman Holiday (1953)", detail: "An unexpected breakthrough — and an Academy Award for Best Actress. Sincerity over performance, softness as strength." },
+                    { period: "Breakfast at Tiffany’s (1961)", detail: "A cultural icon of style and solitude: lightness on the surface, longing underneath." },
+                    { period: "UNICEF Goodwill Ambassador (1988–1993)", detail: "Later in life she traveled relentlessly for children, turning fame into a tool for service rather than self." },
+                    { period: "Presidential Medal of Freedom (1992)", detail: "Honored for humanitarian work — proof that gentleness can also be public courage." }
+                ],
+                voice: "Darling, breathe. Ask: what would look simple and honest tomorrow morning? We'll choose the small step that keeps your heart gentle — and your posture upright."
+            },
+            {
                 id: 'krishnamurti',
                 name: 'Krishnamurti',
                 role: 'THE QUESTIONER',
@@ -1643,12 +1663,20 @@
                 if (view === 'persona-detail') {
                     const cover = detailPersona?.cover_url || null;
                     const hasCover = !!(cover && typeof cover === 'string');
+                    const coverFit = (detailPersona?.cover_fit || 'cover');
+                    const coverPosition = (detailPersona?.cover_position || 'center');
                     return (
                         <div className="p-4 md:p-8 animate-in pb-20 overflow-y-auto no-scrollbar h-[calc(100vh-64px)]">
                             <div className={`max-w-5xl mx-auto ${hasCover ? 'bg-transparent' : 'bg-white'} rounded-[40px] md:rounded-[60px] p-6 md:p-12 shadow-2xl border border-[#F0EDEA] relative overflow-hidden`}>
                                 {hasCover && (
                                     <div className="absolute inset-0">
-                                        <img src={cover} alt="persona cover" className="w-full h-full object-cover grayscale scale-105" loading="lazy" />
+                                        <img
+                                            src={cover}
+                                            alt="persona cover"
+                                            className={`w-full h-full grayscale ${coverFit === 'cover' ? 'scale-105' : ''}`}
+                                            style={{ objectFit: coverFit, objectPosition: coverPosition }}
+                                            loading="lazy"
+                                        />
                                         <div className="absolute inset-0 bg-white/80" />
                                     </div>
                                 )}
@@ -1662,7 +1690,13 @@
                                                 <div className="absolute inset-0 rounded-xl ring-0 group-hover:ring-2 group-hover:ring-blue-brand/20 transition-all pointer-events-none" />
                                                 <div className="aspect-[3/4] bg-slate-50 rounded-xl overflow-hidden relative">
                                                     {hasCover ? (
-                                                        <img src={cover} alt="cover preview" className="absolute inset-0 w-full h-full object-cover grayscale" loading="lazy" />
+                                                        <img
+                                                            src={cover}
+                                                            alt="cover preview"
+                                                            className="absolute inset-0 w-full h-full grayscale"
+                                                            style={{ objectFit: coverFit, objectPosition: coverPosition }}
+                                                            loading="lazy"
+                                                        />
                                                     ) : (
                                                         <div className="absolute inset-0 bg-gradient-to-br from-white via-[#FDFBF7] to-[#F3F1EC]" />
                                                     )}
