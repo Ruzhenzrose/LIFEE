@@ -11,7 +11,7 @@ export interface Env {
   type Persona = {
 	id: string;
 	name: string;
-	prompt?: string; // persona-specific style/behavior instruction (optional)
+	prompt?: string | { en: string; zh: string }; // persona-specific style/behavior instruction (optional)
   };
   
   type Body = {
@@ -35,15 +35,80 @@ export interface Env {
 	  return null;
 	}
   }
+
+  function sseEncode(event: string, data: unknown): Uint8Array {
+	const payload = typeof data === "string" ? data : JSON.stringify(data);
+	const chunk = `event: ${event}\ndata: ${payload}\n\n`;
+	return new TextEncoder().encode(chunk);
+  }
+
+  function normalizeGeminiText(geminiData: any): string {
+	return (
+	  geminiData?.candidates?.[0]?.content?.parts
+		?.map((p: any) => p?.text)
+		.filter(Boolean)
+		.join("") || ""
+	).trim();
+  }
+
+  async function callGeminiText(env: Env, prompt: string): Promise<{ ok: true; text: string } | { ok: false; status: number; details: any }> {
+	const geminiRes = await fetch(
+	  `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`,
+	  {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+		  contents: [
+			{
+			  role: "user",
+			  parts: [{ text: prompt }],
+			},
+		  ],
+		}),
+	  }
+	);
+
+	const geminiData: any = await geminiRes.json();
+	if (!geminiRes.ok) {
+	  return { ok: false, status: geminiRes.status, details: geminiData };
+	}
+
+	return { ok: true, text: normalizeGeminiText(geminiData) };
+  }
+
+  type TargetLang = "en" | "zh";
+
+  function detectLangFromText(text: string): TargetLang {
+	// Naive but effective: any CJK ideograph => Chinese
+	return /[\u4E00-\u9FFF]/.test(text) ? "zh" : "en";
+  }
+
+  function decideTargetLang(userInput: string, situation: string): TargetLang {
+	// IMPORTANT: prioritize the user's latest input to avoid old context (e.g. earlier Chinese rounds)
+	// forcing the model back into Chinese even when the user now types English.
+	if (userInput?.trim()) return detectLangFromText(userInput);
+	return detectLangFromText(situation || "");
+  }
+
+  function langName(lang: TargetLang): string {
+	return lang === "zh" ? "Simplified Chinese" : "English";
+  }
+
+  function resolvePersonaPrompt(prompt: Persona["prompt"] | undefined, lang: TargetLang): string {
+	if (!prompt) return "";
+	if (typeof prompt === "string") return prompt;
+	return prompt[lang] || prompt.en || prompt.zh || "";
+  }
   
   export default {
-	async fetch(request: Request, env: Env): Promise<Response> {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 	  // ---- CORS preflight ----
 	  if (request.method === "OPTIONS") {
 		return new Response(null, { headers: corsHeaders });
 	  }
   
 	  const url = new URL(request.url);
+	  const stream = url.searchParams.get("stream") === "1";
   
 	  // 只允许 POST /decision
 	  if (url.pathname !== "/decision" || request.method !== "POST") {
@@ -68,19 +133,25 @@ export interface Env {
 		const birthDate = body.birthDate?.trim() || "";
   
 		// Persona templates (default 4 voices)
-		const PERSONA_TEMPLATES: Record<string, { defaultName: string; prompt: string }> = {
+		const PERSONA_TEMPLATES: Record<string, { defaultName: string; prompt: Persona["prompt"] }> = {
 		  serene: {
 			defaultName: "SERENE",
-			prompt: [
-			  "你是 Seren：温暖、幸福、胸怀宽广的安慰者，总能给人带来快乐与安稳。",
-			  "在这场“内部辩论”里，你的职责是为焦虑、委屈、迷茫、紧绷的部分提供安抚与希望，同时保持清醒与边界；你也会温柔地化解冲突，让讨论回到可承受的节奏。",
-			  "气质：柔和稳定、真诚、包容；不说教、不评判、不讽刺；不强行正能量，但会点亮希望。",
-			  "表达原则：先看见处境与感受（命名情绪）→再接纳与安放→再指出已付出的努力/勇气→最后给 1-2 个很小、可落地的下一步。",
-			  "语言习惯：多用“我/我们/此刻/内心的某个部分”，避免直接对用户下命令；提出建议时用“也许/可以/要不要试试”的语气。",
-			  "你会：把复杂问题拆小、把压力降一点；提供温柔但有力量的重述与重新框架；邀请其他人格一起协作，而不是争输赢。",
-			  "你避免：‘想开点/别难过’式否定情绪；空泛鸡汤；绝对化结论；把责任全部推给当事人；任何羞辱或指责。",
-			  "安全：若出现自伤/轻生或现实危险信号，你会优先关心当下安全，并建议寻求现实支持（亲友/当地紧急电话/医院/心理援助），但不提供任何自伤方法细节。",
-			].join("\n"),
+			prompt: {
+			  en: [
+				"Core: warm, steady comforter. Soothe without denying reality; name feelings; lower intensity while keeping boundaries.",
+				"Method: validate emotion → accept/ground → recognize effort/courage → offer 1–2 tiny next steps as possibilities.",
+				"Avoid: platitudes, absolutist claims, shaming, commands, forced positivity.",
+				"Safety: if self-harm/danger signals appear, prioritize immediate safety and suggest real-world support (no method details).",
+			  ].join("\n"),
+			  zh: [
+				"你是 Seren：温暖、幸福、胸怀宽广的安慰者，总能给人带来快乐与安稳。",
+				"在这场“内部辩论”里，你的职责是为焦虑、委屈、迷茫、紧绷的部分提供安抚与希望，同时保持清醒与边界；你也会温柔地化解冲突，让讨论回到可承受的节奏。",
+				"气质：柔和稳定、真诚、包容；不说教、不评判、不讽刺；不强行正能量，但会点亮希望。",
+				"表达原则：先看见处境与感受（命名情绪）→再接纳与安放→再指出已付出的努力/勇气→最后给 1-2 个很小、可落地的下一步。",
+				"你避免：‘想开点/别难过’式否定情绪；空泛鸡汤；绝对化结论；把责任全部推给当事人；任何羞辱或指责。",
+				"安全：若出现自伤/轻生或现实危险信号，你会优先关心当下安全，并建议寻求现实支持（亲友/当地紧急电话/医院/心理援助），但不提供任何自伤方法细节。",
+			  ].join("\n"),
+			},
 		  },
 		  // Entrepreneur / Founder voice (user requested "lifecoach" -> entrepreneur style)
 		  architect: {
@@ -122,13 +193,21 @@ export interface Env {
 		  },
 		  mystic: {
 			defaultName: "东方玄学大师",
-			prompt: [
-			  "你是一位东方玄学大师，擅长以八字（四柱）、五行气机与运势节律来做“决策参考”。",
-			  "重要前提：用户需要提供八字信息。若只给了出生日期（YYYY-MM-DD），你必须明确这是简化版推演；如需更精确，请提示补充出生时辰与出生地（可选）。",
-			  "输出要求：用简体中文、克制且有条理，不要神神叨叨。给出“倾向/节律/风险点/适配策略”，避免宿命论与绝对断言。",
-			  "边界：不要把玄学当成科学结论；不做医疗/法律/投资的确定性结论。把玄学当作一种象征性框架，帮助用户看见取舍与时机。",
-			  "风格：沉稳、洞察、一针见血但不吓人；可以用少量术语（如五行、喜忌、节律）但要配一句通俗解释。",
-			].join(" "),
+			prompt: {
+			  en: [
+				"You are an Eastern metaphysics advisor using BaZi (Four Pillars), five elements, and timing cycles as a symbolic decision lens (not science).",
+				"If only a birth date (YYYY-MM-DD) is provided, note it's simplified; for precision, ask for birth time and birthplace (optional).",
+				"Output: calm, structured; give tendencies/cycles/risk points/fit strategies. Avoid fatalism and absolutes.",
+				"Boundaries: no medical/legal/investment certainty. Use metaphysics as a framing tool to clarify trade-offs and timing.",
+			  ].join(" "),
+			  zh: [
+				"你是一位东方玄学大师，擅长以八字（四柱）、五行气机与运势节律来做“决策参考”。",
+				"重要前提：用户需要提供八字信息。若只给了出生日期（YYYY-MM-DD），你必须明确这是简化版推演；如需更精确，请提示补充出生时辰与出生地（可选）。",
+				"输出要求：用简体中文、克制且有条理，不要神神叨叨。给出“倾向/节律/风险点/适配策略”，避免宿命论与绝对断言。",
+				"边界：不要把玄学当成科学结论；不做医疗/法律/投资的确定性结论。把玄学当作一种象征性框架，帮助用户看见取舍与时机。",
+				"风格：沉稳、洞察、一针见血但不吓人；可以用少量术语（如五行、喜忌、节律）但要配一句通俗解释。",
+			  ].join(" "),
+			},
 		  },
 		};
 
@@ -148,11 +227,147 @@ export interface Env {
 		  return {
 			id: p.id,
 			name: p.name || t?.defaultName || p.id,
-			prompt: t?.prompt,
+			// Allow caller to override prompt; otherwise use template prompt.
+			prompt: p.prompt ?? t?.prompt,
 		  };
 		});
   
 		const userInput = body.userInput?.trim() || "";
+		const targetLang = decideTargetLang(userInput, situation);
+		const TARGET_LANGUAGE = langName(targetLang);
+		const stageExample = targetLang === "zh" ? "（皱眉）" : "(frowns)";
+
+		// ---- Stream mode: emit one persona at a time (SSE) ----
+		if (stream) {
+		  const { readable, writable } = new TransformStream();
+		  const writer = writable.getWriter();
+
+		  const headers = {
+			...corsHeaders,
+			"Content-Type": "text/event-stream; charset=utf-8",
+			"Cache-Control": "no-cache, no-transform",
+		  };
+
+		  ctx.waitUntil(
+			(async () => {
+			  try {
+				// Kickoff comment (helps some proxies/browsers flush early)
+				await writer.write(new TextEncoder().encode(":ok\n\n"));
+
+				const earlier: Array<{ personaId: string; name: string; text: string }> = [];
+
+				for (const p of personas) {
+				  const earlierBlock = earlier.length
+					? earlier.map((m) => `- ${m.personaId} (${m.name}): ${m.text}`).join("\n")
+					: "(none)";
+				  const personaInstruction = resolvePersonaPrompt(p.prompt, targetLang) || "(no extra instruction)";
+
+				  const personaPrompt = `
+You are not an assistant. You are one inner voice in an internal debate.
+You speak ONLY as this persona: ${p.name} (${p.id}).
+
+TARGET_LANGUAGE: ${TARGET_LANGUAGE}
+
+Context:
+${situation}
+${birthDate ? `\nUser birth date (YYYY-MM-DD, optional reference): ${birthDate}` : ""}
+
+Persona instruction:
+${personaInstruction}
+
+Earlier voices (react to at least one point if any exist):
+${earlierBlock}
+
+Rules (absolute):
+- Output MUST be in TARGET_LANGUAGE (follow the user's latest input language).
+- If earlier voices are in a different language, interpret/translate them and still respond in TARGET_LANGUAGE.
+- Output ONLY the message text for your persona (no JSON, no markdown, no meta).
+- The text MUST start with a short stage direction, e.g. "${stageExample}", then a space, then the message.
+- If TARGET_LANGUAGE is Simplified Chinese, the stage direction must be in Chinese parentheses with 2–8 Chinese characters.
+- If TARGET_LANGUAGE is English, the stage direction should be 1–3 English words in parentheses.
+- If earlier voices exist, respond to at least one of them (rebut, question, or build).
+- Do NOT address the user directly (avoid "you should/you need"); speak as inner self-talk.
+- Keep it concise. (English: ~50–120 words; Chinese: ~70–180 characters.)
+
+Round input (may be empty on the first round):
+${userInput ? userInput : "(no new input — begin the debate)"}
+				  `.trim();
+
+				  const one = await callGeminiText(env, personaPrompt);
+				  if (!one.ok) {
+					await writer.write(
+					  sseEncode("error", {
+						error: "Gemini API error",
+						status: one.status,
+						details: one.details,
+					  })
+					);
+					await writer.close();
+					return;
+				  }
+
+				  const text = one.text || (targetLang === "zh" ? "（沉默） ……" : "(silence) ...");
+				  const msg = { personaId: p.id, text };
+				  earlier.push({ personaId: p.id, name: p.name, text });
+				  await writer.write(sseEncode("message", msg));
+				}
+
+				// Generate options after all persona messages (small, actionable choices)
+				const debateBlock = earlier.map((m) => `${m.name} (${m.personaId}): ${m.text}`).join("\n");
+				const optionsPrompt = `
+You are an option generator for an internal debate (not an assistant).
+
+TARGET_LANGUAGE: ${TARGET_LANGUAGE}
+
+Context:
+${situation}
+${birthDate ? `\nUser birth date (YYYY-MM-DD, optional reference): ${birthDate}` : ""}
+
+Round input:
+${userInput ? userInput : "(no new input)"}
+
+Persona messages this round:
+${debateBlock}
+
+Task: produce 3–5 distinct "next-step options" that are short, specific, and doable.
+Rules:
+- Output MUST be in TARGET_LANGUAGE.
+- Do not command; do not claim certainty; present options only.
+- Each option length: English 4–10 words; Chinese 8–24 characters.
+
+Output JSON ONLY exactly in this format:
+{ "options": ["...", "...", "..."] }
+				`.trim();
+
+				const opt = await callGeminiText(env, optionsPrompt);
+				if (opt.ok) {
+				  const parsedOpt = extractJsonObject(opt.text);
+				  const options = Array.isArray(parsedOpt?.options) ? parsedOpt.options : [];
+				  await writer.write(sseEncode("options", { options }));
+				} else {
+				  await writer.write(sseEncode("options", { options: [] }));
+				}
+
+				await writer.write(sseEncode("done", { ok: true }));
+				await writer.close();
+			  } catch (err: any) {
+				try {
+				  await writer.write(
+					sseEncode("error", {
+					  error: "Stream failed",
+					  details: String(err?.message || err),
+					})
+				  );
+				} catch (_) {}
+				try {
+				  await writer.close();
+				} catch (_) {}
+			  }
+			})()
+		  );
+
+		  return new Response(readable, { headers });
+		}
   
 		// ✅ 核心：把 system prompt 直接塞进 user 内容里（v1 最稳，不用 systemInstruction 字段）
 		const prompt = `
@@ -174,7 +389,8 @@ export interface Env {
   Personas (each persona MUST follow its own voice instruction):
   ${personas
 	.map((p) => {
-	  const style = p.prompt ? `\n    Voice instruction: ${p.prompt}` : "";
+	  const resolved = resolvePersonaPrompt(p.prompt, targetLang);
+	  const style = resolved ? `\n    Voice instruction: ${resolved}` : "";
 	  return `- ${p.id}: ${p.name}${style}`;
 	})
 	.join("\n")}
@@ -187,19 +403,22 @@ export interface Env {
   - DO NOT address the user directly
   - DO NOT use markdown
   - DO NOT add meta commentary
-  - Use the same language as the user's input/context (if the user writes Chinese, respond in Simplified Chinese)
+  - TARGET_LANGUAGE is ${TARGET_LANGUAGE}. Output MUST be in TARGET_LANGUAGE.
+  - IMPORTANT: Determine language from the user's latest input (Round input). If it is English, output English even if earlier context contains Chinese, and vice versa.
   - The output "messages" MUST contain exactly ONE message per persona listed above (personaId must match the ids in Personas)
   - Generate messages SEQUENTIALLY in the same order as Personas listed above. Later personas MUST react to earlier personas (rebut, question, or build on at least one earlier point).
-  - Each message "text" MUST start with a short stage-direction in Chinese parentheses, like "（皱眉）" or "（轻笑）", then a space, then the message. Keep the action 2-8 Chinese characters.
+  - Each message "text" MUST start with a short stage direction, e.g. "${stageExample}", then a space, then the message.
+  - If TARGET_LANGUAGE is Simplified Chinese, the stage direction must be in Chinese parentheses with 2–8 Chinese characters.
+  - If TARGET_LANGUAGE is English, the stage direction should be 1–3 English words in parentheses.
   
   You MUST output JSON ONLY in the following format:
   
   {
 	"messages": [
-	  { "personaId": "serene", "text": "（...） ..." },
-	  { "personaId": "architect", "text": "（...） ..." },
-	  { "personaId": "rebel", "text": "（...） ..." },
-	  { "personaId": "caretaker", "text": "（...） ..." }
+	  { "personaId": "serene", "text": "${targetLang === "zh" ? "（...） ..." : "(...) ..."}" },
+	  { "personaId": "architect", "text": "${targetLang === "zh" ? "（...） ..." : "(...) ..."}" },
+	  { "personaId": "rebel", "text": "${targetLang === "zh" ? "（...） ..." : "(...) ..."}" },
+	  { "personaId": "caretaker", "text": "${targetLang === "zh" ? "（...） ..." : "(...) ..."}" }
 	],
 	"options": ["...", "...", "..."]
   }
@@ -213,31 +432,13 @@ export interface Env {
   Now produce the JSON ONLY:
   `.trim();
   
-		// ---- Gemini v1 call ----
-		const geminiRes = await fetch(
-		  `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`,
-		  {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-			  contents: [
-				{
-				  role: "user",
-				  parts: [{ text: prompt }],
-				},
-			  ],
-			}),
-		  }
-		);
-  
-		const geminiData: any = await geminiRes.json();
-  
-		if (!geminiRes.ok) {
+		const one = await callGeminiText(env, prompt);
+		if (!one.ok) {
 		  return new Response(
 			JSON.stringify({
 			  error: "Gemini API error",
-			  status: geminiRes.status,
-			  details: geminiData,
+			  status: one.status,
+			  details: one.details,
 			}),
 			{
 			  status: 502,
@@ -246,11 +447,7 @@ export interface Env {
 		  );
 		}
   
-		const rawText =
-		  geminiData?.candidates?.[0]?.content?.parts
-			?.map((p: any) => p?.text)
-			.filter(Boolean)
-			.join("") || "";
+		const rawText = one.text;
   
 		// ---- 尽量保证返回一定是 JSON ----
 		const parsed = extractJsonObject(rawText);

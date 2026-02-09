@@ -6,19 +6,43 @@ import worker from '../src/index';
 // `Request` to pass to `worker.fetch()`.
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 
-describe('Hello World worker', () => {
-	it('responds with Hello World! (unit style)', async () => {
-		const request = new IncomingRequest('http://example.com');
-		// Create an empty context to pass to `worker.fetch()`.
+describe('lifee-api worker', () => {
+	it('returns 404 on non-/decision routes', async () => {
+		const request = new IncomingRequest('http://example.com/');
 		const ctx = createExecutionContext();
 		const response = await worker.fetch(request, env, ctx);
-		// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
 		await waitOnExecutionContext(ctx);
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+		expect(response.status).toBe(404);
+		expect(await response.text()).toMatchInlineSnapshot(`"Not Found"`);
 	});
 
-	it('responds with Hello World! (integration style)', async () => {
-		const response = await SELF.fetch('https://example.com');
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+	it('returns CORS headers on OPTIONS', async () => {
+		const request = new IncomingRequest('http://example.com/decision', { method: 'OPTIONS' });
+		const ctx = createExecutionContext();
+		const response = await worker.fetch(request, env, ctx);
+		await waitOnExecutionContext(ctx);
+		expect(response.status).toBe(200);
+		expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+		expect(response.headers.get('Access-Control-Allow-Methods')).toContain('POST');
+	});
+
+	it('returns 500 JSON when GEMINI_API_KEY missing', async () => {
+		const request = new IncomingRequest('http://example.com/decision', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ situation: 'test', personas: [{ id: 'serene', name: 'SERENE' }] }),
+		});
+		const ctx = createExecutionContext();
+		// Explicitly override env for this test
+		const response = await worker.fetch(request, { GEMINI_API_KEY: '' } as any, ctx);
+		await waitOnExecutionContext(ctx);
+		expect(response.status).toBe(500);
+		expect(await response.json()).toMatchObject({ error: 'Missing GEMINI_API_KEY' });
+	});
+
+	it('integration: / is still Not Found', async () => {
+		const response = await SELF.fetch('https://example.com/');
+		expect(response.status).toBe(404);
+		expect(await response.text()).toMatchInlineSnapshot(`"Not Found"`);
 	});
 });

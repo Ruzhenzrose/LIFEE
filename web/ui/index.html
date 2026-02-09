@@ -310,11 +310,11 @@
             }
         ];
 
-        // ✅ LIFEE API (expects JSON { messages: [...], options: [...] })
+        // ✅ LIFEE API (JSON: { messages: [...], options: [...] })
         const LIFEE_API = "https://lifee-api.guolinn.workers.dev/decision";
 
-        async function fetchLifeeDecision(payload) {
-            const res = await fetch(LIFEE_API, {
+        async function fetchLifeeDecision(payload, url = LIFEE_API) {
+            const res = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
@@ -326,6 +326,107 @@
             }
 
             return res.json();
+        }
+
+        const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+        async function fetchLifeeDecisionStream(payload, { onMessage, onOptions } = {}) {
+            const res = await fetch(`${LIFEE_API}?stream=1`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error("LIFEE API stream failed: " + text);
+            }
+
+            if (!res.body) {
+                throw new Error("Streaming not supported in this browser.");
+            }
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = "";
+            let done = false;
+
+            const flushEventBlock = async (block) => {
+                // Ignore comments
+                if (!block || block.startsWith(":")) return;
+                const lines = block.split("\n").filter(Boolean);
+                let eventName = "message";
+                const dataLines = [];
+                for (const line of lines) {
+                    if (line.startsWith("event:")) eventName = line.slice(6).trim();
+                    else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+                }
+                const dataStr = dataLines.join("\n");
+                if (!dataStr) return;
+
+                let data = dataStr;
+                try { data = JSON.parse(dataStr); } catch (_) {}
+
+                if (eventName === "message") {
+                    if (data && typeof data === "object") await onMessage?.(data);
+                } else if (eventName === "options") {
+                    const opts = (data && typeof data === "object") ? data.options : [];
+                    onOptions?.(Array.isArray(opts) ? opts : []);
+                } else if (eventName === "error") {
+                    const errMsg = (data && typeof data === "object") ? (data.error || JSON.stringify(data)) : String(data);
+                    throw new Error(errMsg);
+                } else if (eventName === "done") {
+                    done = true;
+                }
+            };
+
+            while (!done) {
+                const { value, done: streamDone } = await reader.read();
+                if (streamDone) break;
+                buf += decoder.decode(value, { stream: true });
+                let idx;
+                while ((idx = buf.indexOf("\n\n")) !== -1) {
+                    const block = buf.slice(0, idx).trimEnd();
+                    buf = buf.slice(idx + 2);
+                    await flushEventBlock(block);
+                }
+            }
+        }
+
+        async function fetchLifeeDecisionProgressive(payload, { onMessage, onOptions } = {}) {
+            // 默认：按 persona 逐个请求，先出第一个角色的消息，再出下一个（体感更快）
+            const personas = Array.isArray(payload?.personas) ? payload.personas : [];
+            if (personas.length <= 1) {
+                const data = await fetchLifeeDecision(payload);
+                if (Array.isArray(data?.messages)) {
+                    for (const m of data.messages) await onMessage?.(m);
+                }
+                if (Array.isArray(data?.options)) onOptions?.(data.options);
+                else onOptions?.([]);
+                return;
+            }
+
+            const earlier = [];
+            let lastOptions = [];
+            for (let i = 0; i < personas.length; i++) {
+                const p = personas[i];
+                const situationWithEarlier = earlier.length
+                    ? `${(payload?.situation || "").trim()}\n\nEarlier voices:\n${earlier.map(m => `- ${m.personaId}: ${String(m.text || '').replace(/\n/g, ' ')}`).join('\n')}`
+                    : payload?.situation;
+
+                const singlePayload = { ...payload, situation: situationWithEarlier, personas: [p] };
+                const data = await fetchLifeeDecision(singlePayload);
+                if (Array.isArray(data?.messages)) {
+                    for (const m of data.messages) {
+                        earlier.push(m);
+                        await onMessage?.(m);
+                    }
+                }
+                if (Array.isArray(data?.options)) lastOptions = data.options;
+                // 给 React 一次渲染机会，让“先出第一个角色”更明显
+                await sleep(0);
+            }
+            onOptions?.(lastOptions);
         }
 
         const Icon = ({ name, size = 24, className = "" }) => {
@@ -979,19 +1080,23 @@
                         context: contextBlock
                     };
 
-                    const data = await fetchLifeeDecision(payload);
-
-                    if (Array.isArray(data.messages)) {
-                        setHistory(prev => [...prev, ...data.messages]);
-                        for (const msg of data.messages) {
+                    const handlers = {
+                        onMessage: async (msg) => {
+                            setHistory(prev => [...prev, msg]);
                             const role = msg.personaId === 'system' ? 'system' : 'assistant';
                             await persistMessage(role, msg.text || '');
+                        },
+                        onOptions: (opts) => {
+                            setOptions(Array.isArray(opts) ? opts : []);
                         }
-                    }
-                    if (Array.isArray(data.options)) {
-                        setOptions(data.options);
-                    } else {
-                        setOptions([]);
+                    };
+
+                    // Prefer SSE streaming (single request, progressive persona outputs).
+                    try {
+                        await fetchLifeeDecisionStream(payload, handlers);
+                    } catch (streamErr) {
+                        console.warn('stream failed; fallback to progressive JSON calls', streamErr);
+                        await fetchLifeeDecisionProgressive(payload, handlers);
                     }
                 } catch (e) {
                     console.error(e);
