@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, AsyncIterator, Optional
 
 from lifee.memory import MemoryManager, format_search_results
-from lifee.providers.base import LLMProvider, Message
+from lifee.providers.base import LLMProvider, Message, MessageRole
 from lifee.roles import RoleManager
 
 if TYPE_CHECKING:
@@ -91,12 +91,17 @@ class Participant:
         # 1. 搜索知识库
         knowledge_context = await self._search_knowledge(user_query)
 
-        # 2. 构建 system prompt（包含辩论上下文）
+        # 2. 构建对话历史摘要（用于让分身互相“看见”）
+        dialogue_context = ""
+        if debate_context:
+            dialogue_context = self._format_recent_dialogue(messages)
+
+        # 3. 构建 system prompt（包含辩论上下文）
         system = self._build_system_prompt(
-            knowledge_context, debate_context, user_memory_context
+            knowledge_context, debate_context, user_memory_context, dialogue_context
         )
 
-        # 3. 调用 LLM
+        # 4. 调用 LLM
         async for chunk in self.provider.stream(
             messages=messages,
             system=system,
@@ -109,6 +114,7 @@ class Participant:
         knowledge_context: str,
         debate_context: Optional[DebateContext] = None,
         user_memory_context: Optional[str] = None,
+        dialogue_context: Optional[str] = None,
     ) -> str:
         """
         构建包含知识库上下文和辩论上下文的 system prompt
@@ -128,8 +134,40 @@ class Participant:
         if debate_context:
             parts.append(debate_context.build_context_prompt())
 
+        # 最近对话记录（让分身明确看到其他人说了什么）
+        if dialogue_context:
+            parts.append(dialogue_context)
+
         # 知识库上下文
         if knowledge_context:
             parts.append(f"相关知识：{knowledge_context}")
 
         return "\n\n".join(parts)
+
+    def _format_recent_dialogue(
+        self, messages: list[Message], max_messages: int = 16, max_chars: int = 400
+    ) -> str:
+        """格式化最近对话记录（用于分身互相可见）"""
+        if not messages:
+            return ""
+
+        recent = messages[-max_messages:]
+        lines = []
+        for msg in recent:
+            content = msg.content.strip()
+            if not content:
+                continue
+            if len(content) > max_chars:
+                content = content[:max_chars] + "..."
+
+            if msg.role == MessageRole.USER:
+                speaker = "用户"
+            else:
+                speaker = msg.name or "AI"
+
+            lines.append(f"- {speaker}: {content}")
+
+        if not lines:
+            return ""
+
+        return "最近对话记录（按时间顺序，优先引用其中的具体内容来回应）：\n" + "\n".join(lines)
