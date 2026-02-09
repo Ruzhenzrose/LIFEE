@@ -12,6 +12,7 @@ export interface Env {
 	id: string;
 	name: string;
 	prompt?: string | { en: string; zh: string }; // persona-specific style/behavior instruction (optional)
+	knowledge?: string; // optional grounding notes passed from client (e.g. markdown)
   };
   
   type Body = {
@@ -250,6 +251,7 @@ export interface Env {
 			name: p.name || t?.defaultName || p.id,
 			// Allow caller to override prompt; otherwise use template prompt.
 			prompt: p.prompt ?? t?.prompt,
+			knowledge: typeof p.knowledge === "string" ? p.knowledge : "",
 		  };
 		});
   
@@ -282,6 +284,8 @@ export interface Env {
 					? earlier.map((m) => `- ${m.personaId} (${m.name}): ${m.text}`).join("\n")
 					: "(none)";
 				  const personaInstruction = resolvePersonaPrompt(p.prompt, targetLang) || "(no extra instruction)";
+				  const knowledgeBlock = (p.knowledge || "").trim();
+				  const clippedKnowledge = knowledgeBlock ? knowledgeBlock.slice(0, 12000) : "";
 
 				  const personaPrompt = `
 You are not an assistant. You are one inner voice in an internal debate.
@@ -296,6 +300,9 @@ ${birthDate ? `\nUser birth date (YYYY-MM-DD, optional reference): ${birthDate}`
 Persona instruction:
 ${personaInstruction}
 
+Knowledge base (optional; treat as grounding facts, do not invent beyond it):
+${clippedKnowledge ? clippedKnowledge : "(none)"}
+
 Earlier voices (react to at least one point if any exist):
 ${earlierBlock}
 
@@ -307,6 +314,7 @@ Rules (absolute):
 - If TARGET_LANGUAGE is Simplified Chinese, the stage direction must be in Chinese parentheses with 2–8 Chinese characters.
 - If TARGET_LANGUAGE is English, the stage direction should be 1–3 English words in parentheses.
 - If earlier voices exist, respond to at least one of them (rebut, question, or build).
+- If a knowledge base is provided, use it to ground factual claims. If a detail is not in the knowledge base and you are unsure, say you are unsure rather than making it up.
 - Do NOT address the user directly (avoid "you should/you need"); speak as inner self-talk.
 - Keep it concise. (English: ~50–120 words; Chinese: ~70–180 characters.)
 

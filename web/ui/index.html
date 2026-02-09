@@ -350,6 +350,12 @@
 
         const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
+        async function fetchText(url) {
+            const res = await fetch(url, { method: 'GET' });
+            if (!res.ok) throw new Error(`fetchText failed: ${res.status}`);
+            return res.text();
+        }
+
         async function fetchLifeeDecisionStream(payload, { onMessage, onOptions } = {}) {
             const res = await fetch(`${LIFEE_API}?stream=1`, {
                 method: "POST",
@@ -1096,7 +1102,7 @@
                     const payload = {
                         situation: finalSituation,
                         userInput: cleanInput,
-                        personas: selectedPersonas.map(p => ({ id: p.id, name: p.name })),
+                        personas: selectedPersonas.map(p => ({ id: p.id, name: p.name, knowledge: p.knowledge || '' })),
                         context: contextBlock
                     };
 
@@ -1224,6 +1230,7 @@
             const [context, setContext] = useState({ situation: '', landingPeriods: [] });
             const [landingTab, setLandingTab] = useState('scenario');
             const [personas, setPersonas] = useState(INITIAL_PERSONAS);
+            const [personaKnowledge, setPersonaKnowledge] = useState({});
             const [selectedIds, setSelectedIds] = useState([]);
             const [detailPersona, setDetailPersona] = useState(null);
             const [category, setCategory] = useState('ALL');
@@ -1255,6 +1262,23 @@
             useEffect(() => {
                 sessionMessagesRef.current = sessionMessages;
             }, [sessionMessages]);
+
+            useEffect(() => {
+                // Load persona-specific knowledge notes (optional).
+                // Kept in UI folder so static hosting can serve it.
+                let cancelled = false;
+                (async () => {
+                    try {
+                        const txt = await fetchText('./my-personas/audrey-hepburn.md');
+                        if (cancelled) return;
+                        const clipped = (txt || '').trim().slice(0, 12000);
+                        if (clipped) setPersonaKnowledge(prev => ({ ...(prev || {}), 'audrey-hepburn': clipped }));
+                    } catch (e) {
+                        console.warn('persona knowledge load failed', e);
+                    }
+                })();
+                return () => { cancelled = true; };
+            }, []);
 
             useEffect(() => {
                 if (view !== 'persona-detail' && personaIconEditorOpen) setPersonaIconEditorOpen(false);
@@ -1484,7 +1508,8 @@
                 const override = personaAvatarOverrides?.[p.id];
                 const nextAvatar = override || asset?.avatar_url || p.avatar;
                 const nextCover = personaCoverOverrides?.[p.id] || asset?.cover_url || p.cover_url || null;
-                return { ...p, avatar: nextAvatar, cover_url: nextCover };
+                const knowledge = personaKnowledge?.[p.id] || p.knowledge || '';
+                return { ...p, avatar: nextAvatar, cover_url: nextCover, knowledge };
             });
 
             const refreshChatSessions = async () => {
