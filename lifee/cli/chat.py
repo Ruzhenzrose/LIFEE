@@ -188,11 +188,11 @@ async def chat_loop(
                         min_score=0.35,
                     )
                     if search_results:
-                        # 基于 RAG 结果匹配触发技能 (Tier 2)
+                        # 基于用户输入匹配触发技能 (Tier 2)
                         if current_role:
                             skill_set = load_skill_set(role_manager.roles_dir / current_role)
                             if skill_set.triggered_skills:
-                                matched = skill_set.match_by_results(search_results)
+                                matched = skill_set.match_by_input(user_input)
                                 if matched:
                                     triggered_text = "\n\n".join(s.content for s in matched)
                                     system_prompt = system_prompt + "\n\n" + triggered_text

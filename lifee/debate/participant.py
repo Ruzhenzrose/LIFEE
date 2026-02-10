@@ -92,10 +92,10 @@ class Participant:
         knowledge_results = await self._search_knowledge(user_query)
         knowledge_context = format_search_results(knowledge_results)
 
-        # 2. 基于 RAG 结果匹配触发技能 (Tier 2)
+        # 2. 基于用户输入匹配触发技能 (Tier 2)
         triggered_context = ""
-        if self.skill_set.triggered_skills and knowledge_results:
-            matched = self.skill_set.match_by_results(knowledge_results)
+        if self.skill_set.triggered_skills and user_query:
+            matched = self.skill_set.match_by_input(user_query)
             if matched:
                 triggered_context = "\n\n".join(s.content for s in matched)
 

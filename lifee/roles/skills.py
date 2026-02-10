@@ -2,7 +2,7 @@
 技能加载器 - 三级技能系统
 
 Tier 1 (Always-on): trigger: always 或无 trigger → 始终注入 system prompt
-Tier 2 (Context-triggered): trigger: [关键词] → RAG 结果命中时注入
+Tier 2 (Context-triggered): trigger: [关键词] → 用户输入命中时注入
 Tier 3 (Query-based): 已有的 knowledge/ RAG 系统（不在此模块）
 
 技能文件格式:
@@ -22,10 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
-
-if TYPE_CHECKING:
-    from lifee.memory.search import SearchResult
+from typing import Optional
 
 
 @dataclass
@@ -59,23 +56,23 @@ class SkillSet:
             return ""
         return "\n\n".join(s.content for s in self.core_skills)
 
-    def match_by_results(self, results: list[SearchResult]) -> list[Skill]:
+    def match_by_input(self, user_input: str) -> list[Skill]:
         """
-        基于 RAG 搜索结果匹配触发技能
+        基于用户输入匹配触发技能
 
-        将所有 RAG 结果的 text 和 path 拼接成语料库，
-        检查每个触发技能的关键词是否出现在其中。
+        直接检查用户输入中是否包含触发关键词，
+        避免 RAG 结果中的噪声导致误触发。
         """
-        if not self.triggered_skills or not results:
+        if not self.triggered_skills or not user_input:
             return []
 
-        corpus = " ".join(r.text + " " + r.path for r in results).lower()
+        text = user_input.lower()
 
         matched = []
         for skill in self.triggered_skills:
             if isinstance(skill.trigger, list):
                 for keyword in skill.trigger:
-                    if keyword.lower() in corpus:
+                    if keyword.lower() in text:
                         matched.append(skill)
                         break
         return matched
