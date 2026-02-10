@@ -1,245 +1,322 @@
-# LIFEE - 辩论式 AI 决策助手
+# LIFEE - Debate-Driven AI Decision Assistant
 
-Google Hackathon 2025 项目
+Google Hackathon 2025 Project
 
-## 快速开始
+## Quick Start
 
-### 1. 安装依赖
+### 1. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 选择 LLM Provider
+### 2. Choose an LLM Provider
 
-支持多种 LLM 提供商，编辑 `.env` 文件选择：
+Multiple LLM providers are supported. Edit the `.env` file to select one:
 
-| Provider | 免费额度 | 说明 |
-|----------|---------|------|
-| **Gemini** | 免费 | Google AI，推荐使用 |
-| **Qwen** | 2000次/天 | 阿里通义千问 DashScope API |
-| **Qwen Portal** | 2000次/天 | 通过 clawdbot OAuth 登录 |
-| **Ollama** | 完全免费 | 本地运行，需安装 Ollama |
-| **OpenCode** | $20 起 | 需绑定支付方式 |
-| **Claude** | 需付费 | Anthropic Claude API |
+| Provider | Free Tier | Description |
+|----------|-----------|-------------|
+| **Gemini** | Free | Google AI, recommended |
+| **Qwen** | 2000 calls/day | Alibaba Tongyi Qianwen DashScope API |
+| **Qwen Portal** | 2000 calls/day | Via clawdbot OAuth login |
+| **Ollama** | Completely free | Local inference, requires Ollama installed |
+| **OpenCode** | From $20 | Requires payment method |
+| **Claude** | Paid | Anthropic Claude API |
 
-### 3. 配置
+### 3. Configuration
 
-复制配置文件：
+Copy the example config:
 
 ```bash
 cp .env.example .env
 ```
 
-编辑 `.env`，设置 Provider 和对应的 API Key：
+Edit `.env` to set your Provider and API Key:
 
 ```bash
-# 选择 Provider
+# Select Provider
 LLM_PROVIDER=gemini
 
-# Gemini (推荐)
+# Gemini (recommended)
 GOOGLE_API_KEY=your-api-key
 
-# 或者 Qwen
+# Or Qwen
 # LLM_PROVIDER=qwen
 # QWEN_API_KEY=your-api-key
 
-# 或者 Ollama (本地)
+# Or Ollama (local)
 # LLM_PROVIDER=ollama
 # ollama pull qwen2.5
 ```
 
-### 4. 运行对话
+### 4. Start a Conversation
 
 ```bash
 python -m lifee.main
 ```
 
-首次运行会让你选择具体模型。
+On first run, you'll be prompted to choose a specific model.
 
-### 5. 使用命令
+### 5. Commands
 
 ```
-/help    - 显示帮助
-/history - 显示对话历史
-/clear   - 清空对话历史
-/role    - 切换角色
-/model   - 切换模型
-/memory  - 查看知识库状态
-/quit    - 退出程序
+/help    - Show help
+/history - Show conversation history
+/clear   - Clear conversation history
+/role    - Switch role
+/model   - Switch model
+/memory  - View knowledge base status
+/quit    - Exit
 ```
 
-## 角色系统
+## Role System
 
-LIFEE 支持自定义 AI 角色，每个角色可以有独特的人格和专属知识库。
+LIFEE supports custom AI roles, each with a unique personality and optional knowledge base.
 
-### 目录结构
+### Directory Structure
 
 ```
 lifee/roles/
 └── <role_name>/
-    ├── SOUL.md           # 核心人格（必需）
-    ├── IDENTITY.md       # 身份信息（可选）
-    └── knowledge/        # 专属知识库（可选）
+    ├── SOUL.md           # Core personality (required)
+    ├── IDENTITY.md       # Identity metadata (optional)
+    ├── skills/           # Role-specific skills (optional)
+    │   └── *.md          # trigger: always = core skill, trigger: [keywords] = triggered skill
+    └── knowledge/        # Role-specific knowledge base (optional)
         └── *.md
 ```
 
-### 文件说明
+### File Reference
 
-| 文件 | 作用 |
-|------|------|
-| `SOUL.md` | 定义角色的核心人格、价值观、说话风格、行为边界 |
-| `IDENTITY.md` | 名字、emoji 等元信息，用于显示 |
-| `knowledge/` | Markdown 文件，会被自动索引，对话时通过语义搜索注入相关内容 |
+| File | Purpose |
+|------|---------|
+| `SOUL.md` | Defines core personality, values, speaking style, behavioral boundaries |
+| `IDENTITY.md` | Name, emoji, and other display metadata |
+| `skills/` | Skill files that shape role behavior — always-on or triggered by context |
+| `knowledge/` | Markdown/text files, auto-indexed, injected via semantic search during conversations |
 
-### 知识库工作原理
+## Skill System
 
-知识库让 AI 能够基于角色专属的文档（书籍、文章等）回答问题，而不是泛泛而谈。
+LIFEE implements a tiered skill loading system inspired by Claude Code's skills architecture:
 
-**工作流程：**
+### Tier 1: Core Skills (Always-On)
+
+Skills with `trigger: always` are injected into the system prompt at all times. Use for fundamental behavioral guidelines.
+
+```markdown
+---
+name: psychoanalysis
+description: Core psychoanalytic framework
+trigger: always
+---
+
+## Analytic Framework
+
+1. Listen for slips, repetitions, and hesitations
+2. ...
+```
+
+### Tier 2: Triggered Skills (RAG-Activated)
+
+Skills with `trigger: [keyword1, keyword2]` are loaded only when RAG search results match the specified keywords. This keeps the prompt lightweight while providing deep knowledge on demand.
+
+```markdown
+---
+name: dream-analysis
+description: Techniques for interpreting dreams
+trigger: [dream, nightmare, sleep, unconscious imagery]
+---
+
+## Dream Interpretation Framework
+...
+```
+
+### Skill File Format
+
+Each skill is a `.md` file with optional YAML frontmatter:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | No | Skill name (defaults to filename) |
+| `description` | Recommended | Brief description of the skill |
+| `trigger` | No | `always` for Tier 1, or list of keywords for Tier 2 (default: `always`) |
+
+### How Tiered Loading Works
 
 ```
-1. 索引阶段（首次运行）
-   文档 → 分块（~400 token/块）→ 嵌入向量（Gemini API）→ 存入 knowledge.db
-
-2. 对话阶段
-   用户输入 → 生成查询向量 → 搜索最相似的分块 → 注入到 system prompt → AI 回答
+System Prompt composition:
+┌──────────────────────────┐
+│ SOUL.md (personality)    │
+│ IDENTITY.md (identity)   │
+│ Tier 1 Skills (always)   │  ← always loaded
+├──────────────────────────┤
+│ Tier 2 Skills (triggered)│  ← loaded only when RAG results match keywords
+├──────────────────────────┤
+│ User Memory              │
+│ Debate Context           │
+│ RAG Knowledge Base       │
+└──────────────────────────┘
 ```
 
-**knowledge.db 结构（SQLite）：**
+## Knowledge Base
 
-| 表 | 内容 |
-|---|---|
-| `files` | 已索引文件列表（路径、hash、修改时间） |
-| `chunks` | 文本分块 + 嵌入向量（3072 维） |
-| `chunks_fts` | 全文搜索索引（FTS5，用于关键词搜索） |
+The knowledge base allows AI roles to answer based on role-specific documents (books, articles, etc.) rather than generic knowledge.
 
-**搜索算法：** 混合搜索 = 70% 向量相似度 + 30% 关键词匹配
+### How It Works
 
-### 为你的角色构建知识库
+```
+1. Indexing (first run)
+   Documents → Chunking (~400 tokens/chunk) → Embedding (Gemini API) → Stored in knowledge.db
 
-**步骤 1：准备文档**
+2. Conversation
+   User input → Query embedding → Search most similar chunks → Inject into system prompt → AI responds
+```
 
-在角色目录下创建 `knowledge/` 文件夹，放入 `.md` 或 `.txt` 文件：
+**knowledge.db Schema (SQLite):**
+
+| Table | Content |
+|-------|---------|
+| `files` | Indexed file list (path, hash, modification time) |
+| `chunks` | Text chunks + embedding vectors (3072 dimensions) |
+| `chunks_fts` | Full-text search index (FTS5, for keyword matching) |
+
+**Search Algorithm:** Hybrid search = 70% vector similarity + 30% keyword matching (BM25)
+
+### Building a Knowledge Base for Your Role
+
+**Step 1: Prepare documents**
+
+Create a `knowledge/` folder under your role directory and add `.md` or `.txt` files:
 
 ```
 lifee/roles/your_role/
 ├── SOUL.md
 ├── IDENTITY.md
+├── skills/
+│   └── your_skill.md
 └── knowledge/
-    ├── book1.txt      # 书籍文本
+    ├── book1.txt
     ├── book2.txt
-    └── notes.md       # 手写笔记
+    └── notes.md
 ```
 
-**步骤 2：运行程序**
+**Step 2: Run the program**
 
 ```bash
 python -m lifee.main
-# 选择你的角色，会自动索引
-# 显示进度: 索引知识库: 1/5 ... 5/5
+# Select your role — indexing happens automatically
+# Progress: Indexing knowledge base: 1/5 ... 5/5
 ```
 
-首次索引需要调用 Gemini Embedding API，每个文件约 5-10 秒。
+First-time indexing calls the Gemini Embedding API, ~5-10 seconds per file.
 
-**步骤 3：测试搜索**
+**Step 3: Test search**
 
 ```
-/memory            # 查看知识库状态
-/memory search 关键词  # 测试搜索效果
+/memory              # View knowledge base status
+/memory search query # Test search results
 ```
 
-### 知识库最佳实践
+### Knowledge Base Best Practices
 
-1. **文本格式**：纯文本最佳，PDF/EPUB 需先提取文本（见 `tools/extract_books.py`）
-2. **分块大小**：默认 400 token，适合大多数场景
-3. **文件命名**：使用有意义的文件名，搜索结果会显示来源
-4. **预构建数据库**：仓库已包含预构建的 `knowledge.db`，队友克隆后可直接使用
-5. **重建索引**：添加新文档后，删除 `knowledge.db`，重新运行程序即可
+1. **Text format**: Plain text works best. PDF/EPUB must be extracted first (see `tools/extract_books.py`)
+2. **Chunk size**: Default 400 tokens, suitable for most cases
+3. **File naming**: Use meaningful filenames — search results show the source
+4. **Pre-built databases**: The repo includes pre-built `knowledge.db` files for teammates to use immediately
+5. **Re-indexing**: After adding new documents, delete `knowledge.db` and re-run
 
-### 创建新角色
+## Creating a New Role
 
-1. 在 `lifee/roles/` 下创建目录，如 `lifee/roles/stoic/`
-2. 编写 `SOUL.md` 描述人格
-3. （可选）添加 `IDENTITY.md`
-4. （可选）在 `knowledge/` 下添加知识文档
-5. 运行程序，用 `/role` 切换
+1. Create a directory under `lifee/roles/`, e.g. `lifee/roles/stoic/`
+2. Write `SOUL.md` to define the personality
+3. (Optional) Add `IDENTITY.md`
+4. (Optional) Add skill files in `skills/`
+5. (Optional) Add knowledge documents in `knowledge/`
+6. Run the program and use `/role` to switch
 
-## 支持的模型
+## Supported Models
 
 ### Gemini
-- `gemini-3-flash-preview` - Gemini 3 快速
-- `gemini-3-pro-preview` - Gemini 3 最强
-- `gemini-2.5-pro` - 2.5 最强
-- `gemini-2.5-flash` - 2.5 快速
-- `gemini-2.0-flash` - 2.0 推荐
+- `gemini-3-flash-preview` - Gemini 3 Fast
+- `gemini-3-pro-preview` - Gemini 3 Most Capable
+- `gemini-2.5-pro` - 2.5 Most Capable
+- `gemini-2.5-flash` - 2.5 Fast
+- `gemini-2.0-flash` - 2.0 Recommended
 
 ### Qwen
-- `qwen-plus` - 通用增强
-- `qwen-turbo` - 快速
-- `qwen-max` - 最强
+- `qwen-plus` - Enhanced general-purpose
+- `qwen-turbo` - Fast
+- `qwen-max` - Most capable
 
 ### Ollama
-- `qwen2.5:latest` - 推荐
+- `qwen2.5:latest` - Recommended
 - `llama3.3:latest`
 - `deepseek-r1:latest`
 
-## 项目结构
+## Project Structure
 
 ```
 lifee/
-├── config/         # 配置管理
-├── providers/      # LLM 提供商 (Claude, Gemini, Qwen, Ollama...)
-├── sessions/       # 会话管理
-├── roles/          # 角色系统
+├── config/         # Configuration management
+├── providers/      # LLM providers (Claude, Gemini, Qwen, Ollama...)
+├── sessions/       # Session management
+├── roles/          # Role system
 │   └── <role>/
 │       ├── SOUL.md
 │       ├── IDENTITY.md
+│       ├── skills/
 │       └── knowledge/
-├── memory/         # 知识库/RAG
-│   ├── manager.py      # 索引管理
-│   ├── embeddings.py   # 嵌入提供者 (Gemini/OpenAI)
-│   ├── search.py       # 混合搜索 (向量+关键词)
-│   └── chunker.py      # 文档分块
-└── main.py         # CLI 入口
+├── memory/         # Knowledge base / RAG
+│   ├── manager.py      # Index management
+│   ├── embeddings.py   # Embedding providers (Gemini/OpenAI)
+│   ├── search.py       # Hybrid search (vector + keyword)
+│   ├── chunker.py      # Document chunking
+│   └── user_memory.py  # Cross-session user memory
+├── debate/         # Multi-agent debate
+│   ├── moderator.py    # Debate moderator (flow control)
+│   ├── participant.py  # Participant (per-role LLM calls)
+│   ├── context.py      # Debate context (multi-agent awareness)
+│   └── suggestions.py  # Reply suggestions
+└── main.py         # CLI entry point
 ```
 
-## 多角度讨论模式
+## Multi-Perspective Discussion Mode
 
-LIFEE 支持多个 AI 角色同时参与讨论，从不同视角探讨问题。
+LIFEE supports multiple AI roles participating in a discussion simultaneously, exploring questions from different perspectives.
 
-### 启动讨论
+### Start a Discussion
 
 ```bash
 python -m lifee.main
-# 输入 /debate 进入多角度讨论模式
+# Type /debate to enter multi-perspective discussion mode
 ```
 
-### 讨论模式命令
+### Discussion Commands
 
 ```
-/quit     - 退出讨论
-/clear    - 清空当前讨论历史
-/history  - 查看完整讨论历史
-/sessions - 查看和恢复历史会话
+/quit     - Exit discussion
+/clear    - Clear current discussion history
+/history  - View full discussion history
+/sessions - View and restore historical sessions
 ```
 
-### 会话管理
+### Session Management
 
-- **自动保存**: 每轮对话后自动保存到 `~/.lifee/sessions/current.json`
-- **自动恢复**: 启动时可选择继续上次讨论
-- **历史会话**: 支持查看和恢复任意历史会话
-- **24小时过期**: 超过24小时的会话自动归档
+- **Auto-save**: Automatically saved after each turn to `~/.lifee/sessions/current.json`
+- **Auto-restore**: Option to continue previous discussion on startup
+- **History**: Browse and restore any historical session
+- **24-hour expiry**: Sessions older than 24 hours are automatically archived
 
-### 用户记忆
+### User Memory
 
-LIFEE 会自动记住你的信息（名字、偏好等），存储在 `~/.lifee/memory/USER.md`。
+LIFEE automatically remembers user information (name, preferences, etc.), stored in `~/.lifee/memory/USER.md`.
 
-## 开发进度
+## Development Progress
 
-- [x] Phase 1: 基础对话
-- [x] 多 LLM Provider 支持
-- [x] Phase 2: 角色系统
-- [x] Phase 3: 知识库/RAG
-- [x] Phase 4: 多智能体辩论
-- [x] Phase 5: 会话持久化 + 用户记忆
+- [x] Phase 1: Basic conversation
+- [x] Multi LLM Provider support
+- [x] Phase 2: Role system
+- [x] Phase 3: Knowledge base / RAG
+- [x] Phase 4: Multi-agent debate
+- [x] Phase 5: Session persistence + User memory
+- [x] Phase 6: Tiered skill loading system
