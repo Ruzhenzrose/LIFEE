@@ -10,8 +10,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
-    <script src="./data/navigation.js"></script>
-    <script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+<script src="./data/navigation.js"></script>
+        <script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
     <script src="./help/view.js"></script>
     <script src="./my-chats/view.js"></script>
     <script src="./my-personas/view.js"></script>
@@ -455,34 +455,10 @@
             onOptions?.(lastOptions);
         }
 
-        const Icon = ({ name, size = 24, className = "" }) => {
-            const iconRef = useRef(null);
-            useEffect(() => {
-                const lucide = window.lucide;
-                if (!iconRef.current || !lucide) return;
-                const fallbackMap = {
-                    Pencil: 'PenLine',
-                    Edit: 'PenLine',
-                    Pen: 'PenLine'
-                };
-                const resolved = lucide[name] ? name : (fallbackMap[name] && lucide[fallbackMap[name]] ? fallbackMap[name] : null);
-                if (!resolved) return;
-                try {
-                    // Ensure DOM attribute matches the icon we actually render (important for fallbacks).
-                    iconRef.current.setAttribute('data-lucide', resolved);
-                    lucide.createIcons({
-                        icons: { [resolved]: lucide[resolved] },
-                        attrs: { 'stroke-width': 2, 'width': size, 'height': size }
-                    });
-                } catch (e) {
-                    // Avoid hard crash if an icon name is missing in current lucide build.
-                    console.warn('lucide icon render failed:', resolved, e);
-                }
-            }, [name, size]);
-            return <i data-lucide={name} className={className} ref={iconRef} style={{ width: size, height: size, display: 'inline-flex' }}></i>;
-        };
-
-        const AvatarDisplay = ({ avatar, className = "" }) => {
+        const Icon = ({ name, size = 24, className = "" }) => (
+            <i data-lucide={name} className={className} style={{ width: size, height: size, display: 'inline-flex' }}></i>
+        );
+                        const AvatarDisplay = ({ avatar, className = "" }) => {
             const isImage = typeof avatar === 'string' && (avatar.startsWith('data:image') || avatar.startsWith('http'));
             return (
                 <div className={`flex items-center justify-center overflow-hidden ${className}`}>
@@ -617,7 +593,7 @@
             );
         };
 
-        const AuthModal = ({ isOpen, onClose, onAuthed }) => {
+        const AuthModal = ({ isOpen, onClose, onAuthed, onGuest }) => {
             const [mode, setMode] = useState('login');
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
@@ -670,6 +646,12 @@
                             <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="w-full text-xs uppercase tracking-[0.2em] opacity-50 hover:opacity-100">
                                 {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
                             </button>
+                            <div className="flex items-center gap-3 my-4">
+                                <div className="flex-1 h-px bg-[#E8E6E0]"></div>
+                                <div className="text-[9px] uppercase tracking-[0.2em] opacity-40">Guest</div>
+                                <div className="flex-1 h-px bg-[#E8E6E0]"></div>
+                            </div>
+                            <button onClick={() => { onGuest?.(); }} className="w-full py-3 bg-white border border-[#E8E6E0] rounded-full font-bold uppercase text-[10px] tracking-[0.2em] hover:shadow-md">Continue as Guest</button>
                         </div>
                     </div>
                 </div>
@@ -962,6 +944,13 @@
                 });
             }, [activeView]);
 
+            useEffect(() => {
+                // Render lucide icons after React updates (avoid per-icon DOM mutation).
+                if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                    requestAnimationFrame(() => window.lucide.createIcons());
+                }
+            }, [activeView, isCollapsed, isMobileMenuOpen, user]);
+
             const handleMobileNewChat = () => {
                 onNewChat();
                 setIsMobileMenuOpen(false);
@@ -1140,7 +1129,16 @@
                 setInputValue(prev => quote + prev);
                 inputFieldRef.current?.focus();
             };
-            // Removed auto-start round; first user input will start the debate.
+
+            const autoStartedRef = useRef(false);
+            useEffect(() => {
+                if (autoStartedRef.current) return;
+                if (!selectedPersonas?.length) return;
+                const initial = (context?.situation || '').trim();
+                if (!initial) return;
+                autoStartedRef.current = true;
+                runRound(initial);
+            }, [selectedPersonas?.length]);
 
             return (
                 <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden font-sans animate-in">
@@ -1236,6 +1234,7 @@
             const [category, setCategory] = useState('ALL');
             const [communityTab, setCommunityTab] = useState('DEBATE');
             const [user, setUser] = useState(null);
+            const [isGuest, setIsGuest] = useState(false);
             const [authOpen, setAuthOpen] = useState(false);
             const [userAvatar, setUserAvatar] = useState(() => loadUserAvatar());
             const [sessionId, setSessionId] = useState(null);
@@ -1319,6 +1318,7 @@
                 init();
                 const { data: sub } = supabaseClient.auth.onAuthStateChange((_event, session) => {
                     setUser(session?.user || null);
+                    if (session?.user) setIsGuest(false);
                 });
                 return () => {
                     mounted = false;
@@ -1512,7 +1512,15 @@
             };
 
             const handleNewChat = async () => {
-                if (!user) return;
+                if (!user) {
+                    setSessionId(null);
+                    setSessionMessages([]);
+                    setSessionSummaries([]);
+                    setContext({ situation: '', landingPeriods: [] });
+                    setSelectedIds([]);
+                    setView('home');
+                    return;
+                }
                 const { data } = await supabaseClient.from('chat_sessions').insert({
                     user_id: user.id,
                     title: 'New Chat'
@@ -1702,7 +1710,13 @@
                         user,
                         isAdmin,
                         onOpenAdmin: () => setAdminOpen(true),
-                        onSignOut: async () => { await supabaseClient.auth.signOut(); setUser(null); },
+                        onSignOut: async () => {
+                            await supabaseClient.auth.signOut();
+                            setUser(null);
+                            setIsGuest(false);
+                            setView('home');
+                            setAuthOpen(true);
+                        },
                         onBack: () => setView('home'),
                         onOpenPersona: () => setView('persona-selection'),
                         onOpenCommunityPersona: () => { setCommunityTab('PERSONA'); setView('community'); },
@@ -1979,19 +1993,28 @@
                         isAdmin={isAdmin}
                         onOpenAdmin={() => setAdminOpen(true)}
                         onLogin={() => setAuthOpen(true)}
-                        onSignOut={async () => { await supabaseClient.auth.signOut(); setUser(null); }}
+                        onSignOut={async () => {
+                            await supabaseClient.auth.signOut();
+                            setUser(null);
+                            setIsGuest(false);
+                            setView('home');
+                            setAuthOpen(true);
+                        }}
                         onNewChat={handleNewChat}
                     >
-                        {user ? renderContent() : (
+                        {(user || isGuest) ? renderContent() : (
                             <div className="min-h-screen flex items-center justify-center">
                                 <div className="text-center px-6">
                                     <h1 className="text-4xl font-serif italic text-[#1A1A1A] mb-4">Welcome to LIFEE</h1>
                                     <p className="text-xs uppercase tracking-[0.3em] opacity-40">Please sign in to continue</p>
+<div className="pt-6 flex flex-col items-center gap-2">
+                                        <button onClick={() => setAuthOpen(true)} className="px-8 py-4 bg-blue-brand text-white rounded-full font-bold uppercase text-xs tracking-[0.2em] shadow-xl">Sign in</button>
+                                    </div>
                                 </div>
                             </div>
                         )}
                     </AppLayout>
-                    <AuthModal isOpen={authOpen || !user} onClose={() => setAuthOpen(false)} onAuthed={(u) => setUser(u)} />
+                    <AuthModal isOpen={authOpen || (!user && !isGuest)} onClose={() => setAuthOpen(false)} onAuthed={(u) => { setUser(u); setIsGuest(false); }} onGuest={() => { setIsGuest(true); setAuthOpen(false); }} />
                     {isAdmin && (
                         <AdminPanel
                             isOpen={adminOpen}
