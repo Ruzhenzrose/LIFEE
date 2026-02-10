@@ -5,6 +5,7 @@ from lifee.config.settings import settings
 from lifee.providers import LLMProvider, MessageRole
 from lifee.sessions import Session
 from lifee.roles import RoleManager
+from lifee.roles.skills import SkillSet, load_skill_set
 from lifee.memory import MemoryManager, format_search_results
 from .setup import select_role_interactive, select_provider_interactive, select_model_for_provider
 
@@ -187,6 +188,15 @@ async def chat_loop(
                         min_score=0.35,
                     )
                     if search_results:
+                        # 基于用户输入匹配触发技能 (Tier 2)
+                        if current_role:
+                            skill_set = load_skill_set(role_manager.roles_dir / current_role)
+                            if skill_set.triggered_skills:
+                                matched = skill_set.match_by_input(user_input)
+                                if matched:
+                                    triggered_text = "\n\n".join(s.content for s in matched)
+                                    system_prompt = system_prompt + "\n\n" + triggered_text
+
                         knowledge_context = format_search_results(search_results)
                         system_prompt = system_prompt + "\n\n---\n\n## 相关知识（供参考）\n\n" + knowledge_context
                 except Exception as e:

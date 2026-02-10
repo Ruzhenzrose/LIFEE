@@ -8,8 +8,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, AsyncIterator, Optional
 
 from lifee.memory import MemoryManager, format_search_results
+from lifee.memory.search import SearchResult
 from lifee.providers.base import LLMProvider, Message, MessageRole
 from lifee.roles import RoleManager
+from lifee.roles.skills import SkillSet
 
 if TYPE_CHECKING:
     from .context import DebateContext
@@ -37,6 +39,7 @@ class Participant:
         self.provider = provider
         self.role_manager = role_manager
         self.knowledge_manager = knowledge_manager
+        self.skill_set: SkillSet = role_manager.load_skills(role_name)
         self._load_info()
 
     def _load_info(self):
@@ -52,22 +55,19 @@ class Participant:
         # 加载 system prompt
         self.system_prompt = self.role_manager.load_role(self.role_name)
 
-    async def _search_knowledge(self, query: str) -> str:
-        """搜索知识库"""
+    async def _search_knowledge(self, query: str) -> list[SearchResult]:
+        """搜索知识库，返回原始结果（供 RAG 注入和技能匹配）"""
         if not self.knowledge_manager:
-            return ""
+            return []
 
         try:
-            results = await self.knowledge_manager.search(
+            return await self.knowledge_manager.search(
                 query,
                 max_results=3,
                 min_score=0.35,
             )
-            if results:
-                return format_search_results(results)
         except Exception:
-            pass
-        return ""
+            return []
 
     async def respond(
         self,
@@ -89,19 +89,28 @@ class Participant:
             流式输出的文本片段
         """
         # 1. 搜索知识库
-        knowledge_context = await self._search_knowledge(user_query)
+        knowledge_results = await self._search_knowledge(user_query)
+        knowledge_context = format_search_results(knowledge_results)
 
-        # 2. 构建对话历史摘要（用于让分身互相“看见”）
+        # 2. 基于用户输入匹配触发技能 (Tier 2)
+        triggered_context = ""
+        if self.skill_set.triggered_skills and user_query:
+            matched = self.skill_set.match_by_input(user_query)
+            if matched:
+                triggered_context = "\n\n".join(s.content for s in matched)
+
+        # 3. 构建对话历史摘要（用于让分身互相"看见"）
         dialogue_context = ""
         if debate_context:
             dialogue_context = self._format_recent_dialogue(messages)
 
-        # 3. 构建 system prompt（包含辩论上下文）
+        # 4. 构建 system prompt（包含辩论上下文）
         system = self._build_system_prompt(
-            knowledge_context, debate_context, user_memory_context, dialogue_context
+            knowledge_context, debate_context, user_memory_context,
+            triggered_context, dialogue_context,
         )
 
-        # 4. 调用 LLM
+        # 5. 调用 LLM
         async for chunk in self.provider.stream(
             messages=messages,
             system=system,
@@ -114,19 +123,27 @@ class Participant:
         knowledge_context: str,
         debate_context: Optional[DebateContext] = None,
         user_memory_context: Optional[str] = None,
+        triggered_skill_context: str = "",
         dialogue_context: Optional[str] = None,
     ) -> str:
         """
         构建包含知识库上下文和辩论上下文的 system prompt
 
-        Args:
-            knowledge_context: RAG 搜索结果
-            debate_context: 辩论上下文（参考 clawdbot 的 extraSystemPrompt）
-            user_memory_context: 用户记忆上下文
+        注入顺序:
+        1. 角色定义 (SOUL + IDENTITY + core skills)
+        2. 触发技能 (Tier 2, 基于用户输入)
+        3. 用户记忆
+        4. 辩论上下文
+        5. 最近对话记录
+        6. RAG 知识库
         """
         parts = [self.system_prompt]
 
-        # 注入用户记忆上下文（放在最前面，让角色了解用户）
+        # 注入触发技能 (Tier 2)
+        if triggered_skill_context:
+            parts.append(triggered_skill_context)
+
+        # 注入用户记忆上下文
         if user_memory_context:
             parts.append(f"关于与你对话的用户：\n{user_memory_context}")
 

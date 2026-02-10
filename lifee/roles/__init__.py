@@ -9,6 +9,8 @@
     └── <role_name>/     # 自定义角色
         ├── SOUL.md      # 核心人格、价值观、行为边界
         ├── IDENTITY.md  # 名字、风格、emoji（可选）
+        ├── skills/      # 角色专属技能（可选）
+        │   └── *.md     # trigger: always = 核心技能, trigger: [关键词] = 触发技能
         ├── knowledge/   # 角色专属知识库（可选）
         │   └── *.md
         └── knowledge.db # 知识库索引（自动生成）
@@ -18,7 +20,10 @@
 
     rm = RoleManager()
     roles = rm.list_roles()           # 列出所有角色
-    prompt = rm.load_role("critic")   # 加载角色的 system prompt
+    prompt = rm.load_role("critic")   # 加载角色的 system prompt（含核心技能）
+
+    # 技能支持
+    skill_set = rm.load_skills("critic")  # 加载技能集（用于触发技能匹配）
 
     # 知识库支持
     manager = await rm.get_knowledge_manager("critic", google_api_key="...")
@@ -28,6 +33,8 @@
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
+
+from .skills import SkillSet, load_skill_set
 
 if TYPE_CHECKING:
     from lifee.memory import MemoryManager
@@ -74,6 +81,7 @@ class RoleManager:
         加载顺序:
         1. SOUL.md (必须) - 核心人格
         2. IDENTITY.md (可选) - 身份信息
+        3. core skills (可选) - 始终生效的核心技能 (Tier 1)
         """
         role_dir = self.roles_dir / role_name
 
@@ -104,8 +112,19 @@ class RoleManager:
         if not parts:
             return None
 
+        # 加载核心技能 (Tier 1: always-on)
+        skill_set = load_skill_set(role_dir)
+        core_prompt = skill_set.get_core_prompt()
+        if core_prompt:
+            parts.append(core_prompt)
+
         # 不用 --- 分隔符，避免 LLM 模仿输出
         return "\n\n".join(parts)
+
+    def load_skills(self, role_name: str) -> SkillSet:
+        """加载角色的技能集（用于 Tier 2 触发技能匹配）"""
+        role_dir = self.roles_dir / role_name
+        return load_skill_set(role_dir)
 
     def get_role_info(self, role_name: str) -> dict:
         """获取角色的基本信息"""
@@ -121,6 +140,7 @@ class RoleManager:
             "exists": role_dir.exists(),
             "has_soul": soul_file.exists() if soul_file is not None else False,
             "has_identity": identity_file.exists() if identity_file is not None else False,
+            "has_skills": (role_dir / "skills").is_dir() if role_dir.exists() else False,
             "has_knowledge": (role_dir / "knowledge").is_dir() if role_dir.exists() else False,
         }
 
