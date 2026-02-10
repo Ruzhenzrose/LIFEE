@@ -42,6 +42,10 @@ data/
 # 忽略数据库（知识库会自动构建）
 *.db
 
+# Node / Frontend
+node_modules/
+**/node_modules/
+
 # OS
 .DS_Store
 Thumbs.db

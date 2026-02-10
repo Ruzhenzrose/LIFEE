@@ -48,13 +48,29 @@ class RoleManager:
             roles_dir = Path(__file__).parent
         self.roles_dir = Path(roles_dir)
 
+    def _find_file_ci(self, role_dir: Path, filename: str) -> Optional[Path]:
+        """
+        在 role_dir 内按文件名大小写不敏感查找文件。
+
+        说明：有些环境/仓库可能区分大小写，历史上也可能出现 soul.md / identify.md
+        这会导致角色“存在但不显示”。这里做兼容以提高鲁棒性。
+        """
+        target = filename.lower()
+        try:
+            for p in role_dir.iterdir():
+                if p.is_file() and p.name.lower() == target:
+                    return p
+        except FileNotFoundError:
+            return None
+        return None
+
     def list_roles(self) -> list[str]:
         """列出所有可用角色"""
         roles = []
         for item in self.roles_dir.iterdir():
             if item.is_dir() and not item.name.startswith("_"):
-                soul_file = item / "SOUL.md"
-                if soul_file.exists():
+                soul_file = self._find_file_ci(item, "SOUL.md")
+                if soul_file is not None and soul_file.exists():
                     roles.append(item.name)
         return sorted(roles)
 
@@ -72,8 +88,8 @@ class RoleManager:
         if not role_dir.exists():
             return None
 
-        soul_file = role_dir / "SOUL.md"
-        if not soul_file.exists():
+        soul_file = self._find_file_ci(role_dir, "SOUL.md")
+        if soul_file is None or not soul_file.exists():
             return None
 
         parts = []
@@ -84,8 +100,11 @@ class RoleManager:
             parts.append(soul_content)
 
         # 加载 IDENTITY.md (可选)
-        identity_file = role_dir / "IDENTITY.md"
-        if identity_file.exists():
+        identity_file = self._find_file_ci(role_dir, "IDENTITY.md")
+        if identity_file is None:
+            # 兼容历史误拼写
+            identity_file = self._find_file_ci(role_dir, "identify.md")
+        if identity_file is not None and identity_file.exists():
             identity_content = identity_file.read_text(encoding="utf-8").strip()
             if identity_content:
                 parts.append(identity_content)
@@ -111,19 +130,23 @@ class RoleManager:
         """获取角色的基本信息"""
         role_dir = self.roles_dir / role_name
 
+        soul_file = self._find_file_ci(role_dir, "SOUL.md") if role_dir.exists() else None
+        identity_file = self._find_file_ci(role_dir, "IDENTITY.md") if role_dir.exists() else None
+        if identity_file is None and role_dir.exists():
+            identity_file = self._find_file_ci(role_dir, "identify.md")
+
         info = {
             "name": role_name,
             "exists": role_dir.exists(),
-            "has_soul": (role_dir / "SOUL.md").exists() if role_dir.exists() else False,
-            "has_identity": (role_dir / "IDENTITY.md").exists() if role_dir.exists() else False,
+            "has_soul": soul_file.exists() if soul_file is not None else False,
+            "has_identity": identity_file.exists() if identity_file is not None else False,
             "has_skills": (role_dir / "skills").is_dir() if role_dir.exists() else False,
             "has_knowledge": (role_dir / "knowledge").is_dir() if role_dir.exists() else False,
         }
 
         # 尝试从 IDENTITY.md 提取显示名称和 emoji
         if info["has_identity"]:
-            identity_file = role_dir / "IDENTITY.md"
-            content = identity_file.read_text(encoding="utf-8")
+            content = identity_file.read_text(encoding="utf-8")  # type: ignore[union-attr]
             for line in content.split("\n"):
                 if line.startswith("- **Name:**") or line.startswith("- **名字:**"):
                     info["display_name"] = line.split(":**")[1].strip()
