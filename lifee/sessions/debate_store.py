@@ -1,6 +1,7 @@
 """会话自动存储（参考 clawdbot 实现）"""
 
 import json
+import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -12,15 +13,18 @@ from lifee.providers.base import Message, MessageRole
 # 默认存储目录
 LIFEE_DIR = Path.home() / ".lifee"
 
-# 辩论模式默认路径
-DEBATE_SESSIONS_DIR = LIFEE_DIR / "sessions"
-DEBATE_CURRENT_SESSION = DEBATE_SESSIONS_DIR / "current.json"
-DEBATE_HISTORY_DIR = DEBATE_SESSIONS_DIR / "history"
+# 统一会话路径
+SESSIONS_DIR = LIFEE_DIR / "sessions"
+CURRENT_SESSION = SESSIONS_DIR / "current.json"
+HISTORY_DIR = SESSIONS_DIR / "history"
 
-# 对话模式默认路径
-CHAT_SESSIONS_DIR = LIFEE_DIR / "chat_sessions"
-CHAT_CURRENT_SESSION = CHAT_SESSIONS_DIR / "current.json"
-CHAT_HISTORY_DIR = CHAT_SESSIONS_DIR / "history"
+# 旧的对话模式路径（用于迁移）
+_OLD_CHAT_SESSIONS_DIR = LIFEE_DIR / "chat_sessions"
+
+# 向后兼容别名
+DEBATE_SESSIONS_DIR = SESSIONS_DIR
+DEBATE_CURRENT_SESSION = CURRENT_SESSION
+DEBATE_HISTORY_DIR = HISTORY_DIR
 
 # 会话过期时间（小时）
 SESSION_EXPIRE_HOURS = 24
@@ -36,10 +40,11 @@ class DebateSessionStore:
     """
 
     def __init__(self, current_path=None, history_dir=None):
-        self._current_path = current_path or DEBATE_CURRENT_SESSION
-        self._history_dir = history_dir or DEBATE_HISTORY_DIR
+        self._current_path = current_path or CURRENT_SESSION
+        self._history_dir = history_dir or HISTORY_DIR
         self._current_path.parent.mkdir(parents=True, exist_ok=True)
         self._history_dir.mkdir(parents=True, exist_ok=True)
+        self._migrate_old_chat_sessions()
 
     def save(self, session: Session, participants: list[str]):
         """自动保存当前会话
@@ -183,11 +188,31 @@ class DebateSessionStore:
             return None
 
 
-class ChatSessionStore(DebateSessionStore):
-    """对话模式会话存储，复用辩论模式逻辑，使用独立存储路径"""
+    def _migrate_old_chat_sessions(self):
+        """一次性迁移旧的 chat_sessions 目录到统一路径"""
+        if not _OLD_CHAT_SESSIONS_DIR.exists():
+            return
+        try:
+            # 迁移历史文件
+            old_history = _OLD_CHAT_SESSIONS_DIR / "history"
+            if old_history.exists():
+                for f in old_history.glob("*.json"):
+                    dest = self._history_dir / f"chat_{f.name}"
+                    if not dest.exists():
+                        shutil.move(str(f), str(dest))
+            # 迁移当前会话（归档）
+            old_current = _OLD_CHAT_SESSIONS_DIR / "current.json"
+            if old_current.exists():
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                dest = self._history_dir / f"chat_{timestamp}.json"
+                shutil.move(str(old_current), str(dest))
+            # 清理空目录
+            if old_history.exists():
+                old_history.rmdir()
+            _OLD_CHAT_SESSIONS_DIR.rmdir()
+        except OSError:
+            pass  # 目录非空或权限问题，跳过
 
-    def __init__(self):
-        super().__init__(
-            current_path=CHAT_CURRENT_SESSION,
-            history_dir=CHAT_HISTORY_DIR,
-        )
+
+# 向后兼容别名
+ChatSessionStore = DebateSessionStore

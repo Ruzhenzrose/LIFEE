@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from lifee.sessions.debate_store import DebateSessionStore, ChatSessionStore
+from lifee.sessions.debate_store import DebateSessionStore
 from lifee.sessions import Session
 from lifee.providers.base import MessageRole
 
@@ -183,33 +183,33 @@ class TestDebateSessionStore:
         assert loaded is None
 
 
-class TestChatSessionStore:
-    """测试 ChatSessionStore 使用独立路径"""
+class TestMigration:
+    """测试旧 chat_sessions 迁移"""
 
-    def test_chat_store_uses_separate_paths(self):
-        """ChatSessionStore 应使用独立的存储路径"""
-        from lifee.sessions.debate_store import (
-            CHAT_CURRENT_SESSION, CHAT_HISTORY_DIR,
-            DEBATE_CURRENT_SESSION, DEBATE_HISTORY_DIR,
-        )
-        # 对话和辩论的路径应该不同
-        assert CHAT_CURRENT_SESSION != DEBATE_CURRENT_SESSION
-        assert CHAT_HISTORY_DIR != DEBATE_HISTORY_DIR
+    def test_migration_moves_history(self, tmp_path, monkeypatch):
+        """迁移旧 chat_sessions 目录的历史文件"""
+        import lifee.sessions.debate_store as store_module
 
-    def test_chat_store_save_and_load(self, tmp_path):
-        """ChatSessionStore 基本保存加载"""
-        current_path = tmp_path / "chat" / "current.json"
-        history_dir = tmp_path / "chat" / "history"
-        # 直接用父类构造器传参来测试
+        # 创建旧的 chat_sessions 目录
+        old_dir = tmp_path / "chat_sessions"
+        old_history = old_dir / "history"
+        old_history.mkdir(parents=True)
+        (old_history / "20260101_120000.json").write_text('{"test": 1}', encoding="utf-8")
+
+        # monkeypatch 旧路径
+        monkeypatch.setattr(store_module, "_OLD_CHAT_SESSIONS_DIR", old_dir)
+
+        # 创建 store（会触发迁移）
+        current_path = tmp_path / "sessions" / "current.json"
+        history_dir = tmp_path / "sessions" / "history"
         store = DebateSessionStore(current_path=current_path, history_dir=history_dir)
 
-        session = Session()
-        session.add_user_message("你好")
-        session.add_assistant_message("你好！")
+        # 验证迁移结果
+        migrated = list(history_dir.glob("chat_*.json"))
+        assert len(migrated) == 1
+        assert not old_dir.exists()
 
-        store.save(session, ["lacan"])
-
-        loaded = store.load()
-        assert loaded is not None
-        assert loaded["participants"] == ["lacan"]
-        assert len(loaded["history"]) == 2
+    def test_backward_compat_alias(self):
+        """ChatSessionStore 是 DebateSessionStore 的别名"""
+        from lifee.sessions.debate_store import ChatSessionStore
+        assert ChatSessionStore is DebateSessionStore

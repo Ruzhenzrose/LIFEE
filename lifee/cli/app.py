@@ -19,8 +19,9 @@ from lifee.providers import (
     FallbackProvider,
     read_clawdbot_synthetic_credentials,
 )
-from lifee.sessions import SessionStore
+from lifee.sessions import Session, SessionStore, DebateSessionStore
 from lifee.roles import RoleManager
+from lifee.debate import Participant
 
 from .setup import (
     save_api_key_to_env,
@@ -28,8 +29,9 @@ from .setup import (
     select_ollama_model,
     prompt_for_api_key,
     select_provider_interactive,
+    select_roles_interactive,
+    select_menu_interactive,
 )
-from .chat import chat_loop
 from .debate import debate_loop
 
 
@@ -248,6 +250,178 @@ def check_first_run() -> bool:
     return True
 
 
+async def create_participants(
+    role_names: list[str],
+    provider: LLMProvider,
+    role_manager: RoleManager,
+) -> list[Participant]:
+    """创建参与者列表
+
+    Args:
+        role_names: 角色名称列表
+        provider: LLM Provider
+        role_manager: 角色管理器
+
+    Returns:
+        Participant 对象列表
+    """
+    print("\n正在加载参与者...")
+    participants = []
+    for role_name in role_names:
+        try:
+            km = await role_manager.get_knowledge_manager(
+                role_name,
+                google_api_key=settings.google_api_key,
+            )
+        except Exception:
+            km = None
+
+        p = Participant(
+            role_name=role_name,
+            provider=provider,
+            role_manager=role_manager,
+            knowledge_manager=km,
+        )
+        participants.append(p)
+    return participants
+
+
+def map_display_names_to_role_names(
+    display_names: list[str],
+    role_manager: RoleManager,
+) -> list[str]:
+    """将显示名称映射回角色目录名称
+
+    Args:
+        display_names: 显示名称列表（如 ["克里希那穆提", "拉康"]）
+        role_manager: 角色管理器
+
+    Returns:
+        角色目录名称列表
+    """
+    roles = role_manager.list_roles()
+    name_map = {}
+    for role_name in roles:
+        info = role_manager.get_role_info(role_name)
+        display = info.get("display_name", role_name)
+        name_map[display] = role_name
+    return [name_map.get(n, n) for n in display_names]
+
+
+async def main_menu(
+    provider: LLMProvider,
+    role_manager: RoleManager,
+    session_store: DebateSessionStore,
+) -> tuple[str, dict | None]:
+    """主菜单
+
+    Returns:
+        ("start", {"participants": [...], "session": Session}) - 开始对话
+        ("settings", None) - 进入设置
+        ("quit", None) - 退出
+    """
+    saved_data = session_store.load()
+    history_sessions = session_store.list_history()
+
+    # 构建菜单选项
+    option_labels = []
+    option_keys = []
+
+    if saved_data:
+        time_ago = session_store.get_time_ago(saved_data)
+        participants_str = "、".join(saved_data.get("participants", []))
+        msg_count = len(saved_data.get("history", []))
+        option_labels.append(f"继续上次对话（{time_ago}）| {participants_str} | {msg_count}条消息")
+        option_keys.append("continue")
+
+    option_labels.append("新对话")
+    option_keys.append("new")
+
+    if history_sessions:
+        option_labels.append("历史会话")
+        option_keys.append("history")
+
+    option_labels.append("设置（Provider/Model）")
+    option_keys.append("settings")
+
+    option_labels.append("退出")
+    option_keys.append("quit")
+
+    # 方向键选择
+    choice = select_menu_interactive(
+        "LIFEE - AI 决策助手",
+        option_labels,
+        subtitle=f"Provider: {provider.name} ({provider.model})",
+    )
+
+    if choice is None:
+        print("\n再见！")
+        return ("quit", None)
+
+    selected = option_keys[choice]
+
+    if selected == "continue":
+        session = session_store.restore_session(saved_data)
+        role_names = map_display_names_to_role_names(
+            saved_data.get("participants", []), role_manager
+        )
+        participants = await create_participants(role_names, provider, role_manager)
+        print(f"已恢复会话，共 {len(saved_data.get('history', []))} 条消息")
+        return ("start", {"participants": participants, "session": session})
+
+    elif selected == "new":
+        if saved_data:
+            session_store.archive()
+
+        selected_roles = select_roles_interactive(role_manager)
+        if not selected_roles:
+            return await main_menu(provider, role_manager, session_store)
+
+        session = Session()
+        participants = await create_participants(selected_roles, provider, role_manager)
+        return ("start", {"participants": participants, "session": session})
+
+    elif selected == "history":
+        # 历史会话也用方向键选择
+        hist_labels = []
+        for s in history_sessions:
+            time_str = s["updated_at"][:16].replace("T", " ") if s["updated_at"] else "未知"
+            participants_str = "、".join(s["participants"])
+            hist_labels.append(f"{time_str} | {participants_str} | {s['msg_count']}条消息")
+        hist_labels.append("返回")
+
+        hist_choice = select_menu_interactive("历史会话", hist_labels)
+
+        if hist_choice is not None and hist_choice < len(history_sessions):
+            selected_hist = history_sessions[hist_choice]
+            history_data = session_store.load_history(selected_hist["filename"])
+            if history_data:
+                if saved_data:
+                    session_store.archive()
+                session = session_store.restore_session(history_data)
+                role_names = map_display_names_to_role_names(
+                    history_data.get("participants", []), role_manager
+                )
+                participants = await create_participants(role_names, provider, role_manager)
+                print(f"已恢复历史会话，共 {len(history_data.get('history', []))} 条消息")
+                return ("start", {"participants": participants, "session": session})
+            else:
+                print("\n[无法加载该会话]")
+
+        return await main_menu(provider, role_manager, session_store)
+
+    elif selected == "settings":
+        select_provider_interactive(show_welcome=False)
+        reload_settings()
+        return ("settings", None)
+
+    elif selected == "quit":
+        print("\n再见！")
+        return ("quit", None)
+
+    return ("quit", None)
+
+
 async def main():
     """主函数"""
     # 检查是否首次运行，显示交互式选择
@@ -255,68 +429,37 @@ async def main():
         select_provider_interactive()
         reload_settings()
 
-    # 初始化会话存储（Phase 1 使用内存存储）
-    store = SessionStore(storage_dir=None)
-
-    # 创建新会话
-    session = store.create()
-
-    # 当前状态
-    current_provider_id = None
-    current_role = ""  # 当前角色
-    knowledge_manager = None  # 角色知识库管理器
     role_manager = RoleManager()
+    session_store = DebateSessionStore()
 
-    # 主循环：支持热切换 Provider 和角色
     while True:
         # 重新加载配置以获取最新的 Provider 设置
-        current_settings = reload_settings()
+        reload_settings()
 
         # 创建 Provider（带 fallback 支持）
         provider = create_provider_with_fallback()
-        current_provider_id = current_settings.llm_provider.lower()
 
-        # 如果有角色且有知识库，创建/更新知识库管理器
-        if current_role:
-            info = role_manager.get_role_info(current_role)
-            if info.get("has_knowledge") and knowledge_manager is None:
-                print(f"正在初始化角色知识库...")
-                try:
-                    knowledge_manager = await role_manager.get_knowledge_manager(
-                        current_role,
-                        google_api_key=current_settings.google_api_key,
-                        openai_api_key=getattr(current_settings, 'openai_api_key', None),
-                    )
-                    if knowledge_manager:
-                        stats = knowledge_manager.get_stats()
-                        print(f"知识库已加载: {stats['file_count']} 个文件, {stats['chunk_count']} 个分块")
-                except Exception as e:
-                    print(f"知识库初始化失败: {e}")
-                    knowledge_manager = None
-
-        # 启动对话循环
-        action, value, session = await chat_loop(provider, session, current_role, knowledge_manager)
+        # 显示主菜单
+        action, data = await main_menu(provider, role_manager, session_store)
 
         if action == "quit":
-            # 关闭知识库管理器
-            if knowledge_manager:
-                knowledge_manager.close()
             break
-        elif action == "switch_provider":
-            print(f"\n正在切换到 {value}...")
+        elif action == "settings":
             continue
-        elif action == "switch_role":
-            # 关闭旧的知识库管理器
-            if knowledge_manager:
-                knowledge_manager.close()
-                knowledge_manager = None
-            current_role = value
-            continue
-        elif action == "start_debate":
-            # 进入辩论模式
-            action, value = await debate_loop(provider, session)
-            if action == "quit":
-                if knowledge_manager:
-                    knowledge_manager.close()
+        elif action == "start":
+            participants = data["participants"]
+            session = data["session"]
+
+            # 进入统一对话循环
+            result_action, _ = await debate_loop(
+                participants, session, provider, session_store
+            )
+
+            # 清理知识库
+            for p in participants:
+                if p.knowledge_manager:
+                    p.knowledge_manager.close()
+
+            if result_action == "quit":
                 break
-            continue
+            # "menu" → continue 回到主菜单
