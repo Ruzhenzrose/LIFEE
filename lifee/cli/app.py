@@ -295,7 +295,7 @@ async def main():
                     knowledge_manager = None
 
         # 启动对话循环
-        action, value = await chat_loop(provider, session, current_role, knowledge_manager)
+        action, value, session = await chat_loop(provider, session, current_role, knowledge_manager)
 
         if action == "quit":
             # 关闭知识库管理器

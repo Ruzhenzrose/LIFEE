@@ -1,12 +1,13 @@
 """对话循环"""
+import asyncio
 from pathlib import Path
 
 from lifee.config.settings import settings
 from lifee.providers import LLMProvider, MessageRole
-from lifee.sessions import Session
+from lifee.sessions import Session, ChatSessionStore
 from lifee.roles import RoleManager
 from lifee.roles.skills import SkillSet, load_skill_set
-from lifee.memory import MemoryManager, format_search_results
+from lifee.memory import MemoryManager, format_search_results, UserMemory
 from .setup import select_role_interactive, select_provider_interactive, select_model_for_provider
 
 
@@ -15,7 +16,7 @@ async def chat_loop(
     session: Session,
     current_role: str = "",
     knowledge_manager: MemoryManager = None,
-) -> tuple[str, str]:
+) -> tuple[str, str, Session]:
     """主对话循环
 
     Args:
@@ -25,13 +26,33 @@ async def chat_loop(
         knowledge_manager: 角色知识库管理器
 
     Returns:
-        (action, value):
-        - ("quit", "") - 正常退出
-        - ("switch_provider", provider_id) - 切换 Provider
-        - ("switch_role", role_name) - 切换角色
-        - ("start_debate", "") - 进入辩论模式
+        (action, value, session):
+        - ("quit", "", session) - 正常退出
+        - ("switch_provider", provider_id, session) - 切换 Provider
+        - ("switch_role", role_name, session) - 切换角色
+        - ("start_debate", "", session) - 进入辩论模式
     """
     role_manager = RoleManager()
+
+    # 初始化会话存储和用户记忆
+    session_store = ChatSessionStore()
+    user_memory = UserMemory()
+
+    # 检查是否有保存的会话
+    saved_data = session_store.load()
+    if saved_data:
+        time_ago = session_store.get_time_ago(saved_data)
+        saved_role = saved_data.get("participants", [""])[0]
+        msg_count = len(saved_data.get("history", []))
+        print(f"\n发现上次对话（{time_ago}）| 角色: {saved_role or '无'} | {msg_count}条消息")
+        print("[1] 继续上次对话")
+        print("[2] 新对话")
+        choice = input("\n选择: ").strip()
+        if choice != "2":
+            session = session_store.restore_session(saved_data)
+            print(f"已恢复会话，共 {msg_count} 条消息")
+        else:
+            session_store.archive()
 
     # 显示欢迎信息
     print("\n" + "=" * 50)
@@ -59,19 +80,24 @@ async def chat_loop(
             if user_input.startswith("/"):
                 cmd = user_input.lower()
                 if cmd == "/quit" or cmd == "/exit":
+                    # 保存会话后退出
+                    if session.history:
+                        session_store.save(session, [current_role or "default"])
+                        print("[会话已自动保存]")
                     print("\n再见！")
-                    return ("quit", "")
+                    return ("quit", "", session)
                 elif cmd == "/help":
                     print("\n命令列表:")
-                    print("  /help    - 显示帮助")
-                    print("  /history - 显示对话历史")
-                    print("  /clear   - 清空对话历史")
-                    print("  /role    - 切换角色")
-                    print("  /debate  - 进入多角度讨论模式")
-                    print("  /config  - 切换 LLM Provider")
-                    print("  /model   - 切换当前 Provider 的模型")
-                    print("  /memory  - 显示知识库状态")
-                    print("  /quit    - 退出程序")
+                    print("  /help     - 显示帮助")
+                    print("  /history  - 显示对话历史")
+                    print("  /clear    - 清空对话历史")
+                    print("  /sessions - 历史会话")
+                    print("  /role     - 切换角色")
+                    print("  /debate   - 进入多角度讨论模式")
+                    print("  /config   - 切换 LLM Provider")
+                    print("  /model    - 切换当前 Provider 的模型")
+                    print("  /memory   - 显示知识库状态")
+                    print("  /quit     - 退出程序")
                     print()
                     continue
                 elif cmd == "/memory" or cmd.startswith("/memory "):
@@ -113,16 +139,23 @@ async def chat_loop(
                     print("  /memory search <query> - 搜索知识库\n")
                     continue
                 elif cmd == "/debate":
-                    return ("start_debate", "")
+                    # 保存当前会话后进入辩论模式
+                    if session.history:
+                        session_store.save(session, [current_role or "default"])
+                    return ("start_debate", "", session)
                 elif cmd == "/role":
                     new_role = select_role_interactive(role_manager, current_role)
                     if new_role != current_role:
-                        return ("switch_role", new_role)
+                        # 切换角色时归档当前会话
+                        if session.history:
+                            session_store.save(session, [current_role or "default"])
+                            session_store.archive()
+                        return ("switch_role", new_role, session)
                     continue
                 elif cmd == "/config":
                     new_provider_id = select_provider_interactive(show_welcome=False)
                     if new_provider_id:
-                        return ("switch_provider", new_provider_id)
+                        return ("switch_provider", new_provider_id, session)
                     continue
                 elif cmd == "/model":
                     # 获取当前 Provider ID
@@ -137,7 +170,7 @@ async def chat_loop(
 
                     new_model = select_model_for_provider(provider_id, current_model)
                     if new_model:
-                        return ("switch_provider", provider_id)
+                        return ("switch_provider", provider_id, session)
                     continue
                 elif cmd == "/history":
                     if not session.history:
@@ -152,7 +185,30 @@ async def chat_loop(
                     continue
                 elif cmd == "/clear":
                     session.clear_history()
+                    session_store.clear()
                     print("\n[对话历史已清空]\n")
+                    continue
+                elif cmd == "/sessions":
+                    history_sessions = session_store.list_history()
+                    if not history_sessions:
+                        print("\n[没有历史会话]\n")
+                    else:
+                        print("\n--- 历史会话 ---")
+                        for i, s in enumerate(history_sessions):
+                            time_str = s["updated_at"][:16].replace("T", " ") if s["updated_at"] else "未知"
+                            role_str = s["participants"][0] if s["participants"] else "default"
+                            print(f"  [{i+1}] {time_str} | {role_str} | {s['msg_count']}条消息")
+                        print("\n输入序号恢复，或按回车取消")
+                        choice = input("选择: ").strip()
+                        if choice.isdigit() and 1 <= int(choice) <= len(history_sessions):
+                            selected = history_sessions[int(choice) - 1]
+                            history_data = session_store.load_history(selected["filename"])
+                            if history_data:
+                                session_store.archive()
+                                session = session_store.restore_session(history_data)
+                                print(f"\n[已恢复会话，共 {len(session.history)} 条消息]\n")
+                            else:
+                                print("\n[无法加载该会话]\n")
                     continue
                 else:
                     print(f"\n未知命令: {cmd}，输入 /help 查看帮助\n")
@@ -178,6 +234,11 @@ async def chat_loop(
                     system_prompt = base_prompt
             else:
                 system_prompt = base_prompt
+
+            # 注入用户记忆上下文
+            memory_context = user_memory.get_context()
+            if memory_context:
+                system_prompt += f"\n\n关于与你对话的用户：\n{memory_context}"
 
             # 如果有知识库，搜索相关内容并注入
             if knowledge_manager:
@@ -221,13 +282,22 @@ async def chat_loop(
             # 添加助手消息到历史
             session.add_assistant_message(full_response)
 
+            # 自动保存会话
+            session_store.save(session, [current_role or "default"])
+
+            # 后台提取用户记忆（不阻塞主流程）
+            asyncio.create_task(user_memory.auto_extract(session.history, provider))
+
         except KeyboardInterrupt:
             print("\n\n[中断] 再见！")
-            return ("quit", "")
+            if session.history:
+                session_store.save(session, [current_role or "default"])
+                print("[会话已自动保存]")
+            return ("quit", "", session)
         except Exception as e:
             print(f"\n[错误] {e}\n")
             if settings.debug:
                 import traceback
                 traceback.print_exc()
 
-    return ("quit", "")
+    return ("quit", "", session)

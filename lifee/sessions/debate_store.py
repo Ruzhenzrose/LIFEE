@@ -1,4 +1,4 @@
-"""讨论会话自动存储（参考 clawdbot 实现）"""
+"""会话自动存储（参考 clawdbot 实现）"""
 
 import json
 from datetime import datetime, timedelta
@@ -9,18 +9,25 @@ from .session import Session
 from lifee.providers.base import Message, MessageRole
 
 
-# 存储目录
+# 默认存储目录
 LIFEE_DIR = Path.home() / ".lifee"
-SESSIONS_DIR = LIFEE_DIR / "sessions"
-CURRENT_SESSION = SESSIONS_DIR / "current.json"
-HISTORY_DIR = SESSIONS_DIR / "history"
+
+# 辩论模式默认路径
+DEBATE_SESSIONS_DIR = LIFEE_DIR / "sessions"
+DEBATE_CURRENT_SESSION = DEBATE_SESSIONS_DIR / "current.json"
+DEBATE_HISTORY_DIR = DEBATE_SESSIONS_DIR / "history"
+
+# 对话模式默认路径
+CHAT_SESSIONS_DIR = LIFEE_DIR / "chat_sessions"
+CHAT_CURRENT_SESSION = CHAT_SESSIONS_DIR / "current.json"
+CHAT_HISTORY_DIR = CHAT_SESSIONS_DIR / "history"
 
 # 会话过期时间（小时）
 SESSION_EXPIRE_HOURS = 24
 
 
 class DebateSessionStore:
-    """讨论会话自动存储
+    """会话自动存储
 
     参考 clawdbot 的 sessions.json 结构，实现：
     - 自动保存当前会话到 current.json
@@ -28,9 +35,11 @@ class DebateSessionStore:
     - 过期会话自动归档到 history/
     """
 
-    def __init__(self):
-        SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
-        HISTORY_DIR.mkdir(exist_ok=True)
+    def __init__(self, current_path=None, history_dir=None):
+        self._current_path = current_path or DEBATE_CURRENT_SESSION
+        self._history_dir = history_dir or DEBATE_HISTORY_DIR
+        self._current_path.parent.mkdir(parents=True, exist_ok=True)
+        self._history_dir.mkdir(parents=True, exist_ok=True)
 
     def save(self, session: Session, participants: list[str]):
         """自动保存当前会话
@@ -45,7 +54,7 @@ class DebateSessionStore:
             "participants": participants,
             "history": [msg.to_dict() for msg in session.history],
         }
-        CURRENT_SESSION.write_text(
+        self._current_path.write_text(
             json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
         )
 
@@ -55,11 +64,11 @@ class DebateSessionStore:
         Returns:
             会话数据，如果不存在或已过期则返回 None
         """
-        if not CURRENT_SESSION.exists():
+        if not self._current_path.exists():
             return None
 
         try:
-            data = json.loads(CURRENT_SESSION.read_text(encoding="utf-8"))
+            data = json.loads(self._current_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, IOError):
             return None
 
@@ -98,15 +107,15 @@ class DebateSessionStore:
 
     def archive(self):
         """归档当前会话到历史目录"""
-        if CURRENT_SESSION.exists():
+        if self._current_path.exists():
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            dest = HISTORY_DIR / f"{timestamp}.json"
-            CURRENT_SESSION.rename(dest)
+            dest = self._history_dir / f"{timestamp}.json"
+            self._current_path.rename(dest)
 
     def clear(self):
         """清除当前会话（不归档）"""
-        if CURRENT_SESSION.exists():
-            CURRENT_SESSION.unlink()
+        if self._current_path.exists():
+            self._current_path.unlink()
 
     def get_time_ago(self, data: dict) -> str:
         """获取上次更新的时间描述
@@ -143,7 +152,7 @@ class DebateSessionStore:
         """
         sessions = []
         # 按文件名倒序排列（最新的在前）
-        for f in sorted(HISTORY_DIR.glob("*.json"), reverse=True)[:limit]:
+        for f in sorted(self._history_dir.glob("*.json"), reverse=True)[:limit]:
             try:
                 data = json.loads(f.read_text(encoding="utf-8"))
                 sessions.append({
@@ -165,10 +174,20 @@ class DebateSessionStore:
         Returns:
             会话数据，如果不存在则返回 None
         """
-        path = HISTORY_DIR / filename
+        path = self._history_dir / filename
         if not path.exists():
             return None
         try:
             return json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, IOError):
             return None
+
+
+class ChatSessionStore(DebateSessionStore):
+    """对话模式会话存储，复用辩论模式逻辑，使用独立存储路径"""
+
+    def __init__(self):
+        super().__init__(
+            current_path=CHAT_CURRENT_SESSION,
+            history_dir=CHAT_HISTORY_DIR,
+        )

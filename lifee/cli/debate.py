@@ -11,6 +11,7 @@ from lifee.roles import RoleManager
 from lifee.debate import Moderator, Participant, DebateContext, clean_response
 from lifee.debate.suggestions import SuggestionGenerator
 from lifee.memory import UserMemory
+from .setup import select_provider_interactive, select_model_for_provider
 
 
 async def show_suggestion_menu(
@@ -161,8 +162,8 @@ async def debate_loop(
         print("请先创建角色: lifee/roles/<name>/SOUL.md")
         return ("continue", "")
 
-    if len(roles) < 2:
-        print(f"\n只有 {len(roles)} 个角色，辩论需要至少 2 个角色")
+    if len(roles) < 1:
+        print(f"\n没有可用的角色")
         return ("continue", "")
 
     # 初始化会话存储和用户记忆
@@ -345,12 +346,6 @@ async def debate_loop(
             sys.stdout.flush()
             return ("continue", "")
 
-        if len(selected_roles) == 1:
-            # 选 1 个角色 = 切换到该角色的对话模式
-            sys.stdout.write(f"\n已选择 1 个角色，切换到对话模式\n")
-            sys.stdout.flush()
-            return ("switch_role", selected_roles[0])
-
     # 创建选中的参与者
     print("\n正在加载参与者...")
     participants = []
@@ -381,13 +376,17 @@ async def debate_loop(
 
     # 显示欢迎信息
     print("\n" + "=" * 50)
-    print("LIFEE 多角度讨论模式")
+    if len(participants) == 1:
+        print(f"LIFEE 对话模式 - {participants[0].info.emoji} {participants[0].info.display_name}")
+    else:
+        print("LIFEE 多角度讨论模式")
     print("=" * 50)
-    print("参与者:")
-    for p in participants:
-        print(f"  {p.info.emoji} {p.info.display_name}")
-    print("\n输入问题开始讨论")
-    print("命令: /quit 退出 | /clear 清空 | /history 历史 | /sessions 历史会话")
+    if len(participants) > 1:
+        print("参与者:")
+        for p in participants:
+            print(f"  {p.info.emoji} {p.info.display_name}")
+    print("\n输入问题开始对话" if len(participants) == 1 else "\n输入问题开始讨论")
+    print("命令: /help 帮助 | /quit 退出 | /model 切换模型 | /config 切换 Provider")
     print("=" * 50 + "\n")
 
     pending_suggestion = None  # 用于存储用户选择的建议
@@ -398,7 +397,10 @@ async def debate_loop(
             if pending_suggestion:
                 user_input = pending_suggestion
                 pending_suggestion = None
-                print(f"你: {user_input}")
+                if user_input.startswith("[用户选择保持沉默"):
+                    print("你: （保持沉默）")
+                else:
+                    print(f"你: {user_input}")
             else:
                 user_input = input("你: ").strip()
 
@@ -406,89 +408,122 @@ async def debate_loop(
                 continue
 
             # 处理命令
-            if user_input.lower() in ["/quit", "/exit"]:
-                # 关闭知识库管理器
-                for p in participants:
-                    if p.knowledge_manager:
-                        p.knowledge_manager.close()
-                return ("quit", "")
-
-            if user_input.lower() == "/clear":
-                session.clear_history()
-                print("\n[讨论历史已清空]\n")
-                continue
-
-            if user_input.lower() == "/history":
-                if not session.history:
-                    print("\n[讨论历史为空]\n")
-                else:
-                    print("\n--- 讨论历史 ---")
-                    for msg in session.history:
-                        # 跳过空消息
-                        if not msg.content.strip():
-                            continue
-                        if msg.role.value == "user":
-                            print(f"\n[你] {msg.content}")
-                        else:
-                            name = msg.name or "AI"
-                            print(f"\n[{name}] {msg.content}")
-                    print(f"\n--- 共 {len(session.history)} 条消息 ---\n")
-                continue
-
-            if user_input.lower() == "/sessions":
-                history_sessions = session_store.list_history()
-                if not history_sessions:
-                    print("\n[没有历史会话]\n")
-                else:
-                    print("\n--- 历史会话 ---")
-                    for i, s in enumerate(history_sessions):
-                        time_str = s["updated_at"][:16].replace("T", " ") if s["updated_at"] else "未知"
-                        participants_str = "、".join(s["participants"])
-                        print(f"  [{i+1}] {time_str} | {participants_str} | {s['msg_count']}条消息")
-                    print("\n输入序号恢复，或按回车取消")
-                    choice = input("选择: ").strip()
-                    if choice.isdigit() and 1 <= int(choice) <= len(history_sessions):
-                        selected = history_sessions[int(choice) - 1]
-                        history_data = session_store.load_history(selected["filename"])
-                        if history_data:
-                            # 归档当前会话，恢复历史会话
-                            session_store.archive()
-                            session = session_store.restore_session(history_data)
-                            # 重新创建参与者（使用历史会话的角色）
-                            old_participants = participants
-                            participants = []
-                            role_name_map = {}
-                            for role_name in roles:
-                                info = role_manager.get_role_info(role_name)
-                                display = info.get("display_name", role_name)
-                                role_name_map[display] = role_name
-                            for display_name in history_data.get("participants", []):
-                                role_name = role_name_map.get(display_name)
-                                if role_name:
-                                    try:
-                                        km = await role_manager.get_knowledge_manager(
-                                            role_name,
-                                            google_api_key=settings.google_api_key,
+            if user_input.startswith("/"):
+                cmd = user_input.lower()
+                if cmd in ("/quit", "/exit"):
+                    for p in participants:
+                        if p.knowledge_manager:
+                            p.knowledge_manager.close()
+                    return ("quit", "")
+                elif cmd == "/help":
+                    print("\n命令列表:")
+                    print("  /help     - 显示帮助")
+                    print("  /history  - 显示对话历史")
+                    print("  /clear    - 清空对话历史")
+                    print("  /sessions - 历史会话")
+                    print("  /config   - 切换 LLM Provider")
+                    print("  /model    - 切换当前 Provider 的模型")
+                    print("  /quit     - 退出")
+                    print()
+                elif cmd == "/clear":
+                    session.clear_history()
+                    print("\n[讨论历史已清空]\n")
+                elif cmd == "/history":
+                    if not session.history:
+                        print("\n[讨论历史为空]\n")
+                    else:
+                        print("\n--- 讨论历史 ---")
+                        for msg in session.history:
+                            if not msg.content.strip():
+                                continue
+                            if msg.role.value == "user":
+                                print(f"\n[你] {msg.content}")
+                            else:
+                                name = msg.name or "AI"
+                                print(f"\n[{name}] {msg.content}")
+                        print(f"\n--- 共 {len(session.history)} 条消息 ---\n")
+                elif cmd == "/sessions":
+                    history_sessions = session_store.list_history()
+                    if not history_sessions:
+                        print("\n[没有历史会话]\n")
+                    else:
+                        print("\n--- 历史会话 ---")
+                        for i, s in enumerate(history_sessions):
+                            time_str = s["updated_at"][:16].replace("T", " ") if s["updated_at"] else "未知"
+                            participants_str = "、".join(s["participants"])
+                            print(f"  [{i+1}] {time_str} | {participants_str} | {s['msg_count']}条消息")
+                        print("\n输入序号恢复，或按回车取消")
+                        choice = input("选择: ").strip()
+                        if choice.isdigit() and 1 <= int(choice) <= len(history_sessions):
+                            selected = history_sessions[int(choice) - 1]
+                            history_data = session_store.load_history(selected["filename"])
+                            if history_data:
+                                session_store.archive()
+                                session = session_store.restore_session(history_data)
+                                old_participants = participants
+                                participants = []
+                                role_name_map = {}
+                                for role_name in roles:
+                                    info = role_manager.get_role_info(role_name)
+                                    display = info.get("display_name", role_name)
+                                    role_name_map[display] = role_name
+                                for display_name in history_data.get("participants", []):
+                                    role_name = role_name_map.get(display_name)
+                                    if role_name:
+                                        try:
+                                            km = await role_manager.get_knowledge_manager(
+                                                role_name,
+                                                google_api_key=settings.google_api_key,
+                                            )
+                                        except Exception:
+                                            km = None
+                                        p = Participant(
+                                            role_name=role_name,
+                                            provider=provider,
+                                            role_manager=role_manager,
+                                            knowledge_manager=km,
                                         )
-                                    except Exception:
-                                        km = None
-                                    p = Participant(
-                                        role_name=role_name,
-                                        provider=provider,
-                                        role_manager=role_manager,
-                                        knowledge_manager=km,
-                                    )
-                                    participants.append(p)
-                            # 关闭旧的知识库管理器
-                            for p in old_participants:
-                                if p.knowledge_manager:
-                                    p.knowledge_manager.close()
-                            # 重新创建 moderator
-                            memory_context = user_memory.get_context()
-                            moderator = Moderator(participants, session, user_memory_context=memory_context)
-                            print(f"\n[已恢复会话，共 {len(session.history)} 条消息]\n")
-                        else:
-                            print("\n[无法加载该会话]\n")
+                                        participants.append(p)
+                                for p in old_participants:
+                                    if p.knowledge_manager:
+                                        p.knowledge_manager.close()
+                                memory_context = user_memory.get_context()
+                                moderator = Moderator(participants, session, user_memory_context=memory_context)
+                                print(f"\n[已恢复会话，共 {len(session.history)} 条消息]\n")
+                            else:
+                                print("\n[无法加载该会话]\n")
+                elif cmd == "/config":
+                    new_provider_id = select_provider_interactive(show_welcome=False)
+                    if new_provider_id:
+                        from .app import create_provider_with_fallback
+                        try:
+                            new_provider = create_provider_with_fallback(new_provider_id)
+                            provider = new_provider
+                            for p in participants:
+                                p.provider = new_provider
+                            suggestion_generator = SuggestionGenerator(new_provider)
+                            print(f"\n[已切换到 {new_provider.name} ({new_provider.model})]\n")
+                        except Exception as e:
+                            print(f"\n[切换失败: {e}]\n")
+                elif cmd == "/model":
+                    provider_id = settings.llm_provider.lower()
+                    if provider_id == "qwen-portal":
+                        print("\nQwen Portal 不支持模型切换\n")
+                    else:
+                        new_model = select_model_for_provider(provider_id, provider.model)
+                        if new_model:
+                            from .app import create_provider_with_fallback
+                            try:
+                                new_provider = create_provider_with_fallback()
+                                provider = new_provider
+                                for p in participants:
+                                    p.provider = new_provider
+                                suggestion_generator = SuggestionGenerator(new_provider)
+                                print(f"\n[已切换模型: {new_provider.model}]\n")
+                            except Exception as e:
+                                print(f"\n[切换失败: {e}]\n")
+                else:
+                    print(f"\n未知命令: {cmd}，输入 /help 查看帮助\n")
                 continue
 
             # 运行对话（统一的循环，包含所有角色的发言）
@@ -555,7 +590,7 @@ async def debate_loop(
 
             if is_silence:
                 # 用户选择保持沉默，让角色继续讨论
-                pending_suggestion = "[继续]"
+                pending_suggestion = "[用户选择保持沉默，请继续你的思考或追问]"
             elif choice_text:
                 # 用户选择了建议或输入了内容
                 pending_suggestion = choice_text

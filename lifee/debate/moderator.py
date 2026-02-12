@@ -141,8 +141,8 @@ class Moderator:
 
         # 2. 循环让角色发言
         for turn in range(1, max_turns + 1):
-            # 角色之间添加延迟，避免 API 速率限制
-            if turn > 1:
+            # 角色之间添加延迟，避免 API 速率限制（单参与者无需延迟）
+            if turn > 1 and num_participants > 1:
                 await asyncio.sleep(SPEAKER_DELAY)
 
             # 获取下一个发言者
