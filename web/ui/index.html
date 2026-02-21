@@ -932,6 +932,14 @@
                     { id: 'settings', label: 'Settings', icon: 'Settings', view: 'settings' }
                 ];
 
+            const labToolItems = (window.LIFEE_UI_NAV && Array.isArray(window.LIFEE_UI_NAV.labToolItems))
+                ? window.LIFEE_UI_NAV.labToolItems
+                : [
+                    { id: 'life-simulator', label: 'Life Simulator', icon: 'Activity', view: 'life-simulator' },
+                    { id: 'ai-tarot', label: 'AI Tarot', icon: 'Moon', view: 'ai-tarot' },
+                    { id: 'decision-lab', label: 'Decision Lab', icon: 'Layers', view: 'decision-lab' }
+                ];
+
             useEffect(() => {
                 const el = scrollContainerRef.current;
                 if (!el) return;
@@ -968,11 +976,23 @@
                                 <span className={isCollapsed ? 'md:hidden' : 'block'}>New Chat</span>
                             </button>
                             <nav className="space-y-1">
-                                <div className={`text-[10px] uppercase font-bold tracking-widest opacity-30 px-4 mb-2 ${isCollapsed ? 'md:hidden' : 'block'}`}>History</div>
+                                <div className={`text-[10px] uppercase font-bold tracking-widest opacity-30 px-4 mb-2 ${isCollapsed ? 'md:hidden' : 'block'}`}>Archives</div>
                                 <button className={`w-full text-left rounded-xl hover:bg-white/60 transition-colors flex items-center ${isCollapsed ? 'md:p-3 md:justify-center' : 'px-4 py-3 text-xs opacity-60 italic truncate'}`}>
                                     <Icon name="MessageSquare" size={14} className={isCollapsed ? "md:text-blue-brand" : "mr-2 opacity-40"} />
                                     <span className={isCollapsed ? 'md:hidden' : 'block'}>"Recent thoughts..."</span>
                                 </button>
+
+                                <div className={`text-[10px] uppercase font-bold tracking-widest opacity-30 px-4 mt-6 mb-2 ${isCollapsed ? 'md:hidden' : 'block'}`}>Labs & Tools</div>
+                                {labToolItems.map(item => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => { setView(item.view); setIsMobileMenuOpen(false); }}
+                                        className={`w-full text-left rounded-xl transition-all flex items-center ${isCollapsed ? 'md:p-3 md:justify-center' : 'px-4 py-3 text-xs font-bold'} ${activeView === item.view ? 'bg-blue-brand/10 text-blue-brand shadow-sm' : 'hover:bg-white/60 opacity-60'}`}
+                                    >
+                                        <Icon name={item.icon} size={isCollapsed ? 18 : 16} className={activeView === item.view ? "text-blue-brand" : (isCollapsed ? "opacity-60" : "mr-2 opacity-60")} />
+                                        {!isCollapsed && <span>{item.label}</span>}
+                                    </button>
+                                ))}
                             </nav>
                         </div>
                         <div className="pt-4 border-t border-[#E8E6E0] space-y-1">
@@ -1011,6 +1031,326 @@
                             </div>
                         </header>
                         <main key={activeView} className="flex-1 overflow-y-auto no-scrollbar"><div className="w-full max-w-[1400px] mx-auto">{children}</div></main>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Labs & Tools (secondary pages) ---
+
+        const LifeSimulator = () => {
+            const [decision, setDecision] = useState('');
+            const [timeline, setTimeline] = useState([
+                { year: 'Age 22', title: 'Graduation Crossroads', detail: 'You’re choosing between stability and creativity.' },
+                { year: 'Age 23', title: 'First Commit', detail: 'A small choice becomes a habit — and a direction.' }
+            ]);
+
+            const runSim = () => {
+                const d = (decision || '').trim();
+                if (!d) return;
+                const outcomes = [
+                    'Your clarity increases — momentum follows.',
+                    'A new constraint appears, forcing a better plan.',
+                    'A mentor shows up earlier than expected.',
+                    'You trade comfort for growth, and it pays off.'
+                ];
+                const nextAge = 24 + Math.min(10, Math.floor(timeline.length / 2));
+                const outcome = outcomes[Math.floor(Math.random() * outcomes.length)];
+                setTimeline(prev => ([
+                    ...prev,
+                    { year: `Age ${nextAge}`, title: 'Decision', detail: d },
+                    { year: `Age ${nextAge}`, title: 'Trajectory Shift', detail: outcome }
+                ]));
+                setDecision('');
+            };
+
+            return (
+                <div className="p-6 md:p-12 max-w-5xl mx-auto animate-in space-y-10 pb-32">
+                    <div className="text-center space-y-3">
+                        <h2 className="text-4xl md:text-6xl font-serif italic tracking-tight">Life Simulator</h2>
+                        <p className="text-[10px] uppercase font-black tracking-[0.4em] opacity-40">Predicting your trajectory</p>
+                    </div>
+
+                    <div className="bg-white p-8 md:p-10 rounded-[60px] border border-[#F0EDEA] shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-5"><Icon name="Activity" size={64} /></div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start">
+                            <div className="relative">
+                                <div className="absolute left-4 top-2 bottom-2 w-px bg-blue-brand/15" />
+                                <div className="space-y-6 pl-10">
+                                    {timeline.map((t, idx) => (
+                                        <div key={`${t.year}-${idx}`} className="relative">
+                                            <div className="absolute -left-[30px] top-2 w-3 h-3 rounded-full bg-blue-brand shadow-[0_0_12px_rgba(152,166,212,0.35)]" />
+                                            <div className="bg-[#FDFBF7] rounded-[40px] border-2 border-dashed border-blue-brand/20 p-6">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{t.year}</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-brand">{t.title}</span>
+                                                </div>
+                                                <p className="mt-3 text-sm italic opacity-70 leading-relaxed">{t.detail}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-[#FDFBF7] rounded-[40px] border border-[#E8E6E0] p-6 md:p-8 space-y-6">
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.35em] opacity-40">Input a decision</h4>
+                                    <textarea
+                                        value={decision}
+                                        onChange={(e) => setDecision(e.target.value)}
+                                        placeholder="e.g. Take the offer, but keep weekends for a passion project..."
+                                        className="w-full h-28 p-5 bg-white rounded-[28px] border-2 border-transparent focus-blue-brand text-sm leading-relaxed italic no-scrollbar shadow-inner"
+                                    />
+                                </div>
+                                <button
+                                    onClick={runSim}
+                                    disabled={!decision.trim()}
+                                    className="w-full py-5 bg-blue-brand text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all active:scale-95 disabled:opacity-20"
+                                >
+                                    Run Simulation
+                                </button>
+                                <div className="text-[10px] opacity-50 leading-relaxed">
+                                    This is a lightweight timeline UI. If you want true AI-driven branching outcomes, we can plug it into your existing model / endpoint next.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AITarot = () => {
+            const deck = [
+                'The Fool', 'The Magician', 'The High Priestess', 'The Empress', 'The Emperor',
+                'The Hierophant', 'The Lovers', 'The Chariot', 'Strength', 'The Hermit',
+                'Wheel of Fortune', 'Justice', 'The Hanged Man', 'Death', 'Temperance',
+                'The Devil', 'The Tower', 'The Star', 'The Moon', 'The Sun', 'Judgement', 'The World'
+            ];
+            const [question, setQuestion] = useState('');
+            const [cards, setCards] = useState([null, null, null]);
+            const [reading, setReading] = useState('');
+
+            const shuffle = () => {
+                const pool = [...deck];
+                const pick = () => pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+                setCards([pick(), pick(), pick()]);
+                setReading('');
+            };
+
+            const begin = () => {
+                if (!cards.every(Boolean)) return;
+                const q = (question || '').trim() || 'Your unspoken question';
+                const [past, present, future] = cards;
+                const text = [
+                    `Question: ${q}`,
+                    ``,
+                    `Past — ${past}: what shaped your current pattern.`,
+                    `Present — ${present}: the tension that is alive right now.`,
+                    `Future — ${future}: a likely direction if you keep moving as-is.`,
+                    ``,
+                    `Hint: treat the cards as metaphors. Ask: “What am I avoiding naming?” and “What would a small honest step look like?”`
+                ].join('\n');
+                setReading(text);
+            };
+
+            return (
+                <div className="p-6 md:p-12 max-w-5xl mx-auto animate-in space-y-10 pb-32">
+                    <div className="text-center space-y-3">
+                        <h2 className="text-4xl md:text-6xl font-serif italic tracking-tight">AI Tarot</h2>
+                        <p className="text-[10px] uppercase font-black tracking-[0.4em] opacity-40">Three-card spread</p>
+                    </div>
+
+                    <div className="bg-white p-8 md:p-10 rounded-[60px] border border-[#F0EDEA] shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-5"><Icon name="Moon" size={64} /></div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-8 items-start">
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.35em] opacity-40">Your question</h4>
+                                    <textarea
+                                        value={question}
+                                        onChange={(e) => setQuestion(e.target.value)}
+                                        placeholder="Ask what you truly want to know..."
+                                        className="w-full h-28 p-5 bg-[#FDFBF7] rounded-[28px] border-2 border-transparent focus-blue-brand text-sm leading-relaxed italic no-scrollbar shadow-inner"
+                                    />
+                                </div>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={shuffle}
+                                        className="flex-1 py-4 bg-[#1A1A1A] text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl transition-all active:scale-95"
+                                    >
+                                        Shuffle
+                                    </button>
+                                    <button
+                                        onClick={begin}
+                                        disabled={!cards.every(Boolean)}
+                                        className="flex-1 py-4 bg-blue-brand text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all active:scale-95 disabled:opacity-20"
+                                    >
+                                        Begin Reading
+                                    </button>
+                                </div>
+                                <div className="text-[10px] opacity-50 leading-relaxed">
+                                    This UI is ready for AI deep interpretation. If you want, we can connect it to your existing streaming endpoint and generate persona-based readings.
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="flex justify-center gap-6 flex-wrap">
+                                    {cards.map((c, i) => (
+                                        <div
+                                            key={i}
+                                            className="w-32 md:w-40 aspect-[3/5] bg-white rounded-2xl border-2 border-[#F0EDEA] shadow-lg flex flex-col items-center justify-center gap-4 transition-all"
+                                        >
+                                            <div className="w-12 h-12 rounded-full bg-blue-brand/5 flex items-center justify-center">
+                                                <Icon name="Moon" size={24} className="text-blue-brand/40" />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest opacity-30">
+                                                {c ? c : `Card 0${i + 1}`}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="bg-[#FDFBF7] p-6 md:p-8 rounded-[40px] border-2 border-dashed border-blue-brand/20">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.35em] opacity-40 mb-3">Interpretation</h4>
+                                    <pre className="whitespace-pre-wrap text-sm leading-relaxed italic opacity-70 min-h-[120px]">
+                                        {reading || 'Shuffle to draw three cards, then begin the reading.'}
+                                    </pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const DecisionLab = () => {
+            const [items, setItems] = useState([
+                { id: 'growth', label: 'Career Growth', weight: 8.5 },
+                { id: 'burnout', label: 'Mental Burnout', weight: -6.2 }
+            ]);
+            const [newLabel, setNewLabel] = useState('');
+            const [newWeight, setNewWeight] = useState(2);
+
+            const total = items.reduce((sum, x) => sum + (Number(x.weight) || 0), 0);
+            const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+            const clarity = clamp(Math.round(((total + 20) / 40) * 100), 0, 100);
+
+            const add = () => {
+                const label = (newLabel || '').trim();
+                if (!label) return;
+                const w = clamp(Number(newWeight) || 0, -10, 10);
+                setItems(prev => ([...prev, { id: `${Date.now()}`, label, weight: w }]));
+                setNewLabel('');
+                setNewWeight(2);
+            };
+
+            const updateWeight = (id, weight) => {
+                setItems(prev => prev.map(x => x.id === id ? ({ ...x, weight }) : x));
+            };
+
+            const remove = (id) => setItems(prev => prev.filter(x => x.id !== id));
+
+            return (
+                <div className="p-6 md:p-12 max-w-6xl mx-auto animate-in space-y-10 pb-32 text-left">
+                    <div className="text-center space-y-3">
+                        <h2 className="text-4xl md:text-6xl font-serif italic tracking-tight">Decision Lab</h2>
+                        <p className="text-[10px] uppercase font-black tracking-[0.4em] opacity-40">Quantifying the intangible</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="bg-white p-8 md:p-10 rounded-[60px] border border-[#F0EDEA] shadow-sm space-y-8">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[10px] font-black uppercase tracking-widest opacity-30">Pros / Cons Weight Matrix</h3>
+                                <div className="text-[10px] font-black uppercase tracking-[0.25em] opacity-40">Total: {total.toFixed(1)}</div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {items.map(x => {
+                                    const isPro = (Number(x.weight) || 0) >= 0;
+                                    return (
+                                        <div key={x.id} className={`p-5 rounded-[28px] border ${isPro ? 'bg-green-50/40 border-green-100' : 'bg-red-50/40 border-red-100'}`}>
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="min-w-0">
+                                                    <div className="font-bold text-sm truncate">{x.label}</div>
+                                                    <div className="mt-2 flex items-center gap-3">
+                                                        <input
+                                                            type="range"
+                                                            min={-10}
+                                                            max={10}
+                                                            step={0.5}
+                                                            value={x.weight}
+                                                            onChange={(e) => updateWeight(x.id, Number(e.target.value))}
+                                                            className="w-full"
+                                                        />
+                                                        <div className={`shrink-0 text-xs font-black ${isPro ? 'text-green-700' : 'text-red-700'}`}>
+                                                            {isPro ? '+' : ''}{Number(x.weight).toFixed(1)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => remove(x.id)} className="w-9 h-9 rounded-full bg-white/80 border border-[#E8E6E0] flex items-center justify-center text-[#5D576B]/60 hover:text-blue-brand hover:border-blue-brand/30 transition-all">
+                                                    <Icon name="X" size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="p-6 rounded-[40px] border-2 border-dashed border-[#D1CEC7] bg-[#FDFBF7] space-y-4">
+                                <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Add variable</div>
+                                <input
+                                    value={newLabel}
+                                    onChange={(e) => setNewLabel(e.target.value)}
+                                    placeholder="Variable name..."
+                                    className="w-full h-12 px-5 bg-white rounded-full border-2 border-transparent focus-blue-brand text-sm"
+                                />
+                                <div className="flex items-center gap-4">
+                                    <input
+                                        type="range"
+                                        min={-10}
+                                        max={10}
+                                        step={0.5}
+                                        value={newWeight}
+                                        onChange={(e) => setNewWeight(Number(e.target.value))}
+                                        className="flex-1"
+                                    />
+                                    <div className="w-16 text-right text-xs font-black opacity-60">{newWeight >= 0 ? '+' : ''}{Number(newWeight).toFixed(1)}</div>
+                                </div>
+                                <button
+                                    onClick={add}
+                                    disabled={!newLabel.trim()}
+                                    className="w-full py-4 bg-blue-brand text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all active:scale-95 disabled:opacity-20"
+                                >
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-8 md:p-10 rounded-[60px] border border-[#F0EDEA] shadow-sm flex flex-col justify-center text-center space-y-8 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-8 opacity-5"><Icon name="Layers" size={64} /></div>
+                            <div className="w-36 h-36 rounded-full border-8 border-blue-brand/10 border-t-blue-brand flex items-center justify-center mx-auto">
+                                <span className="text-4xl font-black text-blue-brand">{clarity}%</span>
+                            </div>
+                            <div className="space-y-2 max-w-sm mx-auto">
+                                <h4 className="font-bold text-sm">Rational Clarity Score</h4>
+                                <p className="text-xs opacity-50 italic leading-relaxed">
+                                    A quick heuristic from your weights. Use it as a mirror — then ask what your emotions are protecting.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto w-full">
+                                <div className="p-5 rounded-[32px] bg-[#FDFBF7] border border-[#E8E6E0] text-left">
+                                    <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Emotional</div>
+                                    <div className="mt-3 text-sm italic opacity-70">Name the fear behind the biggest negative weight.</div>
+                                </div>
+                                <div className="p-5 rounded-[32px] bg-[#FDFBF7] border border-[#E8E6E0] text-left">
+                                    <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Rational</div>
+                                    <div className="mt-3 text-sm italic opacity-70">Identify the one variable that changes everything.</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -1644,6 +1984,9 @@
             };
 
             const renderContent = () => {
+                if (view === 'life-simulator') return <LifeSimulator />;
+                if (view === 'ai-tarot') return <AITarot />;
+                if (view === 'decision-lab') return <DecisionLab />;
                 if (view === 'community') return (
                     <CommunityView
                         communityTab={communityTab}
