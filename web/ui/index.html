@@ -164,6 +164,17 @@
                 gap: 16px;
             }
         }
+
+        /* Tarot — 3D flip helpers */
+        .perspective-1000 { perspective: 1000px; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+
+        /* Wider mask for long horizontal tarot deck */
+        .mask-linear-tarot {
+            mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+        }
     </style>
 </head>
 <body>
@@ -1121,104 +1132,100 @@
         };
 
         const AITarot = () => {
+            const [selectedCards, setSelectedCards] = useState({});
+
             const deck = [
-                'The Fool', 'The Magician', 'The High Priestess', 'The Empress', 'The Emperor',
-                'The Hierophant', 'The Lovers', 'The Chariot', 'Strength', 'The Hermit',
-                'Wheel of Fortune', 'Justice', 'The Hanged Man', 'Death', 'Temperance',
-                'The Devil', 'The Tower', 'The Star', 'The Moon', 'The Sun', 'Judgement', 'The World'
+                { id: 0, name: "The Fool", icon: "Wind", desc: "Beginnings, potential, leap of faith." },
+                { id: 1, name: "The Magician", icon: "Zap", desc: "Manifestation, resourcefulness." },
+                { id: 2, name: "The High Priestess", icon: "Moon", desc: "Intuition, sacred knowledge." },
+                { id: 3, name: "The Empress", icon: "Flower", desc: "Femininity, beauty, nature." },
+                { id: 4, name: "The Emperor", icon: "Shield", desc: "Authority, structure, stability." },
+                { id: 5, name: "The Hierophant", icon: "Book", desc: "Spiritual wisdom, traditions." },
+                { id: 6, name: "The Lovers", icon: "Heart", desc: "Love, harmony, relationships." },
+                { id: 7, name: "The Chariot", icon: "Navigation", desc: "Control, willpower, victory." },
+                { id: 8, name: "Strength", icon: "Sun", desc: "Courage, persuasion, compassion." },
+                { id: 9, name: "The Hermit", icon: "Flame", desc: "Introspection, solitude, guidance." },
+                { id: 10, name: "Wheel of Fortune", icon: "RefreshCw", desc: "Destiny, cycles, turning point." },
+                { id: 11, name: "Justice", icon: "Scale", desc: "Fairness, truth, law, cause." },
+                { id: 12, name: "The Hanged Man", icon: "Anchor", desc: "Pause, surrender, letting go." },
+                { id: 13, name: "Death", icon: "Scissors", desc: "Endings, change, transition." },
+                { id: 14, name: "Temperance", icon: "Droplets", desc: "Balance, moderation, patience." },
+                { id: 15, name: "The Devil", icon: "Lock", desc: "Shadow self, attachment, restriction." },
+                { id: 16, name: "The Tower", icon: "Zap", desc: "Sudden change, upheaval, revelation." },
+                { id: 17, name: "The Star", icon: "Star", desc: "Hope, faith, renewal, peace." },
+                { id: 18, name: "The Moon", icon: "CloudMoon", desc: "Illusion, fear, anxiety, intuition." },
+                { id: 19, name: "The Sun", icon: "Sun", desc: "Positivity, success, vitality." },
+                { id: 20, name: "Judgement", icon: "Bell", desc: "Rebirth, inner calling, absolution." },
+                { id: 21, name: "The World", icon: "Globe", desc: "Completion, integration, travel." }
             ];
-            const [question, setQuestion] = useState('');
-            const [cards, setCards] = useState([null, null, null]);
-            const [reading, setReading] = useState('');
 
-            const shuffle = () => {
-                const pool = [...deck];
-                const pick = () => pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-                setCards([pick(), pick(), pick()]);
-                setReading('');
-            };
-
-            const begin = () => {
-                if (!cards.every(Boolean)) return;
-                const q = (question || '').trim() || 'Your unspoken question';
-                const [past, present, future] = cards;
-                const text = [
-                    `Question: ${q}`,
-                    ``,
-                    `Past — ${past}: what shaped your current pattern.`,
-                    `Present — ${present}: the tension that is alive right now.`,
-                    `Future — ${future}: a likely direction if you keep moving as-is.`,
-                    ``,
-                    `Hint: treat the cards as metaphors. Ask: “What am I avoiding naming?” and “What would a small honest step look like?”`
-                ].join('\n');
-                setReading(text);
-            };
+            const toggleCard = (id) => setSelectedCards(p => ({ ...(p || {}), [id]: !p?.[id] }));
 
             return (
-                <div className="p-6 md:p-12 max-w-5xl mx-auto animate-in space-y-10 pb-32">
+                <div className="p-6 md:p-12 max-w-[1400px] mx-auto animate-in space-y-10 pb-32">
                     <div className="text-center space-y-3">
-                        <h2 className="text-4xl md:text-6xl font-serif italic tracking-tight">AI Tarot</h2>
-                        <p className="text-[10px] uppercase font-black tracking-[0.4em] opacity-40">Three-card spread</p>
+                        <h2 className="text-4xl md:text-7xl font-serif italic tracking-tighter text-blue-brand">AI Tarot</h2>
+                        <p className="text-[10px] uppercase font-black tracking-[0.4em] opacity-40">Consult the 22 Major Arcana</p>
                     </div>
 
-                    <div className="bg-white p-8 md:p-10 rounded-[60px] border border-[#F0EDEA] shadow-xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8 opacity-5"><Icon name="Moon" size={64} /></div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-8 items-start">
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.35em] opacity-40">Your question</h4>
-                                    <textarea
-                                        value={question}
-                                        onChange={(e) => setQuestion(e.target.value)}
-                                        placeholder="Ask what you truly want to know..."
-                                        className="w-full h-28 p-5 bg-[#FDFBF7] rounded-[28px] border-2 border-transparent focus-blue-brand text-sm leading-relaxed italic no-scrollbar shadow-inner"
-                                    />
-                                </div>
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={shuffle}
-                                        className="flex-1 py-4 bg-[#1A1A1A] text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl transition-all active:scale-95"
-                                    >
-                                        Shuffle
-                                    </button>
-                                    <button
-                                        onClick={begin}
-                                        disabled={!cards.every(Boolean)}
-                                        className="flex-1 py-4 bg-blue-brand text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all active:scale-95 disabled:opacity-20"
-                                    >
-                                        Begin Reading
-                                    </button>
-                                </div>
-                                <div className="text-[10px] opacity-50 leading-relaxed">
-                                    This UI is ready for AI deep interpretation. If you want, we can connect it to your existing streaming endpoint and generate persona-based readings.
-                                </div>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div className="flex justify-center gap-6 flex-wrap">
-                                    {cards.map((c, i) => (
-                                        <div
-                                            key={i}
-                                            className="w-32 md:w-40 aspect-[3/5] bg-white rounded-2xl border-2 border-[#F0EDEA] shadow-lg flex flex-col items-center justify-center gap-4 transition-all"
+                    <div className="flex items-center justify-center min-h-[420px]">
+                        <div className="w-full overflow-x-auto no-scrollbar py-12 px-[10%] md:px-[20%] mask-linear-tarot">
+                            <div className="flex flex-nowrap gap-6 md:gap-10 min-w-max">
+                                {deck.map((card) => {
+                                    const flipped = !!selectedCards?.[card.id];
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={card.id}
+                                            onClick={() => toggleCard(card.id)}
+                                            className="shrink-0 w-[180px] md:w-[220px] aspect-[2/3.5] perspective-1000 group cursor-pointer transition-transform hover:scale-[1.03] outline-none"
+                                            aria-label={`Tarot card ${card.name}`}
                                         >
-                                            <div className="w-12 h-12 rounded-full bg-blue-brand/5 flex items-center justify-center">
-                                                <Icon name="Moon" size={24} className="text-blue-brand/40" />
-                                            </div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest opacity-30">
-                                                {c ? c : `Card 0${i + 1}`}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
+                                            <div className={`relative w-full h-full duration-700 preserve-3d shadow-xl rounded-[32px] ${flipped ? 'rotate-y-180' : ''}`}>
+                                                {/* Card back */}
+                                                <div className="absolute inset-0 backface-hidden bg-white border border-[#F0EDEA] rounded-[32px] flex flex-col items-center justify-center p-8 text-center shadow-sm">
+                                                    <div className="w-16 h-16 rounded-full bg-[#FDFBF7] flex items-center justify-center mb-10 border border-[#E8E6E0]">
+                                                        <Icon name="Moon" size={28} className="text-[#5D576B] opacity-40" />
+                                                    </div>
+                                                    <div className="text-[10px] font-black opacity-20 tracking-[0.4em] uppercase">
+                                                        CARD {String(card.id + 1).padStart(2, '0')}
+                                                    </div>
+                                                </div>
 
-                                <div className="bg-[#FDFBF7] p-6 md:p-8 rounded-[40px] border-2 border-dashed border-blue-brand/20">
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.35em] opacity-40 mb-3">Interpretation</h4>
-                                    <pre className="whitespace-pre-wrap text-sm leading-relaxed italic opacity-70 min-h-[120px]">
-                                        {reading || 'Shuffle to draw three cards, then begin the reading.'}
-                                    </pre>
-                                </div>
+                                                {/* Card face */}
+                                                <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white border-2 border-blue-brand rounded-[32px] p-8 flex flex-col items-center justify-center text-center">
+                                                    <div className="w-16 h-16 rounded-full bg-blue-brand/5 flex items-center justify-center mb-6">
+                                                        <Icon name={card.icon} size={32} className="text-blue-brand" />
+                                                    </div>
+                                                    <div className="text-xl font-serif italic font-black mb-4 uppercase leading-tight text-[#1A1A1A]">
+                                                        {card.name}
+                                                    </div>
+                                                    <div className="h-px w-10 bg-blue-brand/20 mb-4" />
+                                                    <div className="text-[10px] italic leading-relaxed text-[#5D576B] font-medium uppercase tracking-widest opacity-80">
+                                                        {card.desc}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white/70 backdrop-blur-md p-10 rounded-[50px] border border-[#F0EDEA] shadow-xl text-center space-y-4 max-w-2xl mx-auto relative">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><Icon name="Moon" size={64} /></div>
+                        <p className="text-xs opacity-60 leading-relaxed italic px-4">
+                            "The Arcana is a mirror to your current chapter. Browse the 22 archetypes, pick three, and let the meaning unfold."
+                        </p>
+                        <div className="pt-2">
+                            <button
+                                type="button"
+                                onClick={() => {}}
+                                className="px-16 py-5 bg-blue-brand text-white rounded-full font-black text-[10px] uppercase tracking-[0.4em] shadow-lg shadow-[0_4px_14px_rgba(152,166,212,0.35)] hover:-translate-y-0.5 transition-all active:scale-95"
+                            >
+                                INTERPRET MY SPREAD
+                            </button>
                         </div>
                     </div>
                 </div>
