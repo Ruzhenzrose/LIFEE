@@ -46,6 +46,9 @@ data/
 node_modules/
 **/node_modules/
 
+# Claude Code
+CLAUDE.md
+
 # OS
 .DS_Store
 Thumbs.db
