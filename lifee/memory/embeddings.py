@@ -5,10 +5,16 @@
 参考 clawdbot embeddings-gemini.js / embeddings-openai.js
 """
 
+import re
 from abc import ABC, abstractmethod
 from typing import Optional
 
 from google import genai
+
+
+def _contains_non_english(text: str) -> bool:
+    """检测文本是否包含非英文字符（CJK、日文假名、韩文等）"""
+    return bool(re.search(r'[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]', text))
 
 
 class EmbeddingProvider(ABC):
@@ -93,6 +99,27 @@ class GeminiEmbedding(EmbeddingProvider):
             embedding = await self.embed(text)
             results.append(embedding)
         return results
+
+    async def translate_to_english_keywords(self, text: str) -> str:
+        """将文本翻译为英文关键词，用于跨语言 BM25 搜索"""
+        try:
+            response = await self._client.aio.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=(
+                    "Translate the following text into English search keywords. "
+                    "Rules: output ONLY English words, separated by spaces. "
+                    "No articles (a/an/the), no prepositions, no punctuation. "
+                    "Include synonyms for key concepts.\n"
+                    f"Input: {text}"
+                ),
+            )
+            result = response.text.strip()
+            # 如果返回结果仍包含非英文字符，说明翻译失败
+            if _contains_non_english(result):
+                return text
+            return result
+        except Exception:
+            return text  # 翻译失败时回退到原文
 
 
 class OpenAIEmbedding(EmbeddingProvider):

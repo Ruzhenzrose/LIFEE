@@ -51,21 +51,26 @@ def cosine_similarity(a: list[float], b: list[float]) -> float:
     return float(dot / (norm_a * norm_b))
 
 
-def build_fts_query(query: str) -> str:
+def build_fts_query(query: str, use_or: bool = False) -> str:
     """
     构建 FTS5 查询字符串
 
     将查询文本转换为 FTS5 MATCH 语法
-    例如: "hello world" -> '"hello" AND "world"'
+    例如: "hello world" -> '"hello" AND "world"'（默认）
+          "hello world" -> '"hello" OR "world"'（use_or=True）
+
+    Args:
+        query: 查询文本
+        use_or: 使用 OR 连接（适合翻译后的关键词搜索）
     """
     # 提取词汇（字母数字下划线，或中文字符）
     words = re.findall(r'[\w\u4e00-\u9fff]+', query, re.UNICODE)
     if not words:
         return ""
 
-    # 用 AND 连接
+    connector = " OR " if use_or else " AND "
     terms = [f'"{word}"' for word in words]
-    return " AND ".join(terms)
+    return connector.join(terms)
 
 
 def search_vector(
@@ -125,6 +130,7 @@ def search_keyword(
     query: str,
     model: str,
     limit: int = 24,
+    use_or: bool = False,
 ) -> list[SearchResult]:
     """
     关键词搜索（FTS5 BM25）
@@ -134,11 +140,12 @@ def search_keyword(
         query: 查询文本
         model: 嵌入模型名称
         limit: 返回结果数量
+        use_or: 使用 OR 连接关键词
 
     Returns:
         搜索结果列表（按 BM25 分数）
     """
-    fts_query = build_fts_query(query)
+    fts_query = build_fts_query(query, use_or=use_or)
     if not fts_query:
         return []
 
@@ -188,6 +195,7 @@ def hybrid_search(
     vector_weight: float = 0.7,
     text_weight: float = 0.3,
     candidate_multiplier: int = 4,
+    keyword_query_text: str | None = None,
 ) -> list[SearchResult]:
     """
     混合搜索：向量 + 关键词
@@ -211,8 +219,11 @@ def hybrid_search(
     # 1. 向量搜索
     vector_results = search_vector(db, query_embedding, model, candidates)
 
-    # 2. 关键词搜索
-    keyword_results = search_keyword(db, query_text, model, candidates)
+    # 2. 关键词搜索（支持独立的 keyword query，用于跨语言搜索）
+    bm25_query = keyword_query_text or query_text
+    # 翻译后的关键词用 OR 连接（不要求全部匹配，匹配越多分越高）
+    use_or = keyword_query_text is not None
+    keyword_results = search_keyword(db, bm25_query, model, candidates, use_or=use_or)
 
     # 3. 合并结果
     merged: dict[str, SearchResult] = {}

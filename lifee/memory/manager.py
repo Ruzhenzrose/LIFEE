@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 from .chunker import Chunk, chunk_markdown
-from .embeddings import EmbeddingProvider
+from .embeddings import EmbeddingProvider, GeminiEmbedding, _contains_non_english
 from .schema import (
     DELETE_CHUNKS_BY_PATH_SQL,
     DELETE_FILE_SQL,
@@ -244,8 +244,13 @@ class MemoryManager:
         Returns:
             搜索结果列表
         """
-        # 生成查询向量
+        # 生成查询向量（用原始 query，跨语言 embedding 效果最好）
         query_embedding = await self.embedding.embed(query)
+
+        # 跨语言 BM25：非英文 query 翻译成英文给关键词搜索
+        keyword_query = None
+        if _contains_non_english(query) and isinstance(self.embedding, GeminiEmbedding):
+            keyword_query = await self.embedding.translate_to_english_keywords(query)
 
         # 执行混合搜索
         return hybrid_search(
@@ -257,6 +262,7 @@ class MemoryManager:
             min_score=min_score,
             vector_weight=vector_weight,
             text_weight=text_weight,
+            keyword_query_text=keyword_query,
         )
 
     def get_stats(self) -> dict:
