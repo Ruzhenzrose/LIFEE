@@ -144,7 +144,7 @@ class RoleManager:
             "has_knowledge": (role_dir / "knowledge").is_dir() if role_dir.exists() else False,
         }
 
-        # 尝试从 IDENTITY.md 提取显示名称和 emoji
+        # 尝试从 IDENTITY.md 提取 emoji 等元信息
         if info["has_identity"]:
             content = identity_file.read_text(encoding="utf-8")  # type: ignore[union-attr]
             for line in content.split("\n"):
@@ -154,6 +154,12 @@ class RoleManager:
                     info["emoji"] = line.split(":**")[1].strip()
                 elif "**Knowledge Language:**" in line:
                     info["knowledge_lang"] = line.split(":**")[1].strip()
+
+        # 从 i18n 获取当前语言的显示名（优先级最高）
+        from lifee.cli.i18n import t
+        i18n_name = t(f"role_{role_name}")
+        if i18n_name != f"role_{role_name}":
+            info["display_name"] = i18n_name
 
         return info
 

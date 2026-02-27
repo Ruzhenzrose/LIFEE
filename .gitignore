@@ -48,7 +48,9 @@ node_modules/
 
 # Claude Code
 CLAUDE.md
+.serena/
 
 # OS
 .DS_Store
 Thumbs.db
+lifee/roles/krishnamurti/chinese_backup/

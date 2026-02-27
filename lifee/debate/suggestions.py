@@ -8,20 +8,21 @@ from typing import List
 from lifee.providers.base import LLMProvider, Message
 
 
-SUGGESTION_SYSTEM_PROMPT = """你是一个对话建议生成器。根据当前讨论的上下文，生成 3 个用户可能想说的回复建议。
+SUGGESTION_SYSTEM_PROMPT = """You are a conversation suggestion generator. Based on the current discussion context, generate 3 possible reply suggestions for the user.
 
-要求：
-1. 建议应该多样化：
-   - 一个深入追问或请求澄清的建议
-   - 一个表达自己观点或看法的建议
-   - 一个转向新话题或新角度的建议
-2. 每个建议简短（10-30 字）
-3. 语气自然，像真人说话，用第一人称
+Requirements:
+1. Suggestions should be diverse:
+   - One that digs deeper or asks for clarification
+   - One that expresses the user's own viewpoint
+   - One that shifts to a new topic or angle
+2. Each suggestion should be brief (under 30 words)
+3. Natural tone, like a real person, first person
+4. IMPORTANT: Match the language of the conversation. If the conversation is in Chinese, suggest in Chinese. If in English, suggest in English.
 
-输出格式（严格遵守）：
-- 只输出一个 JSON 数组，格式：["建议1", "建议2", "建议3"]
-- 不要输出任何其他文字、解释或前缀
-- 直接以 [ 开头，以 ] 结尾"""
+Output format (strictly follow):
+- Output only a JSON array: ["suggestion1", "suggestion2", "suggestion3"]
+- No other text, explanations, or prefixes
+- Start with [ and end with ]"""
 
 
 class SuggestionGenerator:
@@ -56,7 +57,7 @@ class SuggestionGenerator:
             request_messages = [
                 Message(
                     role=MessageRole.USER,
-                    content=f"以下是当前的讨论内容：\n\n{context}\n\n请根据这个讨论生成 3 个用户可能想说的回复建议。",
+                    content=f"Here is the current discussion:\n\n{context}\n\nGenerate 3 reply suggestions for the user. Match the language used in the conversation.",
                 )
             ]
 
@@ -115,9 +116,9 @@ class SuggestionGenerator:
         lines = []
         for msg in recent:
             if msg.role.value == "user":
-                speaker = "用户"
+                speaker = "User"
             else:
-                speaker = msg.name or "AI"
+                speaker = "Assistant"
             lines.append(f"{speaker}: {msg.content[:200]}")  # 限制长度
 
         return "\n".join(lines)

@@ -85,6 +85,7 @@ class Settings(BaseSettings):
     # 应用配置
     debug: bool = Field(default=False, description="调试模式")
     data_dir: Path = Field(default=Path("data"), description="数据目录")
+    ui_lang: str = Field(default="zh", description="UI language: zh or en")
 
     @property
     def sessions_dir(self) -> Path:

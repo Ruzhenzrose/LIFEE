@@ -6,6 +6,8 @@ from pathlib import Path
 
 import httpx
 
+from .i18n import t
+
 
 def select_menu_interactive(
     title: str,
@@ -190,7 +192,7 @@ def select_model_for_provider(provider_id: str, current_model: str) -> str:
         return select_ollama_model()
 
     if provider_id not in PROVIDER_MODELS:
-        print(f"\n{provider_id} 不支持模型切换")
+        print(f"\n{t('no_model_switch').format(provider=provider_id)}")
         return ""
 
     config = PROVIDER_MODELS[provider_id]
@@ -199,16 +201,16 @@ def select_model_for_provider(provider_id: str, current_model: str) -> str:
 
     labels = []
     for model_id, desc in models:
-        current = " (当前)" if model_id == current_model else ""
+        current = f" ({t('current_suffix')})" if model_id == current_model else ""
         labels.append(f"{model_id}{current} - {desc}")
 
-    choice = select_menu_interactive("选择模型", labels)
+    choice = select_menu_interactive(t("select_model"), labels)
     if choice is None:
         return ""
 
     selected = models[choice][0]
     save_api_key_to_env(env_key, selected)
-    print(f"\n已选择: {selected}")
+    print(f"\n{t('selected').format(name=selected)}")
     return selected
 
 
@@ -216,92 +218,88 @@ def select_ollama_model() -> str:
     """交互式选择 Ollama 模型"""
     from lifee.config.settings import settings
 
-    print("\n正在检查 Ollama 模型...")
+    print(f"\n{t('checking_ollama')}")
 
     models = get_ollama_models()
 
     if not models:
-        # 没有已安装模型，从推荐列表选择
         labels = [f"{name} - {size} | {desc}" for name, size, desc in OLLAMA_RECOMMENDED_MODELS]
-        labels.append("手动输入模型名")
+        labels.append(t("manual_input"))
 
-        choice = select_menu_interactive("选择 Ollama 模型（未安装会自动下载）", labels)
+        choice = select_menu_interactive(t("select_ollama"), labels)
         if choice is None:
             return ""
 
         if choice < len(OLLAMA_RECOMMENDED_MODELS):
             model = OLLAMA_RECOMMENDED_MODELS[choice][0]
         else:
-            model = input("\n输入模型名: ").strip()
+            model = input(f"\n{t('enter_model_name')}").strip()
             if not model:
                 return ""
 
         save_api_key_to_env("OLLAMA_MODEL", model)
-        print(f"\n已选择 {model}，首次使用会自动下载")
+        print(f"\n{t('ollama_selected_download').format(model=model)}")
         return model
 
-    # 有已安装的模型
     labels = []
     for model in models:
-        current = " (当前)" if model == settings.ollama_model else ""
+        current = f" ({t('current_suffix')})" if model == settings.ollama_model else ""
         labels.append(f"{model}{current}")
-    labels.append("下载新模型...")
+    labels.append(t("download_new_model"))
 
-    choice = select_menu_interactive("选择 Ollama 模型", labels)
+    choice = select_menu_interactive(t("select_ollama_model"), labels)
     if choice is None:
         return ""
 
     if choice < len(models):
         selected = models[choice]
         save_api_key_to_env("OLLAMA_MODEL", selected)
-        print(f"\n已选择: {selected}")
+        print(f"\n{t('selected').format(name=selected)}")
         return selected
 
-    # 下载新模型 → 显示推荐列表
     rec_labels = [f"{name} - {size} | {desc}" for name, size, desc in OLLAMA_RECOMMENDED_MODELS]
-    rec_labels.append("手动输入模型名")
+    rec_labels.append(t("manual_input"))
 
-    rec_choice = select_menu_interactive("选择要下载的模型", rec_labels)
+    rec_choice = select_menu_interactive(t("select_download_model"), rec_labels)
     if rec_choice is None:
         return ""
 
     if rec_choice < len(OLLAMA_RECOMMENDED_MODELS):
         model = OLLAMA_RECOMMENDED_MODELS[rec_choice][0]
     else:
-        model = input("\n输入模型名: ").strip()
+        model = input(f"\n{t('enter_model_name')}").strip()
         if not model:
             return ""
 
     save_api_key_to_env("OLLAMA_MODEL", model)
-    print(f"\n已选择 {model}，首次使用会自动下载")
+    print(f"\n{t('ollama_selected_download').format(model=model)}")
     return model
 
 
 def prompt_for_api_key(provider_name: str, key_name: str, get_url: str) -> str:
     """提示用户输入 API Key"""
     print(f"\n{'='*50}")
-    print(f"首次使用 {provider_name}，需要配置 API Key")
+    print(t("api_key_setup_title").format(provider=provider_name))
     print(f"{'='*50}")
-    print(f"获取地址: {get_url}")
+    print(t("api_key_get_url").format(url=get_url))
     print()
 
     while True:
-        api_key = input("请粘贴你的 API Key (输入 q 退出): ").strip()
+        api_key = input(t("api_key_prompt")).strip()
 
         if api_key.lower() == 'q':
-            print("已取消")
+            print(t("api_key_cancelled"))
             sys.exit(0)
 
         if not api_key:
-            print("API Key 不能为空，请重新输入")
+            print(t("api_key_empty"))
             continue
 
-        # 保存到 .env
         if save_api_key_to_env(key_name, api_key):
-            print(f"\n已保存到 .env 文件")
+            print(f"\n{t('api_key_saved')}")
             return api_key
         else:
-            print("保存失败，请手动编辑 .env 文件")
+            print(t("api_key_save_failed"))
             sys.exit(1)
 
 
@@ -375,14 +373,14 @@ def get_provider_key_status(provider_id: str) -> str:
 
 def select_provider_interactive(show_welcome: bool = True) -> str:
     """交互式选择 LLM Provider"""
-    title = "欢迎使用 LIFEE - AI 决策助手" if show_welcome else "切换 LLM Provider"
+    title = t("welcome_title") if show_welcome else t("switch_provider")
 
     labels = []
     for opt in PROVIDER_OPTIONS:
         status = get_provider_key_status(opt["id"])
         labels.append(f"{opt['name']}{status} - {opt['desc']}")
 
-    choice = select_menu_interactive(title, labels, subtitle="✓ 表示已配置")
+    choice = select_menu_interactive(title, labels, subtitle=t("configured_hint"))
     if choice is None:
         if show_welcome:
             sys.exit(0)
@@ -391,7 +389,7 @@ def select_provider_interactive(show_welcome: bool = True) -> str:
     item = PROVIDER_OPTIONS[choice]
     provider_id = item["id"]
     save_api_key_to_env("LLM_PROVIDER", provider_id)
-    print(f"\n已选择: {item['name']}")
+    print(f"\n{t('selected').format(name=item['name'])}")
     return provider_id
 
 
@@ -407,8 +405,8 @@ def select_roles_interactive(role_manager) -> list[str] | None:
     roles = role_manager.list_roles()
 
     if not roles:
-        print("\n没有可用的角色")
-        print("请先创建角色: lifee/roles/<name>/SOUL.md")
+        print(f"\n{t('no_roles')}")
+        print(t("create_role_hint"))
         return None
 
     # 获取角色信息
@@ -430,7 +428,7 @@ def select_roles_interactive(role_manager) -> list[str] | None:
     total_lines = 1 + len(role_choices)
 
     def render_lines():
-        lines = ["选择参与者 (↑↓移动 | 空格/数字切换 | 回车确认):"]
+        lines = [t("select_participants")]
         for i, (_, display_name, emoji, selected) in enumerate(role_choices):
             checkbox = "☑" if selected else "☐"
             pointer = ">" if i == cursor else " "
@@ -483,8 +481,23 @@ def select_roles_interactive(role_manager) -> list[str] | None:
     selected = [rc[0] for rc in role_choices if rc[3]]
 
     if not selected:
-        sys.stdout.write("\n[取消] 未选择任何角色\n")
+        sys.stdout.write(f"\n{t('no_selection')}\n")
         sys.stdout.flush()
         return None
 
     return selected
+
+
+def select_language_interactive() -> str:
+    """交互式选择系统语言"""
+    from .i18n import set_lang
+
+    options = ["中文 (Chinese)", "English"]
+    choice = select_menu_interactive(t("language_title"), options)
+    if choice is None:
+        return ""
+
+    lang = "zh" if choice == 0 else "en"
+    save_api_key_to_env("UI_LANG", lang)
+    set_lang(lang)
+    return lang
