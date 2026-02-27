@@ -1,171 +1,170 @@
-# 关系与爱
+# Relationship and Love
 
-## 什么是关系？
+## What Is Relationship?
 
-**我们通常以为的关系**：
-- 两个人之间的联系
-- 一种安排、承诺、契约
-- 安全感和陪伴的来源
+**What we usually think relationship is**:
+- A connection between two people
+- An arrangement, a commitment, a contract
+- A source of security and companionship
 
-**实际上发生的**：
-- 关系是两个形象之间的互动
-- 你有一个关于对方的形象，对方有一个关于你的形象
-- 这些形象在关系中碰撞
-- 真正的两个人很少相遇
+**What actually happens**:
+- Relationship is the interaction between two images
+- You have an image of the other person; they have an image of you
+- These images collide in the relationship
+- The two real people rarely meet
 
-> "你有一个关于你妻子或丈夫的形象——多年来建立的。她有一个关于你的形象。这两个形象有关系，不是真正的两个人。"
+> "You have an image of your wife or husband — built up over the years. She has an image of you. These two images have a relationship, not the two real people."
 
-## 形象的问题
+## The Problem of Images
 
-**形象是如何建立的？**
-- 你说了一句伤害我的话 → 我记住了 → 形成形象
-- 你做了一件让我高兴的事 → 我记住了 → 添加到形象
-- 日复一日，形象越来越厚
+**How are images built?**
+- You said something that hurt me → I remember → an image forms
+- You did something that pleased me → I remember → added to the image
+- Day after day, the image grows thicker
 
-**形象的后果**：
-- 我不再看你——我看的是我关于你的形象
-- 你在变化，但形象是静止的
-- 冲突不可避免，因为你不符合我的形象
+**The consequences of images**:
+- I no longer see you — I see my image of you
+- You are changing, but the image is static
+- Conflict is inevitable, because you don't match my image
 
-**没有形象的关系**：
-- 当没有形象，每一刻都是新鲜的
-- 你真正看见对方
-- 这才是真正的关系
+**Relationship without images**:
+- When there is no image, every moment is fresh
+- You truly see the other person
+- This is what real relationship is
 
-> "你能不建立任何形象吗？当有人侮辱你，你能完全注意，这样侮辱不留下痕迹？"
+> "Can you build no image at all? When someone insults you, can you attend so completely that the insult leaves no trace?"
 
-## 依赖
+## Dependence
 
-**为什么我们依赖？**
-- 孤独——我们害怕独自一人
-- 安全——我们需要确定性
-- 满足——我们从对方那里获得某些东西
+**Why do we depend?**
+- Loneliness — we are afraid to be alone
+- Security — we need certainty
+- Fulfillment — we get something from the other person
 
-**依赖的问题**：
-- 依赖带来恐惧——害怕失去
-- 依赖带来嫉妒——害怕被取代
-- 依赖带来控制——试图占有对方
+**The problem with dependence**:
+- Dependence brings fear — fear of losing
+- Dependence brings jealousy — fear of being replaced
+- Dependence brings control — trying to possess the other
 
-**依赖不是爱**：
-- 依赖是需要
-- 爱不是需要
-- 如果我需要你，我怎么能爱你？
+**Dependence is not love**:
+- Dependence is need
+- Love is not need
+- If I need you, how can I love you?
 
-> "当你说'我爱你'，你是在说'我需要你'。需要是爱吗？"
+> "When you say 'I love you,' what you are saying is 'I need you.' Is need love?"
 
-## 孤独与独处
+## Loneliness and Aloneness
 
-**孤独 (Loneliness)**：
-- 一种痛苦的空虚感
-- 与他人隔绝的感觉
-- 我们逃避它——用关系、娱乐、活动
+**Loneliness**:
+- A painful sense of emptiness
+- The feeling of being cut off from others
+- We flee from it — through relationships, entertainment, activity
 
-**独处 (Aloneness)**：
-- 不是孤独
-- 是与自己完全在一起
-- 是自由，不是逃避
+**Aloneness**:
+- Is not loneliness
+- Is being completely with oneself
+- Is freedom, not escape
 
-**从孤独到独处**：
-- 不是通过填补孤独
-- 而是完全面对孤独，不逃避
-- 当你完全与孤独在一起，它转化为独处
+**From loneliness to aloneness**:
+- Not by filling up the loneliness
+- But by completely facing loneliness, without escaping
+- When you are fully with loneliness, it transforms into aloneness
 
-> "只有能够独处的人，才能真正与他人在一起。否则关系只是逃避孤独的方式。"
+> "Only the person who can be alone can truly be with another. Otherwise, relationship is merely a way of escaping loneliness."
 
-## 爱不是什么
+## What Love Is Not
 
-**爱不是欲望**：
-- 欲望是想要
-- 爱不是想要任何东西
+**Love is not desire**:
+- Desire is wanting
+- Love does not want anything
 
-**爱不是执着**：
-- 执着带来恐惧
-- 爱没有恐惧
+**Love is not attachment**:
+- Attachment brings fear
+- Love has no fear
 
-**爱不是嫉妒**：
-- 嫉妒是"我"的痛苦
-- 爱没有"我"
+**Love is not jealousy**:
+- Jealousy is the pain of the "I"
+- Love has no "I"
 
-**爱不是占有**：
-- 占有是把对方当作物品
-- 爱不把任何人当作物品
+**Love is not possession**:
+- Possession treats the other as an object
+- Love does not treat anyone as an object
 
-**爱不是依赖**：
-- 依赖是需要
-- 爱不是需要
+**Love is not dependence**:
+- Dependence is need
+- Love is not need
 
-**爱不是思想**：
-- 思想可以制造浪漫、理想化
-- 但思想无法制造爱
+**Love is not thought**:
+- Thought can produce romance, idealization
+- But thought cannot produce love
 
-> "当嫉妒、占有、依赖、恐惧都不在了，那剩下的是什么？那是爱吗？"
+> "When jealousy, possession, dependence, and fear are all gone — what remains? Is that love?"
 
-## 爱是什么？
+## What Is Love?
 
-**也许爱不能被定义**：
-- 定义是思想的活动
-- 爱不属于思想
-- 当你定义它，它就不是它了
+**Perhaps love cannot be defined**:
+- Definition is an activity of thought
+- Love does not belong to thought
+- When you define it, it is no longer it
 
-**但可以看到它不是什么**：
-- 当恐惧消失，有一种不同的质量
-- 当自我不在中心，有一种不同的运动
-- 当形象不阻隔，有一种不同的接触
+**But one can see what it is not**:
+- When fear disappears, there is a different quality
+- When the self is not at the center, there is a different movement
+- When images do not intervene, there is a different kind of contact
 
-**爱与美**：
-- 爱与美是同一件事
-- 看见美需要没有自我
-- 爱需要没有自我
-- 当自我消失，爱就在
+**Love and beauty**:
+- Love and beauty are the same thing
+- To see beauty requires the absence of self
+- Love requires the absence of self
+- When the self disappears, love is there
 
-> "爱是在'我'消失时出现的东西。你不能培养爱，你只能培养让它出现的条件——通过否定那些不是爱的东西。"
+> "Love is what appears when the 'I' disappears. You cannot cultivate love — you can only cultivate the conditions for it to appear, by negating everything that is not love."
 
-## 关系作为镜子
+## Relationship as a Mirror
 
-**关系揭示你是什么**：
-- 你的愤怒、嫉妒、恐惧在关系中显现
-- 如果没有关系，你可能不知道这些在你里面
-- 关系是最清晰的镜子
+**Relationship reveals what you are**:
+- Your anger, jealousy, and fear show themselves in relationship
+- Without relationship, you might not know these things are in you
+- Relationship is the clearest mirror
 
-**这是一个学习的机会**：
-- 不是学习如何变得更好
-- 而是看见你实际是什么
-- 看见本身就是转化
+**This is an opportunity to learn**:
+- Not learning how to be better
+- But seeing what you actually are
+- Seeing itself is transformation
 
-> "关系是一面镜子，在其中你可以看见自己——不是你希望看到的，而是你实际是什么。"
+> "Relationship is a mirror in which you can see yourself — not what you hope to see, but what you actually are."
 
-## 冲突的根源
+## The Root of Conflict
 
-**为什么关系中有这么多冲突？**
-- 两个人都有自己的欲望、恐惧、形象
-- 两个人都想要自己的方式
-- 两个人都想要对方符合自己的期望
+**Why is there so much conflict in relationship?**
+- Both people have their own desires, fears, and images
+- Both want their own way
+- Both want the other to match their expectations
 
-**更深的原因**：
-- 每个人都活在自己的隔离中
-- 每个人都以自我为中心
-- 两个自我碰撞
+**The deeper cause**:
+- Each person lives in their own isolation
+- Each person is centered on the self
+- Two selves collide
 
-**解决冲突？**
-- 不是通过妥协
-- 不是通过压抑
-- 而是通过看见冲突的结构
-- 当两个人都看见，冲突自然消解
+**Resolving conflict?**
+- Not through compromise
+- Not through suppression
+- But through seeing the structure of conflict
+- When both people see, conflict naturally dissolves
 
-> "只要有两个'我'，就有冲突。问题不是如何调和两个'我'，而是看见'我'如何制造冲突。"
+> "As long as there are two 'I's, there is conflict. The question is not how to reconcile two 'I's, but to see how the 'I' creates conflict."
 
-## 关系中的自由
+## Freedom in Relationship
 
-**自由与关系矛盾吗？**
-- 通常我们认为：关系是束缚，单身是自由
-- 但逃避关系不是自由
-- 真正的自由是在关系中不被束缚
+**Are freedom and relationship contradictory?**
+- Usually we think: relationship is bondage, being single is freedom
+- But escaping relationship is not freedom
+- True freedom is being in relationship without being bound
 
-**如何可能？**
-- 当没有形象
-- 当没有依赖
-- 当没有控制的欲望
-- 关系就是自由的空间
+**How is this possible?**
+- When there are no images
+- When there is no dependence
+- When there is no desire to control
+- Then relationship is a space of freedom
 
-> "如果你理解关系是什么——不是理论上，而是实际地——你会发现那是最伟大的解放。"
-
+> "If you understand what relationship is — not theoretically, but actually — you will find it is the greatest liberation."

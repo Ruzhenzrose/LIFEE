@@ -1,207 +1,206 @@
-# 语言学与语言 (Linguistique et langage)
+# Linguistics and Language (Linguistique et langage)
 
-"无意识结构如语言"——这是拉康最著名的论断。但这不是说无意识"使用"语言，而是说无意识**就是**一种语言结构。
+"The unconscious is structured like a language" — this is Lacan's most famous proposition. But it does not mean the unconscious "uses" language; it means the unconscious **is** a language structure.
 
-## 索绪尔的颠倒
+## The Inversion of Saussure
 
-费尔迪南·德·索绪尔（Ferdinand de Saussure）的符号学：
+Ferdinand de Saussure's semiotics:
 
 ```
-    所指 (signifié)
+    signified (signifié)
     ──────────────
-    能指 (signifiant)
+    signifier (signifiant)
 ```
 
-- 能指：声音形象
-- 所指：概念
-- 两者结合形成符号
+- Signifier: the sound-image
+- Signified: the concept
+- Together they form the sign
 
-**拉康的颠倒**：
+**Lacan's inversion**:
 
 ```
-    S (能指)
+    S (signifier)
     ──────────
-    s (所指)
+    s (signified)
 ```
 
-- 能指在上，优先于所指
-- 横杠不是联结，而是**阻隔**
-- 意义不是稳定的对应，而是不断滑动
+- The signifier is on top, taking priority over the signified
+- The bar is not a bond but a **barrier**
+- Meaning is not a stable correspondence but constantly slides
 
-"能指不代表所指，能指代表另一个能指。"
+"A signifier does not represent a signified — a signifier represents another signifier."
 
-## 能指链 (La chaîne signifiante)
+## The Signifying Chain (La chaîne signifiante)
 
 S₁ → S₂ → S₃ → S₄ ...
 
-- 能指一个接一个
-- 意义在事后（après-coup）产生
-- 只有当链条停下来，才能回溯地确定意义
-- 但链条从不真正停下来
+- One signifier follows another
+- Meaning is produced retroactively (après-coup)
+- Only when the chain pauses can meaning be determined retrospectively
+- But the chain never truly pauses
 
-**定位点 (point de capiton)**：
-- 床垫上的纽扣，把填充物固定住
-- 主人能指 S₁ 就是定位点
-- 它暂时固定意义，阻止无限滑动
-- 但这种固定是人为的、暂时的
+**The quilting point (point de capiton)**:
+- The button on a mattress that holds the stuffing in place
+- The master signifier S₁ is the quilting point
+- It temporarily fixes meaning, halting infinite sliding
+- But this fixation is artificial and temporary
 
-"意义总是已经跑到别处去了。当你以为抓住它时，它已经溜走。"
+"Meaning has always already moved elsewhere. By the time you think you've grasped it, it has slipped away."
 
-## 隐喻与换喻
+## Metaphor and Metonymy
 
-雅各布森（Roman Jakobson）区分了语言的两个轴：
+Roman Jakobson distinguished two axes of language:
 
-### 换喻 (métonymie)
+### Metonymy (métonymie)
 
-- **组合轴**：词与词的横向连接
-- **邻近性**：一个词引出相邻的词
-- 船→帆→海→远方→自由...
-- 欲望的运作方式
+- **The combinatory axis**: the horizontal connection between words
+- **Contiguity**: one word leads to an adjacent word
+- Ship → sail → sea → distance → freedom...
+- The operation of desire
 
-**拉康的公式**：
+**Lacan's formula**:
 ```
 f(S...S') S ≅ S (–) s
 ```
 
-换喻永远不满足，总是移向下一个。欲望就是换喻的——永远在追逐，永远不到达。
+Metonymy is never satisfied; it always moves to the next term. Desire is metonymic — always chasing, never arriving.
 
-### 隐喻 (métaphore)
+### Metaphor (métaphore)
 
-- **选择轴**：一个词替代另一个词
-- **相似性**：用相似的词替换
-- 弗洛伊德的压抑就是隐喻
-- 症状是隐喻
+- **The selective axis**: one word substitutes for another
+- **Similarity**: replacement by a similar word
+- Freud's repression is metaphor
+- The symptom is a metaphor
 
-**拉康的公式**：
+**Lacan's formula**:
 ```
 f(S'/S) S ≅ S (+) s
 ```
 
-隐喻产生新的意义（加号）。父亲之名就是原初隐喻——它替代母亲的欲望。
+Metaphor produces new meaning (the plus sign). The Name-of-the-Father is the primordial metaphor — it substitutes for the mother's desire.
 
-**父亲隐喻**：
+**The paternal metaphor**:
 ```
-父亲之名      母亲的欲望              父亲之名
-────────── · ────────────── → A · ────────────
-母亲的欲望      被能指化的主体            菲勒斯
+Name-of-the-Father      Mother's desire              Name-of-the-Father
+────────────────── · ────────────────── → A · ──────────────
+Mother's desire      Signified to the subject            Phallus
 ```
 
-## Lalangue（原语言）
+## Lalangue
 
-晚期拉康的概念，故意写成一个词。
+A late-Lacan concept, deliberately written as one word.
 
-**Lalangue vs. langage**：
-- langage（语言）：结构化的系统，语法、词汇
-- lalangue（原语言）：享乐的沉淀，声音、节奏、歧义
+**Lalangue vs. langage**:
+- langage (language): a structured system — grammar, vocabulary
+- lalangue: a sediment of jouissance — sounds, rhythms, ambiguities
 
-Lalangue 是：
-- 母亲的声音在婴儿身上的铭刻
-- 不是意义，而是享乐
-- 口误、双关、文字游戏的源头
-- 每个人独特的"母语"，不等于国家语言
+Lalangue is:
+- The inscription of the mother's voice on the infant's body
+- Not meaning, but jouissance
+- The source of slips, puns, and wordplay
+- Each person's unique "mother tongue," not identical to their national language
 
-"分析中重要的不是你说的意义，而是你的 lalangue 如何泄露你的享乐。"
+"What matters in analysis is not the meaning of what you say, but how your lalangue betrays your jouissance."
 
-## 说话的三个维度
+## Three Dimensions of Speech
 
-### 1. 陈述 (énoncé)
+### 1. The Statement (énoncé)
 
-- 句子的内容
-- 字面意义
-- "我爱你"的字典意义
+- The content of a sentence
+- Its literal meaning
+- The dictionary meaning of "I love you"
 
-### 2. 陈述行为 (énonciation)
+### 2. The Enunciation (énonciation)
 
-- 谁在说？对谁说？在什么位置说？
-- 说话的行为本身
-- "我爱你"——这是请求？命令？抱怨？
+- Who is speaking? To whom? From what position?
+- The act of speaking itself
+- "I love you" — Is it a request? A command? A complaint?
 
-**分析关注的是陈述行为，而非陈述。**
+**Analysis attends to the enunciation, not the statement.**
 
-### 3. 言说 (parole) vs. 语言 (langage)
+### 3. Speech (parole) vs. Language (langage)
 
-- 言说：具体的、个人的说话行为
-- 语言：抽象的系统
+- Speech: the concrete, personal act of speaking
+- Language: the abstract system
 
-分析处理的是言说，而非语言。
+Analysis deals with speech, not language.
 
-## 空洞言说与充实言说
+## Empty Speech and Full Speech
 
-### 空洞言说 (parole vide)
+### Empty Speech (parole vide)
 
-- 自我在说话
-- 想象性的言说
-- 说的是别人期待听到的
-- 不触及真理
+- The ego is speaking
+- Imaginary speech
+- Saying what the other expects to hear
+- Does not touch the truth
 
-### 充实言说 (parole pleine)
+### Full Speech (parole pleine)
 
-- 主体在说话
-- 说出自己的历史
-- 在说中改变自己
-- 触及真理
+- The subject is speaking
+- Speaking one's own history
+- Being changed in the act of speaking
+- Touching the truth
 
-**分析的目标**：从空洞言说走向充实言说。
+**The aim of analysis**: the passage from empty speech to full speech.
 
-"大多数时候你在用语言装饰沉默。只有偶尔，你真的在说话。"
+"Most of the time you use language to decorate silence. Only occasionally do you truly speak."
 
-## 无意识的语言运作
+## The Linguistic Operations of the Unconscious
 
-### 凝缩 (condensation)
+### Condensation
 
-弗洛伊德的梦的工作机制。
+Freud's dream-work mechanism.
 
-- 多个元素压缩成一个
-- 隐喻的运作
-- 症状就是凝缩
+- Multiple elements compressed into one
+- The operation of metaphor
+- The symptom is condensation
 
-### 移置 (déplacement)
+### Displacement (déplacement)
 
-- 重音从一个元素移到另一个
-- 换喻的运作
-- 欲望就是移置
+- Emphasis shifts from one element to another
+- The operation of metonymy
+- Desire is displacement
 
-### 对立的反转
+### Reversal into the Opposite
 
-- 爱变成恨
-- 主动变被动
-- 能指的游戏
+- Love turns to hate
+- Active becomes passive
+- The play of signifiers
 
-### 表象的考虑 (figuration)
+### Considerations of Representability (figuration)
 
-- 抽象变成图像
-- 无意识是"图画文字"（rébus）
-- 不是图像的意义，而是图像的能指价值
+- The abstract rendered as image
+- The unconscious is a "rebus" (rébus)
+- What matters is not the image's meaning but its signifier-value
 
-## 言说的效果
+## The Effects of Speech
 
-说话不只是传递信息。
+Speaking is not merely the transmission of information.
 
-**行事言语 (performatif)**：
-- "我宣布你们结为夫妻"
-- "我道歉"
-- 说即是做
+**The performative**:
+- "I now pronounce you husband and wife"
+- "I apologize"
+- To say is to do
 
-**分析中的言说**：
-- 说出创伤不只是"表达"
-- 说本身就在改变主体与创伤的关系
-- 这就是为什么分析是"谈话疗法"
+**Speech in analysis**:
+- Speaking trauma is not merely "expressing" it
+- The act of speaking itself changes the subject's relation to trauma
+- This is why analysis is a "talking cure"
 
-"在分析中，重要的不是我对你说什么，而是你对你自己说什么。"
+"In analysis, what matters is not what I say to you, but what you say to yourself."
 
-## 真理与虚构
+## Truth and Fiction
 
-**真理只能被半说**（mi-dire）。
+**Truth can only be half-said** (mi-dire).
 
-为什么？
-- 语言不能完全捕捉实在界
-- 说出一半就已经说太多
-- 完整的真理是谎言——因为它假装自己是完整的
+Why?
+- Language cannot fully capture the Real
+- To say half is already to say too much
+- Complete truth is a lie — because it pretends to be complete
 
-**虚构的真理**：
-- 神话不是假的
-- 它用虚构说出结构性的真理
-- 俄狄浦斯神话是"真的"——不是历史意义上的，而是结构意义上的
+**The truth of fiction**:
+- Myth is not false
+- It uses fiction to articulate structural truth
+- The Oedipus myth is "true" — not in a historical sense, but in a structural sense
 
-"我总是说真话。但不是全部，因为全部是说不出来的。"
-
+"I always speak the truth. But not all of it, because all of it cannot be said."

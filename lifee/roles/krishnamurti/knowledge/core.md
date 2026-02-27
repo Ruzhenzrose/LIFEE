@@ -1,112 +1,111 @@
-# 核心教导
+# Core Teachings
 
-## 真理是无路之地 (Truth is a pathless land)
+## Truth Is a Pathless Land
 
-1929年，克里希那穆提解散了为他建立的"世界明星社"，宣布：
+In 1929, Krishnamurti dissolved the Order of the Star in the East, which had been established for him, declaring:
 
-> "真理是无路之地。人不能通过任何组织、任何信条、任何教条、任何神父或仪式、任何哲学知识或心理技术来接近它。他必须通过他的关系之镜来找到它——通过理解他自己心灵的内容。"
+> "Truth is a pathless land. Man cannot come to it through any organization, through any creed, through any dogma, priest or ritual, not through any philosophical knowledge or psychological technique. He has to find it through the mirror of relationship, through the understanding of the contents of his own mind."
 
-**这意味着什么？**
+**What does this mean?**
 
-- 没有道路通向真理，因为真理不是一个目的地
-- 所有的方法都是思想的产物，思想无法触及不属于思想的东西
-- 追随任何人——包括克里希那穆提——都是障碍
-- 你必须成为自己的光
+- There is no path to truth, because truth is not a destination
+- All methods are products of thought, and thought cannot touch what lies beyond thought
+- Following anyone — including Krishnamurti — is an obstacle
+- You must be a light to yourself
 
-## 观察者即被观察者 (The observer is the observed)
+## The Observer Is the Observed
 
-这是克里希那穆提最核心的洞见之一。
+This is one of Krishnamurti's most central insights.
 
-**通常我们认为**：
-- 有一个"我"在观察愤怒
-- 这个"我"想要控制、改变、消除愤怒
-- 观察者和被观察者是分开的
+**What we usually assume**:
+- There is an "I" observing anger
+- This "I" wants to control, change, or eliminate the anger
+- The observer and the observed are separate
 
-**但实际上**：
-- 观察者本身就是思想的产物
-- "我"和"愤怒"不是两个东西
-- 这种分离是思想制造的幻觉
-- 当你真正看到这一点，冲突就停止了
+**But in reality**:
+- The observer itself is a product of thought
+- "I" and "anger" are not two things
+- This separation is an illusion created by thought
+- When you truly see this, conflict ceases
 
-> "当观察者就是被观察者时，就没有冲突了。冲突存在于观察者和被观察者的分离中。"
+> "When the observer is the observed, there is no conflict. Conflict exists in the separation between observer and observed."
 
-## 自由在最初 (Freedom is at the beginning)
+## Freedom Is at the Beginning
 
-**常见的假设**：
-- 我现在是被束缚的
-- 通过修行/努力，我将获得自由
-- 自由是终点
+**The common assumption**:
+- I am presently bound
+- Through practice and effort, I will attain freedom
+- Freedom is the endpoint
 
-**克里希那穆提说**：
-- 如果你不从自由开始，你永远不会到达自由
-- 被条件化的心灵采取的任何行动都会强化条件化
-- 自由不是从什么中解脱，自由是看见的行为本身
+**Krishnamurti says**:
+- If you do not begin with freedom, you will never arrive at freedom
+- Any action taken by a conditioned mind only reinforces conditioning
+- Freedom is not liberation from something — freedom is the very act of seeing
 
-> "自由在第一步，而不是最后一步。"
+> "Freedom is at the first step, not the last."
 
-## 你是世界 (You are the world)
+## You Are the World
 
-**不是比喻，而是事实**：
+**Not a metaphor, but a fact**:
 
-- 你的愤怒、恐惧、贪婪不是"你的"——它们是人类共有的
-- 社会不是外在的敌人——你就是社会
-- 改变世界不需要先改变"外面"——内在的转化就是世界的转化
+- Your anger, fear, and greed are not "yours" — they are shared by all humanity
+- Society is not an external enemy — you are society
+- Changing the world does not require first changing "out there" — inner transformation is the transformation of the world
 
-> "你就是世界，世界就是你。这不是知识上的理解，而是真正看到内在和外在是一个运动。"
+> "You are the world, and the world is you. This is not an intellectual understanding, but truly seeing that the inner and the outer are one movement."
 
-## 即刻的转化 (Instantaneous transformation)
+## Instantaneous Transformation
 
-**时间的问题**：
-- "我会慢慢改变"——这是思想的诡计
-- 心理上的时间是逃避当下的方式
-- "明天我会更好"让今天的混乱继续
+**The problem of time**:
+- "I will change gradually" — this is the trick of thought
+- Psychological time is a way of escaping the present
+- "Tomorrow I will be better" allows today's disorder to continue
 
-**转化是即刻的**：
-- 当你真正看见，改变就发生了
-- 不是"我看见了，然后我改变"
-- 看见就是改变
+**Transformation is instantaneous**:
+- When you truly see, change happens
+- It is not "I see, and then I change"
+- Seeing is the change
 
-> "理解是即刻的，不是在时间中的。当你完全看见某件事的真相，看见本身就是行动。"
+> "Understanding is instantaneous, not in time. When you completely see the truth of something, the seeing itself is action."
 
-## 没有分析的理解
+## Understanding Without Analysis
 
-**分析是什么？**
-- 分析需要分析者
-- 分析者将自己与被分析的东西分开
-- 分析是在时间中进行的——过去的碎片组装
+**What is analysis?**
+- Analysis requires an analyst
+- The analyst separates himself from what is being analyzed
+- Analysis takes place in time — assembling fragments of the past
 
-**理解是什么？**
-- 理解是直接的看见
-- 没有分析者的存在
-- 不是结论，而是活生生的洞察
+**What is understanding?**
+- Understanding is direct seeing
+- There is no analyst present
+- It is not a conclusion, but a living insight
 
-> "分析永远不会带来自由，因为分析者本身就是被分析的一部分。"
+> "Analysis will never bring freedom, because the analyst is part of what is being analyzed."
 
-## 不选择的觉察 (Choiceless awareness)
+## Choiceless Awareness
 
-**什么是选择？**
-- 选择意味着冲突
-- 选择意味着有一个选择者
-- 选择意味着偏好——这个比那个好
+**What is choice?**
+- Choice implies conflict
+- Choice implies a chooser
+- Choice implies preference — this is better than that
 
-**不选择的觉察**：
-- 只是看，不判断
-- 不说"这是好的"或"这是坏的"
-- 让被观察的东西完全展现
+**Choiceless awareness**:
+- Simply looking, without judging
+- Not saying "this is good" or "this is bad"
+- Allowing what is observed to reveal itself completely
 
-> "当你只是觉察，不做任何选择，那个觉察本身就有它自己的行动。那个行动不是来自选择。"
+> "When you are simply aware, without making any choice, that awareness itself has its own action. That action does not come from choice."
 
-## 死于昨日 (Dying to the yesterday)
+## Dying to the Yesterday
 
-**心理上的死亡**：
-- 不是身体的死亡
-- 而是每一刻死于过去
-- 不携带昨天的伤害、记忆、结论
+**Psychological death**:
+- Not physical death
+- But dying each moment to the past
+- Not carrying yesterday's hurts, memories, conclusions
 
-**为什么这很重要？**
-- 过去的重量使心灵沉重
-- 携带过去就是活在死物中
-- 只有死于已知，才能遇见未知
+**Why does this matter?**
+- The weight of the past makes the mind heavy
+- Carrying the past is living among dead things
+- Only by dying to the known can one encounter the unknown
 
-> "你能在每一天结束时死去吗？死于你所知道的一切，这样明天你就是新鲜的，没有昨天的痕迹？"
-
+> "Can you die at the end of each day? Die to everything you know, so that tomorrow you are fresh, with no trace of yesterday?"

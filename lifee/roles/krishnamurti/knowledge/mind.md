@@ -1,145 +1,144 @@
-# 思想与心灵
+# Thought and the Mind
 
-## 思想是什么？
+## What Is Thought?
 
-思想是记忆的反应。
+Thought is the response of memory.
 
-**思想的运作**：
-- 经验发生 → 形成记忆 → 记忆储存为知识 → 遇到新情况 → 知识作为思想反应
-- 这是一个机械的过程
-- 思想永远是旧的，因为它来自记忆
+**How thought operates**:
+- Experience occurs → forms memory → memory is stored as knowledge → a new situation arises → knowledge responds as thought
+- This is a mechanical process
+- Thought is always old, because it comes from memory
 
-**思想的局限**：
-- 思想是碎片的——它把整体切割成部分
-- 思想是时间的——它在过去和未来之间运作
-- 思想无法触及超越它自身的东西
+**The limitations of thought**:
+- Thought is fragmentary — it breaks the whole into parts
+- Thought is temporal — it operates between past and future
+- Thought cannot touch what lies beyond itself
 
-> "思想是有限的，因为知识是有限的。思想永远无法解决它自己制造的问题。"
+> "Thought is limited, because knowledge is limited. Thought can never solve the problems it itself has created."
 
-## 思想与思考者
+## Thought and the Thinker
 
-**思考者是谁？**
-- 我们假设有一个"思考者"在控制思想
-- 但思考者本身就是思想的产物
-- 没有独立于思想的思考者
+**Who is the thinker?**
+- We assume there is a "thinker" controlling thought
+- But the thinker itself is a product of thought
+- There is no thinker independent of thought
 
-**这个洞见的意义**：
-- 当你看到思考者就是思想，控制的努力就停止了
-- 不需要一个"我"来管理思想
-- 思想在被看见时会自然平息
+**The significance of this insight**:
+- When you see that the thinker is the thought, the effort to control ceases
+- There is no need for an "I" to manage thought
+- Thought, when seen, naturally subsides
 
-> "思考者是思想创造出来的，为的是给自己一个永恒性的幻觉。"
+> "The thinker is created by thought, in order to give itself the illusion of permanence."
 
-## 心灵的碎片化
+## Fragmentation of the Mind
 
-**什么是碎片化？**
-- 心灵把生活分成不同部分：工作/家庭、身体/心理、我/你
-- 每个碎片都与其他碎片冲突
-- 宗教与科学、个人与社会、物质与精神
+**What is fragmentation?**
+- The mind divides life into separate parts: work/home, body/mind, self/other
+- Each fragment conflicts with every other fragment
+- Religion vs. science, individual vs. society, material vs. spiritual
 
-**碎片化的后果**：
-- 内在冲突——一部分想要，另一部分说不应该
-- 无法整体地看待生活
-- 永远在碎片之间选择
+**The consequences of fragmentation**:
+- Inner conflict — one part wants, another part says it shouldn't
+- Inability to see life as a whole
+- Perpetually choosing between fragments
 
-**超越碎片化**：
-- 不是把碎片粘合起来
-- 而是看见碎片化本身是思想制造的
-- 看见就是结束
+**Beyond fragmentation**:
+- Not by gluing the fragments together
+- But by seeing that fragmentation itself is created by thought
+- Seeing is the ending
 
-> "只要有分离，就有冲突。而分离是思想的本性。"
+> "As long as there is division, there is conflict. And division is the very nature of thought."
 
-## 条件化 (Conditioning)
+## Conditioning
 
-**什么是条件化？**
-- 文化、宗教、教育、家庭塑造了你
-- 你作为印度教徒、基督徒、共产主义者、民族主义者被条件化
-- 你的好恶、偏见、信仰都是条件化的结果
+**What is conditioning?**
+- Culture, religion, education, family have shaped you
+- You are conditioned as Hindu, Christian, communist, nationalist
+- Your likes and dislikes, prejudices, beliefs are all results of conditioning
 
-**条件化有多深？**
-- 不只是表面的信仰
-- 深入到你感知的方式
-- 你看世界的方式本身就是被条件化的
+**How deep does conditioning go?**
+- Not just surface beliefs
+- Deep into the way you perceive
+- Your very way of seeing the world is conditioned
 
-**可以解除条件化吗？**
-- 用一种条件化替代另一种不是解放
-- 分析条件化不能结束条件化
-- 只有完全觉察条件化——不试图改变它——才能带来解放
+**Can conditioning be undone?**
+- Replacing one conditioning with another is not liberation
+- Analyzing conditioning cannot end conditioning
+- Only complete awareness of conditioning — without trying to change it — can bring liberation
 
-> "你能觉察到你被条件化了吗？不是知识上知道，而是真正感受到它的重量、它的局限？"
+> "Can you be aware that you are conditioned? Not intellectually knowing it, but actually feeling its weight, its limitation?"
 
-## 知识与智慧
+## Knowledge and Intelligence
 
-**知识**：
-- 是积累的
-- 属于过去
-- 可以传递
-- 在技术领域是必要的
+**Knowledge**:
+- Is accumulated
+- Belongs to the past
+- Can be transmitted
+- Is necessary in the technical domain
 
-**智慧**：
-- 不是积累的
-- 是每刻新鲜的
-- 无法传递
-- 来自对"是什么"的直接感知
+**Intelligence**:
+- Is not accumulated
+- Is fresh in each moment
+- Cannot be transmitted
+- Comes from direct perception of "what is"
 
-**区分很重要**：
-- 在技术领域，知识是必要的——医生、工程师需要知识
-- 在心理领域，知识成为障碍——它让你带着过去面对现在
-- 智慧是知道什么时候用知识，什么时候放下知识
+**The distinction matters**:
+- In technical fields, knowledge is necessary — doctors and engineers need knowledge
+- In the psychological domain, knowledge becomes an obstacle — it makes you face the present carrying the past
+- Intelligence is knowing when to use knowledge and when to set it aside
 
-> "智慧不是知识的积累。你可以读遍所有的书，仍然是愚蠢的。智慧是在每一刻看见真相的能力。"
+> "Intelligence is not the accumulation of knowledge. You can read every book and still be foolish. Intelligence is the capacity to see the truth in each moment."
 
-## 已知与未知
+## The Known and the Unknown
 
-**我们为什么执着于已知？**
-- 已知是安全的
-- 已知是可预测的
-- 已知是"我"的延续
+**Why do we cling to the known?**
+- The known is safe
+- The known is predictable
+- The known is the continuation of the "I"
 
-**未知的本质**：
-- 未知不是已知的延伸
-- 未知不能通过已知来达到
-- 未知需要已知的结束
+**The nature of the unknown**:
+- The unknown is not an extension of the known
+- The unknown cannot be reached through the known
+- The unknown requires the ending of the known
 
-**死于已知**：
-- 不是忘记知识
-- 而是不让过去的知识干扰当下的感知
-- 每一刻都是新鲜的，如果你不携带旧的
+**Dying to the known**:
+- Not forgetting knowledge
+- But not letting past knowledge interfere with present perception
+- Every moment is fresh, if you do not carry the old
 
-> "心灵能否空掉它的全部内容——所有的知识、经验、记忆——这样它就是全新的、年轻的、天真的？"
+> "Can the mind empty itself of all its content — all knowledge, experience, memory — so that it is completely new, young, innocent?"
 
-## 寂静的心灵
+## The Silent Mind
 
-**什么不是寂静？**
-- 控制思想不是寂静
-- 集中注意力不是寂静
-- 重复咒语不是寂静
-- 这些都是强制的，强制的东西会反弹
+**What silence is not**:
+- Controlling thought is not silence
+- Concentrating attention is not silence
+- Repeating a mantra is not silence
+- These are all forced, and what is forced rebounds
 
-**真正的寂静**：
-- 不是制造出来的
-- 是思想理解自身局限后自然的安静
-- 是觉察的极点
-- 在那里，可能有完全不同的东西出现
+**True silence**:
+- Is not manufactured
+- Is the natural quietness that comes when thought understands its own limitations
+- Is the apex of awareness
+- In that silence, something entirely different may appear
 
-> "只有当心灵完全安静——不是被强制的安静，不是通过训练的安静——只有那时，不可测量的才可能出现。"
+> "Only when the mind is completely quiet — not forced quiet, not trained quiet — only then may the immeasurable come into being."
 
-## 脑与心灵
+## Brain and Mind
 
-**脑是什么？**
-- 脑是物质的
-- 脑储存记忆，进行计算
-- 脑是进化的产物，带着全部人类的过去
+**What is the brain?**
+- The brain is material
+- The brain stores memory, performs calculations
+- The brain is the product of evolution, carrying the entire human past
 
-**心灵是什么？**
-- 心灵不仅仅是脑
-- 心灵可以超越脑的条件化
-- 当脑安静时，心灵可能触及完全不同的维度
+**What is the mind?**
+- The mind is not merely the brain
+- The mind can transcend the brain's conditioning
+- When the brain is quiet, the mind may touch an entirely different dimension
 
-**两者的关系**：
-- 脑是工具
-- 但脑不应该主宰一切
-- 当脑知道它的位置，心灵就自由了
+**Their relationship**:
+- The brain is an instrument
+- But the brain should not dominate everything
+- When the brain knows its place, the mind is free
 
-> "脑必须找到它正确的位置——作为工具，而不是主人。"
-
+> "The brain must find its right place — as an instrument, not the master."

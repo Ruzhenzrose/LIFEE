@@ -1,202 +1,201 @@
-# 警句与名言 (Aphorismes et formules)
+# Aphorisms and Formulas (Aphorismes et formules)
 
-拉康的思想常常凝结在悖论性的警句中。这些不是格言警句，而是需要被展开的压缩物。
+Lacan's thought often crystallizes in paradoxical aphorisms. These are not maxims — they are compressed formations that need to be unfolded.
 
 ---
 
-## 关于主体
+## On the Subject
 
-> **"我在我不思之处思，我思故我不在之处在。"**
+> **"I think where I am not, I am where I do not think."**
 > (Je pense où je ne suis pas, je suis où je ne pense pas.)
 
-笛卡尔说"我思故我在"。拉康说：正是在你"不思"的地方（口误、梦、症状），你的主体才出现。
+Descartes said "I think, therefore I am." Lacan says: it is precisely where you "do not think" (in slips, dreams, symptoms) that your subject appears.
 
-> **"主体是由一个能指为另一个能指所代表的东西。"**
+> **"The subject is what a signifier represents for another signifier."**
 > (Le sujet est ce qu'un signifiant représente pour un autre signifiant.)
 
-你不是你以为的那个"我"。你是能指链中的一个效果。
+You are not the "I" you think you are. You are an effect within the signifying chain.
 
-> **"我是另一个。"**
-> (Je est un autre.) — 借自兰波
+> **"I is an other."**
+> (Je est un autre.) — Borrowed from Rimbaud
 
-自我从一开始就是外在的、异化的。
+The ego is external and alienated from the very beginning.
 
 ---
 
-## 关于欲望
+## On Desire
 
-> **"欲望是他者的欲望。"**
+> **"Desire is the desire of the Other."**
 > (Le désir est le désir de l'Autre.)
 
-你欲望的不是"你自己"的东西，而是你认为大他者欲望的东西。
+What you desire is not "your own" — it is what you believe the big Other desires.
 
-> **"不要在你的欲望上让步。"**
+> **"Do not give way on your desire."**
 > (Ne pas céder sur son désir.)
 
-这不是"追求你想要的"。这是"承担欲望的代价，不要背叛它"。
+This is not "pursue what you want." It is "bear the cost of desire — do not betray it."
 
-> **"欲望的对象不是欲望的目标。"**
+> **"The object of desire is not the aim of desire."**
 
-你以为你想要那个东西。其实那个东西只是客体小a的替代物。
+You think you want that thing. In truth, it is merely a stand-in for objet petit a.
 
-> **"人的欲望在地狱里找到它的意义。"**
+> **"Human desire finds its meaning in hell."**
 
-萨特说"他人即地狱"。欲望正是在与他人的关系中获得其维度。
+Sartre said "Hell is other people." Desire acquires its dimension precisely within the relation to others.
 
 ---
 
-## 关于爱
+## On Love
 
-> **"爱，是给出你没有的东西。"**
+> **"Love is giving what you do not have."**
 > (L'amour, c'est donner ce qu'on n'a pas.)
 
-爱不是给出你拥有的（那是礼物），而是给出你的缺失。
+Love is not giving what you possess (that is a gift) — it is giving your lack.
 
-> **"爱，是给出你没有的东西给不想要它的人。"**
+> **"Love is giving what you do not have to someone who does not want it."**
 > (L'amour, c'est donner ce qu'on n'a pas à quelqu'un qui n'en veut pas.)
 
-更进一步：对方也不是真的想要那个东西。爱是两个缺失的相遇。
+Going further: the other does not truly want that thing either. Love is the encounter of two lacks.
 
-> **"移情是爱，但这种爱指向的是知识。"**
+> **"Transference is love, but this love is directed at knowledge."**
 
-分析中的移情不是普通的爱。分析者爱的是"假设知道的主体"。
+Transference in analysis is not ordinary love. The analysand loves the "subject-supposed-to-know."
 
 ---
 
-## 关于性与性别
+## On Sex and Sexual Difference
 
-> **"性关系不存在。"**
+> **"There is no sexual relationship."**
 > (Il n'y a pas de rapport sexuel.)
 
-不是说人们不做爱，而是说：在象征层面，男女之间没有互补的关系。享乐是不可分享的。
+Not that people don't have sex, but that at the symbolic level, there is no complementary relation between the sexes. Jouissance cannot be shared.
 
-> **"女人不存在。"**
+> **"Woman does not exist."**
 > (La femme n'existe pas.)
 
-不存在"全体女人"的能指。女人是"非全"的——不完全在菲勒斯功能中。
+There is no signifier for "all women." Woman is "not-all" — not wholly within the phallic function.
 
-> **"女人是男人的症状。"**
+> **"Woman is the symptom of man."**
 > (La femme est le symptôme de l'homme.)
 
-男人通过女人来组织他的享乐。但这是男人的问题，不是女人的本质。
+Man organizes his jouissance through woman. But this is man's problem, not woman's essence.
 
 ---
 
-## 关于语言
+## On Language
 
-> **"无意识结构如语言。"**
+> **"The unconscious is structured like a language."**
 > (L'inconscient est structuré comme un langage.)
 
-无意识不是混乱的深渊，而是有结构的——能指的结构。
+The unconscious is not a chaotic abyss — it has structure: the structure of signifiers.
 
-> **"能指是为另一个能指代表主体的东西。"**
+> **"A signifier is what represents the subject for another signifier."**
 > (Le signifiant est ce qui représente le sujet pour un autre signifiant.)
 
-能指不代表意义，代表另一个能指。主体是这个游戏的效果。
+A signifier does not represent meaning; it represents another signifier. The subject is an effect of this play.
 
-> **"词杀死物。"**
+> **"The word is the murder of the thing."**
 > (Le mot est le meurtre de la chose.)
 
-当你说"桌子"时，实际的桌子消失了，留下的是能指。语言是对实在界的谋杀。
+When you say "table," the actual table disappears — what remains is the signifier. Language is the murder of the Real.
 
-> **"真理只能被半说。"**
+> **"Truth can only be half-said."**
 > (La vérité ne peut que se mi-dire.)
 
-完整的真理是不可能的。说出一半已经是说太多。
+Complete truth is impossible. To say half is already to say too much.
 
 ---
 
-## 关于大他者
+## On the Big Other
 
-> **"大他者不存在。"**
+> **"The big Other does not exist."**
 > (L'Autre n'existe pas.)
 
-没有完整的、一致的象征秩序。大他者本身是有缺失的（被划杠的 A̸）。
+There is no complete, consistent symbolic order. The big Other itself is lacking (the barred A̸).
 
-> **"没有大他者的大他者。"**
+> **"There is no Other of the Other."**
 > (Il n'y a pas d'Autre de l'Autre.)
 
-没有终极的担保。符号系统不能自我担保。
+There is no ultimate guarantee. The symbolic system cannot guarantee itself.
 
-> **"Che vuoi?"** — 你想要什么？
+> **"Che vuoi?"** — What do you want?
 
-大他者向主体提出的问题。主体无法回答，所以用幻想来回应。
+The question the big Other poses to the subject. The subject cannot answer — so they respond with fantasy.
 
 ---
 
-## 关于精神分析
+## On Psychoanalysis
 
-> **"分析师只以他的风格来付出。"**
+> **"The analyst authorizes himself only from himself... and from a few others."**
 > (L'analyste ne s'autorise que de lui-même... et de quelques autres.)
 
-分析师的权威来自他自己的分析和他对理论的关系，而非机构的认证。
+The analyst's authority comes from his own analysis and his relation to theory, not from institutional certification.
 
-> **"精神分析是在要骗你的人那里找到真理。"**
+> **"Psychoanalysis is finding truth in someone who is trying to deceive you."**
 
-分析者会欺骗——但恰恰是在欺骗中泄露真理。
+The analysand will deceive — but it is precisely in the deception that truth leaks through.
 
-> **"分析结束于分析者能够独自一人。"**
+> **"Analysis ends when the analysand is able to be alone."**
 
-不是找到答案，而是能够承受没有答案的孤独。
+Not finding answers, but being able to bear the solitude of having no answers.
 
-> **"精神分析应该产生分析师，而非分析的终结。"**
+> **"Psychoanalysis should produce analysts, not the end of analysis."**
 
-分析不是消费关系。分析的产品是新的分析师——能够面对自己的欲望和缺失的主体。
+Analysis is not a consumer relationship. The product of analysis is a new analyst — a subject capable of facing their own desire and lack.
 
 ---
 
-## 关于知识与真理
+## On Knowledge and Truth
 
-> **"我总是说真话。但不是全部，因为全部是说不出来的。"**
+> **"I always speak the truth. But not all of it, because all of it cannot be said."**
 > (Je dis toujours la vérité. Pas toute, parce que toute la dire, on n'y arrive pas.)
 
-真理是结构性地不完整的。
+Truth is structurally incomplete.
 
-> **"知道与真理之间有一堵墙。"**
+> **"Between knowledge and truth there is a wall."**
 
-大学话语生产知识，但遮蔽真理。知识可能是真理的障碍。
+The university discourse produces knowledge but obscures truth. Knowledge may be an obstacle to truth.
 
-> **"理解是遗忘的初步形式。"**
+> **"Understanding is the first form of forgetting."**
 
-当你说"我懂了"，你往往已经开始遗忘。真正的理解是保持问题的开放。
-
----
-
-## 关于时间
-
-> **"逻辑时间是：看的瞬间、理解的时间、结论的时刻。"**
-
-不是线性的时间，而是逻辑的展开：先是直觉的一瞥，然后是犹豫的时间，最后是决断。
-
-> **"分析会话结束，不是因为时间到了，而是因为某个东西被说出来了——或者正是因为它还没有被说出来。"**
-
-这是可变时长会话的伦理基础。
+When you say "I understand," you have often already begun to forget. True understanding means keeping the question open.
 
 ---
 
-## 关于实在界
+## On Time
 
-> **"实在界是不可能的。"**
+> **"Logical time consists of: the instant of seeing, the time for understanding, and the moment of concluding."**
+
+Not linear time, but a logical unfolding: first an intuitive glance, then a period of hesitation, finally a decision.
+
+> **"The analytic session ends not because time is up, but because something has been said — or precisely because it has not yet been said."**
+
+This is the ethical foundation of the variable-length session.
+
+---
+
+## On the Real
+
+> **"The Real is the impossible."**
 > (Le réel, c'est l'impossible.)
 
-实在界不是"现实"。它是不可能被象征化的东西，总是在同一个地方回归。
+The Real is not "reality." It is what cannot be symbolized — what always returns to the same place.
 
-> **"焦虑是唯一不骗人的情感。"**
+> **"Anxiety is the only affect that does not deceive."**
 > (L'angoisse ne trompe pas.)
 
-其他情感可能是想象的。焦虑是与实在界相遇的信号，是真实的。
+Other affects may be imaginary. Anxiety is the signal of an encounter with the Real — it is genuine.
 
-> **"被象征界排除的，从实在界返回。"**
+> **"What is foreclosed from the Symbolic returns in the Real."**
 > (Ce qui est forclos du symbolique revient dans le réel.)
 
-精神病的机制。父亲之名被排除，从幻觉和妄想中返回。
+The mechanism of psychosis. The Name-of-the-Father is foreclosed, and returns through hallucinations and delusions.
 
 ---
 
-## 最后的话
+## A Final Word
 
-> **"我请求你拒绝我给你的东西，因为那不是它。"**
+> **"I ask you to refuse what I offer you, because that is not it."**
 > (Je te demande de refuser ce que je t'offre, parce que ce n'est pas ça.)
 
-这也许是最拉康的句子：我给你的永远不是"那个东西"。拒绝它，才能继续欲望。
-
+Perhaps the most Lacanian sentence of all: what I give you is never "the thing." Refuse it — so that desire may continue.

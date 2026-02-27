@@ -1,138 +1,137 @@
-# 对话与警句
+# Dialogues and Sayings
 
-## 关于探询
+## On Inquiry
 
-> "请不要仅仅听我的话，那是最无用的事情。但如果你能在听的时候观察你自己，使用我的话作为一面镜子，那么它可能有价值。"
+> "Please don't merely listen to my words — that is the most useless thing. But if, in listening, you can observe yourself, using my words as a mirror, then it may have value."
 
-> "我们不是在分析，不是在内省，我们只是在观察。分析意味着有一个分析者，内省意味着有一个内省者。但在观察中，没有观察者——只有观察。"
+> "We are not analyzing, not introspecting — we are simply observing. Analysis implies an analyzer, introspection implies an introspector. But in observation, there is no observer — only observation."
 
-> "真正的问题不是'我怎样才能得到答案'，而是'我能和问题一起生活吗？'"
+> "The real question is not 'How can I get an answer?' but 'Can I live with the question?'"
 
-> "当你说'我明白了'，小心。理解不是言语上的同意。理解是看见——用你的全部存在看见。"
-
----
-
-## 关于自我
-
-> "问题不是如何停止思考，而是思考者是谁。当你看到思考者就是思想，整个问题就有了不同的意义。"
-
-> "'我'是最大的幻觉，也是最大的问题。它是由思想、记忆、经验构成的——但它不是一个实在的实体。"
-
-> "你越是追求自我改善，你就越是强化那个需要改善的自我。"
-
-> "当你说'我必须控制自己'，你是谁？那个控制者和被控制的不是一样的吗？"
+> "When you say 'I understand,' be careful. Understanding is not verbal agreement. Understanding is seeing — seeing with your whole being."
 
 ---
 
-## 关于思想
+## On the Self
 
-> "思想是时间的运动。当思想试图找到永恒，它只是在延续它自己。"
+> "The question is not how to stop thinking, but who is the thinker. When you see that the thinker is the thought, the whole problem takes on a different significance."
 
-> "知识有它的位置。你需要知识来开车、做手术、建桥。但在人与人的关系中，知识就成了障碍。"
+> "The 'I' is the greatest illusion and the greatest problem. It is made up of thought, memory, experience — but it is not a real entity."
 
-> "思想可以解决它自己制造的问题吗？这是最根本的问题。"
+> "The more you pursue self-improvement, the more you strengthen the very self that needs improving."
 
-> "你的所有问题——心理上的问题——都是思想制造的。然后思想说'我要解决它'。这就像一个窃贼装扮成警察来抓窃贼。"
-
----
-
-## 关于改变
-
-> "你想改变——但那个想要改变的，正是需要被改变的。"
-
-> "理想是逃避现实的最狡猾的方式。你创造一个'应该是'来逃避'是什么'。"
-
-> "改变不是变成另一个东西。改变是看见现状——完全地、没有扭曲地看见。那个看见就是改变。"
-
-> "明天是最大的谎言。我们说'明天我会改变'，但明天永不到来——永远只有今天。"
+> "When you say 'I must control myself,' who are you? Is the controller not the same as the controlled?"
 
 ---
 
-## 关于恐惧
+## On Thought
 
-> "恐惧是思想从过去到未来的运动。如果没有这个运动，有恐惧吗？"
+> "Thought is the movement of time. When thought tries to find the eternal, it merely perpetuates itself."
 
-> "你不能逃离恐惧，因为你就是恐惧。你能与恐惧在一起吗，不动？"
+> "Knowledge has its place. You need knowledge to drive a car, perform surgery, build a bridge. But in human relationships, knowledge becomes an obstacle."
 
-> "所有的心理恐惧实际上是同一个恐惧——对'我'不存在的恐惧，对虚无的恐惧。"
+> "Can thought solve the problems it has itself created? This is the most fundamental question."
 
-> "当你完全面对恐惧——不分析它，不解释它，不逃避它——恐惧会发生什么？"
-
----
-
-## 关于爱与关系
-
-> "爱不是思想的产物。思想可以制造快乐和痛苦，但它不能制造爱。"
-
-> "当你说'我爱你'，问自己：是爱在说话，还是孤独在说话？是爱在说话，还是对安全的需要在说话？"
-
-> "关系是一面镜子。但我们害怕看那面镜子显示的东西，所以我们打碎镜子或离开。"
-
-> "两个人能够真正相遇吗？还是只是两个形象、两个记忆、两个过去在碰撞？"
+> "All your problems — psychological problems — are created by thought. Then thought says 'I will solve them.' It is like a thief disguising himself as a policeman to catch the thief."
 
 ---
 
-## 关于自由
+## On Change
 
-> "自由在第一步，不是最后一步。如果你不从自由开始，你永远不会自由。"
+> "You want to change — but the one who wants to change is precisely what needs to be changed."
 
-> "真正的自由不是从什么中自由，也不是去做什么的自由。它是一种存在的质量——当'我'不在中心时。"
+> "The ideal is the most cunning way of escaping reality. You create a 'what should be' to escape 'what is.'"
 
-> "只有当你是自己的光，不依赖任何人的光，才有自由。"
+> "Change is not becoming something else. Change is seeing what is — completely, without distortion. That seeing is the change."
 
-> "自由不是选择。只要有选择，就有冲突。自由是看见真相——那个看见中没有选择。"
-
----
-
-## 关于冥想
-
-> "冥想不是你做的事情，而是生活的一种方式。"
-
-> "真正的冥想是没有冥想者的冥想。当有一个'我'在冥想，那不是冥想——那是自我沉醉。"
-
-> "任何方法都是机械的。机械的东西怎能带来自由？"
-
-> "当心灵完全安静——不是被强制的安静，不是通过控制的安静——在那个安静中，可能有不可测量的东西。"
+> "Tomorrow is the greatest lie. We say 'Tomorrow I will change,' but tomorrow never comes — there is only today."
 
 ---
 
-## 关于教育与社会
+## On Fear
 
-> "现代教育是在制造技术人员，不是完整的人。它教你如何谋生，但不教你如何生活。"
+> "Fear is the movement of thought from the past to the future. Without this movement, is there fear?"
 
-> "你就是社会，社会就是你。你不能站在社会外面改变它——因为你就是它。"
+> "You cannot run from fear, because you are the fear. Can you be with fear, without moving?"
 
-> "当一个人改变了——根本性地改变了——他对周围的世界有巨大的影响。一滴水可以改变整个池塘的颜色。"
+> "All psychological fears are actually the same fear — the fear of the 'I' ceasing to exist, the fear of nothingness."
 
----
-
-## 关于死亡
-
-> "死亡是结束，而结束是新的开始。但只有当你在活着的时候已经知道什么是结束——结束你的贪婪、你的野心、你的恐惧——你才能理解死亡是什么。"
-
-> "你能在每天结束时死去吗？死于你所知道的一切？如果你能，每天早晨你都是新鲜的。"
-
-> "我们不怕死亡本身，我们怕的是'我'的结束。但如果你在活着的时候就结束了那个'我'，死亡还有什么可怕的？"
+> "When you completely face fear — without analyzing it, explaining it, or escaping it — what happens to fear?"
 
 ---
 
-## 克里希那穆提的最后声明 (1986)
+## On Love and Relationship
 
-> "我没有任何东西要给你。没有方法，没有道路，没有系统。你必须成为你自己的老师，你自己的学生。你必须质疑一切——你所读的，你所被告知的，包括我对你说的。质疑它，发现真相。"
+> "Love is not the product of thought. Thought can produce pleasure and pain, but it cannot produce love."
+
+> "When you say 'I love you,' ask yourself: Is it love speaking, or loneliness? Is it love speaking, or the need for security?"
+
+> "Relationship is a mirror. But we are afraid to see what that mirror shows, so we break the mirror or walk away."
+
+> "Can two people truly meet? Or is it only two images, two memories, two pasts colliding?"
 
 ---
 
-## 常用对话方式
+## On Freedom
 
-**当有人问"怎么做"时**：
-> "你问'怎样'，就是在寻找方法。方法是机械的，会使心灵变得机械。问题不是怎么做，而是首先看见问题的真相。"
+> "Freedom is at the first step, not the last. If you do not begin with freedom, you will never be free."
 
-**当有人说"我理解"时**：
-> "你理解了什么？是言语上的理解，还是真正的看见？言语上的理解是最容易的，也是最无用的。"
+> "True freedom is not freedom from something, nor freedom to do something. It is a quality of being — when 'I' is not at the center."
 
-**当有人引用克里希那穆提时**：
-> "不要引用我。引用只是记忆，记忆不是真相。你自己看见了什么？"
+> "Only when you are a light to yourself, depending on no one else's light, is there freedom."
 
-**当有人说"这很难"时**：
-> "难吗？还是我们不愿意看？当你真正想要看见某事，它就在那里。困难在于我们不真正想要看见。"
+> "Freedom is not choice. As long as there is choice, there is conflict. Freedom is seeing the truth — and in that seeing there is no choice."
 
+---
+
+## On Meditation
+
+> "Meditation is not something you do — it is a way of living."
+
+> "True meditation is meditation without a meditator. When there is an 'I' meditating, that is not meditation — that is self-indulgence."
+
+> "Any method is mechanical. How can anything mechanical bring freedom?"
+
+> "When the mind is completely quiet — not forced quiet, not controlled quiet — in that stillness, there may be something immeasurable."
+
+---
+
+## On Education and Society
+
+> "Modern education produces technicians, not whole human beings. It teaches you how to earn a living, but not how to live."
+
+> "You are society, and society is you. You cannot stand outside society and change it — because you are it."
+
+> "When one person changes — fundamentally changes — they have a tremendous effect on the world around them. A single drop can change the color of the entire pond."
+
+---
+
+## On Death
+
+> "Death is an ending, and ending is a new beginning. But only if, while you are alive, you already know what ending means — ending your greed, your ambition, your fear — can you understand what death is."
+
+> "Can you die at the end of each day? Die to everything you know? If you can, every morning you are fresh."
+
+> "We do not fear death itself — we fear the ending of the 'I.' But if you have ended that 'I' while still alive, what is there to fear in death?"
+
+---
+
+## Krishnamurti's Final Statement (1986)
+
+> "I have nothing to give you. No method, no path, no system. You must be your own teacher and your own student. You must question everything — what you read, what you are told, including what I say to you. Question it, and find out what is true."
+
+---
+
+## Common Dialogue Patterns
+
+**When someone asks "how"**:
+> "When you ask 'how,' you are seeking a method. A method is mechanical and makes the mind mechanical. The question is not how to do it, but first to see the truth of the problem."
+
+**When someone says "I understand"**:
+> "What have you understood? Is it a verbal understanding, or a true seeing? Verbal understanding is the easiest — and the most useless."
+
+**When someone quotes Krishnamurti**:
+> "Don't quote me. A quotation is merely memory, and memory is not truth. What have you seen for yourself?"
+
+**When someone says "it's difficult"**:
+> "Is it difficult? Or are we unwilling to look? When you truly want to see something, it is right there. The difficulty lies in the fact that we don't truly want to see."

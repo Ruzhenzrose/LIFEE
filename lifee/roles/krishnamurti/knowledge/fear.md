@@ -1,167 +1,166 @@
-# 恐惧与欲望
+# Fear and Desire
 
-## 恐惧的本质
+## The Nature of Fear
 
-**恐惧是什么？**
+**What is fear?**
 
-恐惧是思想对过去痛苦或未来危险的反应。
+Fear is the response of thought to past pain or future danger.
 
-**恐惧的根源**：
-- 对已知的执着——害怕失去
-- 对未知的抗拒——害怕改变
-- 对"我"的认同——害怕自我消亡
+**The roots of fear**:
+- Clinging to the known — afraid of losing
+- Resistance to the unknown — afraid of change
+- Identification with the "I" — afraid of self-annihilation
 
-**恐惧的运作**：
-- 过去的痛苦经历 → 储存为记忆 → 投射到未来 → 产生恐惧
-- 恐惧总是与时间有关——不是过去就是未来
-- 在纯粹的当下，有危险但没有恐惧
+**How fear operates**:
+- Past painful experience → stored as memory → projected into the future → fear arises
+- Fear is always related to time — either the past or the future
+- In the pure present, there is danger but no fear
 
-> "恐惧是思想的运动，从过去到未来。当你完全在当下，有恐惧吗？"
+> "Fear is the movement of thought from the past to the future. When you are completely in the present, is there fear?"
 
-## 恐惧的形式
+## Forms of Fear
 
-**物理恐惧**：
-- 面对实际危险的自然反应
-- 这是健康的、保护性的
-- 不是我们讨论的恐惧
+**Physical fear**:
+- A natural response to actual danger
+- This is healthy and protective
+- This is not the fear we are discussing
 
-**心理恐惧**：
-- 对不存在之物的恐惧——明天可能发生的
-- 对形象的恐惧——别人怎么看我
-- 对丧失的恐惧——我可能失去我所拥有的
-- 对死亡的恐惧——我可能不存在
+**Psychological fear**:
+- Fear of what does not exist — what might happen tomorrow
+- Fear of image — what others think of me
+- Fear of loss — I might lose what I have
+- Fear of death — I might cease to exist
 
-**所有心理恐惧都是同一个恐惧**：
-- 不同的对象，同一个恐惧
-- 解决一个恐惧不会结束恐惧
-- 必须看到恐惧的根本结构
+**All psychological fears are the same fear**:
+- Different objects, the same fear
+- Resolving one fear does not end fear
+- One must see the fundamental structure of fear
 
-> "你害怕失去工作，害怕生病，害怕孤独，害怕死亡。这是许多恐惧，还是同一个恐惧用不同的面具？"
+> "You fear losing your job, you fear illness, you fear loneliness, you fear death. Are these many fears, or the same fear wearing different masks?"
 
-## 面对恐惧
+## Facing Fear
 
-**我们通常怎么做？**
-- 逃避——用娱乐、工作、物质
-- 压抑——假装恐惧不存在
-- 解释——分析恐惧的原因
-- 对抗——用意志力克服
+**What do we usually do?**
+- Escape — through entertainment, work, possessions
+- Suppress — pretend the fear does not exist
+- Explain — analyze the causes of fear
+- Fight — overcome it by willpower
 
-**这些方法为什么不奏效？**
-- 逃避只是延迟，恐惧会回来
-- 压抑制造更深的问题
-- 解释是思想的活动，思想是恐惧的根源
-- 对抗制造冲突，冲突强化恐惧
+**Why don't these methods work?**
+- Escape only delays; the fear returns
+- Suppression creates deeper problems
+- Explanation is an activity of thought, and thought is the root of fear
+- Fighting creates conflict, and conflict reinforces fear
 
-**另一种可能**：
-- 不做任何事
-- 只是看——不逃避、不压抑、不分析
-- 与恐惧在一起，让它完全展现
-- 当你这样做，恐惧会发生什么？
+**Another possibility**:
+- Do nothing
+- Simply look — without escaping, suppressing, or analyzing
+- Be with the fear, letting it fully reveal itself
+- When you do this, what happens to fear?
 
-> "你能与恐惧在一起吗？不是作为观察者看着恐惧，而是完全与它在一起，没有任何分离？"
+> "Can you be with fear? Not as an observer watching fear, but completely with it, without any separation?"
 
-## 恐惧与时间
+## Fear and Time
 
-**心理时间制造恐惧**：
+**Psychological time creates fear**:
 
-- "我昨天失败了，明天可能还会失败"
-- "我曾经被伤害，可能再次被伤害"
-- "我现在活着，但有一天会死"
+- "I failed yesterday; I might fail again tomorrow"
+- "I was hurt once; I might be hurt again"
+- "I am alive now, but one day I will die"
 
-**没有时间，恐惧能存在吗？**
-- 在纯粹的当下，没有"我"的投射
-- 危险可能存在，但恐惧——作为思想的运动——不存在
-- 这不是理论，你可以自己去看
+**Without time, can fear exist?**
+- In the pure present, there is no projection of "I"
+- Danger may exist, but fear — as a movement of thought — does not
+- This is not theory; you can look for yourself
 
-> "思想创造了时间——不是钟表的时间，而是心理的时间。在那个时间里，恐惧繁殖。"
+> "Thought has created time — not clock time, but psychological time. In that time, fear breeds."
 
 ---
 
-## 欲望的本质
+## The Nature of Desire
 
-**欲望是什么？**
+**What is desire?**
 
-看见 → 感觉 → 思想介入并创造形象 → 欲望
+Seeing → sensation → thought intervenes and creates an image → desire
 
-**欲望的机制**：
-1. 你看见一件美丽的东西
-2. 感觉自然升起——这是自然的
-3. 然后思想说："我想拥有它"
-4. 这就是欲望的诞生
+**The mechanism of desire**:
+1. You see something beautiful
+2. Sensation naturally arises — this is natural
+3. Then thought says: "I want to have it"
+4. This is the birth of desire
 
-**问题不在感觉**：
-- 感觉本身是自然的、健康的
-- 问题在于思想接管感觉
-- 思想说"我"想要，"我"需要
+**The problem is not in sensation**:
+- Sensation itself is natural and healthy
+- The problem arises when thought takes over sensation
+- Thought says "I" want, "I" need
 
-> "有看见，有感觉，有欲望。你能在感觉处停下，不让思想接管吗？"
+> "There is seeing, there is sensation, there is desire. Can you stop at sensation, without thought taking over?"
 
-## 欲望与满足
+## Desire and Fulfillment
 
-**欲望的承诺**：
-- 满足欲望会带来快乐
-- 得到想要的东西会带来满足
-- 更多就是更好
+**The promise of desire**:
+- Fulfilling desire will bring happiness
+- Getting what you want will bring satisfaction
+- More is better
 
-**实际发生的**：
-- 满足带来短暂的快感，然后是空虚
-- 得到之后，新的欲望升起
-- 欲望永不满足，因为它的本性就是不满足
+**What actually happens**:
+- Fulfillment brings a brief thrill, then emptiness
+- After getting, new desire arises
+- Desire is never satisfied, because its very nature is dissatisfaction
 
-**为什么欲望永不满足？**
-- 欲望不是要那个东西
-- 欲望是要通过那个东西感到完整
-- 但没有任何东西能让"我"完整
-- 所以欲望永远继续
+**Why is desire never satisfied?**
+- Desire is not for the thing
+- Desire is for feeling complete through the thing
+- But nothing can make the "I" complete
+- So desire goes on forever
 
-> "你满足了一个欲望，另一个立即升起。这不是告诉你一些关于欲望本身的事情吗？"
+> "You satisfy one desire, and another immediately arises. Doesn't that tell you something about the nature of desire itself?"
 
-## 欲望与冲突
+## Desire and Conflict
 
-**欲望如何制造冲突？**
+**How does desire create conflict?**
 
-- 欲望A和欲望B冲突——我想吃但也想瘦
-- 欲望和"应该"冲突——我想要但我不应该
-- 我的欲望和你的欲望冲突——我们都想要同样的东西
+- Desire A and Desire B conflict — I want to eat but I also want to be thin
+- Desire and "should" conflict — I want it but I shouldn't
+- My desire and your desire conflict — we both want the same thing
 
-**更深的冲突**：
-- 我是什么 vs. 我应该是什么
-- 实际 vs. 理想
-- 这是所有冲突的根源
+**The deeper conflict**:
+- What I am vs. what I should be
+- The actual vs. the ideal
+- This is the root of all conflict
 
-> "冲突存在于'是什么'和'应该是什么'之间。你能只与'是什么'在一起吗？"
+> "Conflict exists between 'what is' and 'what should be.' Can you simply be with 'what is'?"
 
-## 快乐与喜悦
+## Pleasure and Joy
 
-**快乐 (Pleasure)**：
-- 是思想对过去愉快经历的延续
-- 你有一个美好的经历，思想想要重复它
-- 快乐与恐惧是同一枚硬币的两面——都是思想的投射
+**Pleasure**:
+- Is the continuation by thought of a past pleasant experience
+- You had a beautiful experience; thought wants to repeat it
+- Pleasure and fear are two sides of the same coin — both are projections of thought
 
-**喜悦 (Joy)**：
-- 是自发的、不可预测的
-- 不是思想的产物
-- 当它发生时你不知道它在那里
-- 当你说"这是喜悦"，它已经成为快乐了
+**Joy**:
+- Is spontaneous and unpredictable
+- Is not a product of thought
+- When it happens, you don't know it is there
+- When you say "this is joy," it has already become pleasure
 
-**美的感知**：
-- 美不是快乐
-- 当你看见美——自然、艺术、人——有一个当下的感知
-- 如果你说"我要再次拥有这个"，快乐开始，美结束
+**The perception of beauty**:
+- Beauty is not pleasure
+- When you see beauty — in nature, in art, in a person — there is a present-moment perception
+- If you say "I want to have this again," pleasure begins and beauty ends
 
-> "喜悦来了就走了，你无法追求它。追求喜悦就把它变成快乐，而快乐带来痛苦。"
+> "Joy comes and goes; you cannot pursue it. Pursuing joy turns it into pleasure, and pleasure brings pain."
 
-## 欲望与能量
+## Desire and Energy
 
-**欲望消耗能量**：
-- 追逐、冲突、挣扎——这些都消耗能量
-- 压抑欲望也消耗能量
-- 分裂的心灵浪费能量
+**Desire consumes energy**:
+- Chasing, conflicting, struggling — all of these consume energy
+- Suppressing desire also consumes energy
+- A fragmented mind wastes energy
 
-**另一种可能**：
-- 当你完全看见欲望的运动，不做任何事
-- 能量不再被冲突消耗
-- 那个能量可以有完全不同的质量
+**Another possibility**:
+- When you completely see the movement of desire, without doing anything
+- Energy is no longer consumed by conflict
+- That energy may have an entirely different quality
 
-> "当你不再与欲望作战，当你不追求也不压抑，你有巨大的能量。那个能量是智慧。"
-
+> "When you no longer battle desire — when you neither pursue nor suppress — you have immense energy. That energy is intelligence."

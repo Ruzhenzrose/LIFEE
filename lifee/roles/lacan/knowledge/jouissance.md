@@ -1,129 +1,128 @@
-# 享乐 (La jouissance)
+# Jouissance (La jouissance)
 
-Jouissance 不是快乐（plaisir）。快乐遵循快乐原则，维持在低张力水平。享乐是超越快乐原则的，是痛苦的快感，是令人毁灭的满足。
+Jouissance is not pleasure (plaisir). Pleasure follows the pleasure principle, maintaining a low level of tension. Jouissance is beyond the pleasure principle — it is painful pleasure, a devastating satisfaction.
 
-## 享乐与快乐的区别
+## Jouissance vs. Pleasure
 
-**快乐 (plaisir)**：
-- 遵循快乐原则
-- 追求张力降低
-- 可以言说
-- 与象征界兼容
+**Pleasure (plaisir)**:
+- Follows the pleasure principle
+- Seeks reduction of tension
+- Can be spoken
+- Compatible with the Symbolic
 
-**享乐 (jouissance)**：
-- 超越快乐原则
-- 追求张力的极限
-- 不可言说
-- 属于实在界
+**Jouissance**:
+- Beyond the pleasure principle
+- Pushes tension to its limit
+- Cannot be spoken
+- Belongs to the Real
 
-"快乐是你想要的，享乐是你不知道自己想要、却无法停止追求的。"
+"Pleasure is what you want; jouissance is what you didn't know you wanted, yet cannot stop pursuing."
 
-## 享乐的悖论
+## The Paradox of Jouissance
 
-弗洛伊德发现了重复强迫：主体重复痛苦的经历，明明知道会受苦，却无法停止。
+Freud discovered the repetition compulsion: the subject repeats painful experiences, knowing full well they will suffer, yet unable to stop.
 
-这就是享乐的运作：
-- 它不是"好"的
-- 它让主体受苦
-- 但主体**从受苦中获得满足**
-- 症状就是享乐的场所
+This is how jouissance operates:
+- It is not "good"
+- It makes the subject suffer
+- But the subject **derives satisfaction from the suffering**
+- The symptom is the site of jouissance
 
-"神经症者抱怨他的症状，但他从抱怨本身中享乐。"
+"The neurotic complains about his symptom, but he takes jouissance from the very act of complaining."
 
-## 享乐的类型
+## Types of Jouissance
 
-### 1. 菲勒斯享乐 (Jouissance phallique)
+### 1. Phallic Jouissance (Jouissance phallique)
 
-- 与阉割相关的享乐
-- 通过象征界中介
-- 受语言限制
-- **男性**主体的享乐方式（性别化公式中）
-- 是"可数的"、有限的
+- Jouissance linked to castration
+- Mediated through the Symbolic
+- Limited by language
+- The mode of jouissance for the **male** subject (in the formulas of sexuation)
+- It is "countable," finite
 
-菲勒斯享乐在阉割的限制下运作。它说："是的，但这是被允许的。"
+Phallic jouissance operates under the constraint of castration. It says: "Yes, but this is permitted."
 
-### 2. 大他者享乐 (Jouissance de l'Autre)
+### 2. Jouissance of the Other (Jouissance de l'Autre)
 
-- 超越菲勒斯的享乐
-- 不可言说
-- 神秘主义者的体验
-- **女性**主体可能接近的享乐（但不是所有女性，也不只是女性）
-- 是"不可数的"、无限的
+- Jouissance beyond the phallic
+- Unspeakable
+- The experience of the mystics
+- A jouissance the **female** subject may approach (but not all women, and not only women)
+- It is "uncountable," infinite
 
-"女人们有时会经历一种她们自己都说不清的享乐。"——第二十研讨班
+"Women sometimes experience a jouissance they themselves cannot articulate." — Seminar XX
 
-### 3. 剩余享乐 (Plus-de-jouir)
+### 3. Surplus Jouissance (Plus-de-jouir)
 
-- 客体小a 作为剩余享乐的凝缩
-- 对应马克思的剩余价值
-- 能指运作中失落的、无法被象征化的享乐
-- **欲望的原因**
+- Objet petit a as the condensation of surplus jouissance
+- Analogous to Marx's surplus value
+- The jouissance lost in the operation of signifiers, unsymbolizable
+- **The cause of desire**
 
-语言切割了享乐，但切割后有剩余。这个剩余就是客体小a。我们以为追求对象能填补缺失，实际上是这个剩余在驱动我们。
+Language cuts into jouissance, but after the cut there is a remainder. This remainder is objet petit a. We think pursuing objects will fill the lack, but in truth it is this remainder that drives us.
 
-## 享乐与身体
+## Jouissance and the Body
 
-享乐发生在**身体**上。
+Jouissance takes place on the **body**.
 
-- 身体是享乐的场所
-- 症状是享乐在身体上的铭写
-- 歇斯底里的症状：享乐的身体表达
-- 强迫症的仪式：享乐的变相实现
+- The body is the site of jouissance
+- Symptoms are the inscription of jouissance on the body
+- Hysterical symptoms: the bodily expression of jouissance
+- Obsessional rituals: jouissance realized in disguise
 
-"无意识是用身体写的。"
+"The unconscious is written with the body."
 
-### 身体的三种维度
+### Three Dimensions of the Body
 
-1. **想象的身体**：镜像中的完整形象
-2. **象征的身体**：被能指切割的身体，欲望的身体
-3. **实在的身体**：享乐的身体，器官的身体
+1. **The imaginary body**: the complete image in the mirror
+2. **The symbolic body**: the body cut by signifiers, the body of desire
+3. **The real body**: the body of jouissance, the body of organs
 
-## 享乐与性别
+## Jouissance and Sexual Difference
 
-### 性别化公式 (Les formules de la sexuation)
+### The Formulas of Sexuation (Les formules de la sexuation)
 
-**男性一侧**：
-- ∃x Φ̄x：存在一个不受阉割的x（原父）
-- ∀x Φx：所有x都受阉割
-- 男性主体完全在菲勒斯功能中
+**The male side**:
+- ∃x Φ̄x: There exists one x not subject to castration (the primal father)
+- ∀x Φx: All x are subject to castration
+- The male subject is entirely within the phallic function
 
-**女性一侧**：
-- ∄x Φ̄x：不存在不受阉割的x
-- ∀̄x Φx：不是所有x都在菲勒斯功能中
-- 女性主体**不完全**在菲勒斯功能中
+**The female side**:
+- ∄x Φ̄x: There does not exist one x not subject to castration
+- ∀̄x Φx: Not all of x is within the phallic function
+- The female subject is **not wholly** within the phallic function
 
-**含义**：
-- "女人不存在"（La femme n'existe pas）：没有"全体女人"的能指
-- 女人是"非全"（pas-toute）的：不完全被菲勒斯功能定义
-- 这使女人可能接近大他者享乐
+**Implications**:
+- "Woman does not exist" (La femme n'existe pas): there is no signifier for "all women"
+- Woman is "not-all" (pas-toute): not entirely defined by the phallic function
+- This is what allows woman to approach the jouissance of the Other
 
-"男人和女人之间没有性关系。"——因为享乐是不可分享的，双方追求的是不同的东西。
+"There is no sexual relationship between man and woman." — Because jouissance cannot be shared; each party pursues something different.
 
-## 享乐与症状
+## Jouissance and the Symptom
 
-症状是享乐的方式。
+The symptom is a mode of jouissance.
 
-- 症状不只是痛苦
-- 症状是主体安排享乐的方式
-- 消除症状不是分析的目标
-- 分析的目标：让主体认出他从症状中获得的享乐
+- The symptom is not merely suffering
+- The symptom is the subject's way of arranging jouissance
+- Eliminating the symptom is not the goal of analysis
+- The goal of analysis: enabling the subject to recognize the jouissance they derive from the symptom
 
-**症状的功能**：
-1. 表达被压抑的欲望（弗洛伊德）
-2. 获得享乐的方式（拉康）
+**Functions of the symptom**:
+1. Expressing repressed desire (Freud)
+2. A mode of obtaining jouissance (Lacan)
 
-"你的症状就是你。不是要消灭它，而是要承认它。"
+"Your symptom is you. The aim is not to destroy it, but to acknowledge it."
 
-## 享乐与伦理
+## Jouissance and Ethics
 
-拉康的伦理不是康德的普遍法则，也不是功利主义的最大幸福。
+Lacan's ethics is neither Kant's universal law nor utilitarian maximization of happiness.
 
-**精神分析的伦理**：
-- "不要在欲望上让步"（ne pas céder sur son désir）
-- 这不是说"追求你的欲望"
-- 而是说"承担你的欲望的代价"
+**The ethics of psychoanalysis**:
+- "Do not give way on your desire" (ne pas céder sur son désir)
+- This does not mean "pursue your desire"
+- It means "bear the cost of your desire"
 
-享乐的问题不是如何获得更多，而是如何与它相处。
+The question of jouissance is not how to obtain more, but how to live with it.
 
-"真正的问题不是'我怎样才能快乐'，而是'我如何能够承受自己的享乐'。"
-
+"The real question is not 'How can I be happy?' but 'How can I bear my own jouissance?'"

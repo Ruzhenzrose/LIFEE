@@ -1,101 +1,100 @@
-# 拓扑学 (La topologie)
+# Topology (La topologie)
 
-拓扑学不是比喻，而是精神分析的数学基础。它展示的不是"像什么"，而是结构本身。
+Topology is not a metaphor — it is the mathematical foundation of psychoanalysis. It shows not "what something is like," but the structure itself.
 
-## 莫比乌斯带 (Le ruban de Möbius)
+## The Möbius Strip (Le ruban de Möbius)
 
-一个只有一个面、一个边缘的曲面。
+A surface with only one side and one edge.
 
-**精神分析意义**：
-- **内外不分**：沿着带走一圈，你从"外面"到了"内面"，却从未跨越边界
-- 主体与客体的关系：不是对立的两面，而是同一个面的延续
-- 意识与无意识：不是两层，而是一个连续的面
-- **能指链的模型**：S₁ → S₂ 的运动就像沿着莫比乌斯带前进
+**Psychoanalytic significance**:
+- **No inside/outside distinction**: Walk along the strip and you pass from "outside" to "inside" without crossing any boundary
+- The relation between subject and object: not two opposing sides, but a continuous surface
+- Consciousness and the unconscious: not two layers, but one continuous surface
+- **Model of the signifying chain**: the movement of S₁ → S₂ is like advancing along a Möbius strip
 
-"你以为你在外面观察，其实你已经在里面了。"
+"You think you are observing from the outside, but you are already on the inside."
 
-## 环面 (Le tore)
+## The Torus (Le tore)
 
-一个甜甜圈形状的曲面，有两种不可约的回路。
+A doughnut-shaped surface with two irreducible loops.
 
-**两种回路**：
-- **要求的回路**（petit cercle）：绕着管子转一圈
-- **欲望的回路**（grand cercle）：穿过中间的洞
+**Two loops**:
+- **The loop of demand** (petit cercle): going around the tube
+- **The loop of desire** (grand cercle): passing through the central hole
 
-**精神分析意义**：
-- 要求总是在重复，一圈又一圈
-- 但每次重复都在接近那个中心的空洞——欲望的客体-原因
-- **欲望与要求的关系**：要求是显性的、重复的；欲望在要求的重复中被绕行
-- 中心的洞：不可能满足的点，客体小a的位置
+**Psychoanalytic significance**:
+- Demand always repeats, round after round
+- But each repetition approaches the central void — the object-cause of desire
+- **The relation between desire and demand**: demand is manifest and repetitive; desire is traced through the repetition of demand
+- The central hole: the impossible point of satisfaction, the locus of objet petit a
 
-"神经症者的悲剧：他以为多要求几次就能得到欲望的对象，却不知道欲望的对象就是那个洞本身。"
+"The tragedy of the neurotic: he thinks that demanding more will get him the object of desire, not knowing that the object of desire is the hole itself."
 
-## 克莱因瓶 (La bouteille de Klein)
+## The Klein Bottle (La bouteille de Klein)
 
-一个没有内外之分的封闭曲面，只能在四维空间中不自交地存在。
+A closed surface with no inside/outside distinction, which can exist without self-intersection only in four-dimensional space.
 
-**精神分析意义**：
-- **自我穿透**：瓶子的"口"穿入自身的"壁"
-- 主体的结构：主体穿越自身而构成
-- **幻想的公式**（$ ◇ a）的拓扑实现：被划杠的主体与客体小a的交织
-- 你以为是"外部"给予你的东西，其实是你自己结构的一部分
+**Psychoanalytic significance**:
+- **Self-penetration**: the "mouth" of the bottle passes through its own "wall"
+- The structure of the subject: the subject constitutes itself by passing through itself
+- **Topological realization of the formula of fantasy** ($ ◇ a): the interweaving of the barred subject and objet petit a
+- What you think is given to you from "outside" is actually part of your own structure
 
-"主体不是一个容器，而是一个克莱因瓶——他以为从外部接收的，正是他自己构成的。"
+"The subject is not a container but a Klein bottle — what he thinks he receives from outside is precisely what he himself constitutes."
 
-## 交叉帽 (Le cross-cap)
+## The Cross-Cap (Le cross-cap)
 
-射影平面的一种表示，一个自交的曲面。
+A representation of the projective plane — a self-intersecting surface.
 
-**精神分析意义**：
-- **切口的效果**：在交叉帽上做一个切口，得到一个莫比乌斯带和一个圆盘
-- 圆盘 = 客体小a
-- 莫比乌斯带 = 被划杠的主体 $
-- **分析的操作**：分析就是在交叉帽上做切口，分离出客体小a
+**Psychoanalytic significance**:
+- **The effect of the cut**: making a cut on the cross-cap yields a Möbius strip and a disk
+- The disk = objet petit a
+- The Möbius strip = the barred subject $
+- **The operation of analysis**: analysis is making a cut on the cross-cap, separating out objet petit a
 
-"分析师的解释就是那一刀——不是添加什么，而是切开什么。"
+"The analyst's interpretation is that cut — not adding something, but cutting something open."
 
-## 博罗米结 (Le nœud borroméen)
+## The Borromean Knot (Le nœud borroméen)
 
-三个环相互穿过，但任意两个都不直接相连。切断任何一个，三个都散开。
+Three rings interlocked such that no two are directly linked. Cut any one, and all three come apart.
 
-**三界的结构**：
-- **想象界 (I)**：一个环
-- **象征界 (S)**：一个环
-- **实在界 (R)**：一个环
-- 三个环同等重要，没有哪个是"基础"
+**The structure of the three registers**:
+- **The Imaginary (I)**: one ring
+- **The Symbolic (S)**: one ring
+- **The Real (R)**: one ring
+- All three rings are equally important — none is "foundational"
 
-**关键点**：
-- 没有象征界，想象界与实在界无法连接
-- 没有实在界，象征界与想象界只是空转
-- 没有想象界，主体无法"看到"自己
+**Key points**:
+- Without the Symbolic, the Imaginary and the Real cannot connect
+- Without the Real, the Symbolic and the Imaginary merely spin in empty circles
+- Without the Imaginary, the subject cannot "see" itself
 
-**精神病的结构**：
-- 父亲之名的排除（forclusion）= 象征界的环断裂
-- 三界散开，主体失去维系
+**The structure of psychosis**:
+- The foreclosure (forclusion) of the Name-of-the-Father = the Symbolic ring breaks
+- The three registers come apart; the subject loses its mooring
 
-## 第四环：圣状 (Le sinthome)
+## The Fourth Ring: The Sinthome (Le sinthome)
 
-晚期拉康的创新：当博罗米结的一个环出问题时，可以用第四个环来修补。
+A late-Lacan innovation: when one ring of the Borromean knot fails, a fourth ring can serve as repair.
 
-**乔伊斯的例子**：
-- 詹姆斯·乔伊斯可能缺乏父亲之名的正常功能
-- 但他的**写作**成为第四环，维系了三界
-- 艺术作为 sinthome
+**The example of Joyce**:
+- James Joyce may have lacked the normal function of the Name-of-the-Father
+- But his **writing** became the fourth ring, holding the three registers together
+- Art as sinthome
 
-**sinthome vs. symptôme**：
-- symptôme（症状）：可以被解释、被穿越
-- sinthome（圣状）：不可解释，是主体存在的方式本身
-- 分析的另一种结束：不是穿越症状，而是**认同 sinthome**
+**Sinthome vs. symptôme**:
+- symptôme (symptom): can be interpreted, can be traversed
+- sinthome: cannot be interpreted — it is the subject's very mode of existence
+- An alternative end of analysis: not traversing the symptom, but **identifying with the sinthome**
 
-"有些人的症状不能被'治愈'，因为那就是他们本人。"
+"Some people's symptoms cannot be 'cured,' because the symptom is who they are."
 
-## 拓扑学的伦理
+## The Ethics of Topology
 
-为什么要用拓扑学？
+Why use topology?
 
-1. **反对空间化的直觉**：常识的空间观念（里/外、上/下）是想象界的陷阱
-2. **展示不可能性**：拓扑学能展示某些结构性的不可能
-3. **数学化**：拉康追求的"数学化"（mathème）——能够传递的知识，不依赖于想象性的理解
+1. **Against spatialized intuition**: Commonsense spatial notions (inside/outside, above/below) are traps of the Imaginary
+2. **Demonstrating impossibility**: Topology can show certain structural impossibilities
+3. **Mathematization**: Lacan's pursuit of the "matheme" (mathème) — transmissible knowledge that does not depend on imaginary understanding
 
-"我不要求你们理解，我要求你们看到结构。"
-
+"I do not ask you to understand — I ask you to see the structure."

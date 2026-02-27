@@ -1,184 +1,183 @@
-# 冥想与自由
+# Meditation and Freedom
 
-## 什么不是冥想
+## What Meditation Is Not
 
-**专注不是冥想**：
-- 专注是排斥——你集中于一点，排斥其他
-- 专注是努力——需要意志力
-- 专注是狭窄的——像聚光灯
-- 专注会疲劳
+**Concentration is not meditation**:
+- Concentration is exclusion — you focus on one point, shutting out everything else
+- Concentration is effort — it requires willpower
+- Concentration is narrow — like a spotlight
+- Concentration leads to fatigue
 
-**控制思想不是冥想**：
-- 控制意味着有一个控制者
-- 控制者是另一个思想
-- 一个思想控制另一个思想——这不是自由
+**Controlling thought is not meditation**:
+- Control implies a controller
+- The controller is itself another thought
+- One thought controlling another thought — this is not freedom
 
-**方法不是冥想**：
-- 任何方法都是机械的
-- 方法是已知的
-- 方法不能带你到未知
+**A method is not meditation**:
+- Any method is mechanical
+- A method belongs to the known
+- A method cannot take you to the unknown
 
-**追求体验不是冥想**：
-- 追求神秘体验是欲望
-- 体验需要一个体验者
-- 体验者是过去，过去不能遇见真正的新
+**Pursuing experience is not meditation**:
+- Seeking mystical experience is desire
+- Experience requires an experiencer
+- The experiencer is the past, and the past cannot meet what is truly new
 
-> "如果你遵循一个方法，你会得到那个方法承诺的结果——那是你自己投射的，不是真实的。"
+> "If you follow a method, you will get the result that method promises — and that result is your own projection, not the real."
 
-## 觉察与注意
+## Awareness and Attention
 
-**觉察 (Awareness)**：
-- 觉察是无选择的
-- 不说"这个好，那个坏"
-- 只是看，不判断
-- 像一面镜子，如实反映
+**Awareness**:
+- Awareness is choiceless
+- It does not say "this is good, that is bad"
+- It simply looks, without judgment
+- Like a mirror, reflecting what is
 
-**注意 (Attention)**：
-- 注意不同于专注
-- 专注有排斥，注意没有
-- 注意是全然的、完整的
-- 在注意中，观察者消失
+**Attention**:
+- Attention is different from concentration
+- Concentration has exclusion; attention does not
+- Attention is total and complete
+- In attention, the observer disappears
 
-**觉察到注意**：
-- 首先觉察——看见你的思想、感受
-- 然后注意——那个"看"变得全然
-- 在全然的注意中，问题消解
+**From awareness to attention**:
+- First, awareness — seeing your thoughts, your feelings
+- Then attention — the seeing becomes total
+- In total attention, the problem dissolves
 
-> "当你全然注意某事，那个注意本身就是智慧、就是爱、就是真相。"
+> "When you attend to something totally, that attention itself is intelligence, is love, is truth."
 
-## 冥想是什么
+## What Meditation Is
 
-**冥想不是做什么**：
-- 不是一个活动
-- 不是一个练习
-- 不是某种状态的追求
+**Meditation is not doing something**:
+- It is not an activity
+- It is not an exercise
+- It is not the pursuit of some state
 
-**冥想是生活的质量**：
-- 当你在吃饭时完全注意——那是冥想
-- 当你在听鸟叫时没有任何判断——那是冥想
-- 当你与另一个人在一起，没有形象——那是冥想
+**Meditation is a quality of living**:
+- When you eat with complete attention — that is meditation
+- When you listen to birdsong without any judgment — that is meditation
+- When you are with another person without any image — that is meditation
 
-**冥想是终点在开始**：
-- 不是"我冥想以便达到某种状态"
-- 冥想本身就是终点
-- 每一刻都是完整的
+**In meditation, the end is in the beginning**:
+- Not "I meditate in order to reach some state"
+- Meditation itself is the end
+- Every moment is complete
 
-> "冥想是看见和行动中没有中心。这个中心就是思想的'我'。当没有中心时，有一种完全不同的感知。"
+> "Meditation is seeing and acting without a center. That center is the 'I' of thought. When there is no center, there is an entirely different perception."
 
-## 心灵的寂静
+## The Silence of the Mind
 
-**强制的寂静不是寂静**：
-- 通过重复咒语——心灵被催眠
-- 通过控制思想——能量被压抑
-- 这些是人为制造的，不是真正的寂静
+**Forced silence is not silence**:
+- Through repeating a mantra — the mind is hypnotized
+- Through controlling thought — energy is suppressed
+- These are manufactured; they are not true silence
 
-**真正的寂静**：
-- 来自对思想运动的理解
-- 当你看见思想的全部内容
-- 当思想理解它自己的局限
-- 思想自然变得安静——不是被强制的
+**True silence**:
+- Comes from understanding the movement of thought
+- When you see the entire content of thought
+- When thought understands its own limitations
+- Thought naturally becomes quiet — it is not forced
 
-**在寂静中**：
-- 可能有完全不同的东西
-- 不可测量的、不可命名的
-- 但如果你追求它，它就不会来
-- 它只能在寂静中自己到来
+**In silence**:
+- There may be something entirely different
+- Immeasurable, unnameable
+- But if you pursue it, it will not come
+- It can only come of itself, in silence
 
-> "你不能邀请那不可知的。你能做的只是让房间干净——清除一切。如果它来，它来；如果它不来，你不能做什么。"
+> "You cannot invite the unknown. All you can do is keep the room clean — clear everything out. If it comes, it comes; if it does not, there is nothing you can do."
 
 ---
 
-## 自由的本质
+## The Nature of Freedom
 
-**自由不是从什么中自由**：
-- "从恐惧中自由"——这仍然是受限的
-- 这样的自由是反应性的
-- 真正的自由没有"从"
+**Freedom is not freedom from something**:
+- "Freedom from fear" — this is still limited
+- Such freedom is reactive
+- True freedom has no "from"
 
-**自由不是去做什么**：
-- "我自由了，所以我可以做任何事"——这是放纵
-- 这不是自由，是欲望的奴役
+**Freedom is not freedom to do something**:
+- "I am free, so I can do anything" — this is indulgence
+- This is not freedom; it is slavery to desire
 
-**真正的自由**：
-- 不是自由"从"什么或"去"做什么
-- 自由是一种存在的质量
-- 自由是在观察中——当观察完全没有自我
+**True freedom**:
+- Is not freedom "from" something or "to" do something
+- Freedom is a quality of being
+- Freedom lies in observation — when observation is completely free of self
 
-> "自由不是选择的自由。只要有选择，就有冲突，就有不自由。真正的自由是看见真相——在那个看见中没有选择。"
+> "Freedom is not the freedom of choice. As long as there is choice, there is conflict, there is unfreedom. True freedom is seeing the truth — and in that seeing there is no choice."
 
-## 自由与秩序
+## Freedom and Order
 
-**自由不是混乱**：
-- 真正的自由中有秩序
-- 不是强加的秩序
-- 不是纪律的秩序
-- 而是自然的秩序
+**Freedom is not chaos**:
+- In true freedom there is order
+- Not imposed order
+- Not the order of discipline
+- But a natural order
 
-**秩序从何而来？**
-- 当你看见混乱——真正看见它
-- 秩序自然出现
-- 不是"你"创造秩序
-- 看见本身带来秩序
+**Where does order come from?**
+- When you see disorder — truly see it
+- Order naturally emerges
+- It is not "you" who creates order
+- Seeing itself brings order
 
-> "只有在自由中才有秩序。强加的秩序是束缚。但当你真正看见混乱是什么，秩序自然发生。"
+> "Only in freedom is there order. Imposed order is bondage. But when you truly see what disorder is, order happens naturally."
 
-## 自由与责任
+## Freedom and Responsibility
 
-**自由是责任**：
-- 不是"我自由了，所以我不负责任"
-- 恰恰相反——真正的自由意味着全然的责任
-- 当你没有别人可以依靠，你全然负责
+**Freedom is responsibility**:
+- Not "I am free, therefore I am not responsible"
+- Quite the opposite — true freedom means total responsibility
+- When you have no one else to lean on, you are wholly responsible
 
-**对什么负责？**
-- 对你的思想、言语、行动
-- 对你对世界的影响
-- 因为你就是世界
+**Responsible for what?**
+- For your thoughts, words, and actions
+- For your impact on the world
+- Because you are the world
 
-> "当你真正自由时，你对整个人类负责。因为你就是人类。"
+> "When you are truly free, you are responsible for all humanity. Because you are humanity."
 
-## 死亡与自由
+## Death and Freedom
 
-**我们为什么怕死？**
-- 因为我们执着于已知
-- 因为"我"想要延续
-- 因为我们不知道死亡是什么
+**Why do we fear death?**
+- Because we cling to the known
+- Because the "I" wants to continue
+- Because we do not know what death is
 
-**死亡是什么？**
-- 死亡是未知
-- 死亡是全然的结束——"我"的结束
-- 死亡是不可避免的
+**What is death?**
+- Death is the unknown
+- Death is total ending — the ending of the "I"
+- Death is inevitable
 
-**每日的死亡**：
-- 不必等到身体死亡
-- 每一天死于过去
-- 每一刻死于已知
-- 这是活着的方式
+**Daily dying**:
+- You need not wait for the body to die
+- Die each day to the past
+- Die each moment to the known
+- This is the way to live
 
-**死亡与生命**：
-- 当你不怕死，你开始活
-- 真正的生命需要死于恐惧
-- 死亡和生命不是对立的
+**Death and life**:
+- When you do not fear death, you begin to live
+- True life requires dying to fear
+- Death and life are not opposites
 
-> "你能在活着的时候死去吗？不是自杀——而是心理上死于你所知道的一切？那时你会发现，死亡和生命是同一件事。"
+> "Can you die while you are alive? Not suicide — but psychologically die to everything you know? Then you will find that death and life are the same thing."
 
-## 什么是不可测量的？
+## What Is the Immeasurable?
 
-**思想的边界**：
-- 思想是测量
-- 思想比较、判断、评估
-- 思想属于已知的领域
+**The boundary of thought**:
+- Thought is measurement
+- Thought compares, judges, evaluates
+- Thought belongs to the realm of the known
 
-**超越思想**：
-- 有没有思想无法触及的？
-- 有没有不可测量的？
-- 有没有神圣的？
+**Beyond thought**:
+- Is there something thought cannot touch?
+- Is there something immeasurable?
+- Is there something sacred?
 
-**不能追求**：
-- 追求是思想的活动
-- 追求神圣仍然是思想
-- 当思想完全静止
-- 当心灵完全空——不是强制的空
-- 也许那时有完全不同的东西
+**It cannot be pursued**:
+- Pursuit is an activity of thought
+- Pursuing the sacred is still thought
+- When thought is completely still
+- When the mind is completely empty — not forcibly empty
+- Perhaps then something entirely different is there
 
-> "那不可测量的不能被寻找。当心灵完全空——没有追求、没有动机、没有任何方向——也许它就在那里。但你不能邀请它。"
-
+> "The immeasurable cannot be sought. When the mind is completely empty — without pursuit, without motive, without any direction — perhaps it is there. But you cannot invite it."
