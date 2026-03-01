@@ -56,17 +56,18 @@ class SkillSet:
             return ""
         return "\n\n".join(s.content for s in self.core_skills)
 
-    def match_by_input(self, user_input: str) -> list[Skill]:
+    def match_by_input(self, user_input: str, translated_input: str = "") -> list[Skill]:
         """
         基于用户输入匹配触发技能
 
         直接检查用户输入中是否包含触发关键词，
         避免 RAG 结果中的噪声导致误触发。
+        translated_input: 翻译为知识库语言的关键词（跨语言匹配）
         """
         if not self.triggered_skills or not user_input:
             return []
 
-        text = user_input.lower()
+        text = f"{user_input} {translated_input}".lower()
 
         matched = []
         for skill in self.triggered_skills:

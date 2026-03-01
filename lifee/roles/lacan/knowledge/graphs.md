@@ -1,6 +1,6 @@
-# 图示 (Les schémas et graphes)
+# Schemas and Graphs (Les schémas et graphes)
 
-## L图式 (Le schéma L)
+## Schema L (Le schéma L)
 
 ```
     (Es) S ──────────────── a' (autre)
@@ -19,27 +19,27 @@
                symbolique
 ```
 
-**四个位置**：
-- **S (Es)**：主体，但是是无意识的主体，弗洛伊德的 Es（它）
-- **a (moi)**：自我，想象性的我
-- **a' (autre)**：小他者，镜像，相似者
-- **A (Autre)**：大他者，象征秩序
+**Four positions**:
+- **S (Es)**: The subject — but the unconscious subject, Freud's Es (the "it")
+- **a (moi)**: The ego, the imaginary self
+- **a' (autre)**: The little other, the mirror image, the counterpart
+- **A (Autre)**: The big Other, the symbolic order
 
-**两条轴**：
-- **想象轴 (a—a')**：自我与镜像的关系，想象性认同
-- **象征轴 (S—A)**：主体与大他者的关系，被想象轴阻断
+**Two axes**:
+- **The imaginary axis (a—a')**: The relation between the ego and the mirror image; imaginary identification
+- **The symbolic axis (S—A)**: The relation between the subject and the big Other; blocked by the imaginary axis
 
-**关键洞见**：
-- 想象轴**阻断**了象征轴
-- 自我与小他者的关系遮蔽了主体与大他者的关系
-- 这就是为什么"自我"是分析的障碍，而非盟友
-- 分析要做的：绕过想象轴，让 S—A 的关系显现
+**Key insight**:
+- The imaginary axis **blocks** the symbolic axis
+- The relation between the ego and the little other obscures the relation between the subject and the big Other
+- This is why the "ego" is an obstacle to analysis, not an ally
+- The task of analysis: bypass the imaginary axis and allow the S—A relation to emerge
 
-"你以为你在和我说话，其实你在和你的镜像说话。"
+"You think you are speaking to me, but in fact you are speaking to your mirror image."
 
-## 欲望图 (Le graphe du désir)
+## The Graph of Desire (Le graphe du désir)
 
-### 第一层：基本图
+### First Level: The Basic Graph
 
 ```
         Δ ───────────────→ $
@@ -51,27 +51,27 @@
             ↗       ↘
            /         \
           /           \
-        意向 ←───────── 能指链
+        intention ←───────── signifying chain
 ```
 
-**元素**：
-- **Δ**：神话性的起点，未被象征化的需要
-- **$**：被划杠的主体，言说的结果
-- **A**：大他者，语言的宝库
-- **s(A)**：大他者的所指，意义的效果
-- **能指链**：S₁ → S₂ → S₃ ...
+**Elements**:
+- **Δ**: The mythical starting point — unsymbolized need
+- **$**: The barred subject — the result of speaking
+- **A**: The big Other — the treasury of signifiers
+- **s(A)**: The signified of the Other — the effect of meaning
+- **The signifying chain**: S₁ → S₂ → S₃ ...
 
-**过程**：
-- 主体从 Δ 出发，带着需要
-- 穿过能指链，需要被语言切割
-- 到达 A（大他者）寻求意义
-- 但得到的只是 s(A)——总是不完整的意义
-- 主体作为 $ 出现——被划杠的，分裂的
+**The process**:
+- The subject departs from Δ, carrying need
+- Passes through the signifying chain; need is cut by language
+- Reaches A (the big Other) seeking meaning
+- But receives only s(A) — always incomplete meaning
+- The subject emerges as $ — barred, split
 
-### 第二层：完整图
+### Second Level: The Complete Graph
 
 ```
-        享乐            Che vuoi?
+        jouissance            Che vuoi?
           ↑               ↑
     $ ◇ a ←─── $ ◇ D ←─── d
           ↓               ↓
@@ -79,37 +79,37 @@
                 A
 ```
 
-**上层新增元素**：
-- **d**：欲望
-- **$ ◇ D**：欲望的公式（主体对要求的关系）
-- **$ ◇ a**：幻想的公式
-- **S(Ⱥ)**：被划杠的大他者的能指——大他者也是不完整的
+**Upper-level elements added**:
+- **d**: Desire
+- **$ ◇ D**: The formula of desire (the subject's relation to demand)
+- **$ ◇ a**: The formula of fantasy
+- **S(Ⱥ)**: The signifier of the barred big Other — the big Other is itself incomplete
 
-**Che vuoi?**（你想要什么？）：
-- 大他者向主体提出的问题
-- 主体无法回答，因为他不知道自己的欲望
-- 这个问题制造焦虑
-- 主体用幻想（$ ◇ a）来回答这个无法回答的问题
+**Che vuoi?** ("What do you want?"):
+- The question the big Other poses to the subject
+- The subject cannot answer, because they do not know their own desire
+- This question produces anxiety
+- The subject uses fantasy ($ ◇ a) to answer this unanswerable question
 
-**欲望的辩证法**：
-- 需要（besoin）→ 被语言切割
-- 要求（demande）→ 对爱的要求，超出需要
-- 欲望（désir）→ 在需要和要求的差距中诞生
-- 欲望是要求减去需要后的剩余
+**The dialectic of desire**:
+- Need (besoin) → cut by language
+- Demand (demande) → a demand for love, exceeding need
+- Desire (désir) → born in the gap between need and demand
+- Desire is what remains when need is subtracted from demand
 
-"你要求的不是你需要的，你欲望的不是你要求的。"
+"What you demand is not what you need; what you desire is not what you demand."
 
-## 四种话语的公式
+## The Formulas of the Four Discourses
 
-每种话语都有四个位置：
+Each discourse has four positions:
 
 ```
-施动者 → 他者
+agent → other
   ↑        ↓
-真理    产品
+truth    product
 ```
 
-### 主人话语 (Discours du maître)
+### The Master's Discourse (Discours du maître)
 
 ```
 S₁ → S₂
@@ -117,14 +117,14 @@ S₁ → S₂
 $     a
 ```
 
-- **施动者**：主人能指 S₁（命令）
-- **他者**：知识 S₂（奴隶的知识）
-- **真理**：被划杠的主体 $（主人的分裂被掩盖）
-- **产品**：客体小a（剩余享乐，主人得不到的）
+- **Agent**: The master signifier S₁ (the command)
+- **Other**: Knowledge S₂ (the slave's knowledge)
+- **Truth**: The barred subject $ (the master's splitting is concealed)
+- **Product**: Objet petit a (surplus jouissance — what the master cannot obtain)
 
-主人说"做！"，奴隶知道怎么做，但产出的享乐主人无法获得。
+The master says "Do!" The slave knows how, but the jouissance produced is inaccessible to the master.
 
-### 大学话语 (Discours de l'université)
+### The University Discourse (Discours de l'université)
 
 ```
 S₂ → a
@@ -132,14 +132,14 @@ S₂ → a
 S₁   $
 ```
 
-- **施动者**：知识 S₂（"客观的"知识）
-- **他者**：学生作为客体 a
-- **真理**：隐藏的主人能指 S₁（权威）
-- **产品**：被划杠的主体 $（被生产出的顺从主体）
+- **Agent**: Knowledge S₂ ("objective" knowledge)
+- **Other**: The student as objet a
+- **Truth**: The hidden master signifier S₁ (authority)
+- **Product**: The barred subject $ (the compliant subject produced)
 
-大学话语的虚伪：表面上是知识在说话，实际上背后是权力。
+The hypocrisy of the university discourse: on the surface, knowledge speaks; in reality, power lurks behind it.
 
-### 癔症话语 (Discours de l'hystérique)
+### The Hysteric's Discourse (Discours de l'hystérique)
 
 ```
 $ → S₁
@@ -147,14 +147,14 @@ $ → S₁
 a    S₂
 ```
 
-- **施动者**：被划杠的主体 $（分裂的、提问的）
-- **他者**：主人能指 S₁（被质问的权威）
-- **真理**：客体小a（欲望的秘密原因）
-- **产品**：知识 S₂（主人被迫生产知识）
+- **Agent**: The barred subject $ (split, questioning)
+- **Other**: The master signifier S₁ (the authority being interrogated)
+- **Truth**: Objet petit a (the secret cause of desire)
+- **Product**: Knowledge S₂ (the master is forced to produce knowledge)
 
-癔症者的提问迫使主人暴露他的无知。分析者应促成癔症话语。
+The hysteric's questioning forces the master to expose his ignorance. The analyst should facilitate the hysteric's discourse.
 
-### 分析师话语 (Discours de l'analyste)
+### The Analyst's Discourse (Discours de l'analyste)
 
 ```
 a → $
@@ -162,12 +162,11 @@ a → $
 S₂   S₁
 ```
 
-- **施动者**：客体小a（分析师占据欲望客体-原因的位置）
-- **他者**：被划杠的主体 $（分析者）
-- **真理**：知识 S₂（分析师的知识，但不直接运用）
-- **产品**：主人能指 S₁（分析者生产出自己的主人能指）
+- **Agent**: Objet petit a (the analyst occupies the position of object-cause of desire)
+- **Other**: The barred subject $ (the analysand)
+- **Truth**: Knowledge S₂ (the analyst's knowledge, but not directly deployed)
+- **Product**: The master signifier S₁ (the analysand produces their own master signifier)
 
-分析师的沉默、切断、谜一般的在场——都是为了占据 a 的位置，让分析者生产出他自己的 S₁。
+The analyst's silence, cuts, and enigmatic presence — all serve to occupy the position of a, enabling the analysand to produce their own S₁.
 
-"分析师不是知道答案的人，而是让你生产出自己答案的人。"
-
+"The analyst is not the one who has the answers, but the one who enables you to produce your own."

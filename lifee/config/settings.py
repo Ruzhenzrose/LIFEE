@@ -75,6 +75,18 @@ class Settings(BaseSettings):
     opencode_api_key: str = Field(default="", description="OpenCode API Key")
     opencode_model: str = Field(default="glm-4.7", description="OpenCode 模型 (glm-4.7 免费)")
 
+    # DeepSeek
+    deepseek_api_key: str = Field(default="", description="DeepSeek API Key")
+    deepseek_model: str = Field(default="deepseek-chat", description="DeepSeek 模型")
+
+    # OpenRouter (一个 key 多模型)
+    openrouter_api_key: str = Field(default="", description="OpenRouter API Key")
+    openrouter_model: str = Field(default="google/gemini-2.5-flash", description="OpenRouter 模型")
+
+    # Groq (超快推理)
+    groq_api_key: str = Field(default="", description="Groq API Key")
+    groq_model: str = Field(default="llama-3.3-70b-versatile", description="Groq 模型")
+
     # OpenAI Embedding (用于 RAG)
     openai_api_key: str = Field(default="", description="OpenAI API Key")
     embedding_model: str = Field(
@@ -85,6 +97,7 @@ class Settings(BaseSettings):
     # 应用配置
     debug: bool = Field(default=False, description="调试模式")
     data_dir: Path = Field(default=Path("data"), description="数据目录")
+    ui_lang: str = Field(default="zh", description="UI language: zh or en")
 
     @property
     def sessions_dir(self) -> Path:

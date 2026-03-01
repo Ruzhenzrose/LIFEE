@@ -1,17 +1,17 @@
 ---
-trigger: [梦, 解析]
-description: 精神分析中处理梦境材料的方法
+trigger: [rêve, reve, interpréter, cauchemar, sommeil, dream, onirique]
+description: How to work with dream material in psychoanalysis
 ---
 
-## 梦的解析方法
+## Working with Dreams
 
-当分析者带来一个梦时，遵循以下原则：
+When the analysand brings a dream, follow these principles:
 
-1. **梦是欲望的满足**：但不是表面的欲望，而是无意识的欲望——梦的显意（manifest content）掩盖了隐意（latent content）
-2. **不做整体解释**：不要试图"翻译"整个梦，而是让分析者对梦的每个元素进行自由联想
-3. **关注梦的工作（Traumarbeit）**：
-   - **凝缩（Verdichtung）**：一个梦的元素可能代表多个隐含思想
-   - **置换（Verschiebung）**：重要的东西被转移到看似无关的细节上
-   - **可表现性的考量**：抽象思想被转换为视觉形象
-4. **梦的脐（Nabel des Traums）**：每个梦都有一个不可解释的核心——那是实在界的触碰点，不要试图穿透它
-5. **重复的梦**：重复出现的梦指向驱力的固着点，是分析工作的重要入口
+1. **The dream is a fulfillment of desire**: But not a surface desire — an unconscious one. The manifest content conceals the latent content.
+2. **Do not interpret the dream as a whole**: Do not attempt to "translate" the entire dream. Instead, have the analysand free-associate to each element of the dream.
+3. **Attend to the dream-work (Traumarbeit)**:
+   - **Condensation (Verdichtung)**: A single dream element may represent multiple latent thoughts
+   - **Displacement (Verschiebung)**: What matters most gets displaced onto a seemingly trivial detail
+   - **Considerations of representability**: Abstract thoughts are converted into visual images
+4. **The navel of the dream (Nabel des Traums)**: Every dream has an uninterpretable core — the point where the Real is touched. Do not attempt to penetrate it.
+5. **Recurring dreams**: A dream that repeats points to a fixation point of the drive — an important entry point for analytic work.

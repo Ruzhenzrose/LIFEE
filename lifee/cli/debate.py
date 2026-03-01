@@ -11,6 +11,7 @@ from lifee.roles import RoleManager
 from lifee.debate import Moderator, Participant, DebateContext, clean_response
 from lifee.debate.suggestions import SuggestionGenerator
 from lifee.memory import UserMemory
+from .i18n import t
 from .setup import select_provider_interactive, select_model_for_provider, select_menu_interactive
 
 
@@ -28,27 +29,38 @@ async def show_suggestion_menu(
         - 保持沉默: ("", True)
         - ESC取消: ("", False)
     """
-    print("正在思考建议回复...", end="", flush=True)
+    print(t("thinking_suggestions"), end="", flush=True)
     suggestions = await suggestion_generator.generate(session.get_messages())
     sys.stdout.write("\r\033[K")
     sys.stdout.flush()
 
-    # 即使建议生成失败，也显示菜单（只有保持沉默和自由输入）
     if not suggestions:
         suggestions = []
 
-    # 构建选项列表（建议 + 保持沉默 + 自由输入）
-    options = suggestions + ["[保持沉默，让对话继续]", "[自由输入]"]
-    silence_idx = len(suggestions)  # 保持沉默的索引
-    free_input_idx = len(suggestions) + 1  # 自由输入的索引
+    # 截断建议文本，防止换行导致重绘错位
+    import shutil
+    term_width = shutil.get_terminal_size().columns
+    max_opt_len = term_width - 8  # "  > N. " 前缀占 ~7 字符
+    display_options = []
+    for s in suggestions:
+        if len(s) > max_opt_len:
+            display_options.append(s[:max_opt_len - 3] + "...")
+        else:
+            display_options.append(s)
+    display_options += [t("silence_option"), t("free_input_option")]
+
+    options = suggestions + [t("silence_option"), t("free_input_option")]
+    silence_idx = len(suggestions)
+    free_input_idx = len(suggestions) + 1
     cursor = 0
     total_lines = 1 + len(options)
 
     def render_menu(first_time=False):
         if not first_time:
             sys.stdout.write(f"\033[{total_lines}A")
-        sys.stdout.write("\033[2K你想说什么？ (↑↓选择 | 回车确认 | 直接打字输入)\n")
-        for i, opt in enumerate(options):
+        prompt = t("suggestion_prompt")
+        sys.stdout.write(f"\033[2K{prompt}\n")
+        for i, opt in enumerate(display_options):
             pointer = ">" if i == cursor else " "
             sys.stdout.write(f"\033[2K  {pointer} {i+1}. {opt}\n")
         sys.stdout.flush()
@@ -99,7 +111,7 @@ async def show_suggestion_menu(
                     if ord(first_char) >= 32:
                         sys.stdout.write("\033[?25h")
                         sys.stdout.write(f"\033[{total_lines}A\033[J")
-                        sys.stdout.write(f"你: {first_char}")
+                        sys.stdout.write(f"{t('input_prompt')}{first_char}")
                         sys.stdout.flush()
                         rest = input()
                         result = (first_char + rest, False)
@@ -120,7 +132,7 @@ def collect_user_input_nonblocking() -> str:
     用户输入会实时回显到屏幕上。
     """
     chars = []
-    sys.stdout.write("\n\n[插话] 你: ")
+    sys.stdout.write(t("interject_prompt"))
     sys.stdout.flush()
 
     while True:
@@ -138,7 +150,7 @@ def collect_user_input_nonblocking() -> str:
                     sys.stdout.write('\b \b')
                     sys.stdout.flush()
             elif char == '\x1b':  # ESC - 取消输入
-                sys.stdout.write("\n[取消]\n")
+                sys.stdout.write(f"\n{t('cancel')}\n")
                 sys.stdout.flush()
                 return ""
             elif ord(char) >= 32:  # 可打印字符
@@ -181,17 +193,36 @@ async def debate_loop(
     # 显示欢迎信息
     print("\n" + "=" * 50)
     if len(participants) == 1:
-        print(f"LIFEE 对话模式 - {participants[0].info.emoji} {participants[0].info.display_name}")
+        print(t("conversation_mode").format(emoji=participants[0].info.emoji, name=participants[0].info.display_name))
     else:
-        print("LIFEE 多角度讨论模式")
+        print(t("discussion_mode"))
     print("=" * 50)
     if len(participants) > 1:
-        print("参与者:")
+        print(t("participants"))
         for p in participants:
             print(f"  {p.info.emoji} {p.info.display_name}")
-    print("\n输入问题开始对话" if len(participants) == 1 else "\n输入问题开始讨论")
-    print("命令: /help 帮助 | /quit 退出 | /menu 主菜单")
+    print(t("start_conversation") if len(participants) == 1 else t("start_discussion"))
+    print(t("commands_hint"))
     print("=" * 50 + "\n")
+
+    # 如果是恢复的会话，显示历史对话记录
+    if session.history:
+        # 构建参与者 emoji 映射
+        emoji_map = {p.info.display_name: p.info.emoji for p in participants}
+        print(f"  ── 历史记录 ({len(session.history)} 条) ──\n")
+        for msg in session.history:
+            content = msg.content.strip()
+            if not content:
+                continue
+            # 全部显示，不截断
+            if msg.role.value == "user":
+                print(f"  👤 你: {content}")
+            else:
+                name = msg.name or "AI"
+                emoji = emoji_map.get(name, "🤖")
+                print(f"  {emoji} {name}: {content}")
+            print()
+        print(f"  ── 继续对话 ──\n")
 
     pending_suggestion = None  # 用于存储用户选择的建议
 
@@ -201,12 +232,12 @@ async def debate_loop(
             if pending_suggestion:
                 user_input = pending_suggestion
                 pending_suggestion = None
-                if user_input.startswith("[用户选择保持沉默"):
-                    print("你: （保持沉默）")
+                if user_input == t("silence_prompt"):
+                    print(t("silence_display"))
                 else:
-                    print(f"你: {user_input}")
+                    print(f"{t('input_prompt')}{user_input}")
             else:
-                user_input = input("你: ").strip()
+                user_input = input(t("input_prompt")).strip()
 
             if not user_input:
                 continue
@@ -215,109 +246,105 @@ async def debate_loop(
             if user_input.startswith("/"):
                 cmd = user_input.lower()
                 if cmd in ("/quit", "/exit"):
-                    # 保存会话后退出
                     if session.history:
                         participant_names = [p.info.display_name for p in participants]
                         session_store.save(session, participant_names)
-                        print("[会话已自动保存]")
+                        print(f"[{t('session_saved')}]")
                     return ("quit", "")
                 elif cmd == "/menu":
-                    # 保存会话后返回主菜单
                     if session.history:
                         participant_names = [p.info.display_name for p in participants]
                         session_store.save(session, participant_names)
-                        print("[会话已自动保存]")
+                        print(f"[{t('session_saved')}]")
                     return ("menu", "")
                 elif cmd == "/help":
-                    print("\n命令列表:")
-                    print("  /help     - 显示帮助")
-                    print("  /history  - 显示对话历史")
-                    print("  /clear    - 清空对话历史")
-                    print("  /sessions - 历史会话")
-                    print("  /memory   - 知识库状态")
-                    print("  /config   - 切换 LLM Provider")
-                    print("  /model    - 切换当前 Provider 的模型")
-                    print("  /menu     - 返回主菜单")
-                    print("  /quit     - 退出")
+                    print(t("help_title"))
+                    print(t("help_help"))
+                    print(t("help_history"))
+                    print(t("help_clear"))
+                    print(t("help_sessions"))
+                    print(t("help_memory"))
+                    print(t("help_config"))
+                    print(t("help_model"))
+                    print(t("help_menu"))
+                    print(t("help_quit"))
                     print()
                 elif cmd == "/clear":
                     session.clear_history()
                     session_store.clear()
-                    print("\n[对话历史已清空]\n")
+                    print(f"\n[{t('history_cleared')}]\n")
                 elif cmd == "/history":
                     if not session.history:
-                        print("\n[对话历史为空]\n")
+                        print(f"\n[{t('history_empty')}]\n")
                     else:
-                        print("\n--- 对话历史 ---")
+                        print(f"\n{t('history_title')}")
                         for msg in session.history:
                             if not msg.content.strip():
                                 continue
                             if msg.role.value == "user":
-                                print(f"\n[你] {msg.content}")
+                                print(f"\n[{t('you_label')}] {msg.content}")
                             else:
                                 name = msg.name or "AI"
                                 print(f"\n[{name}] {msg.content}")
-                        print(f"\n--- 共 {len(session.history)} 条消息 ---\n")
+                        print(f"\n{t('message_count').format(count=len(session.history))}\n")
                 elif cmd == "/memory" or cmd.startswith("/memory "):
-                    # 知识库管理
                     if len(participants) == 1:
                         km = participants[0].knowledge_manager
                         if not km:
-                            print("\n当前角色没有知识库")
-                            print("创建方法: 在角色目录下创建 knowledge/ 目录，添加 .md 文件\n")
+                            print(f"\n{t('no_knowledge')}")
+                            print(f"{t('knowledge_create_hint')}\n")
                         elif cmd == "/memory":
                             stats = km.get_stats()
-                            print("\n知识库状态:")
-                            print(f"  文件数: {stats['file_count']}")
-                            print(f"  分块数: {stats['chunk_count']}")
-                            print(f"  嵌入模型: {stats['embedding_provider']}/{stats['embedding_model']}")
+                            print(f"\n{t('knowledge_status')}")
+                            print(t("file_count").format(count=stats['file_count']))
+                            print(t("chunk_count").format(count=stats['chunk_count']))
+                            print(t("embedding_model").format(model=f"{stats['embedding_provider']}/{stats['embedding_model']}"))
                             print()
                         elif cmd.startswith("/memory search "):
                             query = user_input[15:].strip()
                             if not query:
-                                print("\n用法: /memory search <查询内容>\n")
+                                print(f"\n{t('memory_search_usage')}\n")
                             else:
-                                print(f"\n搜索: {query}")
+                                print(f"\n{t('searching').format(query=query)}")
                                 results = await km.search(query, max_results=5)
                                 if not results:
-                                    print("没有找到相关内容\n")
+                                    print(f"{t('no_results')}\n")
                                 else:
-                                    print(f"找到 {len(results)} 条结果:\n")
+                                    print(f"{t('result_count').format(count=len(results))}\n")
                                     for i, r in enumerate(results, 1):
-                                        print(f"[{i}] {Path(r.path).name}:{r.start_line}-{r.end_line} (分数: {r.score:.2f})")
+                                        print(f"[{i}] {Path(r.path).name}:{r.start_line}-{r.end_line} (score: {r.score:.2f})")
                                         preview = r.text[:100].replace("\n", " ")
                                         print(f"    {preview}...")
                                         print()
                         else:
-                            print("\n用法:")
-                            print("  /memory         - 显示知识库状态")
-                            print("  /memory search <query> - 搜索知识库\n")
+                            print(t("memory_usage"))
+                            print(t("memory_usage_status"))
+                            print(f"{t('memory_usage_search')}\n")
                     else:
-                        # 多参与者：显示各角色知识库状态
                         has_any = False
                         for p in participants:
                             if p.knowledge_manager:
                                 has_any = True
                                 stats = p.knowledge_manager.get_stats()
-                                print(f"\n{p.info.emoji} {p.info.display_name} 知识库:")
-                                print(f"  文件数: {stats['file_count']}, 分块数: {stats['chunk_count']}")
+                                print(f"\n{t('knowledge_label').format(emoji=p.info.emoji, name=p.info.display_name)}")
+                                print(t("file_chunk_count").format(files=stats['file_count'], chunks=stats['chunk_count']))
                         if not has_any:
-                            print("\n当前参与者均没有知识库\n")
+                            print(f"\n{t('no_knowledge_all')}\n")
                         else:
                             print()
                 elif cmd == "/sessions":
                     history_sessions = session_store.list_history()
                     if not history_sessions:
-                        print("\n[没有历史会话]\n")
+                        print(f"\n[{t('no_sessions')}]\n")
                     else:
                         hist_labels = []
                         for s in history_sessions:
-                            time_str = s["updated_at"][:16].replace("T", " ") if s["updated_at"] else "未知"
-                            participants_str = "、".join(s["participants"])
-                            hist_labels.append(f"{time_str} | {participants_str} | {s['msg_count']}条消息")
-                        hist_labels.append("返回")
+                            time_str = s["updated_at"][:16].replace("T", " ") if s["updated_at"] else t("unknown_time")
+                            participants_str = ", ".join(s["participants"])
+                            hist_labels.append(f"{time_str} | {participants_str} | {t('messages_suffix').format(count=s['msg_count'])}")
+                        hist_labels.append(t("back"))
 
-                        hist_choice = select_menu_interactive("历史会话", hist_labels)
+                        hist_choice = select_menu_interactive(t("history"), hist_labels)
                         if hist_choice is not None and hist_choice < len(history_sessions):
                             selected = history_sessions[hist_choice]
                             history_data = session_store.load_history(selected["filename"])
@@ -353,9 +380,9 @@ async def debate_loop(
                                         p.knowledge_manager.close()
                                 memory_context = user_memory.get_context()
                                 moderator = Moderator(participants, session, user_memory_context=memory_context)
-                                print(f"\n[已恢复会话，共 {len(session.history)} 条消息]\n")
+                                print(f"\n[{t('session_restored').format(count=len(session.history))}]\n")
                             else:
-                                print("\n[无法加载该会话]\n")
+                                print(f"\n[{t('session_load_failed')}]\n")
                 elif cmd == "/config":
                     new_provider_id = select_provider_interactive(show_welcome=False)
                     if new_provider_id:
@@ -366,13 +393,13 @@ async def debate_loop(
                             for p in participants:
                                 p.provider = new_provider
                             suggestion_generator = SuggestionGenerator(new_provider)
-                            print(f"\n[已切换到 {new_provider.name} ({new_provider.model})]\n")
+                            print(f"\n[{t('switched_to').format(name=new_provider.name, model=new_provider.model)}]\n")
                         except Exception as e:
-                            print(f"\n[切换失败: {e}]\n")
+                            print(f"\n[{t('switch_failed').format(error=e)}]\n")
                 elif cmd == "/model":
                     provider_id = settings.llm_provider.lower()
                     if provider_id == "qwen-portal":
-                        print("\nQwen Portal 不支持模型切换\n")
+                        print(f"\n{t('model_no_switch')}\n")
                     else:
                         new_model = select_model_for_provider(provider_id, provider.model)
                         if new_model:
@@ -383,11 +410,11 @@ async def debate_loop(
                                 for p in participants:
                                     p.provider = new_provider
                                 suggestion_generator = SuggestionGenerator(new_provider)
-                                print(f"\n[已切换模型: {new_provider.model}]\n")
+                                print(f"\n[{t('model_switched').format(model=new_provider.model)}]\n")
                             except Exception as e:
-                                print(f"\n[切换失败: {e}]\n")
+                                print(f"\n[{t('switch_failed').format(error=e)}]\n")
                 else:
-                    print(f"\n未知命令: {cmd}，输入 /help 查看帮助\n")
+                    print(f"\n{t('unknown_command').format(cmd=cmd)}\n")
                 continue
 
             # 运行对话（统一的循环，包含所有角色的发言）
@@ -407,7 +434,7 @@ async def debate_loop(
                         # 回到行首，向上移动到标题行，清除所有输出
                         sys.stdout.write(f"\r\033[{current_output_lines + 1}A\033[J")
                         sys.stdout.flush()
-                    print(f"{participant.info.emoji} {participant.info.display_name} 选择保持沉默")
+                    print(t("chose_silence").format(emoji=participant.info.emoji, name=participant.info.display_name))
                     skip_happened = True
                     break
 
@@ -418,7 +445,7 @@ async def debate_loop(
                         if current_output_chars == 0:
                             # 清除名字行，显示保持沉默
                             sys.stdout.write("\r\033[K")
-                            print(f"{current_participant.info.emoji} {current_participant.info.display_name} 选择保持沉默\n")
+                            print(f"{t('chose_silence').format(emoji=current_participant.info.emoji, name=current_participant.info.display_name)}\n")
                         else:
                             print("\n")
                     print(f"\n{participant.info.emoji} {participant.info.display_name}: ", end="", flush=True)
@@ -436,7 +463,7 @@ async def debate_loop(
             # 如果当前角色没有输出任何内容，显示"保持沉默"（但如果已经因为 skip 打印过就跳过）
             if current_participant and current_output_chars == 0 and not skip_happened:
                 sys.stdout.write("\r\033[K")
-                print(f"{current_participant.info.emoji} {current_participant.info.display_name} 选择保持沉默")
+                print(t("chose_silence").format(emoji=current_participant.info.emoji, name=current_participant.info.display_name))
             elif not skip_happened:
                 print()
 
@@ -448,28 +475,27 @@ async def debate_loop(
             asyncio.create_task(user_memory.auto_extract(session.history, provider))
 
             # 一轮结束，显示建议菜单
+            print()  # 回答与建议菜单之间的空行
             choice_text, is_silence = await show_suggestion_menu(
                 suggestion_generator, session
             )
 
             if is_silence:
-                # 用户选择保持沉默，让角色继续讨论
-                pending_suggestion = "[用户选择保持沉默，请继续你的思考或追问]"
+                pending_suggestion = t("silence_prompt")
             elif choice_text:
                 # 用户选择了建议或输入了内容
                 pending_suggestion = choice_text
             # 否则（ESC/自由输入但没输入）等待用户正常输入
 
         except KeyboardInterrupt:
-            print("\n\n[中断]")
-            # 保存会话
+            print(f"\n\n{t('interrupted')}")
             if session.history:
                 participant_names = [p.info.display_name for p in participants]
                 session_store.save(session, participant_names)
-                print("[会话已自动保存]")
+                print(f"[{t('session_saved')}]")
             return ("quit", "")
         except Exception as e:
-            print(f"\n[错误] {e}\n")
+            print(f"\n{t('error_prefix').format(error=e)}\n")
             if settings.debug:
                 import traceback
                 traceback.print_exc()

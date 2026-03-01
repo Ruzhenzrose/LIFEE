@@ -144,7 +144,7 @@ class RoleManager:
             "has_knowledge": (role_dir / "knowledge").is_dir() if role_dir.exists() else False,
         }
 
-        # 尝试从 IDENTITY.md 提取显示名称和 emoji
+        # 尝试从 IDENTITY.md 提取 emoji 等元信息
         if info["has_identity"]:
             content = identity_file.read_text(encoding="utf-8")  # type: ignore[union-attr]
             for line in content.split("\n"):
@@ -152,6 +152,14 @@ class RoleManager:
                     info["display_name"] = line.split(":**")[1].strip()
                 elif "**Emoji:**" in line:
                     info["emoji"] = line.split(":**")[1].strip()
+                elif "**Knowledge Language:**" in line:
+                    info["knowledge_lang"] = line.split(":**")[1].strip()
+
+        # 从 i18n 获取当前语言的显示名（优先级最高）
+        from lifee.cli.i18n import t
+        i18n_name = t(f"role_{role_name}")
+        if i18n_name != f"role_{role_name}":
+            info["display_name"] = i18n_name
 
         return info
 
@@ -209,9 +217,11 @@ class RoleManager:
             # 没有可用的 API Key
             return None
 
-        # 创建管理器
+        # 创建管理器（传入知识库语言，用于跨语言 BM25 搜索）
         db_path = self.get_knowledge_db_path(role_name)
-        manager = MemoryManager(db_path, embedding)
+        role_info = self.get_role_info(role_name)
+        knowledge_lang = role_info.get("knowledge_lang", "English")
+        manager = MemoryManager(db_path, embedding, knowledge_lang=knowledge_lang)
 
         # 自动索引（支持 .md 和 .txt 文件）
         if auto_index:
@@ -226,11 +236,19 @@ class RoleManager:
                     total = len(files)
                     print(f"  索引知识库: 0/{total}", end="", flush=True)
                     indexed = 0
+                    failed = 0
                     for f in files:
-                        await manager.index_file(f)
+                        try:
+                            await manager.index_file(f)
+                        except Exception as e:
+                            failed += 1
+                            print(f"\n  Warning: {f.name}: {e}", end="", flush=True)
                         indexed += 1
                         print(f"\r  索引知识库: {indexed}/{total}", end="", flush=True)
-                    print()  # 换行
+                    if failed:
+                        print(f"  ({failed} failed)")
+                    else:
+                        print()  # 换行
 
         return manager
 

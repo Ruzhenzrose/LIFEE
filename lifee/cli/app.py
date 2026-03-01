@@ -15,6 +15,9 @@ from lifee.providers import (
     QwenProvider,
     OllamaProvider,
     OpenCodeZenProvider,
+    DeepSeekProvider,
+    OpenRouterProvider,
+    GroqProvider,
     GeminiProvider,
     FallbackProvider,
     read_clawdbot_synthetic_credentials,
@@ -23,6 +26,7 @@ from lifee.sessions import Session, SessionStore, DebateSessionStore
 from lifee.roles import RoleManager
 from lifee.debate import Participant
 
+from .i18n import t, set_lang
 from .setup import (
     save_api_key_to_env,
     get_ollama_models,
@@ -31,6 +35,7 @@ from .setup import (
     select_provider_interactive,
     select_roles_interactive,
     select_menu_interactive,
+    select_language_interactive,
 )
 from .debate import debate_loop
 
@@ -60,6 +65,30 @@ PROVIDER_REGISTRY = {
         "prompt_name": "OpenCode Zen (GLM-4.7 免费)",
         "env_key": "OPENCODE_API_KEY",
         "get_url": "https://opencode.ai/",
+    },
+    "deepseek": {
+        "class": DeepSeekProvider,
+        "key_attr": "deepseek_api_key",
+        "model_attr": "deepseek_model",
+        "prompt_name": "DeepSeek",
+        "env_key": "DEEPSEEK_API_KEY",
+        "get_url": "https://platform.deepseek.com/api_keys",
+    },
+    "openrouter": {
+        "class": OpenRouterProvider,
+        "key_attr": "openrouter_api_key",
+        "model_attr": "openrouter_model",
+        "prompt_name": "OpenRouter",
+        "env_key": "OPENROUTER_API_KEY",
+        "get_url": "https://openrouter.ai/keys",
+    },
+    "groq": {
+        "class": GroqProvider,
+        "key_attr": "groq_api_key",
+        "model_attr": "groq_model",
+        "prompt_name": "Groq",
+        "env_key": "GROQ_API_KEY",
+        "get_url": "https://console.groq.com/keys",
     },
 }
 
@@ -94,10 +123,9 @@ def create_provider(provider_name: str = None) -> LLMProvider:
     if provider_name == "claude":
         api_key = current_settings.get_anthropic_api_key()
         if not api_key:
-            print("\n错误: 未找到 Claude 认证凭据")
-            print("解决方法:")
-            print("  1. 运行 'claude login' 登录 Claude Code")
-            print("  2. 或设置环境变量 ANTHROPIC_API_KEY")
+            print(t("error_no_claude"))
+            print("  1. Run 'claude login'")
+            print("  2. Or set ANTHROPIC_API_KEY")
             sys.exit(1)
         return ClaudeProvider(api_key=api_key, model=current_settings.claude_model)
 
@@ -149,8 +177,8 @@ def create_provider(provider_name: str = None) -> LLMProvider:
         )
 
     else:
-        print(f"\n错误: 未知的 Provider: {provider_name}")
-        print("支持的 Provider: claude, synthetic, qwen, gemini, ollama, opencode")
+        print(t("error_unknown_provider").format(name=provider_name))
+        print("Supported: claude, gemini, deepseek, qwen, openrouter, groq, ollama, opencode, synthetic")
         sys.exit(1)
 
 
@@ -167,7 +195,10 @@ def get_available_providers() -> list[str]:
     checks = [
         ("claude", current_settings.get_anthropic_api_key()),
         ("gemini", current_settings.google_api_key),
+        ("deepseek", current_settings.deepseek_api_key),
         ("qwen", current_settings.qwen_api_key),
+        ("openrouter", current_settings.openrouter_api_key),
+        ("groq", current_settings.groq_api_key),
         ("opencode", current_settings.opencode_api_key),
         ("synthetic", current_settings.synthetic_api_key),
         # ollama 不需要 API Key，暂不自动加入
@@ -220,7 +251,7 @@ def create_provider_with_fallback(provider_name: str = None) -> LLMProvider:
             providers.append(create_provider(name))
         except Exception as e:
             # 无法创建的 fallback Provider 跳过，但打印警告
-            print(f"[警告] 无法创建 fallback provider '{name}': {e}")
+            print(t("fallback_warning").format(name=name, error=e))
 
     if len(providers) == 1:
         return primary
@@ -265,7 +296,7 @@ async def create_participants(
     Returns:
         Participant 对象列表
     """
-    print("\n正在加载参与者...")
+    print(f"\n{t('loading_participants')}")
     participants = []
     for role_name in role_names:
         try:
@@ -329,33 +360,32 @@ async def main_menu(
 
     if saved_data:
         time_ago = session_store.get_time_ago(saved_data)
-        participants_str = "、".join(saved_data.get("participants", []))
+        participants_str = ", ".join(saved_data.get("participants", []))
         msg_count = len(saved_data.get("history", []))
-        option_labels.append(f"继续上次对话（{time_ago}）| {participants_str} | {msg_count}条消息")
+        option_labels.append(t("continue_session").format(time=time_ago, participants=participants_str, count=msg_count))
         option_keys.append("continue")
 
-    option_labels.append("新对话")
+    option_labels.append(t("new_chat"))
     option_keys.append("new")
 
     if history_sessions:
-        option_labels.append("历史会话")
+        option_labels.append(t("history"))
         option_keys.append("history")
 
-    option_labels.append("设置（Provider/Model）")
+    option_labels.append(t("settings"))
     option_keys.append("settings")
 
-    option_labels.append("退出")
+    option_labels.append(t("quit"))
     option_keys.append("quit")
 
-    # 方向键选择
     choice = select_menu_interactive(
-        "LIFEE - AI 决策助手",
+        t("main_title"),
         option_labels,
         subtitle=f"Provider: {provider.name} ({provider.model})",
     )
 
     if choice is None:
-        print("\n再见！")
+        print(f"\n{t('goodbye')}")
         return ("quit", None)
 
     selected = option_keys[choice]
@@ -366,7 +396,7 @@ async def main_menu(
             saved_data.get("participants", []), role_manager
         )
         participants = await create_participants(role_names, provider, role_manager)
-        print(f"已恢复会话，共 {len(saved_data.get('history', []))} 条消息")
+        print(t("session_restored_count").format(count=len(saved_data.get('history', []))))
         return ("start", {"participants": participants, "session": session})
 
     elif selected == "new":
@@ -385,12 +415,12 @@ async def main_menu(
         # 历史会话也用方向键选择
         hist_labels = []
         for s in history_sessions:
-            time_str = s["updated_at"][:16].replace("T", " ") if s["updated_at"] else "未知"
-            participants_str = "、".join(s["participants"])
-            hist_labels.append(f"{time_str} | {participants_str} | {s['msg_count']}条消息")
-        hist_labels.append("返回")
+            time_str = s["updated_at"][:16].replace("T", " ") if s["updated_at"] else t("unknown_time")
+            participants_str = ", ".join(s["participants"])
+            hist_labels.append(f"{time_str} | {participants_str} | {t('messages_suffix').format(count=s['msg_count'])}")
+        hist_labels.append(t("back"))
 
-        hist_choice = select_menu_interactive("历史会话", hist_labels)
+        hist_choice = select_menu_interactive(t("history"), hist_labels)
 
         if hist_choice is not None and hist_choice < len(history_sessions):
             selected_hist = history_sessions[hist_choice]
@@ -403,20 +433,27 @@ async def main_menu(
                     history_data.get("participants", []), role_manager
                 )
                 participants = await create_participants(role_names, provider, role_manager)
-                print(f"已恢复历史会话，共 {len(history_data.get('history', []))} 条消息")
+                print(t("history_restored_count").format(count=len(history_data.get('history', []))))
                 return ("start", {"participants": participants, "session": session})
             else:
-                print("\n[无法加载该会话]")
+                print(f"\n{t('session_load_failed_bracket')}")
 
         return await main_menu(provider, role_manager, session_store)
 
     elif selected == "settings":
-        select_provider_interactive(show_welcome=False)
-        reload_settings()
+        # 设置子菜单
+        settings_options = [t("settings_provider"), t("settings_language"), t("settings_back")]
+        settings_choice = select_menu_interactive(t("settings_title"), settings_options)
+        if settings_choice == 0:
+            select_provider_interactive(show_welcome=False)
+        elif settings_choice == 1:
+            select_language_interactive()
+        new_settings = reload_settings()
+        set_lang(new_settings.ui_lang)
         return ("settings", None)
 
     elif selected == "quit":
-        print("\n再见！")
+        print(f"\n{t('goodbye')}")
         return ("quit", None)
 
     return ("quit", None)
@@ -424,6 +461,9 @@ async def main_menu(
 
 async def main():
     """主函数"""
+    # 初始化系统语言
+    set_lang(settings.ui_lang)
+
     # 检查是否首次运行，显示交互式选择
     if check_first_run():
         select_provider_interactive()

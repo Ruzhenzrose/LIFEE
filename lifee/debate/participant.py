@@ -55,7 +55,9 @@ class Participant:
         # 加载 system prompt
         self.system_prompt = self.role_manager.load_role(self.role_name)
 
-    async def _search_knowledge(self, query: str) -> list[SearchResult]:
+    async def _search_knowledge(
+        self, query: str, translated_keywords: str = ""
+    ) -> list[SearchResult]:
         """搜索知识库，返回原始结果（供 RAG 注入和技能匹配）"""
         if not self.knowledge_manager:
             return []
@@ -65,6 +67,7 @@ class Participant:
                 query,
                 max_results=3,
                 min_score=0.35,
+                keyword_query_override=translated_keywords or None,
             )
         except Exception:
             return []
@@ -88,29 +91,50 @@ class Participant:
         Yields:
             流式输出的文本片段
         """
-        # 1. 搜索知识库
-        knowledge_results = await self._search_knowledge(user_query)
+        # 0. 跨语言关键词翻译（复用于 RAG 搜索和 Tier 2 技能匹配）
+        translated_keywords = ""
+        if self.knowledge_manager and user_query:
+            from lifee.memory.embeddings import GeminiEmbedding
+            emb = self.knowledge_manager.embedding
+            if isinstance(emb, GeminiEmbedding):
+                translated_keywords = await emb.translate_to_keywords(
+                    user_query, self.knowledge_manager.knowledge_lang
+                )
+
+        # 1. 搜索知识库（传入已翻译的关键词，避免重复翻译）
+        knowledge_results = await self._search_knowledge(
+            user_query, translated_keywords
+        )
         knowledge_context = format_search_results(knowledge_results)
 
         # 2. 基于用户输入匹配触发技能 (Tier 2)
         triggered_context = ""
         if self.skill_set.triggered_skills and user_query:
-            matched = self.skill_set.match_by_input(user_query)
+            matched = self.skill_set.match_by_input(user_query, translated_keywords)
             if matched:
                 triggered_context = "\n\n".join(s.content for s in matched)
 
-        # 3. 构建对话历史摘要（用于让分身互相"看见"）
+        # 3. 投资角色：只要提到公司名就获取实时数据（不依赖 Tier 2 触发）
+        stock_data_context = ""
+        if user_query and self.skill_set.triggered_skills:
+            inv_skills = {"business-analysis", "financial-statements", "valuation-math"}
+            role_skill_names = {s.name for s in self.skill_set.triggered_skills}
+            if inv_skills & role_skill_names:
+                from lifee.market import resolve_and_fetch
+                stock_data_context = await resolve_and_fetch(user_query, translated_keywords)
+
+        # 4. 构建对话历史摘要（用于让分身互相"看见"）
         dialogue_context = ""
         if debate_context:
             dialogue_context = self._format_recent_dialogue(messages)
 
-        # 4. 构建 system prompt（包含辩论上下文）
+        # 5. 构建 system prompt（包含辩论上下文）
         system = self._build_system_prompt(
             knowledge_context, debate_context, user_memory_context,
-            triggered_context, dialogue_context,
+            triggered_context, dialogue_context, stock_data_context,
         )
 
-        # 5. 调用 LLM
+        # 6. 调用 LLM
         async for chunk in self.provider.stream(
             messages=messages,
             system=system,
@@ -125,23 +149,34 @@ class Participant:
         user_memory_context: Optional[str] = None,
         triggered_skill_context: str = "",
         dialogue_context: Optional[str] = None,
+        stock_data_context: str = "",
     ) -> str:
         """
         构建包含知识库上下文和辩论上下文的 system prompt
 
-        注入顺序:
+        注入顺序：
         1. 角色定义 (SOUL + IDENTITY + core skills)
         2. 触发技能 (Tier 2, 基于用户输入)
-        3. 用户记忆
-        4. 辩论上下文
-        5. 最近对话记录
-        6. RAG 知识库
+        3. 实时市场数据（仅投资技能触发时）
+        4. 用户记忆
+        5. 辩论上下文
+        6. 最近对话记录
+        7. RAG 知识库
         """
         parts = [self.system_prompt]
 
         # 注入触发技能 (Tier 2)
         if triggered_skill_context:
             parts.append(triggered_skill_context)
+
+        # 注入实时市场数据
+        if stock_data_context:
+            parts.append(
+                "The following real-time market data has been retrieved by the system. "
+                "Use these specific numbers in your analysis. "
+                "Do NOT ask the user to look up this data themselves.\n\n"
+                + stock_data_context
+            )
 
         # 注入用户记忆上下文
         if user_memory_context:

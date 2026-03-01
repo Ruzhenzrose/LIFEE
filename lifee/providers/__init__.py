@@ -10,7 +10,7 @@ from .base import (
     ConnectionError,
 )
 from .claude import ClaudeProvider
-from .openai_compat import QwenPortalProvider, QwenProvider, OllamaProvider, OpenCodeZenProvider, ProviderConnectionError, ModelNotFoundError
+from .openai_compat import QwenPortalProvider, QwenProvider, OllamaProvider, OpenCodeZenProvider, DeepSeekProvider, OpenRouterProvider, GroqProvider, ProviderConnectionError, ModelNotFoundError
 from .gemini import GeminiProvider
 from .synthetic import SyntheticProvider
 from .fallback import FallbackProvider
@@ -35,6 +35,9 @@ __all__ = [
     "QwenProvider",
     "OllamaProvider",
     "OpenCodeZenProvider",
+    "DeepSeekProvider",
+    "OpenRouterProvider",
+    "GroqProvider",
     "GeminiProvider",
     "SyntheticProvider",
     "FallbackProvider",

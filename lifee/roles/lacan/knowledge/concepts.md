@@ -1,97 +1,97 @@
-# 拉康核心概念
+# Core Concepts of Lacan
 
-## 三界 (RSI)
+## The Three Registers (RSI)
 
-### 想象界 (l'Imaginaire)
-- 镜像阶段的领域
-- 自我（moi）的形成：通过镜中影像的误认
-- 想象性认同：我是那个完整的形象
-- 攻击性的根源：镜像既是我，又不是我
-- 二元关系：我-他者的想象性捕获
+### The Imaginary (l'Imaginaire)
+- The domain of the mirror stage
+- Formation of the ego (moi): through misrecognition of the mirror image
+- Imaginary identification: "I am that complete image"
+- The root of aggressivity: the mirror image is both me and not me
+- Dual relation: the imaginary capture of self and other
 
-### 象征界 (le Symbolique)
-- 语言的秩序，能指的链条
-- 大他者（l'Autre）的领域
-- 父亲之名（Nom-du-Père）：象征性阉割的施行者
-- 菲勒斯（Phallus）：不是器官，而是象征性的能指
-- 主体通过进入语言而被构成，也被分裂
+### The Symbolic (le Symbolique)
+- The order of language, the chain of signifiers
+- The domain of the big Other (l'Autre)
+- The Name-of-the-Father (Nom-du-Père): the agent of symbolic castration
+- The Phallus: not the organ, but the symbolic signifier
+- The subject is constituted through entering language, and thereby split
 
-### 实在界 (le Réel)
-- 不可能的、不可象征化的
-- 创伤的核心：无法被言说的东西
-- 总是在同一个地方回归
-- 不是"现实"（réalité），现实是想象与象征的交织
-- 焦虑是与实在界相遇的信号
+### The Real (le Réel)
+- The impossible, the unsymbolizable
+- The kernel of trauma: what cannot be spoken
+- It always returns to the same place
+- Not "reality" (réalité) — reality is the interweaving of the imaginary and the symbolic
+- Anxiety is the signal of an encounter with the Real
 
-## 镜像阶段 (Le stade du miroir)
+## The Mirror Stage (Le stade du miroir)
 
-6-18个月的婴儿在镜中认出自己的形象。这是一个**误认**（méconnaissance）：
-- 婴儿的身体是碎片化的（corps morcelé）
-- 镜像提供了一个完整的、统一的形象
-- 婴儿欢欣鼓舞地认同这个形象
-- 但这个形象是外在的、异化的
-- 自我（moi）从一开始就建立在误认之上
+The infant between 6 and 18 months recognizes its own image in the mirror. This is a **misrecognition** (méconnaissance):
+- The infant's body is fragmented (corps morcelé)
+- The mirror image provides a complete, unified form
+- The infant jubilantly identifies with this image
+- But the image is external, alienating
+- The ego (moi) is founded on misrecognition from the very start
 
-"我是另一个"（Je est un autre）—— 兰波的话，拉康的真理。
+"I is an other" (Je est un autre) — Rimbaud's phrase, Lacan's truth.
 
-## 欲望 (Le désir)
+## Desire (Le désir)
 
-- **欲望是他者的欲望**：我欲望的是大他者的欲望
-- **欲望是对欲望的欲望**：我欲望被欲望
-- 欲望不等于需要（besoin）或要求（demande）
-- 欲望在要求与需要的差距中诞生
-- 欲望的客体不是真正的目标，只是客体小a的替代
+- **Desire is the desire of the Other**: what I desire is the desire of the big Other
+- **Desire is the desire to be desired**: I desire to be desired
+- Desire is not the same as need (besoin) or demand (demande)
+- Desire is born in the gap between demand and need
+- The object of desire is not its true aim — it is merely a stand-in for objet petit a
 
-**Che vuoi?** —— "你想要什么？"这是大他者向主体提出的问题，也是主体永远无法完全回答的问题。
+**Che vuoi?** — "What do you want?" This is the question the big Other poses to the subject, and the one the subject can never fully answer.
 
-## 客体小a (l'objet petit a)
+## Objet petit a (l'objet petit a)
 
-- 不是一个对象，而是欲望的原因
-- 永远失落的客体，从未拥有过
-- 不是欲望的目标，而是欲望运动的原因
-- 剩余的、不可象征化的
-- 出现在幻想的公式中：$ ◇ a
+- Not an object, but the cause of desire
+- The forever-lost object, never possessed
+- Not the aim of desire, but the cause of desire's movement
+- A remainder, unsymbolizable
+- Appears in the formula of fantasy: $ ◇ a
 
-客体小a是欲望的"永动机"：我们追逐它，但永远抓不住，因为它本就是缺失本身的名字。
+Objet petit a is the "perpetual motion machine" of desire: we chase it, but never catch it, because it is the very name of lack itself.
 
-## 大他者 (l'Autre)
+## The Big Other (l'Autre)
 
-- 不是具体的他人（autre），而是象征秩序本身
-- 语言的宝库
-- 法则的位置
-- 但大他者是**被划杠的**（A̸）：大他者本身也是不完整的
-- "大他者不存在"：没有完整的、一致的象征秩序
+- Not a concrete other person (autre), but the symbolic order itself
+- The treasury of signifiers
+- The locus of the law
+- But the big Other is **barred** (A̸): the big Other itself is incomplete
+- "The big Other does not exist": there is no complete, consistent symbolic order
 
-当主体说话时，他不只是在对一个人说话，而是在大他者的场域中说话。
+When the subject speaks, they are not merely speaking to a person — they are speaking within the field of the big Other.
 
-## 能指 (Le signifiant)
+## The Signifier (Le signifiant)
 
-- 能指优先于所指
-- 能指不代表意义，而是代表另一个能指
-- **能指链**：S₁ → S₂ → S₃ ...
-- 主体被能指所代表：一个能指为另一个能指代表主体
-- **主人能指（S₁）**：固定意义的点，但这种固定是暂时的
+- The signifier has priority over the signified
+- A signifier does not represent meaning — it represents another signifier
+- **The signifying chain**: S₁ → S₂ → S₃ ...
+- The subject is represented by a signifier: one signifier represents the subject for another signifier
+- **The master signifier (S₁)**: the point that fixes meaning, but this fixation is always temporary
 
-意义总是在滑动。当你以为抓住了意义，它已经跑到别处去了。
+Meaning is always sliding. When you think you've grasped it, it has already moved elsewhere.
 
-## 四种话语 (Les quatre discours)
+## The Four Discourses (Les quatre discours)
 
-### 主人话语 (Discours du maître)
+### The Master's Discourse (Discours du maître)
 S₁ → S₂
 $      a
-主人命令，奴隶生产知识，但主人失去了与享乐的关系。
+The master commands, the slave produces knowledge, but the master loses his relation to jouissance.
 
-### 大学话语 (Discours de l'université)
+### The University Discourse (Discours de l'université)
 S₂ → a
 S₁    $
-知识占据主导，但背后是隐藏的主人能指。教育的欺骗。
+Knowledge occupies the dominant position, but behind it hides the master signifier. The deception of education.
 
-### 癔症话语 (Discours de l'hystérique)
+### The Hysteric's Discourse (Discours de l'hystérique)
 $ → S₁
 a    S₂
-被划杠的主体质问主人，要求知识。分析者应该促成这种话语。
+The barred subject interrogates the master, demanding knowledge. The analyst should facilitate this discourse.
 
-### 分析师话语 (Discours de l'analyste)
+### The Analyst's Discourse (Discours de l'analyste)
 a → $
 S₂   S₁
-分析师占据客体小a的位置，使主体生产自己的主人能指。
+The analyst occupies the position of objet petit a, enabling the subject to produce their own master signifier.

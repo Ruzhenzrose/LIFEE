@@ -1,85 +1,85 @@
-# 临床与技术
+# Clinical Practice and Technique
 
-## 分析师的位置
+## The Analyst's Position
 
-分析师不是：
-- 专家（知道答案的人）
-- 支持者（让你感觉好的人）
-- 朋友（平等交流的人）
+The analyst is not:
+- An expert (someone who has the answers)
+- A supporter (someone who makes you feel good)
+- A friend (someone with whom you converse as equals)
 
-分析师是：
-- **假设知道的主体（sujet supposé savoir）**：分析者假设分析师知道，这是移情的枢纽
-- 但分析师必须**拒绝这个位置**：他不真的"知道"
-- 分析师占据**客体小a的位置**：欲望的原因，而非欲望的对象
+The analyst is:
+- **The subject-supposed-to-know (sujet supposé savoir)**: the analysand assumes the analyst knows — this is the pivot of transference
+- But the analyst must **refuse this position**: they do not truly "know"
+- The analyst occupies **the position of objet petit a**: the cause of desire, not the object of desire
 
-## 切断 (La coupure)
+## The Cut (La coupure)
 
-精神分析的会话可以在任何时刻结束。这不是残忍，而是技术：
-- 标准的50分钟是想象界的舒适
-- 切断制造**惊讶**，打破自我的防御
-- 在分析者说出关键能指时切断，让它回响
+The psychoanalytic session can end at any moment. This is not cruelty — it is technique:
+- The standard fifty minutes is an imaginary comfort
+- The cut produces **surprise**, breaking through the ego's defenses
+- Cutting at the moment the analysand utters a key signifier allows it to resonate
 
-"会话的结束不是因为时间到了，而是因为某个东西被说出来了——或者，正是因为它还没有被说出来。"
+"The session ends not because time is up, but because something has been said — or precisely because it has not yet been said."
 
-## 解释 (L'interprétation)
+## Interpretation (L'interprétation)
 
-分析师的解释不是：
-- 解释意义（"你这样说是因为..."）
-- 翻译无意识（"你真正想说的是..."）
+The analyst's interpretation is not:
+- Explaining meaning ("You say this because...")
+- Translating the unconscious ("What you really mean is...")
 
-分析师的解释是：
-- **标点**（ponctuation）：在能指链上打上标点，改变意义
-- **引用**（citation）：重复分析者的某个词，不加解释
-- **含混**（équivoque）：利用语言的歧义，让无意识说话
+The analyst's interpretation is:
+- **Punctuation** (ponctuation): placing punctuation marks on the signifying chain, altering meaning
+- **Citation** (citation): repeating one of the analysand's words without explanation
+- **Equivocation** (équivoque): exploiting linguistic ambiguity, letting the unconscious speak
 
-最好的解释是让分析者自己说出来的解释。
+The best interpretation is one the analysand produces themselves.
 
-## 移情 (Le transfert)
+## Transference (Le transfert)
 
-移情不是：
-- 爱上分析师（虽然可能表现为此）
-- 对分析师的依赖
-- 需要被"处理"的问题
+Transference is not:
+- Falling in love with the analyst (though it may appear as such)
+- Dependence on the analyst
+- A problem to be "handled"
 
-移情是：
-- **无意识的启动**：分析者开始假设分析师知道
-- 旧有能指的重新激活
-- 分析的引擎：没有移情，就没有分析
+Transference is:
+- **The activation of the unconscious**: the analysand begins to assume the analyst knows
+- The re-activation of old signifiers
+- The engine of analysis: without transference, there is no analysis
 
-"移情是爱。但这种爱指向的是知识，而非分析师本人。"
+"Transference is love. But this love is directed at knowledge, not at the analyst himself."
 
-## 焦虑 (L'angoisse)
+## Anxiety (L'angoisse)
 
-焦虑不是恐惧：
-- 恐惧有对象
-- 焦虑没有对象——或者说，它的对象是**缺失的缺失**
+Anxiety is not fear:
+- Fear has an object
+- Anxiety has no object — or rather, its object is **the lack of lack**
 
-当大他者的欲望变得太清晰，当我们太接近实在界，焦虑就出现了。
+When the desire of the big Other becomes too clear, when we approach the Real too closely, anxiety appears.
 
-焦虑是**与客体小a相遇的信号**：太近了，太真实了。
+Anxiety is **the signal of an encounter with objet petit a**: too close, too real.
 
-## 症状 (Le symptôme)
+## The Symptom (Le symptôme)
 
-症状是：
-- 主体的真理以加密形式说话
-- 能指的妥协形成
-- 主体用来享乐（jouissance）的方式
+The symptom is:
+- The subject's truth speaking in encrypted form
+- A compromise formation of signifiers
+- The subject's mode of jouissance
 
-分析不是消除症状，而是让主体**认同自己的症状**（s'identifier à son symptôme）。
+Analysis does not aim to eliminate the symptom, but to enable the subject to **identify with their symptom** (s'identifier à son symptôme).
 
-晚期拉康写作 sinthome：超越神经症结构的症状，一种主体维系自身的方式。
+Late Lacan writes it as sinthome: beyond neurotic structure, a mode by which the subject holds itself together.
 
-## 结束分析 (La fin de l'analyse)
+## The End of Analysis (La fin de l'analyse)
 
-分析的结束不是：
-- "治愈"
-- 适应社会
-- 自我的强化
+The end of analysis is not:
+- A "cure"
+- Adaptation to society
+- Strengthening of the ego
 
-分析的结束是：
-- **穿越幻想**（traversée du fantasme）：看到欲望背后没有秘密
-- 与大他者的**分离**：不再等待大他者的答案
-- **主体性的贬值**：不再把自己当回事
-- 能够**承担自己的欲望**：不是知道自己想要什么，而是能够承担欲望的无根据
+The end of analysis is:
+- **Traversal of the fantasy** (traversée du fantasme): seeing that behind desire there is no secret
+- **Separation from the big Other**: no longer waiting for the big Other's answer
+- **Destitution of the subject**: no longer taking oneself so seriously
+- **Bearing one's own desire**: not knowing what one wants, but being able to bear the groundlessness of desire
 
-"分析结束于分析者能够独自一人。"
+"Analysis ends when the analysand is able to be alone."

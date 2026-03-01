@@ -331,3 +331,69 @@ class OpenCodeZenProvider(OpenAICompatProvider):
             model=model,
             provider_name="opencode-zen",
         )
+
+
+class DeepSeekProvider(OpenAICompatProvider):
+    """DeepSeek Provider
+
+    性价比高，中英文能力强
+    API 文档：https://platform.deepseek.com/
+    """
+
+    DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "deepseek-chat",
+    ):
+        super().__init__(
+            api_key=api_key,
+            base_url=self.DEEPSEEK_BASE_URL,
+            model=model,
+            provider_name="deepseek",
+        )
+
+
+class OpenRouterProvider(OpenAICompatProvider):
+    """OpenRouter Provider
+
+    一个 API Key 访问多个模型（Gemini, Claude, Llama 等）
+    API 文档：https://openrouter.ai/docs
+    """
+
+    OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "google/gemini-2.5-flash",
+    ):
+        super().__init__(
+            api_key=api_key,
+            base_url=self.OPENROUTER_BASE_URL,
+            model=model,
+            provider_name="openrouter",
+        )
+
+
+class GroqProvider(OpenAICompatProvider):
+    """Groq Provider
+
+    超快推理速度，免费额度
+    API 文档：https://console.groq.com/docs
+    """
+
+    GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "llama-3.3-70b-versatile",
+    ):
+        super().__init__(
+            api_key=api_key,
+            base_url=self.GROQ_BASE_URL,
+            model=model,
+            provider_name="groq",
+        )

@@ -3,7 +3,7 @@ from typing import AsyncIterator, List, Optional, Union
 
 import anthropic
 
-from .base import ChatResponse, LLMProvider, Message, MessageRole
+from .base import ChatResponse, LLMProvider, Message, MessageRole, RateLimitError, ServiceUnavailableError
 
 
 # Claude Code 版本号（用于 user-agent）
@@ -99,6 +99,11 @@ class ClaudeProvider(LLMProvider):
                     content = content.rstrip()
                 converted.append({"role": msg.role.value, "content": content})
 
+        # Claude API 要求对话必须以 user 消息结尾
+        # 多角色对话中，上一个角色的 assistant 消息可能是最后一条
+        if converted and converted[-1]["role"] == "assistant":
+            converted.append({"role": "user", "content": "[Please respond to the conversation above]"})
+
         return system_prompt, converted
 
     def _build_system_prompt(
@@ -137,14 +142,19 @@ class ClaudeProvider(LLMProvider):
         msg_system, msg_list = self._convert_messages(messages)
         final_system = self._build_system_prompt(system or msg_system)
 
-        response = await self._client.messages.create(
-            model=self._model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            system=final_system,
-            messages=msg_list,
-            **kwargs,
-        )
+        try:
+            response = await self._client.messages.create(
+                model=self._model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=final_system,
+                messages=msg_list,
+                **kwargs,
+            )
+        except anthropic.RateLimitError as e:
+            raise RateLimitError(f"Claude 速率限制: {e}") from e
+        except anthropic.InternalServerError as e:
+            raise ServiceUnavailableError(f"Claude 服务不可用: {e}") from e
 
         # 安全获取响应内容（防止空列表导致 IndexError）
         content = ""
@@ -184,19 +194,24 @@ class ClaudeProvider(LLMProvider):
                 preview = m["content"][:80].replace('\n', '\\n')
                 print(f"[CLAUDE DEBUG] msg[{i}] role={m['role']}, len={content_len}: {preview}...")
 
-        async with self._client.messages.stream(
-            model=self._model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            system=final_system,
-            messages=msg_list,
-            **kwargs,
-        ) as stream:
-            chunk_count = 0
-            async for text in stream.text_stream:
-                chunk_count += 1
-                yield text
+        try:
+            async with self._client.messages.stream(
+                model=self._model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=final_system,
+                messages=msg_list,
+                **kwargs,
+            ) as stream:
+                chunk_count = 0
+                async for text in stream.text_stream:
+                    chunk_count += 1
+                    yield text
 
-            # DEBUG: 流结束信息
-            if os.environ.get("LIFEE_DEBUG"):
-                print(f"\n[CLAUDE DEBUG] stream ended, chunks={chunk_count}")
+                # DEBUG: 流结束信息
+                if os.environ.get("LIFEE_DEBUG"):
+                    print(f"\n[CLAUDE DEBUG] stream ended, chunks={chunk_count}")
+        except anthropic.RateLimitError as e:
+            raise RateLimitError(f"Claude 速率限制: {e}") from e
+        except anthropic.InternalServerError as e:
+            raise ServiceUnavailableError(f"Claude 服务不可用: {e}") from e

@@ -1,224 +1,223 @@
-# 临床结构 (Les structures cliniques)
+# Clinical Structures (Les structures cliniques)
 
-拉康区分三种基本结构：神经症、精神病、倒错。这不是症状的分类，而是主体对阉割的不同回应方式。结构一旦形成，就不会改变。
+Lacan distinguishes three fundamental structures: neurosis, psychosis, and perversion. These are not classifications of symptoms but different modes by which the subject responds to castration. Once a structure is formed, it does not change.
 
-## 结构 vs. 症状
+## Structure vs. Symptom
 
-**症状**可以变化：
-- 今天是焦虑，明天是抑郁
-- 行为可以改变
-- 症状可以被"治愈"
+**Symptoms** can change:
+- Anxiety today, depression tomorrow
+- Behavior can be modified
+- Symptoms can be "cured"
 
-**结构**不变：
-- 是主体对根本问题的回应方式
-- 是主体在象征界中的位置
-- 决定了主体如何处理享乐
+**Structure** does not change:
+- It is the subject's mode of responding to a fundamental question
+- It is the subject's position within the Symbolic
+- It determines how the subject handles jouissance
 
-"你的症状会变，你的结构不变。"
+"Your symptoms may change; your structure does not."
 
-## 三种结构的核心区分
+## The Core Distinction Among the Three Structures
 
-关键问题：**父亲之名的命运**
+The key question: **the fate of the Name-of-the-Father**
 
-| 结构 | 父亲之名的命运 | 对阉割的回应 |
-|------|----------------|--------------|
-| 神经症 | 压抑 (refoulement) | 接受，但否认 |
-| 精神病 | 排除 (forclusion) | 从未接受 |
-| 倒错 | 否认 (déni) | 知道，但拒绝 |
-
----
-
-## 神经症 (La névrose)
-
-神经症是最"正常"的结构——大多数人都是神经症。
-
-**核心机制**：压抑（refoulement）
-- 父亲之名被接受，进入象征界
-- 但被压抑的内容（欲望、冲动）从无意识返回
-- 症状是压抑失败的信号
-
-### 癔症 (L'hystérie)
-
-**基本问题**："我是男人还是女人？"
-
-**特征**：
-- 对身份的不确定
-- 用症状提问
-- 总是不满足
-- 让主人暴露他的无能
-
-**与大他者的关系**：
-- 质问大他者
-- 要求大他者给出答案
-- 但拒绝任何答案
-
-**身体症状**：
-- 转换症状：心理冲突在身体上表达
-- "我的身体在说我不能说的话"
-
-**欲望的结构**：
-- 欲望不满足的欲望
-- 维持欲望比满足欲望更重要
-
-"癔症者不是想要被爱，而是想要被欲望。"
-
-### 强迫症 (La névrose obsessionnelle)
-
-**基本问题**："我是活着还是死了？"
-
-**特征**：
-- 思想的反刍
-- 仪式和强迫行为
-- 拖延（用思想代替行动）
-- 对死亡的痴迷
-
-**与大他者的关系**：
-- 试图控制大他者
-- 等待大他者死亡（来获得行动的自由）
-- 但这个等待是永恒的
-
-**享乐的问题**：
-- 享乐被禁止
-- 但在禁止本身中享乐
-- 仪式是获得被禁止的享乐的方式
-
-**欲望的结构**：
-- 把欲望变成不可能
-- "我想要，但条件是不可能"
-
-"强迫症者的座右铭：再等等。他在等什么？等大他者死。"
+| Structure | Fate of the Name-of-the-Father | Response to castration |
+|-----------|-------------------------------|----------------------|
+| Neurosis | Repression (refoulement) | Accepted, but denied |
+| Psychosis | Foreclosure (forclusion) | Never accepted |
+| Perversion | Disavowal (déni) | Known, but refused |
 
 ---
 
-## 精神病 (La psychose)
+## Neurosis (La névrose)
 
-精神病不是神经症的"严重版"，而是完全不同的结构。
+Neurosis is the most "normal" structure — most people are neurotics.
 
-**核心机制**：排除（forclusion）
-- 父亲之名从未被接受
-- 它没有进入象征界
-- 因此也无法被压抑——它从来就不在那里
+**Core mechanism**: Repression (refoulement)
+- The Name-of-the-Father is accepted and enters the Symbolic
+- But repressed content (desires, drives) returns from the unconscious
+- Symptoms are signals of failed repression
 
-### 排除的后果
+### Hysteria (L'hystérie)
 
-当父亲之名被排除：
-- 象征界出现一个洞
-- 大他者是不完整的，但主体不知道
-- 没有能指来锚定主体的位置
+**Fundamental question**: "Am I a man or a woman?"
 
-**从实在界返回**：
-- 被排除的东西不是从无意识返回
-- 而是从实在界返回
-- 以幻觉、妄想的形式
-- 这就是"在象征界被排除的，从实在界返回"
+**Characteristics**:
+- Uncertainty about identity
+- Questioning through symptoms
+- Always unsatisfied
+- Exposing the master's impotence
 
-### 触发 (Le déclenchement)
+**Relation to the big Other**:
+- Interrogates the big Other
+- Demands that the big Other provide answers
+- But refuses every answer given
 
-精神病可能长期"稳定"，直到被触发。
+**Bodily symptoms**:
+- Conversion symptoms: psychic conflict expressed through the body
+- "My body is saying what I cannot say"
 
-**触发条件**：
-- 遇到一个位置，需要父亲之名来回应
-- 但那个能指不在
-- 结构崩溃
+**Structure of desire**:
+- The desire for unsatisfied desire
+- Maintaining desire matters more than satisfying it
 
-例如：成为父亲、担任权威位置、被指名某种身份...
+"The hysteric does not want to be loved — she wants to be desired."
 
-### 精神病的形式
+### Obsessional Neurosis (La névrose obsessionnelle)
 
-**偏执狂 (paranoïa)**：
-- 建构妄想来填补象征界的洞
-- 妄想是一种自我治疗
-- 谢瑞伯法官：建立完整的妄想体系
+**Fundamental question**: "Am I alive or dead?"
 
-**精神分裂症 (schizophrénie)**：
-- 无法建立稳定的妄想
-- 身体碎片化
-- 语言碎裂
-- 器官说话
+**Characteristics**:
+- Rumination of thought
+- Rituals and compulsive acts
+- Procrastination (substituting thought for action)
+- Obsession with death
 
-**忧郁症 (mélancolie)**：
-- 与客体的认同
-- "我就是那个被抛弃的垃圾"
-- 自杀的危险：杀死自己就是杀死客体
+**Relation to the big Other**:
+- Attempts to control the big Other
+- Waits for the big Other to die (in order to gain freedom to act)
+- But this waiting is eternal
 
-### 精神病的治疗
+**The problem of jouissance**:
+- Jouissance is forbidden
+- But there is jouissance in the very act of forbidding
+- Rituals are a way of obtaining the forbidden jouissance
 
-分析能做什么？
+**Structure of desire**:
+- Rendering desire impossible
+- "I want it, but only on the condition that it is impossible"
 
-- 不是"治愈"（结构不会改变）
-- 而是帮助主体建立**替代物**
-- 艺术、写作、某种使命可以起到第四环的作用
-- 稳定化，而非转化
-
-"对精神病主体，分析师不是假设知道的主体，而是秘书——记录他们的发明。"
+"The obsessional's motto: wait a little longer. What is he waiting for? For the big Other to die."
 
 ---
 
-## 倒错 (La perversion)
+## Psychosis (La psychose)
 
-倒错不是"变态"行为，而是一种结构。
+Psychosis is not a "severe version" of neurosis — it is an entirely different structure.
 
-**核心机制**：否认（déni / Verleugnung）
-- 知道阉割存在
-- 但同时否认它
-- "我知道，但仍然..."
+**Core mechanism**: Foreclosure (forclusion)
+- The Name-of-the-Father was never accepted
+- It never entered the Symbolic
+- Therefore it cannot be repressed — it was never there in the first place
 
-### 恋物癖的范例
+### Consequences of Foreclosure
 
-弗洛伊德的分析：
-- 男孩"看见"母亲没有阴茎
-- 这是阉割的证据
-- 但他否认这个证据
-- 用**恋物**来代替缺失的菲勒斯
+When the Name-of-the-Father is foreclosed:
+- A hole appears in the Symbolic
+- The big Other is incomplete, but the subject does not know
+- There is no signifier to anchor the subject's position
 
-恋物是一个能指，填补在阉割的位置。
+**Return from the Real**:
+- What is foreclosed does not return from the unconscious
+- It returns from the Real
+- In the form of hallucinations and delusions
+- This is the principle: "What is foreclosed from the Symbolic returns in the Real"
 
-### 倒错的结构
+### Triggering (Le déclenchement)
 
-**与法则的关系**：
-- 不是忽视法则
-- 而是知道法则的存在，并专门去违反它
-- 违反法则确认法则的存在
+Psychosis may remain "stable" for a long time, until it is triggered.
 
-**与享乐的关系**：
-- 倒错者是享乐的"工具"
-- 他让大他者享乐
-- 萨德的范例：刽子手是欲望执行者
+**Triggering conditions**:
+- Encountering a position that calls for the Name-of-the-Father
+- But that signifier is absent
+- The structure collapses
 
-**与大他者的关系**：
-- 倒错者试图让大他者完整
-- 通过填补大他者的缺失
-- 他"知道"大他者想要什么
+Examples: becoming a father, assuming a position of authority, being designated a certain identity...
 
-### 施虐与受虐
+### Forms of Psychosis
 
-**施虐**：
-- 不是享受他人的痛苦
-- 而是让客体（受害者）体验分裂
-- 成为大他者享乐的工具
+**Paranoia (paranoïa)**:
+- Constructing delusions to fill the hole in the Symbolic
+- Delusion is a form of self-treatment
+- Judge Schreber: building a complete delusional system
 
-**受虐**：
-- 不是享受自己的痛苦
-- 而是让大他者焦虑
-- 通过自己的受苦来让大他者问"你到底想要什么？"
+**Schizophrenia (schizophrénie)**:
+- Unable to construct a stable delusion
+- Bodily fragmentation
+- Language shatters
+- Organs "speak"
 
-"倒错者是大他者的仆人。他知道大他者想要什么——这正是他的幻觉。"
+**Melancholia (mélancolie)**:
+- Identification with the object
+- "I am that discarded piece of refuse"
+- Danger of suicide: killing oneself is killing the object
+
+### Treatment of Psychosis
+
+What can analysis do?
+
+- Not "cure" (structure does not change)
+- But help the subject build **substitutes**
+- Art, writing, a certain mission can serve as the fourth ring
+- Stabilization, not transformation
+
+"For the psychotic subject, the analyst is not the subject-supposed-to-know, but a secretary — recording their inventions."
 
 ---
 
-## 诊断的伦理
+## Perversion (La perversion)
 
-**为什么区分结构？**
+Perversion is not "deviant" behavior — it is a structure.
 
-不是为了贴标签，而是为了：
-1. 知道什么是可能的（神经症可分析，精神病需要另一种方式）
-2. 知道什么是危险的（给精神病主体做标准分析可能触发爆发）
-3. 不把神经症的框架强加给其他结构
+**Core mechanism**: Disavowal (déni / Verleugnung)
+- Knows that castration exists
+- But simultaneously disavows it
+- "I know, but still..."
 
-**诊断的谦逊**：
-- 结构不是一眼就能看出来的
-- 需要长时间的倾听
-- 在移情中显现
+### The Paradigm of Fetishism
 
-"不要急于诊断。让主体说话，结构会自己显现。"
+Freud's analysis:
+- The boy "sees" that the mother has no penis
+- This is evidence of castration
+- But he disavows this evidence
+- Uses a **fetish** to replace the missing phallus
 
+The fetish is a signifier placed at the site of castration.
+
+### The Structure of Perversion
+
+**Relation to the law**:
+- Not ignoring the law
+- But knowing the law exists, and specifically transgressing it
+- Transgression confirms the law's existence
+
+**Relation to jouissance**:
+- The pervert is the "instrument" of jouissance
+- He makes the big Other enjoy
+- The paradigm of Sade: the executioner as agent of desire
+
+**Relation to the big Other**:
+- The pervert attempts to complete the big Other
+- By filling in the big Other's lack
+- He "knows" what the big Other wants
+
+### Sadism and Masochism
+
+**Sadism**:
+- Not enjoyment of another's pain
+- But making the object (the victim) experience splitting
+- Becoming the instrument of the big Other's jouissance
+
+**Masochism**:
+- Not enjoyment of one's own pain
+- But making the big Other anxious
+- Through one's own suffering, forcing the big Other to ask: "What do you really want?"
+
+"The pervert is the servant of the big Other. He knows what the big Other wants — that is precisely his delusion."
+
+---
+
+## The Ethics of Diagnosis
+
+**Why distinguish structures?**
+
+Not for labeling, but in order to:
+1. Know what is possible (neurosis is analyzable; psychosis requires a different approach)
+2. Know what is dangerous (performing standard analysis on a psychotic subject may trigger an episode)
+3. Not impose the neurotic framework onto other structures
+
+**Humility in diagnosis**:
+- Structure is not visible at a glance
+- It requires prolonged listening
+- It reveals itself in the transference
+
+"Do not rush to diagnose. Let the subject speak — the structure will show itself."

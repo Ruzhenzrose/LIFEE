@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 from .chunker import Chunk, chunk_markdown
-from .embeddings import EmbeddingProvider
+from .embeddings import EmbeddingProvider, GeminiEmbedding, _contains_non_english
 from .schema import (
     DELETE_CHUNKS_BY_PATH_SQL,
     DELETE_FILE_SQL,
@@ -39,6 +39,7 @@ class MemoryManager:
         self,
         db_path: str | Path,
         embedding_provider: EmbeddingProvider,
+        knowledge_lang: str = "English",
     ):
         """
         初始化管理器
@@ -49,6 +50,7 @@ class MemoryManager:
         """
         self.db_path = Path(db_path)
         self.embedding = embedding_provider
+        self.knowledge_lang = knowledge_lang
 
         # 确保目录存在
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -230,6 +232,7 @@ class MemoryManager:
         min_score: float = 0.35,
         vector_weight: float = 0.7,
         text_weight: float = 0.3,
+        keyword_query_override: Optional[str] = None,
     ) -> list[SearchResult]:
         """
         搜索知识库
@@ -240,12 +243,18 @@ class MemoryManager:
             min_score: 最小分数阈值
             vector_weight: 向量搜索权重
             text_weight: 关键词搜索权重
+            keyword_query_override: 预翻译的关键词（避免重复翻译）
 
         Returns:
             搜索结果列表
         """
-        # 生成查询向量
+        # 生成查询向量（用原始 query，跨语言 embedding 效果最好）
         query_embedding = await self.embedding.embed(query)
+
+        # 跨语言 BM25：使用预翻译的关键词，或现场翻译
+        keyword_query = keyword_query_override
+        if keyword_query is None and isinstance(self.embedding, GeminiEmbedding):
+            keyword_query = await self.embedding.translate_to_keywords(query, self.knowledge_lang)
 
         # 执行混合搜索
         return hybrid_search(
@@ -257,6 +266,7 @@ class MemoryManager:
             min_score=min_score,
             vector_weight=vector_weight,
             text_weight=text_weight,
+            keyword_query_text=keyword_query,
         )
 
     def get_stats(self) -> dict:

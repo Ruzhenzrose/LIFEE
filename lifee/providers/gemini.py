@@ -8,7 +8,7 @@ from typing import AsyncIterator, List, Optional
 from google import genai
 from google.genai import types
 
-from .base import ChatResponse, LLMProvider, Message, MessageRole, ServiceUnavailableError
+from .base import ChatResponse, LLMProvider, Message, MessageRole, RateLimitError, ServiceUnavailableError
 
 
 class GeminiProvider(LLMProvider):
@@ -96,8 +96,9 @@ class GeminiProvider(LLMProvider):
                 config=config,
             )
         except Exception as e:
-            # 检查是否是 503 服务不可用错误
             error_str = str(e).lower()
+            if "429" in error_str or "rate" in error_str or "quota" in error_str or "resource_exhausted" in error_str:
+                raise RateLimitError(f"Gemini 速率限制: {e}") from e
             if "503" in error_str or "unavailable" in error_str or "overloaded" in error_str:
                 raise ServiceUnavailableError(f"Gemini 服务不可用: {e}") from e
             raise
@@ -139,8 +140,9 @@ class GeminiProvider(LLMProvider):
                 if chunk.text:
                     yield chunk.text
         except Exception as e:
-            # 检查是否是 503 服务不可用错误
             error_str = str(e).lower()
+            if "429" in error_str or "rate" in error_str or "quota" in error_str or "resource_exhausted" in error_str:
+                raise RateLimitError(f"Gemini 速率限制: {e}") from e
             if "503" in error_str or "unavailable" in error_str or "overloaded" in error_str:
                 raise ServiceUnavailableError(f"Gemini 服务不可用: {e}") from e
             raise
