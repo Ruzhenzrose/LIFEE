@@ -3,6 +3,7 @@
 支持 Google Gemini API (使用新的 google-genai SDK)
 API 文档：https://ai.google.dev/
 """
+import base64
 from typing import AsyncIterator, List, Optional
 
 from google import genai
@@ -62,9 +63,15 @@ class GeminiProvider(LLMProvider):
             if msg.role == MessageRole.SYSTEM:
                 system_instruction = content
             elif msg.role == MessageRole.USER:
-                contents.append(
-                    types.Content(role="user", parts=[types.Part(text=content)])
-                )
+                parts = [types.Part(text=content)]
+                for m in msg.media:
+                    parts.append(types.Part(
+                        inline_data=types.Blob(
+                            mime_type=m.mime_type,
+                            data=base64.b64decode(m.data),
+                        )
+                    ))
+                contents.append(types.Content(role="user", parts=parts))
             elif msg.role == MessageRole.ASSISTANT:
                 contents.append(
                     types.Content(role="model", parts=[types.Part(text=content)])

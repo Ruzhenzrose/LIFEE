@@ -92,6 +92,15 @@ class OpenAICompatProvider(LLMProvider):
 
             if msg.role == MessageRole.SYSTEM:
                 converted.append({"role": "system", "content": content})
+            elif msg.media and msg.role == MessageRole.USER:
+                # 多模态消息（OpenAI vision 格式）
+                blocks = [{"type": "text", "text": content}]
+                for m in msg.media:
+                    blocks.append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{m.mime_type};base64,{m.data}"},
+                    })
+                converted.append({"role": msg.role.value, "content": blocks})
             else:
                 converted.append({"role": msg.role.value, "content": content})
 

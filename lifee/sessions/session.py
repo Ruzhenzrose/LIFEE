@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from lifee.providers.base import Message, MessageRole
+from lifee.providers.base import MediaItem, Message, MessageRole
 
 
 @dataclass
@@ -19,14 +19,14 @@ class Session:
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
 
-    def add_message(self, role: MessageRole, content: str, name: Optional[str] = None):
+    def add_message(self, role: MessageRole, content: str, name: Optional[str] = None, media: Optional[List] = None):
         """添加消息到历史"""
-        self.history.append(Message(role=role, content=content, name=name))
+        self.history.append(Message(role=role, content=content, name=name, media=media or []))
         self.updated_at = datetime.now()
 
-    def add_user_message(self, content: str):
+    def add_user_message(self, content: str, media: Optional[List] = None):
         """添加用户消息"""
-        self.add_message(MessageRole.USER, content)
+        self.add_message(MessageRole.USER, content, media=media)
 
     def add_assistant_message(self, content: str, name: Optional[str] = None):
         """添加助手消息
@@ -76,14 +76,7 @@ class Session:
     @classmethod
     def from_dict(cls, data: dict) -> "Session":
         """从字典创建会话"""
-        history = [
-            Message(
-                role=MessageRole(msg["role"]),
-                content=msg["content"],
-                name=msg.get("name"),
-            )
-            for msg in data.get("history", [])
-        ]
+        history = [Message.from_dict(msg) for msg in data.get("history", [])]
 
         return cls(
             id=data["id"],

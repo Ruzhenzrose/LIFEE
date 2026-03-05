@@ -97,7 +97,22 @@ class ClaudeProvider(LLMProvider):
                 # Claude API 要求："final assistant content cannot end with trailing whitespace"
                 if msg.role == MessageRole.ASSISTANT:
                     content = content.rstrip()
-                converted.append({"role": msg.role.value, "content": content})
+
+                if msg.media and msg.role == MessageRole.USER:
+                    # 多模态消息：文本 + 图片
+                    blocks = [{"type": "text", "text": content}]
+                    for m in msg.media:
+                        blocks.append({
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": m.mime_type,
+                                "data": m.data,
+                            },
+                        })
+                    converted.append({"role": msg.role.value, "content": blocks})
+                else:
+                    converted.append({"role": msg.role.value, "content": content})
 
         # Claude API 要求对话必须以 user 消息结尾
         # 多角色对话中，上一个角色的 assistant 消息可能是最后一条

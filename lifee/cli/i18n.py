@@ -32,8 +32,8 @@ STRINGS = {
     "start_conversation": {"zh": "\n输入问题开始对话", "en": "\nType a question to start"},
     "start_discussion": {"zh": "\n输入问题开始讨论", "en": "\nType a question to start the discussion"},
     "commands_hint": {
-        "zh": "命令: /help 帮助 | /quit 退出 | /menu 主菜单",
-        "en": "Commands: /help | /quit | /menu",
+        "zh": "命令: /help 帮助 | /menu 主菜单 | /quit 退出 | Ctrl+V 粘贴图片",
+        "en": "Commands: /help | /menu | /quit | Ctrl+V paste image",
     },
 
     # === 用户输入 ===
@@ -65,6 +65,23 @@ STRINGS = {
     "help_model": {"zh": "  /model    - 切换当前 Provider 的模型", "en": "  /model    - Switch model"},
     "help_menu": {"zh": "  /menu     - 返回主菜单", "en": "  /menu     - Back to main menu"},
     "help_quit": {"zh": "  /quit     - 退出", "en": "  /quit     - Quit"},
+    "help_image_title": {"zh": "\n发送图片:", "en": "\nSend images:"},
+    "help_image_ctrlv": {
+        "zh": "  Ctrl+V    - 粘贴剪贴板图片",
+        "en": "  Ctrl+V    - Paste clipboard image",
+    },
+    "help_image_atpath": {
+        "zh": "  @文件路径  - 附加图片（如 @photo.jpg @\"C:/有空格/img.png\"）",
+        "en": "  @filepath  - Attach image (e.g. @photo.jpg @\"path with spaces/img.png\")",
+    },
+    "help_image_drag": {
+        "zh": "  拖入文件   - 直接拖图片到终端，自动识别",
+        "en": "  Drag file  - Drag image into terminal, auto-detected",
+    },
+    "help_image_clipboard": {
+        "zh": "  @clipboard - 从剪贴板读取图片（同 Ctrl+V）",
+        "en": "  @clipboard - Read image from clipboard (same as Ctrl+V)",
+    },
 
     # === 会话状态 ===
     "session_saved": {"zh": "会话已自动保存", "en": "Session saved"},

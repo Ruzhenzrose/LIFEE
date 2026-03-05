@@ -1,7 +1,9 @@
 """LLM Provider 抽象基类"""
+import base64
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import AsyncIterator, List, Optional
 
 
@@ -46,19 +48,76 @@ class MessageRole(str, Enum):
     ASSISTANT = "assistant"
 
 
+_MIME_MAP = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+}
+
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+@dataclass
+class MediaItem:
+    """多媒体项（图片等）"""
+    mime_type: str      # "image/jpeg" 等
+    data: str           # base64 编码
+    filename: str = ""  # 原始文件名
+
+    @classmethod
+    def from_file(cls, filepath: str) -> "MediaItem":
+        """从文件创建"""
+        path = Path(filepath).expanduser().resolve()
+        if not path.exists():
+            raise FileNotFoundError(f"文件不存在: {filepath}")
+
+        mime_type = _MIME_MAP.get(path.suffix.lower())
+        if not mime_type:
+            raise ValueError(f"不支持的图片格式: {path.suffix}（支持 jpg/png/gif/webp）")
+
+        if path.stat().st_size > MAX_IMAGE_SIZE:
+            raise ValueError(f"图片太大（>{MAX_IMAGE_SIZE // 1024 // 1024}MB）: {path.name}")
+
+        b64 = base64.b64encode(path.read_bytes()).decode("utf-8")
+        return cls(mime_type=mime_type, data=b64, filename=path.name)
+
+    def to_dict(self) -> dict:
+        return {"mime_type": self.mime_type, "data": self.data, "filename": self.filename}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "MediaItem":
+        return cls(mime_type=d["mime_type"], data=d["data"], filename=d.get("filename", ""))
+
+
 @dataclass
 class Message:
     """对话消息"""
     role: MessageRole
     content: str
     name: Optional[str] = None  # 可选的发送者名称（用于多智能体）
+    media: list[MediaItem] = field(default_factory=list)  # 图片等多媒体
 
     def to_dict(self) -> dict:
         """转换为字典格式"""
         d = {"role": self.role.value, "content": self.content}
         if self.name:
             d["name"] = self.name
+        if self.media:
+            d["media"] = [m.to_dict() for m in self.media]
         return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "Message":
+        """从字典恢复"""
+        media = [MediaItem.from_dict(m) for m in d.get("media", [])]
+        return cls(
+            role=MessageRole(d["role"]),
+            content=d["content"],
+            name=d.get("name"),
+            media=media,
+        )
 
     def format_content(self) -> str:
         """

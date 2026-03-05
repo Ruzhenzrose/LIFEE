@@ -1,11 +1,15 @@
 """统一对话循环"""
 import asyncio
+import re
 import sys
+import unicodedata
 import msvcrt
 from pathlib import Path
+from typing import List, Optional, Tuple
 
 from lifee.config.settings import settings
 from lifee.providers import LLMProvider
+from lifee.providers.base import MediaItem
 from lifee.sessions import Session, DebateSessionStore
 from lifee.roles import RoleManager
 from lifee.debate import Moderator, Participant, DebateContext, clean_response
@@ -13,6 +17,236 @@ from lifee.debate.suggestions import SuggestionGenerator
 from lifee.memory import UserMemory
 from .i18n import t
 from .setup import select_provider_interactive, select_model_for_provider, select_menu_interactive
+
+
+_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+
+
+def get_clipboard_image() -> Optional[MediaItem]:
+    """从 Windows 剪贴板读取图片
+
+    支持两种剪贴板内容:
+    1. 截图 (Image) — Win+Shift+S 等截图工具
+    2. 复制的图片文件 (FileDropList) — 资源管理器中 Ctrl+C 复制图片
+    """
+    import subprocess
+    import tempfile
+
+    temp_path = Path(tempfile.gettempdir()) / "lifee_clipboard.png"
+
+    # PowerShell: 先检查 Image，再检查 FileDropList
+    ps_script = (
+        'Add-Type -Assembly System.Windows.Forms;'
+        '$img = [System.Windows.Forms.Clipboard]::GetImage();'
+        f'if ($img) {{ $img.Save(\"{temp_path}\"); Write-Output \"IMAGE\" }}'
+        ' else {'
+        '  $files = [System.Windows.Forms.Clipboard]::GetFileDropList();'
+        '  if ($files.Count -gt 0) { Write-Output (\"FILE:\" + $files[0]) }'
+        '  else { Write-Output \"NO\" }'
+        '}'
+    )
+
+    try:
+        result = subprocess.run(
+            ['powershell', '-NoProfile', '-Command', ps_script],
+            capture_output=True, text=True, timeout=5,
+        )
+        output = result.stdout.strip()
+
+        if output == "IMAGE" and temp_path.exists():
+            item = MediaItem.from_file(str(temp_path))
+            item.filename = "clipboard.png"
+            return item
+
+        if output.startswith("FILE:"):
+            filepath = output[5:]
+            ext = Path(filepath).suffix.lower()
+            if ext in _IMAGE_EXTENSIONS:
+                return MediaItem.from_file(filepath)
+            # 不是图片文件，忽略
+
+    except Exception:
+        pass
+    finally:
+        if temp_path.exists():
+            temp_path.unlink(missing_ok=True)
+
+    return None
+
+
+def parse_media_from_input(text: str) -> Tuple[str, List[MediaItem]]:
+    """从用户输入中提取图片
+
+    支持三种方式:
+        1. @路径:     @photo.jpg  @"C:/path with spaces/img.jpg"
+        2. @clipboard: 从剪贴板粘贴截图
+        3. 拖入文件:   自动检测图片路径（无需 @ 前缀）
+
+    Returns:
+        (清理后的文本, 媒体列表)
+    """
+    media = []
+    errors = []
+    has_clipboard = False
+
+    # ── Pass 1: @"path" 和 @path 模式 ──
+    def replace_at_match(m):
+        nonlocal has_clipboard
+        path = m.group(1) or m.group(2)
+        if path.lower() == 'clipboard':
+            has_clipboard = True
+            return ""
+        try:
+            item = MediaItem.from_file(path)
+            media.append(item)
+            return ""
+        except (FileNotFoundError, ValueError) as e:
+            errors.append(str(e))
+            return ""
+
+    clean_text = re.sub(r'@"([^"]+)"|@(\S+)', replace_at_match, text)
+
+    # ── Pass 2: 自动检测拖入的图片路径 ──
+    def replace_bare_path(m):
+        path = m.group(1) or m.group(2)
+        if not path or path.startswith(('http://', 'https://')):
+            return m.group(0)
+        p = Path(path)
+        if p.suffix.lower() not in _IMAGE_EXTENSIONS:
+            return m.group(0)
+        try:
+            resolved = p.expanduser().resolve()
+            if not resolved.exists():
+                return m.group(0)
+            item = MediaItem.from_file(str(resolved))
+            media.append(item)
+            return ""
+        except (FileNotFoundError, ValueError):
+            return m.group(0)
+
+    clean_text = re.sub(
+        r'"([^"]+\.(?:jpg|jpeg|png|gif|webp))"|(\S+\.(?:jpg|jpeg|png|gif|webp))',
+        replace_bare_path,
+        clean_text,
+        flags=re.IGNORECASE,
+    )
+
+    # ── Pass 3: @clipboard 剪贴板 ──
+    if has_clipboard:
+        sys.stdout.write("  ⏳ 读取剪贴板...")
+        sys.stdout.flush()
+        item = get_clipboard_image()
+        sys.stdout.write("\r\033[K")
+        sys.stdout.flush()
+        if item:
+            media.append(item)
+        else:
+            errors.append("剪贴板中没有图片")
+
+    # 清理多余空格
+    clean_text = re.sub(r'  +', ' ', clean_text).strip()
+
+    for err in errors:
+        print(f"  ⚠ {err}")
+
+    return clean_text, media
+
+
+def _char_width(c: str) -> int:
+    """获取字符的显示宽度（中文等宽字符为 2）"""
+    w = unicodedata.east_asian_width(c)
+    return 2 if w in ('F', 'W') else 1
+
+
+def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
+    """带剪贴板粘贴的自定义输入函数
+
+    功能:
+        - Ctrl+V / Alt+V: 粘贴剪贴板图片
+        - Backspace: 文本为空时删除最后一张图片
+        - 附件统一显示在一行，不会重复出现提示符
+
+    显示布局:
+        📎 clipboard.png, clipboard.png   ← 附件行（有图片时）
+        你: 输入文本█                       ← 输入行
+
+    Returns:
+        (输入文本, 剪贴板媒体列表)
+    """
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+
+    chars = []
+    media = []
+    has_attachment_line = False  # 输入行上方是否有附件行
+
+    def _redraw():
+        """重绘附件行 + 输入行"""
+        nonlocal has_attachment_line
+        # 回到起始位置
+        if has_attachment_line:
+            sys.stdout.write("\033[1A")  # 上移到附件行
+        sys.stdout.write("\r\033[J")  # 清除到屏幕末尾
+
+        # 附件行
+        if media:
+            names = ", ".join(m.filename for m in media)
+            sys.stdout.write(f"  📎 {names}\n")
+            has_attachment_line = True
+        else:
+            has_attachment_line = False
+
+        # 输入行
+        sys.stdout.write(f"{prompt}{''.join(chars)}")
+        sys.stdout.flush()
+
+    def _do_paste():
+        """读取剪贴板图片并重绘"""
+        sys.stdout.write(" ⏳")
+        sys.stdout.flush()
+        item = get_clipboard_image()
+        if item:
+            media.append(item)
+        _redraw()
+
+    while True:
+        char = msvcrt.getwch()
+
+        if char == '\r':  # Enter
+            sys.stdout.write('\n')
+            sys.stdout.flush()
+            break
+
+        elif char == '\x08':  # Backspace
+            if chars:
+                removed = chars.pop()
+                w = _char_width(removed)
+                sys.stdout.write('\b' * w + ' ' * w + '\b' * w)
+                sys.stdout.flush()
+            elif media:
+                media.pop()
+                _redraw()
+
+        elif char == '\x03':  # Ctrl+C
+            raise KeyboardInterrupt
+
+        elif char == '\x16':  # Ctrl+V (Git Bash)
+            _do_paste()
+
+        elif char == '\x00':  # Special key prefix (PowerShell/CMD: Alt+key)
+            scan = msvcrt.getwch()
+            if ord(scan) == 0x2F:  # Alt+V
+                _do_paste()
+
+        elif char == '\xe0':  # Extended key prefix (arrows, etc.)
+            msvcrt.getwch()
+
+        elif ord(char) >= 32:  # 可打印字符
+            chars.append(char)
+            sys.stdout.write(char)
+            sys.stdout.flush()
+
+    return ''.join(chars).strip(), media
 
 
 async def show_suggestion_menu(
@@ -215,8 +449,12 @@ async def debate_loop(
             if not content:
                 continue
             # 全部显示，不截断
+            media_hint = ""
+            if msg.media:
+                names = ", ".join(m.filename for m in msg.media)
+                media_hint = f" 📎{names}"
             if msg.role.value == "user":
-                print(f"  👤 你: {content}")
+                print(f"  👤 你: {content}{media_hint}")
             else:
                 name = msg.name or "AI"
                 emoji = emoji_map.get(name, "🤖")
@@ -229,6 +467,7 @@ async def debate_loop(
     while True:
         try:
             # 如果有待处理的建议选择，直接使用
+            clipboard_media = []
             if pending_suggestion:
                 user_input = pending_suggestion
                 pending_suggestion = None
@@ -237,9 +476,9 @@ async def debate_loop(
                 else:
                     print(f"{t('input_prompt')}{user_input}")
             else:
-                user_input = input(t("input_prompt")).strip()
+                user_input, clipboard_media = input_with_clipboard(t("input_prompt"))
 
-            if not user_input:
+            if not user_input and not clipboard_media:
                 continue
 
             # 处理命令
@@ -268,6 +507,11 @@ async def debate_loop(
                     print(t("help_model"))
                     print(t("help_menu"))
                     print(t("help_quit"))
+                    print(t("help_image_title"))
+                    print(t("help_image_ctrlv"))
+                    print(t("help_image_atpath"))
+                    print(t("help_image_drag"))
+                    print(t("help_image_clipboard"))
                     print()
                 elif cmd == "/clear":
                     session.clear_history()
@@ -417,6 +661,17 @@ async def debate_loop(
                     print(f"\n{t('unknown_command').format(cmd=cmd)}\n")
                 continue
 
+            # 解析图片附件（@路径 + Alt+V 剪贴板）
+            clean_input, path_media = parse_media_from_input(user_input)
+            media = clipboard_media + path_media
+            if media:
+                path_names = [m.filename for m in path_media]
+                if path_names:
+                    print(f"  📎 {', '.join(path_names)}")
+                if not clean_input:
+                    clean_input = "请看这张图片"
+                user_input = clean_input
+
             # 运行对话（统一的循环，包含所有角色的发言）
             current_participant = None
             skip_happened = False
@@ -427,7 +682,7 @@ async def debate_loop(
             current_output_lines = 0
             current_output_chars = 0
 
-            async for participant, chunk, is_skip in moderator.run(user_input, max_turns=len(participants)):
+            async for participant, chunk, is_skip in moderator.run(user_input, max_turns=len(participants), media=media or None):
                 if is_skip:
                     # 清除当前角色之前输出的内容
                     if current_output_chars > 0:

@@ -7,7 +7,7 @@ import re
 import sys
 from typing import AsyncIterator, Optional, Tuple
 
-from lifee.providers.base import Message, RateLimitError, RetryableError
+from lifee.providers.base import MediaItem, Message, RateLimitError, RetryableError
 from lifee.sessions import Session
 
 # 重试配置
@@ -114,6 +114,7 @@ class Moderator:
         self,
         user_input: str,
         max_turns: int = 10,
+        media: Optional[list] = None,
     ) -> AsyncIterator[Tuple[Participant, str, bool]]:
         """
         运行对话 - 统一的对话循环
@@ -127,6 +128,7 @@ class Moderator:
         Args:
             user_input: 用户输入
             max_turns: 最大发言轮次（默认 10）
+            media: 用户附带的图片等多媒体
 
         Yields:
             (participant, chunk, is_skip) - 参与者、文本片段、是否跳过
@@ -135,7 +137,7 @@ class Moderator:
         self.round_number += 1
 
         # 1. 添加用户消息到会话
-        self.session.add_user_message(user_input)
+        self.session.add_user_message(user_input, media=media)
 
         # 获取所有参与者信息（用于构建上下文）
         all_participants_info = [p.info for p in self.participants]

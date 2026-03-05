@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 from .session import Session
-from lifee.providers.base import Message, MessageRole
+from lifee.providers.base import Message
 
 
 # 默认存储目录
@@ -97,14 +97,7 @@ class DebateSessionStore:
         Returns:
             恢复的 Session 对象
         """
-        history = [
-            Message(
-                role=MessageRole(msg["role"]),
-                content=msg["content"],
-                name=msg.get("name"),
-            )
-            for msg in data.get("history", [])
-        ]
+        history = [Message.from_dict(msg) for msg in data.get("history", [])]
 
         session = Session(id=data.get("session_id"))
         session.history = history
