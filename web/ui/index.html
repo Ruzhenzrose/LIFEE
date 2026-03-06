@@ -380,18 +380,49 @@
                     { period: "Inversion and Misjudgment", detail: "Focused on avoiding predictable errors, bias traps, and bad incentives before seeking upside." }
                 ],
                 voice: "Try this in reverse: what choice would reliably make your life worse? Eliminate that first. Then the intelligent path becomes less mysterious."
+            },
+            {
+                id: 'tarot-master',
+                name: 'THE TAROT MASTER',
+                role: 'ARCANA INTERPRETER',
+                category: 'CREATIVE',
+                worldview: 'A choice reveals itself through symbols, tension, and the pattern between desire, fear, and the unseen.',
+                avatar: '🌙',
+                decisionStyle: "Reads a three-card spread around one decision, naming the visible path, the hidden force, and the transformation underway without pretending fate is fixed.",
+                lifeContext: [
+                    { period: "The Spread", detail: "Uses the Major Arcana as a reflective structure for live choices, not as a rigid promise about the future." },
+                    { period: "Reading the Tension", detail: "Interprets what is emerging, what is obscured, and what asks to be released before the next step is taken." }
+                ],
+                knowledge: "You are The Tarot Master. Interpret three-card spreads in natural English. Explain each card briefly, then synthesize what the spread suggests about the user's specific decision. Focus on symbolic meaning, tension, hidden factors, and next steps. Do not claim certainty or supernatural guarantees.",
+                voice: "Bring me one decision, draw three cards, and I will read the pattern beneath the surface rather than promise certainty."
             }
         ];
 
         // ✅ LIFEE API (JSON: { messages: [...], options: [...] })
         const LIFEE_API = "https://lifee-api.guolinn.workers.dev/decision";
+        const LIFEE_API_TIMEOUT_MS = 25000;
+        const LIFEE_STREAM_TIMEOUT_MS = 40000;
 
         async function fetchLifeeDecision(payload, url = LIFEE_API) {
-            const res = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), LIFEE_API_TIMEOUT_MS);
+            let res;
+
+            try {
+                res = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+            } catch (err) {
+                if (err?.name === 'AbortError') {
+                    throw new Error(`LIFEE API timed out after ${Math.round(LIFEE_API_TIMEOUT_MS / 1000)}s`);
+                }
+                throw err;
+            } finally {
+                clearTimeout(timer);
+            }
 
             if (!res.ok) {
                 const text = await res.text();
@@ -410,18 +441,32 @@
         }
 
         async function fetchLifeeDecisionStream(payload, { onMessage, onOptions } = {}) {
-            const res = await fetch(`${LIFEE_API}?stream=1`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), LIFEE_STREAM_TIMEOUT_MS);
+            let res;
+
+            try {
+                res = await fetch(`${LIFEE_API}?stream=1`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+            } catch (err) {
+                if (err?.name === 'AbortError') {
+                    throw new Error(`LIFEE API stream timed out after ${Math.round(LIFEE_STREAM_TIMEOUT_MS / 1000)}s`);
+                }
+                throw err;
+            }
 
             if (!res.ok) {
+                clearTimeout(timer);
                 const text = await res.text();
                 throw new Error("LIFEE API stream failed: " + text);
             }
 
             if (!res.body) {
+                clearTimeout(timer);
                 throw new Error("Streaming not supported in this browser.");
             }
 
@@ -459,16 +504,25 @@
                 }
             };
 
-            while (!done) {
-                const { value, done: streamDone } = await reader.read();
-                if (streamDone) break;
-                buf += decoder.decode(value, { stream: true });
-                let idx;
-                while ((idx = buf.indexOf("\n\n")) !== -1) {
-                    const block = buf.slice(0, idx).trimEnd();
-                    buf = buf.slice(idx + 2);
-                    await flushEventBlock(block);
+            try {
+                while (!done) {
+                    const { value, done: streamDone } = await reader.read();
+                    if (streamDone) break;
+                    buf += decoder.decode(value, { stream: true });
+                    let idx;
+                    while ((idx = buf.indexOf("\n\n")) !== -1) {
+                        const block = buf.slice(0, idx).trimEnd();
+                        buf = buf.slice(idx + 2);
+                        await flushEventBlock(block);
+                    }
                 }
+            } catch (err) {
+                if (err?.name === 'AbortError') {
+                    throw new Error(`LIFEE API stream timed out after ${Math.round(LIFEE_STREAM_TIMEOUT_MS / 1000)}s`);
+                }
+                throw err;
+            } finally {
+                clearTimeout(timer);
             }
         }
 
@@ -985,13 +1039,14 @@
                     { id: 'settings', label: 'Settings', icon: 'Settings', view: 'settings' }
                 ];
 
-            const labToolItems = (window.LIFEE_UI_NAV && Array.isArray(window.LIFEE_UI_NAV.labToolItems))
+            const rawLabToolItems = (window.LIFEE_UI_NAV && Array.isArray(window.LIFEE_UI_NAV.labToolItems))
                 ? window.LIFEE_UI_NAV.labToolItems
                 : [
                     { id: 'life-simulator', label: 'Life Simulator', icon: 'Activity', view: 'life-simulator' },
                     { id: 'ai-tarot', label: 'AI Tarot', icon: 'Moon', view: 'ai-tarot' },
                     { id: 'decision-lab', label: 'Decision Lab', icon: 'Layers', view: 'decision-lab' }
                 ];
+            const labToolItems = rawLabToolItems.filter(item => item.id !== 'ai-tarot' && item.view !== 'ai-tarot');
 
             useEffect(() => {
                 const el = scrollContainerRef.current;
@@ -1173,33 +1228,33 @@
             );
         };
 
+        const TAROT_DECK = [
+            { id: 0, name: "The Fool", icon: "Wind", desc: "Beginnings, potential, leap of faith." },
+            { id: 1, name: "The Magician", icon: "Zap", desc: "Manifestation, resourcefulness." },
+            { id: 2, name: "The High Priestess", icon: "Moon", desc: "Intuition, sacred knowledge." },
+            { id: 3, name: "The Empress", icon: "Flower", desc: "Femininity, beauty, nature." },
+            { id: 4, name: "The Emperor", icon: "Shield", desc: "Authority, structure, stability." },
+            { id: 5, name: "The Hierophant", icon: "Book", desc: "Spiritual wisdom, traditions." },
+            { id: 6, name: "The Lovers", icon: "Heart", desc: "Love, harmony, relationships." },
+            { id: 7, name: "The Chariot", icon: "Navigation", desc: "Control, willpower, victory." },
+            { id: 8, name: "Strength", icon: "Sun", desc: "Courage, persuasion, compassion." },
+            { id: 9, name: "The Hermit", icon: "Flame", desc: "Introspection, solitude, guidance." },
+            { id: 10, name: "Wheel of Fortune", icon: "RefreshCw", desc: "Destiny, cycles, turning point." },
+            { id: 11, name: "Justice", icon: "Scale", desc: "Fairness, truth, law, cause." },
+            { id: 12, name: "The Hanged Man", icon: "Anchor", desc: "Pause, surrender, letting go." },
+            { id: 13, name: "Death", icon: "Scissors", desc: "Endings, change, transition." },
+            { id: 14, name: "Temperance", icon: "Droplets", desc: "Balance, moderation, patience." },
+            { id: 15, name: "The Devil", icon: "Lock", desc: "Shadow self, attachment, restriction." },
+            { id: 16, name: "The Tower", icon: "Zap", desc: "Sudden change, upheaval, revelation." },
+            { id: 17, name: "The Star", icon: "Star", desc: "Hope, faith, renewal, peace." },
+            { id: 18, name: "The Moon", icon: "CloudMoon", desc: "Illusion, fear, anxiety, intuition." },
+            { id: 19, name: "The Sun", icon: "Sun", desc: "Positivity, success, vitality." },
+            { id: 20, name: "Judgement", icon: "Bell", desc: "Rebirth, inner calling, absolution." },
+            { id: 21, name: "The World", icon: "Globe", desc: "Completion, integration, travel." }
+        ];
+
         const AITarot = () => {
             const [selectedCards, setSelectedCards] = useState({});
-
-            const deck = [
-                { id: 0, name: "The Fool", icon: "Wind", desc: "Beginnings, potential, leap of faith." },
-                { id: 1, name: "The Magician", icon: "Zap", desc: "Manifestation, resourcefulness." },
-                { id: 2, name: "The High Priestess", icon: "Moon", desc: "Intuition, sacred knowledge." },
-                { id: 3, name: "The Empress", icon: "Flower", desc: "Femininity, beauty, nature." },
-                { id: 4, name: "The Emperor", icon: "Shield", desc: "Authority, structure, stability." },
-                { id: 5, name: "The Hierophant", icon: "Book", desc: "Spiritual wisdom, traditions." },
-                { id: 6, name: "The Lovers", icon: "Heart", desc: "Love, harmony, relationships." },
-                { id: 7, name: "The Chariot", icon: "Navigation", desc: "Control, willpower, victory." },
-                { id: 8, name: "Strength", icon: "Sun", desc: "Courage, persuasion, compassion." },
-                { id: 9, name: "The Hermit", icon: "Flame", desc: "Introspection, solitude, guidance." },
-                { id: 10, name: "Wheel of Fortune", icon: "RefreshCw", desc: "Destiny, cycles, turning point." },
-                { id: 11, name: "Justice", icon: "Scale", desc: "Fairness, truth, law, cause." },
-                { id: 12, name: "The Hanged Man", icon: "Anchor", desc: "Pause, surrender, letting go." },
-                { id: 13, name: "Death", icon: "Scissors", desc: "Endings, change, transition." },
-                { id: 14, name: "Temperance", icon: "Droplets", desc: "Balance, moderation, patience." },
-                { id: 15, name: "The Devil", icon: "Lock", desc: "Shadow self, attachment, restriction." },
-                { id: 16, name: "The Tower", icon: "Zap", desc: "Sudden change, upheaval, revelation." },
-                { id: 17, name: "The Star", icon: "Star", desc: "Hope, faith, renewal, peace." },
-                { id: 18, name: "The Moon", icon: "CloudMoon", desc: "Illusion, fear, anxiety, intuition." },
-                { id: 19, name: "The Sun", icon: "Sun", desc: "Positivity, success, vitality." },
-                { id: 20, name: "Judgement", icon: "Bell", desc: "Rebirth, inner calling, absolution." },
-                { id: 21, name: "The World", icon: "Globe", desc: "Completion, integration, travel." }
-            ];
 
             const toggleCard = (id) => setSelectedCards(p => ({ ...(p || {}), [id]: !p?.[id] }));
 
@@ -1213,7 +1268,7 @@
                     <div className="flex items-center justify-center min-h-[420px]">
                         <div className="w-full overflow-x-auto no-scrollbar py-12 px-[10%] md:px-[20%] mask-linear-tarot">
                             <div className="flex flex-nowrap gap-6 md:gap-10 min-w-max">
-                                {deck.map((card) => {
+                                {TAROT_DECK.map((card) => {
                                     const flipped = !!selectedCards?.[card.id];
                                     return (
                                         <button
@@ -1268,6 +1323,135 @@
                             >
                                 INTERPRET MY SPREAD
                             </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const TarotReadingModal = ({ isOpen, decisionLabel, onClose, onInterpret }) => {
+            const [selectedCards, setSelectedCards] = useState({});
+
+            useEffect(() => {
+                if (!isOpen) setSelectedCards({});
+            }, [isOpen]);
+
+            if (!isOpen) return null;
+
+            const pickedCards = TAROT_DECK.filter(card => selectedCards?.[card.id]);
+
+            const toggleCard = (id) => {
+                setSelectedCards(prev => {
+                    const next = { ...(prev || {}) };
+                    if (next[id]) {
+                        delete next[id];
+                        return next;
+                    }
+                    if (Object.keys(next).length >= 3) return next;
+                    next[id] = true;
+                    return next;
+                });
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose}></div>
+                    <div className="relative w-full max-w-[1280px] max-h-[90vh] overflow-hidden bg-[#FDFBF7] rounded-[40px] md:rounded-[56px] border border-[#F0EDEA] shadow-2xl animate-in">
+                        <div className="flex items-center justify-between px-6 md:px-8 pt-6 md:pt-8 pb-2">
+                            <div className="space-y-2 pr-4">
+                                <div className="text-[10px] font-black uppercase tracking-[0.35em] opacity-35">Tarot Consultation</div>
+                                <h3 className="text-2xl md:text-4xl font-serif italic tracking-tight text-blue-brand">Draw for This Decision</h3>
+                                <p className="text-xs md:text-sm text-[#5D576B] italic max-w-2xl">
+                                    {decisionLabel ? `Decision in focus: "${decisionLabel}"` : 'Focus on the choice in front of you, then draw three cards.'}
+                                </p>
+                            </div>
+                            <button onClick={onClose} className="shrink-0 w-11 h-11 rounded-full border border-[#E8E6E0] bg-white flex items-center justify-center text-[#5D576B]/60 hover:text-blue-brand hover:border-blue-brand/30 transition-all">
+                                <Icon name="X" size={18} />
+                            </button>
+                        </div>
+
+                        <div className="overflow-y-auto max-h-[calc(90vh-96px)] px-4 md:px-8 pb-6 md:pb-8">
+                            <div className="flex items-center justify-center min-h-[360px]">
+                                <div className="w-full overflow-x-auto no-scrollbar py-8 md:py-12 px-[2%] md:px-[8%] mask-linear-tarot">
+                                    <div className="flex flex-nowrap gap-4 md:gap-8 min-w-max">
+                                        {TAROT_DECK.map((card) => {
+                                            const flipped = !!selectedCards?.[card.id];
+                                            const order = pickedCards.findIndex(x => x.id === card.id);
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={card.id}
+                                                    onClick={() => toggleCard(card.id)}
+                                                    className="shrink-0 w-[150px] md:w-[200px] aspect-[2/3.5] perspective-1000 group cursor-pointer transition-transform hover:scale-[1.03] outline-none"
+                                                    aria-label={`Tarot card ${card.name}`}
+                                                >
+                                                    <div className={`relative w-full h-full duration-700 preserve-3d shadow-xl rounded-[32px] ${flipped ? 'rotate-y-180' : ''}`}>
+                                                        <div className="absolute inset-0 backface-hidden bg-white border border-[#F0EDEA] rounded-[32px] flex flex-col items-center justify-center p-8 text-center shadow-sm">
+                                                            <div className="w-14 h-14 rounded-full bg-[#FDFBF7] flex items-center justify-center mb-8 border border-[#E8E6E0]">
+                                                                <Icon name="Moon" size={24} className="text-[#5D576B] opacity-40" />
+                                                            </div>
+                                                            <div className="text-[10px] font-black opacity-20 tracking-[0.4em] uppercase">
+                                                                CARD {String(card.id + 1).padStart(2, '0')}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white border-2 border-blue-brand rounded-[32px] p-6 md:p-8 flex flex-col items-center justify-center text-center">
+                                                            {order >= 0 && (
+                                                                <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-blue-brand text-white text-[10px] font-black flex items-center justify-center">
+                                                                    {order + 1}
+                                                                </div>
+                                                            )}
+                                                            <div className="w-14 h-14 rounded-full bg-blue-brand/5 flex items-center justify-center mb-5">
+                                                                <Icon name={card.icon} size={28} className="text-blue-brand" />
+                                                            </div>
+                                                            <div className="text-lg md:text-xl font-serif italic font-black mb-4 uppercase leading-tight text-[#1A1A1A]">
+                                                                {card.name}
+                                                            </div>
+                                                            <div className="h-px w-10 bg-blue-brand/20 mb-4" />
+                                                            <div className="text-[10px] italic leading-relaxed text-[#5D576B] font-medium uppercase tracking-widest opacity-80">
+                                                                {card.desc}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/80 backdrop-blur-md p-6 md:p-10 rounded-[36px] md:rounded-[50px] border border-[#F0EDEA] shadow-xl text-center space-y-4 max-w-3xl mx-auto relative">
+                                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><Icon name="Moon" size={64} /></div>
+                                <p className="text-xs opacity-60 leading-relaxed italic px-4">
+                                    Draw exactly three cards. The spread will be read as present tension, hidden influence, and likely transformation around this one decision.
+                                </p>
+                                <div className="flex flex-wrap items-center justify-center gap-2 min-h-[32px]">
+                                    {pickedCards.length > 0 ? pickedCards.map(card => (
+                                        <span key={card.id} className="px-3 py-1.5 rounded-full bg-blue-brand/8 border border-blue-brand/15 text-[10px] font-black uppercase tracking-[0.15em] text-blue-brand">
+                                            {card.name}
+                                        </span>
+                                    )) : (
+                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-25">No cards drawn yet</span>
+                                    )}
+                                </div>
+                                <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={onClose}
+                                        className="px-8 py-4 bg-white text-[#5D576B] rounded-full font-black text-[10px] uppercase tracking-[0.3em] border border-[#E8E6E0] hover:border-blue-brand/30 transition-all"
+                                    >
+                                        Close
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={pickedCards.length !== 3}
+                                        onClick={() => onInterpret?.(pickedCards)}
+                                        className="px-10 md:px-16 py-4 md:py-5 bg-blue-brand text-white rounded-full font-black text-[10px] uppercase tracking-[0.35em] shadow-lg shadow-[0_4px_14px_rgba(152,166,212,0.35)] hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-20"
+                                    >
+                                        INTERPRET MY SPREAD
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1455,8 +1639,13 @@
             const [options, setOptions] = useState([]);
             const [isDebating, setIsDebating] = useState(false);
             const [inputValue, setInputValue] = useState('');
+            const [tarotDecision, setTarotDecision] = useState('');
+            const [tarotModalOpen, setTarotModalOpen] = useState(false);
             const scrollRef = useRef(null);
             const inputFieldRef = useRef(null);
+            const hasTarotMaster = selectedPersonas.some(p => p.id === 'tarot-master');
+            const tarotMasterPersona = selectedPersonas.find(p => p.id === 'tarot-master') || null;
+            const debatePersonas = selectedPersonas.filter(p => p.id !== 'tarot-master');
 
             useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [history]);
 
@@ -1480,9 +1669,14 @@
                     const payload = {
                         situation: finalSituation,
                         userInput: cleanInput,
-                        personas: selectedPersonas.map(p => ({ id: p.id, name: p.name, knowledge: p.knowledge || '' })),
+                        personas: debatePersonas.map(p => ({ id: p.id, name: p.name, knowledge: p.knowledge || '' })),
                         context: contextBlock
                     };
+
+                    if (!payload.personas.length) {
+                        setOptions([]);
+                        return;
+                    }
 
                     const handlers = {
                         onMessage: async (msg) => {
@@ -1504,7 +1698,7 @@
                     }
                 } catch (e) {
                     console.error(e);
-                    setHistory(prev => [...prev, { personaId: "system", text: "(Request failed) Check API / CORS / response format" }]);
+                    setHistory(prev => [...prev, { personaId: "system", text: `(${e?.message || 'Request failed'})` }]);
                     setOptions([]);
                 } finally {
                     setIsDebating(false);
@@ -1519,15 +1713,72 @@
                 inputFieldRef.current?.focus();
             };
 
+            const openTarotForDecision = (decision) => {
+                setTarotDecision((decision || '').trim());
+                setTarotModalOpen(true);
+            };
+
+            const handleInterpretTarot = async (cards) => {
+                if (!tarotMasterPersona) return;
+
+                const focus = tarotDecision || (context?.situation || '').trim() || 'this decision';
+                const drawnCards = Array.isArray(cards) ? cards : [];
+                const drawn = drawnCards.map(card => card.name).join(', ');
+                setTarotModalOpen(false);
+
+                const spreadPrompt = `Read a three-card tarot spread for this decision: "${focus}". Cards drawn: ${drawn}. Interpret them in this order: present tension, hidden influence, likely transformation. Keep the reading grounded in the decision and end with one concrete next step.`;
+                const spreadSummary = `[Tarot spread for "${focus}"] ${drawn}`;
+
+                setIsDebating(true);
+                setHistory(prev => [...prev, { personaId: 'user', text: spreadSummary }]);
+                await persistMessage('user', spreadSummary);
+
+                try {
+                    const contextBlock = buildContextBlock();
+                    const situation = (context.situation || "").trim();
+                    const finalSituation = contextBlock
+                        ? `Context:\n${contextBlock}\n\nUser situation:\n${situation || "Start the internal debate."}\n\nDecision for tarot reading:\n${focus}`
+                        : `${situation || "Start the internal debate."}\n\nDecision for tarot reading:\n${focus}`;
+
+                    const payload = {
+                        situation: finalSituation,
+                        userInput: spreadPrompt,
+                        personas: [{ id: tarotMasterPersona.id, name: tarotMasterPersona.name, knowledge: tarotMasterPersona.knowledge || '' }],
+                        context: contextBlock
+                    };
+
+                    const handlers = {
+                        onMessage: async (msg) => {
+                            setHistory(prev => [...prev, msg]);
+                            const role = msg.personaId === 'system' ? 'system' : 'assistant';
+                            await persistMessage(role, msg.text || '');
+                        },
+                        onOptions: () => {}
+                    };
+
+                    try {
+                        await fetchLifeeDecisionStream(payload, handlers);
+                    } catch (streamErr) {
+                        console.warn('tarot stream failed; fallback to progressive JSON calls', streamErr);
+                        await fetchLifeeDecisionProgressive(payload, handlers);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    setHistory(prev => [...prev, { personaId: "system", text: `(${e?.message || 'Tarot reading failed'})` }]);
+                } finally {
+                    setIsDebating(false);
+                }
+            };
+
             const autoStartedRef = useRef(false);
             useEffect(() => {
                 if (autoStartedRef.current) return;
-                if (!selectedPersonas?.length) return;
+                if (!debatePersonas?.length) return;
                 const initial = (context?.situation || '').trim();
                 if (!initial) return;
                 autoStartedRef.current = true;
                 runRound(initial);
-            }, [selectedPersonas?.length]);
+            }, [debatePersonas?.length]);
 
             return (
                 <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden font-sans animate-in">
@@ -1559,16 +1810,63 @@
                     </div>
                     <div className="p-4 md:p-8 bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7] to-transparent">
                         <div className="max-w-3xl mx-auto space-y-4">
-                            {options.length > 0 && !isDebating && <div className="flex flex-wrap justify-center gap-2 mb-2 animate-in">{options.map((opt, i) => <button key={i} onClick={() => runRound(opt)} className="px-4 py-2 bg-white/90 border border-blue-brand/20 rounded-full text-xs font-bold hover:bg-blue-brand hover:text-white transition-all shadow-sm">{opt}</button>)}</div>}
+                            {options.length > 0 && !isDebating && (
+                                <div className="flex flex-wrap justify-center gap-2 mb-2 animate-in">
+                                    {options.map((opt, i) => (
+                                        <div key={i} className="flex items-center gap-2">
+                                            <button key={i} onClick={() => runRound(opt)} className="px-4 py-2 bg-white/90 border border-blue-brand/20 rounded-full text-xs font-bold hover:bg-blue-brand hover:text-white transition-all shadow-sm">{opt}</button>
+                                            {hasTarotMaster && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openTarotForDecision(opt)}
+                                                    className="w-9 h-9 rounded-full bg-white border border-blue-brand/20 flex items-center justify-center text-blue-brand hover:bg-blue-brand hover:text-white transition-all shadow-sm"
+                                                    title="Draw tarot for this decision"
+                                                >
+                                                    <Icon name="Moon" size={14} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             <div className="flex gap-3">
                                 <button disabled={isDebating} onClick={() => runRound(null)} className="hidden md:block flex-1 py-5 bg-blue-brand text-white rounded-full font-bold shadow-xl transition-all hover:translate-y-[-2px] disabled:opacity-50 uppercase tracking-widest text-xs">STAY SILENT</button>
+                                {hasTarotMaster && (
+                                    <button
+                                        type="button"
+                                        disabled={isDebating}
+                                        onClick={() => openTarotForDecision((inputValue || '').trim() || (context?.situation || '').trim())}
+                                        className="hidden md:flex w-14 h-14 shrink-0 rounded-full bg-white border border-[#E8E6E0] items-center justify-center text-blue-brand shadow-xl hover:border-blue-brand/30 transition-all disabled:opacity-50"
+                                        title="Open tarot spread"
+                                    >
+                                        <Icon name="Moon" size={20} />
+                                    </button>
+                                )}
                                 <div className="relative flex-[3] group">
                                     <input ref={inputFieldRef} type="text" placeholder="..." disabled={isDebating} className="w-full h-14 bg-white rounded-full shadow-xl border-2 border-transparent focus:border-blue-brand transition-all duration-300 px-6 md:px-8 focus:outline-none text-sm" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && inputValue) runRound(); }} />
                                     <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none group-focus-within:opacity-0 transition-opacity"><Icon name="MessageCircle" size={22} className="text-blue-brand" /></div>
                                 </div>
                             </div>
+                            {hasTarotMaster && (
+                                <div className="md:hidden flex justify-center">
+                                    <button
+                                        type="button"
+                                        disabled={isDebating}
+                                        onClick={() => openTarotForDecision((inputValue || '').trim() || (context?.situation || '').trim())}
+                                        className="px-5 py-3 rounded-full bg-white border border-[#E8E6E0] text-[10px] font-black uppercase tracking-[0.25em] text-blue-brand shadow-sm disabled:opacity-50"
+                                    >
+                                        Draw Tarot
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
+                    <TarotReadingModal
+                        isOpen={tarotModalOpen}
+                        decisionLabel={tarotDecision}
+                        onClose={() => setTarotModalOpen(false)}
+                        onInterpret={handleInterpretTarot}
+                    />
                 </div>
             );
         };
