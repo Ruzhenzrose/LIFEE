@@ -114,10 +114,10 @@ class Participant:
             if matched:
                 triggered_context = "\n\n".join(s.content for s in matched)
 
-        # 3. 投资角色：只要提到公司名就获取实时数据（不依赖 Tier 2 触发）
+        # 3. 投资角色：用户提到股票/商品/加密货币时自动获取实时数据
         stock_data_context = ""
         if user_query and self.skill_set.triggered_skills:
-            inv_skills = {"business-analysis", "financial-statements", "valuation-math"}
+            inv_skills = {"business_analysis", "financial_statements", "valuation_math"}
             role_skill_names = {s.name for s in self.skill_set.triggered_skills}
             if inv_skills & role_skill_names:
                 from lifee.market import resolve_and_fetch

@@ -349,5 +349,37 @@ TICKER_MAP: dict[str, str] = {
     "京东方": "000725.SZ", "boe": "000725.SZ",
     # Sany Heavy
     "三一重工": "600031.SS", "三一": "600031.SS",
+
+    # ── 大宗商品期货 ──
+    # Gold
+    "黄金": "GC=F", "gold": "GC=F", "金价": "GC=F", "xauusd": "GC=F",
+    # Silver
+    "白银": "SI=F", "silver": "SI=F", "银价": "SI=F",
+    # Crude Oil
+    "原油": "CL=F", "crude oil": "CL=F", "oil": "CL=F", "wti": "CL=F", "石油": "CL=F",
+    # Brent Crude
+    "布伦特原油": "BZ=F", "brent": "BZ=F",
+    # Natural Gas
+    "天然气": "NG=F", "natural gas": "NG=F",
+    # Copper
+    "铜": "HG=F", "copper": "HG=F",
+
+    # ── 商品 ETF ──
+    "黄金etf": "GLD", "gld": "GLD", "spdr gold": "GLD",
+    "白银etf": "SLV", "slv": "SLV",
+    "原油etf": "USO", "uso": "USO",
+
+    # ── 加密货币 ──
+    "比特币": "BTC-USD", "bitcoin": "BTC-USD", "btc": "BTC-USD",
+    "以太坊": "ETH-USD", "ethereum": "ETH-USD", "eth": "ETH-USD",
+    "狗狗币": "DOGE-USD", "dogecoin": "DOGE-USD", "doge": "DOGE-USD",
+    "solana": "SOL-USD", "sol": "SOL-USD",
+
+    # ── 主要指数 ──
+    "标普500": "^GSPC", "s&p500": "^GSPC", "s&p 500": "^GSPC", "标普": "^GSPC",
+    "纳斯达克": "^IXIC", "nasdaq": "^IXIC",
+    "道琼斯": "^DJI", "dow jones": "^DJI", "道指": "^DJI",
+    "恒生指数": "^HSI", "恒指": "^HSI", "hang seng": "^HSI",
+    "上证指数": "000001.SS", "上证": "000001.SS", "a股指数": "000001.SS",
 }
 # fmt: on
