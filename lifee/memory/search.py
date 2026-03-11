@@ -185,6 +185,31 @@ def search_keyword(
     return results
 
 
+
+def _text_overlap(a: str, b: str) -> float:
+    """计算两段文本的重叠比例（基于字符集合的 Jaccard 相似度的快速近似）"""
+    # 用 n-gram 集合比较，比逐字符更准确
+    n = 4
+    if len(a) < n or len(b) < n:
+        return 0.0
+    set_a = set(a[i:i+n] for i in range(len(a) - n + 1))
+    set_b = set(b[i:i+n] for i in range(len(b) - n + 1))
+    intersection = len(set_a & set_b)
+    union = len(set_a | set_b)
+    return intersection / union if union else 0.0
+
+
+def _deduplicate(results: list[SearchResult], threshold: float) -> list[SearchResult]:
+    """移除文本高度重叠的搜索结果，保留分数更高的"""
+    if threshold <= 0 or threshold > 1:
+        return results
+    kept: list[SearchResult] = []
+    for r in results:
+        if any(_text_overlap(r.text, k.text) >= threshold for k in kept):
+            continue
+        kept.append(r)
+    return kept
+
 def hybrid_search(
     db: sqlite3.Connection,
     query_embedding: list[float],
@@ -196,6 +221,7 @@ def hybrid_search(
     text_weight: float = 0.3,
     candidate_multiplier: int = 4,
     keyword_query_text: str | None = None,
+    dedup_threshold: float = 0.6,
 ) -> list[SearchResult]:
     """
     混合搜索：向量 + 关键词
@@ -210,6 +236,7 @@ def hybrid_search(
         vector_weight: 向量搜索权重（默认 0.7）
         text_weight: 关键词搜索权重（默认 0.3）
         candidate_multiplier: 候选倍数
+        dedup_threshold: 文本去重阈值，重叠比例超过此值则去掉后者
 
     Returns:
         合并后的搜索结果
@@ -269,5 +296,8 @@ def hybrid_search(
         if r.score >= min_score
     ]
     final_results.sort(key=lambda x: x.score, reverse=True)
+
+    # 6. 去重：移除文本高度重叠的结果
+    final_results = _deduplicate(final_results, dedup_threshold)
 
     return final_results[:max_results]

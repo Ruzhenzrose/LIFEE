@@ -230,21 +230,23 @@ class RoleManager:
             files = [f for f in files if f.is_file()]
 
             if files:
-                # 检查是否需要索引（对比数据库中已有的文件数）
-                stats = manager.get_stats()
-                if stats["file_count"] < len(files):
-                    total = len(files)
-                    print(f"  索引知识库: 0/{total}", end="", flush=True)
-                    indexed = 0
+                # 先快速扫描哪些文件需要索引
+                need_index = [f for f in files if manager._needs_reindex(f)]
+
+                if need_index:
+                    total = len(need_index)
+                    label = "新增" if manager.get_stats()["file_count"] == 0 else "更新"
+                    print(f"  索引知识库: {label} {total} 个文件", flush=True)
+                    done = 0
                     failed = 0
-                    for f in files:
+                    for f in need_index:
                         try:
                             await manager.index_file(f)
                         except Exception as e:
                             failed += 1
                             print(f"\n  Warning: {f.name}: {e}", end="", flush=True)
-                        indexed += 1
-                        print(f"\r  索引知识库: {indexed}/{total}", end="", flush=True)
+                        done += 1
+                        print(f"\r  索引知识库: {done}/{total}", end="", flush=True)
                     if failed:
                         print(f"  ({failed} failed)")
                     else:
