@@ -43,12 +43,20 @@ Current USER.md content:
 Recent conversation:
 {conversation}
 
+The file has three key sections:
+- **How** — communication style preferences
+- **What now** — what the user is currently focused on or thinking about (replace with latest)
+- **What not** — topics or behaviors to avoid
+- **背景参考** — stable background info (interests, personality)
+
 Task: Produce an updated USER.md that:
-1. Incorporates any NEW information revealed in the conversation (name, job, preferences, etc.)
-2. Deduplicates and merges similar items — do NOT add items that are already covered
-3. Keeps the file concise and well-organized
-4. Preserves the existing structure and language (Chinese)
-5. If nothing new was learned, return the original content unchanged
+1. Updates "What now" to reflect what the user seemed focused on in this conversation
+2. Adds to "What not" if the user showed discomfort with something
+3. Adds to "背景参考" only if genuinely new stable info was revealed
+4. Does NOT repeat items already covered; deduplicates similar items
+5. Keeps the file concise — prefer updating existing lines over adding new ones
+6. Preserves the structure and Chinese language
+7. If nothing new was learned, return the original content unchanged
 
 Return ONLY the updated markdown content, no explanation."""
 
