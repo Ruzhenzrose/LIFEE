@@ -85,6 +85,9 @@ STRINGS = {
 
     # === 会话状态 ===
     "session_saved": {"zh": "会话已自动保存", "en": "Session saved"},
+    "profile_updating": {"zh": "正在更新档案...", "en": "Updating profile..."},
+    "profile_updated": {"zh": "档案已更新", "en": "Profile updated"},
+    "profile_unchanged": {"zh": "档案无变化", "en": "Profile unchanged"},
     "history_cleared": {"zh": "对话历史已清空", "en": "Chat history cleared"},
     "history_empty": {"zh": "对话历史为空", "en": "Chat history is empty"},
     "history_title": {"zh": "--- 对话历史 ---", "en": "--- Chat History ---"},
