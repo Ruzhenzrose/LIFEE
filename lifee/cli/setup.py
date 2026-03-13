@@ -19,6 +19,7 @@ def select_menu_interactive(
     title: str,
     options: list[str],
     subtitle: str = "",
+    default_index: int = 0,
 ) -> int | None:
     """通用方向键单选菜单
 
@@ -26,6 +27,7 @@ def select_menu_interactive(
         title: 菜单标题
         options: 选项文本列表
         subtitle: 标题下的副标题（如 Provider 信息）
+        default_index: 默认选中项索引
 
     Returns:
         选中项的索引（0-based），ESC/q 取消返回 None
@@ -37,7 +39,7 @@ def select_menu_interactive(
     kernel32.GetConsoleMode(stdout_handle, ctypes.byref(mode))
     kernel32.SetConsoleMode(stdout_handle, mode.value | 0x0004)
 
-    cursor = 0
+    cursor = max(0, min(default_index, len(options) - 1))
     # 标题行 + 副标题行（如果有）+ 空行 + 选项行
     header_lines = 3  # "===", title, "==="
     if subtitle:

@@ -407,9 +407,20 @@ async def main_menu(
         if not selected_roles:
             return await main_menu(provider, role_manager, session_store)
 
+        # 多角色时询问每轮发言人数
+        max_speakers = len(selected_roles)
+        if len(selected_roles) > 1:
+            n = len(selected_roles)
+            spk_labels = [f"{i} {'人' if settings.ui_lang == 'zh' else 'speakers'}" for i in range(1, n)]
+            spk_labels.append(f"{n} {'人（全部）' if settings.ui_lang == 'zh' else 'speakers (all)'}")
+            spk_title = "每轮最多几人发言？" if settings.ui_lang == "zh" else "How many speakers per round?"
+            spk_choice = select_menu_interactive(spk_title, spk_labels, default_index=n - 1)
+            if spk_choice is not None:
+                max_speakers = spk_choice + 1
+
         session = Session()
         participants = await create_participants(selected_roles, provider, role_manager)
-        return ("start", {"participants": participants, "session": session})
+        return ("start", {"participants": participants, "session": session, "max_speakers": max_speakers})
 
     elif selected == "history":
         # 历史会话也用方向键选择
@@ -489,10 +500,12 @@ async def main():
         elif action == "start":
             participants = data["participants"]
             session = data["session"]
+            max_speakers = data.get("max_speakers", len(participants))
 
             # 进入统一对话循环
             result_action, _ = await debate_loop(
-                participants, session, provider, session_store
+                participants, session, provider, session_store,
+                max_speakers_per_round=max_speakers,
             )
 
             # 清理知识库
