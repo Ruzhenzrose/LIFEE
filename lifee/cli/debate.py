@@ -187,8 +187,11 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
     sys.stdout.write(prompt)
     sys.stdout.flush()
 
+    import shutil
     chars = []
     cursor_pos = 0  # 光标在 chars 中的位置（0 = 最左）
+    prompt_width = sum(_char_width(c) for c in prompt)
+    rendered_cursor_tw = prompt_width  # 上次渲染后光标对应的文本宽度（含 prompt）
     media = []
     has_attachment_line = False
 
@@ -203,17 +206,15 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
 
     def _redraw_line():
         """重绘输入行，光标定位到 cursor_pos（正确处理多行换行）"""
-        import shutil
+        nonlocal rendered_cursor_tw
         term_width = shutil.get_terminal_size().columns
-        prompt_width = sum(_char_width(c) for c in prompt)
         cursor_text_width = prompt_width + sum(_char_width(c) for c in chars[:cursor_pos])
         total_width = prompt_width + sum(_char_width(c) for c in chars)
 
-        # 当前光标在第几个终端行（相对于输入起始行，0-based）
-        cur_row = cursor_text_width // term_width
-        # 上移到输入第一行
-        if cur_row > 0:
-            sys.stdout.write(f"\033[{cur_row}A")
+        # 物理光标行 = 上次渲染后记录的文本宽度 // 终端宽度
+        phys_row = rendered_cursor_tw // term_width
+        if phys_row > 0:
+            sys.stdout.write(f"\033[{phys_row}A")
         # 从第一行行首清到屏幕底，重写全部内容
         sys.stdout.write(f"\r\033[J{prompt}{''.join(chars)}")
 
@@ -227,11 +228,13 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
         sys.stdout.write("\r")
         if target_col > 0:
             sys.stdout.write(f"\033[{target_col}C")
+
+        rendered_cursor_tw = cursor_text_width  # 更新物理光标位置记录
         sys.stdout.flush()
 
     def _redraw():
         """重绘附件行 + 输入行"""
-        nonlocal has_attachment_line
+        nonlocal has_attachment_line, rendered_cursor_tw
         if has_attachment_line:
             sys.stdout.write("\033[1A")
         sys.stdout.write("\r\033[J")
@@ -245,6 +248,8 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
         tw = _tail_width()
         if tw > 0:
             sys.stdout.write(f"\033[{tw}D")
+        cursor_text_width = prompt_width + sum(_char_width(c) for c in chars[:cursor_pos])
+        rendered_cursor_tw = cursor_text_width
         sys.stdout.flush()
 
     def _do_paste():
@@ -404,6 +409,7 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
             cursor_pos += 1
             if cursor_pos == len(chars):
                 sys.stdout.write(char)
+                rendered_cursor_tw += _char_width(char)  # 追踪物理光标位置
                 sys.stdout.flush()
             else:
                 _redraw_line()
