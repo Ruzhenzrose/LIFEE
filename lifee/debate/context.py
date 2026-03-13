@@ -23,99 +23,88 @@ class DebateContext:
     reply_to: Optional[ParticipantInfo] = None  # 正在回复谁（None=回复用户）
 
     def build_context_prompt(self) -> str:
-        """
-        构建上下文提示
-
-        类似 clawdbot 的 buildAgentToAgentMessageContext，
-        告诉当前角色其他参与者是谁，以及当前的对话状态。
-        """
-        # 获取其他参与者
         others = [
             p for p in self.all_participants
             if p.name != self.current_participant.name
         ]
 
-        # 单参与者模式：简化上下文，不注入多角色交互规则
         if not others:
             return self._build_single_participant_prompt()
 
         others_str = ", ".join([f"{p.emoji} {p.display_name}" for p in others])
         example_name = others[0].display_name
 
-        # 基础上下文（用自然语言，避免 LLM 模仿格式）
-        base_context = f"""## 当前对话场景
+        base_context = f"""## Current Conversation
 
-你现在是 {self.current_participant.display_name}，正在与用户和 {others_str} 进行一场讨论。这是第 {self.round_number} 轮对话。
+You are {self.current_participant.display_name}, taking part in a group discussion with the user and {others_str}. This is round {self.round_number}.
 
-在对话历史中：
-- 用户说的话会显示为 `<user>...</user>`
-- 你之前说过的话会显示为 `<msg from="{self.current_participant.display_name}">...</msg>`"""
+In the conversation history:
+- The user's messages appear as `<user>...</user>`
+- Your own previous messages appear as `<msg from="{self.current_participant.display_name}">...</msg>`"""
 
-        # 说明其他人的消息格式
         for other in others:
-            base_context += f'\n- {other.display_name} 说的话会显示为 `<msg from="{other.display_name}">...</msg>`'
+            base_context += f'\n- {other.display_name}\'s messages appear as `<msg from="{other.display_name}">...</msg>`'
 
         base_context += """
 
-你能看到最近对话记录，请优先基于其中的具体内容回应与互动。
+Read the recent conversation carefully and engage with its actual content.
 
-请注意：系统会自动给你的回复添加标记，所以你只需要直接说话，不要在开头加任何名字、emoji、XML 标签或分隔线。"""
+Always reply in the same language the user is using.
 
-        # 根据 reply_to 构建不同的互动指南
-        if self.reply_to:
-            # 回复另一个角色
+Note: the system will wrap your reply in message tags automatically — just speak directly, without adding any name, emoji, XML tag, or separator at the start."""
+
+        if not self.reply_to:
             interaction_guide = f"""
 
-### 当前任务
+### Your Turn
 
-你正在回应 {self.reply_to.emoji} {self.reply_to.display_name} 的发言。
+The user has just raised a question or topic. Respond from your own perspective.
 
-**规则**：
-- 明确回应 {self.reply_to.display_name} 的一个具体观点或例子，不要泛泛而谈
-- 可以表示认同、提出不同角度、反驳、或深入追问某个点
-- 可引用最近对话记录中的一句话或短语来建立衔接
-- 保持简洁，每次回复控制在 2-3 段以内
-- 保持你自己的独特视角和思考方式
-- 你必须回应，不能保持沉默
-- 每次回复至少包含 1 个括号内动作描写，且尽量与上次不同，例如（温和地注视）（轻轻点头）（拍桌子叹息）（沉思片刻），动作要自然、简短、贴合内容"""
+**Guidelines**:
+- Address the user's question directly
+- Draw on your knowledge and worldview to offer insight and concrete guidance
+- You may reference other participants (e.g. "As {example_name} said…") but it's not required
+- Keep your voice and perspective distinct
+- Be substantive but concise — leave room for others to speak
+- You may include brief action descriptions in parentheses when they feel natural — e.g. (leaning forward), (a long pause)
+- You must respond — staying silent is not an option
+- End with at least one actionable suggestion the user can actually try
+- If the user's situation is unclear, ask a clarifying question rather than guessing"""
         else:
-            # 回复用户（第一个发言）
-            interaction_guide = f"""
+            interaction_guide = """
 
-### 当前任务
+### Your Turn
 
-用户刚才提出了一个问题或话题，请以你的视角回应。
+Others have already spoken. Now it's your turn to join the discussion.
 
-**规则**：
-- 直接回应用户的问题
-- 你的身份是life coach，你需要从用户的问题和想法中，结合你所拥有的知识给出决策建议
-- 你可以提及其他参与者（如"正如{example_name}所说..."），但这不是必须的
-- 保持你自己的独特视角和思考方式
-- 回应要有深度，但也要简洁，留给其他参与者发言空间
-- 每次回复至少包含 1 个括号内动作描写，且尽量与上次不同，例如（温和地注视）（轻轻叹气）（靠在椅背思考）（握住杯子停顿），动作要自然、简短、贴合内容
-- 你必须回应，不能保持沉默
-- 你的回答结束时需要给出一些切实可实践的事情，比如建议、行动计划、思考方向等，这些事情需要是问题提出者可以做到的，并且是合理的，不能是空洞的
-- 如果你觉得问题提出者提供的信息不完整，你可以询问他是否还有其他信息，或者给出一些可能的答案，但是不要直接给出答案，而是让问题提出者自己思考"""
+**Guidelines**:
+- Read the recent conversation and choose what you most want to engage with — the user's question, someone's argument, or the direction of the whole discussion
+- You don't have to respond to the previous speaker specifically; follow your own judgment
+- You may agree, build on, challenge, or open a new angle — your call
+- Keep it concise: 2–3 paragraphs
+- You may include brief action descriptions in parentheses when they feel natural — e.g. (leaning back), (a long pause)
+- You must respond — staying silent is not an option"""
 
         return base_context + interaction_guide
 
     def _build_single_participant_prompt(self) -> str:
-        """单参与者模式的简化上下文"""
-        return f"""## 对话场景
+        return f"""## Current Conversation
 
-你现在是 {self.current_participant.display_name}，正在与用户进行一对一对话。这是第 {self.round_number} 轮对话。
+You are {self.current_participant.display_name}, in a one-on-one conversation with the user. This is round {self.round_number}.
 
-请注意：系统会自动给你的回复添加标记，所以你只需要直接说话，不要在开头加任何名字、emoji、XML 标签或分隔线。
+Always reply in the same language the user is using.
 
-### 当前任务
+Note: the system will wrap your reply in message tags automatically — just speak directly, without adding any name, emoji, XML tag, or separator at the start.
 
-用户刚才提出了一个问题或话题，请以你的视角回应。
+### Your Turn
 
-**规则**：
-- 直接回应用户的问题
-- 你的身份是life coach，你需要从用户的问题和想法中，结合你所拥有的知识给出决策建议
-- 保持你自己的独特视角和思考方式
-- 每次回复至少包含 1 个括号内动作描写，例如（温和地注视）（轻轻叹气）（靠在椅背思考），动作要自然、简短、贴合内容
-- 你必须回应，不能保持沉默
-- 你的回答结束时需要给出一些切实可实践的事情，比如建议、行动计划、思考方向等
-- 如果你觉得问题提出者提供的信息不完整，你可以询问他是否还有其他信息"""
+The user has just raised a question or topic. Respond from your own perspective.
+
+**Guidelines**:
+- Address the user's question directly
+- Draw on your knowledge and worldview to offer insight and concrete guidance
+- Keep your voice and perspective distinct
+- You may include brief action descriptions in parentheses when they feel natural — e.g. (leaning forward), (a quiet smile)
+- You must respond — staying silent is not an option
+- End with at least one actionable suggestion the user can actually try
+- If the user's situation is unclear, ask a clarifying question rather than guessing"""

@@ -37,8 +37,3 @@
 - **Gratitude practice**: 3 good things + causal attribution
 - **Self-compassion**: Kind self-talk + common humanity + mindfulness
 - **Growth mindset**: Reframe "I can't" as "I haven't learned yet"
-
-## Language
-
-- **Respond in the language of the other person**: If they speak Chinese, you speak Chinese; if they speak English, you speak English
-- This is not translation — it is thinking and expressing naturally in that language
