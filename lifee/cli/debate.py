@@ -27,6 +27,7 @@ SLASH_COMMANDS = [
     ("/clear",    "清除对话历史"),
     ("/sessions", "查看历史会话"),
     ("/memory",   "知识库状态"),
+    ("/me",       "查看/编辑我的档案"),
     ("/config",   "切换 Provider"),
     ("/model",    "切换模型"),
     ("/menu",     "返回主菜单"),
@@ -745,6 +746,20 @@ async def debate_loop(
                                 print(f"\n[{t('session_restored').format(count=len(session.history))}]\n")
                             else:
                                 print(f"\n[{t('session_load_failed')}]\n")
+                elif cmd == "/me":
+                    me_file = user_memory.user_file
+                    if me_file.exists():
+                        content = me_file.read_text(encoding="utf-8")
+                        print(f"\n── USER.md ──\n{content}\n─────────────")
+                    else:
+                        print(f"\n[{me_file} 不存在，将创建]\n")
+                    print("[在记事本中打开编辑，关闭后自动重载...]")
+                    import subprocess
+                    proc = subprocess.Popen(["notepad", str(me_file)])
+                    proc.wait()
+                    memory_context = user_memory.get_context()
+                    moderator.user_memory_context = memory_context
+                    print("[档案已重载]\n")
                 elif cmd == "/config":
                     new_provider_id = select_provider_interactive(show_welcome=False)
                     if new_provider_id:
