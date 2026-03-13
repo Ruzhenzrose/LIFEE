@@ -94,6 +94,18 @@ class SpeakerRotation:
         next_idx = (self._index + 1) % self._count
         return self.participants[next_idx]
 
+    def set_first(self, index: int) -> None:
+        """覆盖第一个发言者（仅在首次 next() 前有效）"""
+        self._index = index % self._count
+        self._prev_index = None
+
+    def reorder(self, sorted_participants: list) -> None:
+        """按 RAG 相关度重排发言顺序（每轮用户输入后调用）"""
+        self.participants = sorted_participants
+        self._count = len(sorted_participants)
+        self._index = 0
+        self._prev_index = None
+
 
 class Moderator:
     """辩论主持者 - 调度辩论流程"""
@@ -142,6 +154,21 @@ class Moderator:
         # 获取所有参与者信息（用于构建上下文）
         all_participants_info = [p.info for p in self.participants]
         num_participants = len(self.participants)
+
+        # 2a. 多参与者时，根据 RAG 相关度重排发言顺序
+        if num_participants > 1 and user_input:
+            search_tasks = [p._search_knowledge(user_input) for p in self.participants]
+            all_results = await asyncio.gather(*search_tasks, return_exceptions=True)
+            scores = [
+                max((r.score for r in res), default=0.0)
+                if isinstance(res, list) else 0.0
+                for res in all_results
+            ]
+            if max(scores) > 0:
+                sorted_participants = [
+                    p for _, p in sorted(zip(scores, self.participants), key=lambda x: x[0], reverse=True)
+                ]
+                self.rotation.reorder(sorted_participants)
 
         # 2. 循环让角色发言
         for turn in range(1, max_turns + 1):
