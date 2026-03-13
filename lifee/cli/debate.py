@@ -187,6 +187,7 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
     sys.stdout.flush()
 
     chars = []
+    cursor_pos = 0  # 光标在 chars 中的位置（0 = 最左）
     media = []
     has_attachment_line = False
 
@@ -194,6 +195,18 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
     in_slash_mode = False
     slash_cursor = 0
     slash_prev_count = 0  # 上次绘制的菜单行数
+
+    def _tail_width():
+        """光标右侧字符的显示宽度（用于回移光标）"""
+        return sum(_char_width(c) for c in chars[cursor_pos:])
+
+    def _redraw_line():
+        """重绘输入行，光标定位到 cursor_pos"""
+        sys.stdout.write(f"\r\033[K{prompt}{''.join(chars)}")
+        tw = _tail_width()
+        if tw > 0:
+            sys.stdout.write(f"\033[{tw}D")
+        sys.stdout.flush()
 
     def _redraw():
         """重绘附件行 + 输入行"""
@@ -208,6 +221,9 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
         else:
             has_attachment_line = False
         sys.stdout.write(f"{prompt}{''.join(chars)}")
+        tw = _tail_width()
+        if tw > 0:
+            sys.stdout.write(f"\033[{tw}D")
         sys.stdout.flush()
 
     def _do_paste():
@@ -290,10 +306,8 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
         elif char == "\x08":  # Backspace
             if in_slash_mode:
                 if chars:
-                    removed = chars.pop()
-                    w = _char_width(removed)
-                    sys.stdout.write("\b" * w + " " * w + "\b" * w)
-                    sys.stdout.flush()
+                    chars.pop()
+                    cursor_pos = len(chars)
                     if not chars:
                         _clear_slash_menu()
                         in_slash_mode = False
@@ -304,11 +318,10 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
                     _clear_slash_menu()
                     in_slash_mode = False
             else:
-                if chars:
-                    removed = chars.pop()
-                    w = _char_width(removed)
-                    sys.stdout.write("\b" * w + " " * w + "\b" * w)
-                    sys.stdout.flush()
+                if cursor_pos > 0:
+                    chars.pop(cursor_pos - 1)
+                    cursor_pos -= 1
+                    _redraw_line()
                 elif media:
                     media.pop()
                     _redraw()
@@ -343,12 +356,36 @@ def input_with_clipboard(prompt: str) -> Tuple[str, List[MediaItem]]:
                 elif arrow == "\x50":  # 下
                     slash_cursor = (slash_cursor + 1) % n
                     _draw_slash_menu()
-            # 非 slash 模式下忽略方向键（保持原行为）
+            else:
+                if arrow == "\x4b":  # 左
+                    if cursor_pos > 0:
+                        cursor_pos -= 1
+                        _redraw_line()
+                elif arrow == "\x4d":  # 右
+                    if cursor_pos < len(chars):
+                        cursor_pos += 1
+                        _redraw_line()
+                elif arrow == "\x47":  # Home
+                    if cursor_pos > 0:
+                        cursor_pos = 0
+                        _redraw_line()
+                elif arrow == "\x4f":  # End
+                    if cursor_pos < len(chars):
+                        cursor_pos = len(chars)
+                        _redraw_line()
+                elif arrow == "\x53":  # Delete（向前删）
+                    if cursor_pos < len(chars):
+                        chars.pop(cursor_pos)
+                        _redraw_line()
 
         elif ord(char) >= 32:  # 可打印字符
-            chars.append(char)
-            sys.stdout.write(char)
-            sys.stdout.flush()
+            chars.insert(cursor_pos, char)
+            cursor_pos += 1
+            if cursor_pos == len(chars):
+                sys.stdout.write(char)
+                sys.stdout.flush()
+            else:
+                _redraw_line()
 
             if char == "/" and len(chars) == 1:
                 # 进入 slash 菜单模式
