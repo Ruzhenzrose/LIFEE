@@ -570,11 +570,12 @@ def select_provider_interactive(show_welcome: bool = True) -> str:
     return provider_id
 
 
-def select_roles_interactive(role_manager) -> list[str] | None:
+def select_roles_interactive(role_manager, pre_selected: list[str] | None = None) -> list[str] | None:
     """交互式多角色选择（checkbox + 方向键）
 
     Args:
         role_manager: RoleManager 实例
+        pre_selected: 预选中的角色名列表
 
     Returns:
         选中的角色名列表，取消返回 None
@@ -586,13 +587,16 @@ def select_roles_interactive(role_manager) -> list[str] | None:
         print(t("create_role_hint"))
         return None
 
+    pre_selected_set = set(pre_selected or [])
+
     # 获取角色信息
     role_choices = []  # [(role_name, display_name, emoji, selected), ...]
     for role_name in roles:
         info = role_manager.get_role_info(role_name)
         display_name = info.get("display_name", role_name)
         emoji = role_manager.get_role_emoji(role_name)
-        role_choices.append([role_name, display_name, emoji, False])
+        selected = role_name in pre_selected_set
+        role_choices.append([role_name, display_name, emoji, selected])
 
     # 启用 Windows Virtual Terminal Processing（ANSI 转义序列）
     kernel32 = ctypes.windll.kernel32

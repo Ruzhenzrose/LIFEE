@@ -16,7 +16,7 @@ from lifee.debate import Moderator, Participant, DebateContext, clean_response
 from lifee.debate.suggestions import SuggestionGenerator
 from lifee.memory import UserMemory
 from .i18n import t
-from .setup import select_provider_interactive, select_model_for_provider, select_menu_interactive
+from .setup import select_provider_interactive, select_model_for_provider, select_menu_interactive, select_roles_interactive
 
 
 _IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
@@ -28,6 +28,7 @@ SLASH_COMMANDS = [
     ("/sessions", "查看历史会话"),
     ("/memory",   "知识库状态"),
     ("/me",       "查看/编辑我的档案"),
+    ("/roles",    "增删角色 / 调整发言人数"),
     ("/config",   "切换 Provider"),
     ("/model",    "切换模型"),
     ("/menu",     "返回主菜单"),
@@ -804,6 +805,72 @@ async def debate_loop(
                     memory_context = user_memory.get_context()
                     moderator.user_memory_context = memory_context
                     print("[档案已重载]\n")
+                elif cmd == "/roles":
+                    role_manager = participants[0].role_manager
+                    current_role_names = [p.role_name for p in participants]
+
+                    # 子菜单
+                    roles_opts = [
+                        "修改角色（增删）" if settings.ui_lang == "zh" else "Edit roles (add/remove)",
+                        "调整发言人数" if settings.ui_lang == "zh" else "Adjust speakers per round",
+                        t("back"),
+                    ]
+                    roles_choice = select_menu_interactive(
+                        "编辑角色" if settings.ui_lang == "zh" else "Edit roles",
+                        roles_opts,
+                    )
+
+                    if roles_choice == 0:  # 修改角色
+                        new_role_names = select_roles_interactive(role_manager, pre_selected=current_role_names)
+                        if new_role_names:
+                            # 关闭移除角色的知识库
+                            new_set = set(new_role_names)
+                            for p in participants:
+                                if p.role_name not in new_set and p.knowledge_manager:
+                                    p.knowledge_manager.close()
+
+                            # 保留已有 participant，新增的重新创建
+                            existing = {p.role_name: p for p in participants}
+                            new_participants = []
+                            for rn in new_role_names:
+                                if rn in existing:
+                                    new_participants.append(existing[rn])
+                                else:
+                                    print(f"[加载 {rn}...]", end="", flush=True)
+                                    try:
+                                        km = await role_manager.get_knowledge_manager(
+                                            rn, google_api_key=settings.google_api_key
+                                        )
+                                    except Exception:
+                                        km = None
+                                    new_participants.append(Participant(
+                                        role_name=rn,
+                                        provider=provider,
+                                        role_manager=role_manager,
+                                        knowledge_manager=km,
+                                    ))
+                                    print(f"\r\033[K[{rn} 已加载]")
+
+                            participants = new_participants
+                            memory_context = user_memory.get_context()
+                            moderator = Moderator(participants, session, user_memory_context=memory_context)
+                            names = ", ".join(p.info.display_name for p in participants)
+                            print(f"\n[当前角色: {names}]\n")
+
+                    elif roles_choice == 1:  # 调整发言人数
+                        n = len(participants)
+                        if n <= 1:
+                            print("\n[只有一个角色，无需调整]\n")
+                        else:
+                            spk_labels = [f"{i} {'人' if settings.ui_lang == 'zh' else 'speakers'}" for i in range(1, n)]
+                            spk_labels.append(f"{n} {'人（全部）' if settings.ui_lang == 'zh' else 'speakers (all)'}")
+                            spk_title = "每轮最多几人发言？" if settings.ui_lang == "zh" else "Speakers per round?"
+                            cur_idx = (max_speakers_per_round - 1) if 0 < max_speakers_per_round <= n else n - 1
+                            spk_choice = select_menu_interactive(spk_title, spk_labels, default_index=cur_idx)
+                            if spk_choice is not None:
+                                max_speakers_per_round = spk_choice + 1
+                                print(f"\n[每轮发言人数: {max_speakers_per_round}]\n")
+
                 elif cmd == "/config":
                     new_provider_id = select_provider_interactive(show_welcome=False)
                     if new_provider_id:
