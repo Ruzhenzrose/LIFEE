@@ -44,7 +44,6 @@ Recent conversation:
 {conversation}
 
 The file has three key sections:
-- **How** — communication style preferences
 - **What now** — what the user is currently focused on or thinking about (replace with latest)
 - **What not** — topics or behaviors to avoid
 - **背景参考** — stable background info (interests, personality)
