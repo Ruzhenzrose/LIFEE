@@ -98,6 +98,10 @@ class Settings(BaseSettings):
     debug: bool = Field(default=False, description="调试模式")
     data_dir: Path = Field(default=Path("data"), description="数据目录")
     ui_lang: str = Field(default="zh", description="UI language: zh or en")
+    max_speakers_per_round: int = Field(
+        default=0,
+        description="每轮最多发言人数（0 = 全部参与者）",
+    )
 
     @property
     def sessions_dir(self) -> Path:

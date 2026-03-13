@@ -858,7 +858,9 @@ async def debate_loop(
             current_output_lines = 0
             current_output_chars = 0
 
-            async for participant, chunk, is_skip in moderator.run(user_input, max_turns=len(participants), media=media or None):
+            _max_spk = settings.max_speakers_per_round
+            _turns = min(_max_spk, len(participants)) if _max_spk > 0 else len(participants)
+            async for participant, chunk, is_skip in moderator.run(user_input, max_turns=_turns, media=media or None):
                 if is_skip:
                     # 清除当前角色之前输出的内容
                     if current_output_chars > 0:
