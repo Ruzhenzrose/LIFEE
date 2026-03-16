@@ -50,8 +50,8 @@ STRINGS = {
     },
     "free_input_option": {"zh": "[自由输入]", "en": "[Free input]"},
     "suggestion_prompt": {
-        "zh": "你想说什么？ (↑↓选择 | 回车确认 | 直接打字输入)",
-        "en": "Your reply? (↑↓ select | Enter confirm | type to input)",
+        "zh": "你想说什么？ (直接打字 | ↑↓选择建议 | 回车发送)",
+        "en": "Your reply? (type directly | ↑↓ browse suggestions | Enter to send)",
     },
 
     # === /help 命令 ===

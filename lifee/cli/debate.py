@@ -437,12 +437,15 @@ async def show_suggestion_menu(
     session,
 ) -> tuple[str, bool]:
     """
-    显示建议回复菜单
+    显示建议回复菜单（输入框 + 建议列表混合 UI）
+
+    默认处于输入模式，光标在输入框中可直接打字。
+    按 ↓ 进入选择模式浏览建议，按 ↑ 回到输入模式。
 
     Returns:
         (选择的文本, 是否保持沉默)
-        - 选择建议: ("建议文本", False)
         - 自由输入: ("输入文本", False)
+        - 选择建议: ("建议文本", False)
         - 保持沉默: ("", True)
         - ESC取消: ("", False)
     """
@@ -457,86 +460,122 @@ async def show_suggestion_menu(
     # 截断建议文本，防止换行导致重绘错位
     import shutil
     term_width = shutil.get_terminal_size().columns
-    max_opt_len = term_width - 8  # "  > N. " 前缀占 ~7 字符
-    display_options = []
+    max_opt_len = term_width - 8  # "    N. " 前缀占 ~7 字符
+    display_suggestions = []
     for s in suggestions:
         if len(s) > max_opt_len:
-            display_options.append(s[:max_opt_len - 3] + "...")
+            display_suggestions.append(s[: max_opt_len - 3] + "...")
         else:
-            display_options.append(s)
-    display_options += [t("silence_option"), t("free_input_option")]
+            display_suggestions.append(s)
 
-    options = suggestions + [t("silence_option"), t("free_input_option")]
-    silence_idx = len(suggestions)
-    free_input_idx = len(suggestions) + 1
-    cursor = 0
-    total_lines = 1 + len(options)
+    silence_idx = len(suggestions)  # 沉默选项在建议列表末尾
+    select_options = suggestions + [t("silence_option")]
+    display_select = display_suggestions + [t("silence_option")]
 
-    def render_menu(first_time=False):
+    # 状态
+    mode = "input"  # "input" 或 "select"
+    buf = []  # 输入缓冲区
+    cursor_pos = 0  # 输入光标位置
+    sel_cursor = 0  # 选择模式光标
+    input_prefix = t("input_prompt")  # "你: "
+    # 总行数 = 提示行 + 输入行 + 建议行数
+    total_lines = 1 + 1 + len(select_options)
+
+    def render(first_time=False):
         if not first_time:
             sys.stdout.write(f"\033[{total_lines}A")
-        prompt = t("suggestion_prompt")
-        sys.stdout.write(f"\033[2K{prompt}\n")
-        for i, opt in enumerate(display_options):
-            pointer = ">" if i == cursor else " "
-            sys.stdout.write(f"\033[2K  {pointer} {i+1}. {opt}\n")
+        # 提示行
+        sys.stdout.write(f"\033[2K{t('suggestion_prompt')}\n")
+        # 输入行
+        text = "".join(buf)
+        if mode == "input":
+            # 显示光标：在 cursor_pos 位置插入可见光标
+            before = text[:cursor_pos]
+            after = text[cursor_pos:]
+            sys.stdout.write(f"\033[2K  {input_prefix}{before}\033[7m \033[27m{after}\n")
+        else:
+            sys.stdout.write(f"\033[2K  {input_prefix}{text}\n")
+        # 建议列表
+        for i, opt in enumerate(display_select):
+            if mode == "select" and i == sel_cursor:
+                sys.stdout.write(f"\033[2K  > {i + 1}. {opt}\n")
+            else:
+                sys.stdout.write(f"\033[2K    {i + 1}. {opt}\n")
         sys.stdout.flush()
 
-    sys.stdout.write("\033[?25l")  # 隐藏光标
-    render_menu(first_time=True)
+    sys.stdout.write("\033[?25l")  # 隐藏终端光标，用反色方块做视觉光标
+    render(first_time=True)
 
     result = ("", False)
     try:
         while True:
-            key = msvcrt.getch()
+            ch = msvcrt.getwch()  # getwch 直接返回 Unicode 字符，支持中文
 
-            if key == b'\r':  # 回车
-                if cursor < len(suggestions):
-                    result = (suggestions[cursor], False)
-                elif cursor == silence_idx:
-                    result = ("", True)  # 保持沉默
-                # 自由输入则返回空字符串
+            if ch == "\r":  # 回车
+                if mode == "input":
+                    text = "".join(buf).strip()
+                    if text:
+                        result = (text, False)
+                    # 空输入视同 ESC
+                    break
+                else:  # select mode
+                    if sel_cursor == silence_idx:
+                        result = ("", True)
+                    else:
+                        result = (select_options[sel_cursor], False)
+                    break
+
+            elif ch == "\x1b":  # ESC
                 break
 
-            elif key == b'\x1b':  # ESC
-                break
+            elif ch == "\xe0":  # 方向键前缀
+                arrow = msvcrt.getwch()
+                if arrow == "P":  # ↓
+                    if mode == "input":
+                        mode = "select"
+                        sel_cursor = 0
+                    else:
+                        sel_cursor = (sel_cursor + 1) % len(select_options)
+                    render()
+                elif arrow == "H":  # ↑
+                    if mode == "select":
+                        if sel_cursor == 0:
+                            mode = "input"
+                        else:
+                            sel_cursor -= 1
+                    render()
+                elif arrow == "K":  # ←
+                    if mode == "input" and cursor_pos > 0:
+                        cursor_pos -= 1
+                        render()
+                elif arrow == "M":  # →
+                    if mode == "input" and cursor_pos < len(buf):
+                        cursor_pos += 1
+                        render()
 
-            elif key == b'\xe0':  # 方向键
-                arrow = msvcrt.getch()
-                if arrow == b'H':  # 上
-                    cursor = (cursor - 1) % len(options)
-                    render_menu()
-                elif arrow == b'P':  # 下
-                    cursor = (cursor + 1) % len(options)
-                    render_menu()
+            elif ch == "\x08":  # Backspace
+                if mode == "input" and buf and cursor_pos > 0:
+                    buf.pop(cursor_pos - 1)
+                    cursor_pos -= 1
+                    render()
+                elif mode == "select":
+                    # 退格切回输入模式
+                    mode = "input"
+                    if buf and cursor_pos > 0:
+                        buf.pop(cursor_pos - 1)
+                        cursor_pos -= 1
+                    render()
 
-            elif key in [b'1', b'2', b'3', b'4', b'5']:
-                idx = int(key.decode()) - 1
-                if idx < len(suggestions):
-                    result = (suggestions[idx], False)
-                    break
-                elif idx == silence_idx:
-                    result = ("", True)
-                    break
-                elif idx == free_input_idx:
-                    break
-
-            elif key not in [b'\x00', b'\xe0']:
-                # 其他字符 - 自由输入
-                try:
-                    first_char = key.decode('utf-8')
-                    if ord(first_char) >= 32:
-                        sys.stdout.write("\033[?25h")
-                        sys.stdout.write(f"\033[{total_lines}A\033[J")
-                        sys.stdout.write(f"{t('input_prompt')}{first_char}")
-                        sys.stdout.flush()
-                        rest = input()
-                        result = (first_char + rest, False)
-                        return result
-                except:
-                    pass
+            elif ch not in ("\x00", "\xe0") and ord(ch) >= 32:
+                # 可打印字符（包括中文）
+                if mode == "select":
+                    mode = "input"
+                buf.insert(cursor_pos, ch)
+                cursor_pos += 1
+                render()
     finally:
-        sys.stdout.write("\033[?25h")
+        # 清理菜单区域，只保留最终结果
+        sys.stdout.write(f"\033[{total_lines}A\033[J")
         sys.stdout.flush()
 
     return result
