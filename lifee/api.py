@@ -94,6 +94,15 @@ async def root():
 @app.post("/decision")
 async def decision(req: DecisionRequest, request: Request):
     """处理辩论请求 — 兼容前端的 /decision 接口"""
+    import traceback
+    try:
+        return await _handle_decision(req, request)
+    except Exception as e:
+        traceback.print_exc()
+        return {"messages": [{"personaId": "system", "text": f"Error: {e}"}], "options": []}
+
+
+async def _handle_decision(req: DecisionRequest, request: Request):
     from lifee.roles import RoleManager
     from lifee.debate.participant import Participant
     from lifee.debate.moderator import Moderator
