@@ -29,28 +29,39 @@ async def ask(role: str, question: str):
         print(f"角色 '{role}' 不存在。可用: {', '.join(available)}", file=sys.stderr)
         sys.exit(1)
 
-    # 加载当前 session 上下文（最近 20 条）
+    # 加载当前 session
     store = DebateSessionStore()
     data = store.load()
     if data:
-        session = store.restore_session(data)
-        if len(session.history) > 20:
-            session.history = session.history[-20:]
+        full_session = store.restore_session(data)
+        participants_names = data.get("participants", [])
     else:
-        session = Session()
+        full_session = Session()
+        participants_names = []
+
+    # 直接用完整 session
+    session = full_session
 
     # 创建参与者
     google_key = os.getenv("GOOGLE_API_KEY")
     km = await rm.get_knowledge_manager(matched, google_api_key=google_key) if google_key else None
     participant = Participant(matched, provider, rm, knowledge_manager=km)
 
-    # 运行
+    # 确保参与者名在列表中
+    display_name = participant.info.display_name
+    if display_name not in participants_names:
+        participants_names.append(display_name)
+
+    # 运行（moderator.run 内部会自动往 session 添加消息）
     moderator = Moderator([participant], session)
     async for p, chunk, is_skip in moderator.run(question, max_turns=1):
         if not is_skip and chunk:
             sys.stdout.write(chunk)
             sys.stdout.flush()
     print()
+
+    # 保存更新后的 session
+    store.save(full_session, participants_names)
 
 
 async def consult(roles: list[str], question: str):
@@ -84,11 +95,13 @@ async def consult(roles: list[str], question: str):
     store = DebateSessionStore()
     data = store.load()
     if data:
-        session = store.restore_session(data)
-        if len(session.history) > 20:
-            session.history = session.history[-20:]
+        full_session = store.restore_session(data)
+        participants_names = data.get("participants", [])
     else:
-        session = Session()
+        full_session = Session()
+        participants_names = []
+
+    session = full_session
 
     # 创建参与者
     participants = []
@@ -97,6 +110,8 @@ async def consult(roles: list[str], question: str):
         km = await rm.get_knowledge_manager(role_name, google_api_key=google_key) if google_key else None
         p = Participant(role_name, provider, rm, knowledge_manager=km)
         participants.append(p)
+        if p.info.display_name not in participants_names:
+            participants_names.append(p.info.display_name)
 
     # 去掉角色间延迟
     original_delay = mod_module.SPEAKER_DELAY
@@ -118,6 +133,10 @@ async def consult(roles: list[str], question: str):
         print()
     finally:
         mod_module.SPEAKER_DELAY = original_delay
+
+    # session 已经被 moderator.run() 更新了（内部 add_user_message + add_assistant_message）
+    # 直接保存
+    store.save(full_session, participants_names)
 
 
 def main():
