@@ -1,0 +1,728 @@
+Charlie Munger Q&A - 2023 Daily Journal Annual Meeting
+February 15, 2023
+
+On February 15, 2023, Charlie Munger spoke for two-and-a-half hours at the Daily Journal Corporation annual shareholder meeting. Over the weekend, I transcribed (and lightly annotated) his remarks for posterity.
+
+My main focus is accuracy and readability.
+
+I summarized some of Becky Quick’s questions to save space. All answers — from both Charlie Munger and Steven Myhill-Jones — are transcribed verbatim.
+
+I added footnotes with additional information at relevant points. Hopefully, these will prove useful to readers.
+
+So, without further ado, here is the full transcript of Charlie Munger’s Q&A at last week’s Daily Journal annual meeting…
+
+Kingswell is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.
+
+Q1: Can you give an update on the company’s new CEO, Steven Myhill-Jones? He was appointed as interim CEO nearly one year ago. How is he performing and when will a decision be made on selecting a permanent CEO?
+
+Charlie Munger: The answer is Steve chose his own titles coming in and we’ll change it whenever he wants to change it1. How’s that?
+
+Becky Quick: That sounds fair enough.
+
+Steven Myhill-Jones: When we were in discussions a year ago, I told Charlie that I was committed to ensure the success of the business, but that I wasn’t sure that I would be the right long-term CEO. I had incomplete information at the time and I thought it was important that I have the optionality to hire someone better suited or promote from within if we discovered that would be a better path.
+
+I founded and helped grow a geography software company2 with no background in publishing or the legal and court sector. What I can say now is that the parallels between the software company I built and Journal Technologies are remarkable and I believe I can add value. I like the business and the potential for it, so I expect we will have clarity on our long-term approach sometime later this year.
+
+Q2: Is Journal Technologies3 a natural area to allocate excess capital for the best return on equity for the company? How does the current investment manager think about investing in Daily Journal’s equity portfolio in relation to re-investing in growing areas of the business or share buybacks?
+
+CM: It’s all very simple. We made a lot of extra money out of the publishing business in its heyday and that was about $30 million. That was all made in the foreclosure boom and, of course, in the old days we had an information monopoly on publishing the appellate court’s decisions, daily and newsprint. When the internet came along, it destroyed our position. Our circulation went way down, so we’ve had a drastic change in good fortune in our publishing business.
+
+Steve actually ran a small software company in Canada for years and years and years which is quite similar to what Journal Technologies does, so that’s how we got together. The future of this business is not in the publishing side, it’s on the Journal Technologies side. The good news is that we’re in a huge market because all the courts of the world are in the stone age still in terms of automating with modern technology, so it’s a big market.
+
+The bad news is that it’s a long, slow slog where you deal with a lot of bureaucracies in response to RFPs (requests for proposals). It’s just a very slow, difficult business. So we’ve got a slow, difficult business of chewing our way into a huge market that’s not going away — with one big competitor in it. That’s the future and, like many a publishing company which used newsprint, it’s a miracle when any survive.
+
+If you look in the small- and mid-cap edition of the Value Line books, you’ll find there are two entries left. One is Gannett, which used to own the monopoly newspaper in — I don’t know — fifty, sixty, one hundred different cities. The executives used to ride around in giant airplanes and be treated like lords of England when they went to publishers’ conventions. Every newspaper publisher was hugely powerful in his own community, so they were like the lords of England, all these publishers. And, now, mighty Gannett is just a pale shadow of itself with newspapers shrunk down to a tiny little few and very limited assets and so forth. There’s been an unbelievable change in the technology and competitive outcomes in publishing ordinary newspapers on newsprint. By and large, the safe rule is they’re all dying. They’re just in different states of near death.
+
+If this place has a future, it’s in the Journal Technologies side — and that’s a long, slow grind. The only reason we have a lot of marketable securities is we had the extra money and we preferred the marketable securities to cash in an inflationary world. Of course, it’s been a minor miracle that we’ve got as much as we have in marketable securities because our investments have done better than average. The good news is we’ve survived so far and we’ve got some surplus wealth. The bad news is it’s a long, slow slog ahead and the main future is in Journal Technologies.
+
+Q3: Given the extended amount of time that it will take to digitize the court systems because of complexity, risk, and bureaucracy, how can shareholders be assured that Journal Technologies’ solution will remain cutting edge long enough to reward shareholders?
+
+SMJ: Of course, there are no assurances. At the same time, I do have some background dealing with this challenge because I did it for nineteen years with my former company. We earned consistent and appealing profits and I expect the model is still working well for the folks who acquired us.
+
+I think a key responsibility is to get technology change working for us and our customers, rather than against us. It takes advance planning and investment to engineer software with change over time in mind and so it’s inherently upgradeable. I think this model works great if you can establish a sufficient licensee base to fund that proactive R&D to evolve products in a way that manages technology change. It also needs to be highly repeatable. I think all of this requires a mindset that enterprise software development is an ongoing process and not a one-time event and, so, are our customer deployments.
+
+Q4: Two years ago, you said Daily Journal’s $350 stock was selling way above the price that you would pay for new shares. As I write this, Daily Journal trades for $305 a share, a $420 million market cap, with a total equity portfolio value of over $310 million, debt charge covered several times over by bank dividends, etc. Do you still hold the same belief?
+
+CM: You accurately stated our circumstances. We do have a lot of surplus wealth, but we need it to attack this big market. Why would [these courts] gamble on a little company with no net worth, the courts that are letting the RFP contracts? We’re using our net worth to help the business.
+
+BQ: But does that get at the question of whether you’d buy this stock at $305?
+
+CM: I don’t buy it and I don’t sell it. That’s what the Mungers have been doing. It’s not a crazy valuation, considering what everything else is selling for these days, so I have no feeling that it’s almost foolishly high on some crazy mystique. Some people go, well, it’s a small Berkshire and it will double like rabbits — and, of course, it’s not a small Berkshire. I’m 99 years old, for Christ’s sake.
+
+Q5: Berkshire has unloaded the bank stocks4. If it’s not good enough for Berkshire shareholders, why is it good enough for us?
+
+CM: I might have different ideas [than Berkshire]. If you owned marketable securities within a corporation located in California, you pay huge state and federal taxes if you sell things at a big gain and that affects our willingness to sell. Those bank stocks5 I bought on the bottom tick in the foreclosure crisis. Literally, it was the bottom tick. And they’re practically all gain, so I [would] immediately give the government forty-some percent of everything we sell out of those bank stocks. And, of course, they’re producing dividends [that] are almost tax free. Based on what we would get if we sold them and the return we’re getting out of the dividends, it’s not so bad for us. The answer is that we’re not in a normal position. All factors considered, we’re willing to hold them for a while.
+
+There is a big disadvantage in having this huge layer of federal corporate taxes and state taxes between us and any money we make — in a state like California which is a very business-unfriendly state. It isn’t like people are rushing to come out and incorporate in California. There are all kinds of states that have no income taxes and deliberately use that lure to bring in corporations. California is trying to force its wealthy people and its wealthy corporations out of the state — and I must say it’s working fine. They’re leaving just one after another. That’s just the way it is.
+
+If we succeed in this software business, it will all come good in the end. And, if we fail, we have a crutch under us in our real estate and our securities, which means we won’t lose so much from the present market price. It’s not a crazy thing to own now at the market valuation, but it’s not cheap either.
+
+Q6: It’s surprising to see such small ownership of Daily Journal shares by the company’s board of directors. Three of the five own zero shares and a fourth owns 100 shares. That doesn’t suggest much alignment between board members and shareholders.
+
+CM: What happened is that we used to have [Rick] Guerin and Munger and we were the two biggest shareholders. Of course, we’ve been partners for years and years and we took no fees — no directors fees, no expenses, no nothing — so it was a very user-friendly, Berkshire-type place. Well, Guerin died finally at age ninety-something6, so now we’re down to one last survivor of the old guard. Of course, we need a certain number of new directors and our new directors are pretty damn smart — and they’re all rich, by the way. So it’s still a very Berkshire-like board. Smart and rich and thinking like a capitalist. We still have that [at DJCO].
+
+SMJ: I would add that, while I don’t have equity yet, I’m certainly keen to participate in the future growth of the business. What should the timing of that be with someone as new as me? I think that’s an interesting question.
+
+SMJ: Yeah. Right now, I don’t think it is impacting my drive or decisions. I already feel enormous skin in the game that Mr. Munger and the board entrusted me to take the reins of the business is something I take very seriously.
+
+CM: It’s really quite interesting to have a pile of securities and one interesting activity in a very high-tech field with a lot of politics and travel and difficulty in it, but it’s a huge, huge market and it isn’t like there are a lot of other people in it. Most of the big corporations that would be our natural competitors are places where they hate RFPs.
+
+In other words, one of the reasons the business is good for us is that a lot of the big companies just hate what we’re doing. They want easier money selling standard pieces of software just repeated over and over again. They’re spoiled. We’re willing to slug it out in the mud of all these little consulting contracts. There are only a few competitors in the field.
+
+Q7: How was Rick Guerin as a person, as an investor, and how do you remember his legacy?
+
+CM: He was just terrific as a person7 and an investor. I miss him terribly, of course. We were together for years and years and years and we were poor together. That creates a bond. When we met in 19618, we were both poor and struggling and young, so we had a long ride together. But all things end, that’s the nature of the human condition.
+
+Q8: What are your thoughts on artificial intelligence’s impact on Daily Journal’s business and, more broadly, our civilization at large?
+
+CM: I think artificial intelligence is very important, but there’s also a lot of crazy hype on the subject. Artificial intelligence is not going to cure cancer. It’s not going to do everything that we want done. There’s a lot of nonsense in it, too. I regard it as a mixed blessing, all this artificial intelligence. Some people have used it in some things like insurance underwriting pretty well, but a lot of people try and use it in ordinary things like buying office buildings or something. I don’t think it’s going to help anybody buy an office building. Not very much, anyway.
+
+SMJ: Through the lens of Daily Journal Corporation, AI is something that we started experimenting with in the summer for the writing of certain types of articles. That’s something we’re certainly tracking very closely. In terms of complex work, I think it’s a long way off, but for many types of activities, especially routine things, I think it will be fascinating to see how disruptive it is over a relatively short time horizon for many types of work and activities.
+
+CM: We had our big disruption when technology severely and adversely affected our publishing business. We have our opportunity in this new business, but it’s just a long, tough slog. There’s no royal road to success in what we’re doing.
+
+Q9: ChatGPT asks, “Mr. Munger, you’ve spoken about the importance of avoiding mental biases in decision-making. In your experience, what’s the most challenging bias to overcome and how do you personally guard against it?”
+
+CM: If I had to name one factor that dominates human bad decisions, it would be what I call denial. If the truth is unpleasant enough, their mind plays tricks on them and they think it isn’t really happening. Of course, that causes enormous destruction of business where people go on throwing money into the way they used to do things, even though it isn’t going to work at all well in the way the world is now, having changed.
+
+If you want an example of how denial is affecting things, take the world of investment management. How many managers are going to beat the indexes, all costs considered? I would say maybe 5% can consistently beat the averages. Everybody else is living in a state of extreme denial. They’re used to charging big fees for stuff that isn’t doing their clients any good. It’s a deep moral depravity if some widow comes to you with $500,000 and you charge her one point a year when you could put her in the indexes — but you need the one point. So people just charge some widow a considerable fee for worthless advice. The whole profession is full of that kind of denial. It’s everywhere.
+
+I always quote Demosthenes. It was a long time ago, Demosthenes. That was more than 2,000 years ago. He said, “What people wish is what they believe.”9 Think of how much of that goes on. Of course, it’s hugely important. You can just see it.
+
+I would say the agency costs of money management, there are just so many billions, it’s unaccountable. And nobody can face it. You want to keep your kids in school, you need the fees. You need the brokerage commissions. You need this or that, so you do what’s good for you and bad for them.
+
+I don’t think Berkshire does that and I don’t think Guerin and I did it at the Daily Journal. Guerin and I never took a dime in salary or directors fees or anything. If I have business and talk on my phone or use my car, I don’t charge it to the Daily Journal. That’s unheard of. It shouldn’t be unheard of and it goes on in Berkshire and it goes on in the Daily Journal.
+
+We have an incentive plan now in this Journal Technologies and it has a million dollars worth of Daily Journal stock. That did not come from the company issuing those shares, I gave those shares to the company to use in compensating the employees. I learned that trick, so to speak, from the guy at BYD10 which is one of the securities we hold in our securities portfolio.
+
+BYD, at one time in its history, the founder/chairman didn’t use the company’s stock to reward the executives, he used his own stock. It was a big reward, too. Well, last year, what happened? BYD, last year, made more than $2 billion after taxes in the auto business in China. Who in the hell makes $2 billion as a brand new entrant in the auto business, for all practical purposes? It’s incredible what’s happened. So there is some of this old-fashioned capitalist virtue left in the Daily Journal and there’s some left in Berkshire Hathaway and there’s some left in BYD. But, most places, everybody is trying to take what they need and just rationalizing whether it’s deserved or not.
+
+Q10: Why do you prefer an investment in BYD to Tesla?
+
+CM: That’s easy. Tesla, last year, reduced its prices in China twice and BYD increased its prices. We’re direct competitors. BYD is so much ahead of Tesla in China, it’s almost ridiculous. If you look at BYD, which most people have never heard of, if you count all of the manufacturing space they have in China to make cars, it would amount to a big percentage of all the land in Manhattan Island. And nobody ever heard of them a few years ago.
+
+Q11: Did Berkshire’s sale of some BYD and Taiwan Semi shares11 have anything to do with the relations between the United States and China or was it for purely economic reasons?
+
+CM: Well, BYD is selling for about 50x earnings. That is a very high price. On the other hand, they’re likely to increase their auto sales by another 50% this year. We sold part of ours, by the way, about a year ago at a much higher price than it’s selling for now. We’re not a mini-Berkshire. We’re not going to have a big correlation between us and what Berkshire does.
+
+You can understand why some people would sell BYD stock at 50x earnings. At the current price of BYD stock, little BYD is worth more than the entire Mercedes corporation’s market capitalization. It’s not a cheap stock. On the other hand, it’s a very remarkable company.
+
+And, by the way, I want to tell people the great contribution I made to the success of BYD. We got into it through Li Lu12 and it was a little company that knocked off the Japanese cell phones. The chairman — who’s kind of a genius — said, I’ll buy a bankrupt little crappy auto plant and we’ll go into the auto business. From dead scratch, when he was making cell phones, a little tiny nothing company. Both Li Lu and I tried to talk him out of it. We said, please, don’t do this dumb thing! You’ll get your head handed to you in the auto business, little BYD. Well, last year, they made more than $2 billion in the auto business from that standing start of zero. It’s unheard of. But Li Lu and I deserve all the credit because we tried to talk him out of doing what worked out so well, which shows that there is some accident in life.
+
+Q12: According to company filings, it appears that Alibaba shares were purchased with leverage and, when the stock price fell last year, you were forced to sell13. Can you confirm if it was bought with leverage and, if so, why would you do that? It seems to go against your philosophy.
+
+CM: Yes, it’s true. I operated with no leverage for long stretches of my old age — Warren is the same way — and recently I did use a little bit of leverage here and in another place because the opportunities were so ridiculously good that I thought it was desirable to do that. You’re right, it’s unusual for us, but we did find a few things.
+
+By the way, if you go back early in my career, I used some leverage. I sometimes ask myself a mental question. I say, “What is the appropriate percentage of your net worth you should put in a stock if you think it’s an absolute cinch?” If you’re the kind of fellow who’s right when you think something is a cinch, the answer is 100%. Or maybe 150%. But nobody teaches people to think that way in finance. If the opportunity is great enough, the logical answer is 100%. Or maybe 200%.
+
+BQ: You’ve said the three things that ruin people are ladies, liquor, and leverage. Why would you use leverage if that’s one of the three things that can destroy somebody?
+
+CM: You’re right. I used a little on my way up and so did Warren, by the way. The Buffett Partnership used leverage regularly, every year of its life. What Warren would do is he would buy a bunch of stocks and then he’d borrow against those stocks and he’d buy into [what] they used to call event arbitrage. Liquidations, mergers, and so forth14 that didn’t go up and down with the market. That was like an independent banking business.
+
+Ben Graham’s name for that type of investment, he called them Jewish treasury bills. It always amused me that that’s what he would call them. But Warren used leverage to buy Jewish treasury bills when on the way up and it worked fine for him. I don’t think either of us ever buys… Well, no, Berkshire has stock in Activision Blizzard and, whether that will go through or not I don’t know, but that’s a Jewish treasury bill.
+
+BQ: The arbitrage play on Activision?
+
+CM: Yes, it’s event arbitrage. We sort of stopped doing it because it’s such a crowded place, but here’s little Berkshire doing it again on Activision Blizzard. And Munger using a little leverage at the Daily Journal Corporation. You could argue that I used leverage to buy BYD and you could argue that’s the best thing I’ve ever done for the Daily Journal.
+
+BQ: So is leverage the least evil of the “Three L’s”?
+
+CM: I think most people should avoid it, but maybe not everybody need play by those rules. I have a friend who says, “The young man knows the rules and the old man knows the exceptions.” At least, if he’s lived right, he knows them.
+
+Q13: How should investors view geopolitical events in regards to their investment in foreign countries? How do you look at the situation of the recent Chinese spy balloon in regards to the Alibaba investment?
+
+CM: It was a very interesting thing. Jack Ma was a dominant capitalist in Alibaba and, one day, he got up and made a public speech where he basically said the Communist Party is full of malarkey. They don’t know their ass from their elbow and they’re no damn good and I’m smart. And, of course, the Communist Party didn’t particularly like his speech and pretty soon he just sort of disappeared from view for months on end and now he’s out of [Alibaba]. He was pretty stupid. It’s like poking a bear in the nose with a sharp stick. It’s not smart and Jack Ma got way out of line by popping off the way he did to the Chinese government. Of course, it hurt Alibaba.
+
+I regard Alibaba as one of the worst mistakes I ever made. In thinking about Alibaba, I got charmed with the idea of their position in the Chinese internet and I didn’t stop to realize that it’s still a goddamn retailer. It’s going to be a competitive business, the internet. It’s not going to be a cakewalk for everybody.
+
+Q14: Do you still maintain that China is a viable investment option for foreign capital or is China experiencing a similar regression as Russia has seen under Putin’s leadership that culminates in the invasion of Taiwan?
+
+CM: That’s a very good question. I would argue that the chances of a big confrontation from China have gone down, not up, because of what happened in Ukraine. I think that the Chinese leader is a very smart, practical person. Russia went into Ukraine because it looked like a cakewalk. I don’t think Taiwan looks like such a cakewalk anymore. I think it’s off the table in China for a long, long time — and I think that helps the prospects of investors who invest in China.
+
+The other thing that helps, in terms of the China prospects, [is] you can buy better, stronger companies at a cheaper valuation in China than you can in the United States. The extra risk can be worth running given the extra value you get. That’s why we’re in China. It’s not like we prefer being in some foreign country. Of course, I’d rather be in Los Angeles right next to my house. It would be more convenient. But I can’t find that many investments right next to my house.
+
+Q15: How have political events in China over the past few months affected your thinking on the country? Many were taken aback by the forceful withdrawal of former president Hu Jintao at the October 22 Annual Congress. President Xi seems to have consolidated power and his actions have indicated that he thinks very differently about the role of business in Chinese society.
+
+CM: I have more optimism about the leader of the Chinese party than most people do. He’s done a lot right, too. He led a big anti-corruption drive. He’s done a lot of things right. I don’t know where this man (who submitted the question) lives. Where is there a place where the government is perfect in a world of sin and sorrow?
+
+The democracies aren’t that brilliantly run, either. It’s natural to have some decisions made by government that don’t work well. It’s natural to have decisions in each individual life that don’t work very well. We live in a world of sin, sorrow, and misdecision. That’s what human beings get to cope with in their days of life. I don’t expect the world to be free of folly and mistakes and so forth — I just hope that I’m invested with people who have more good judgment than bad judgment. I don’t know anybody who’s right all the time.
+
+Q16: How should we think about the political climate around Taiwan and the long-term impact on the semiconductor industry? Specifically, do you see the CHIPS and Science Act15 favorably?
+
+CM: The semiconductor industry is a very peculiar industry. In the semiconductor industry, you have to take all of the money you’ve made and, with each new generation of chips, you throw in all the money you’ve previously made. It’s compulsory investment of everything if you want to stay in the game. Naturally, I hate a business like that. At Berkshire, we like a whole lot of surplus money to come in that we can do something else with.
+
+Now, if you’re enough ahead of it — like Taiwan Semiconductor is — that may be a good buy at these prices. It’s not at all clear to me that they’re not going to succeed mightily. It’s a business with enormous promise for the big winner, but it’s a difficult business in requiring everybody to keep increasing the bets on and on with all of the money. It’s not perfect, that semiconductor business.
+
+Remember when Intel owned the world? Intel was once the Taiwan Semiconductor business of the world. They invented the damn business and they dominated it for decades. It’s not clear to me that Intel’s gonna have a very decent semiconductor business, getting as far behind as they are now. My answer is that it’s not so damn fool-proof as it has looked.
+
+BQ: Even with the incentives to build plants here in the United States, like Intel is doing in Ohio?
+
+CM: That will really help, but they’re borrowing the money. There’s no indication that the government is going to forgive the loans or something. It’s not like the recent loans to business where they said we’ll loan you the money and then, oh, keep the money. The government is not planning to do that with these new semiconductor loans.
+
+It’s not a field where I feel I have a lot of expertise. What the hell do I know about semiconductors?
+
+BQ: Do you worry about any conditions that the government would put on companies that end up using any of that money, with semiconductors or anything else?
+
+CM: Of course, all of that. It’s deeply intertwined with government policies of both China and the United States, so I would rather have something that’s more foolproof, myself, but I do think Taiwan Semiconductor is the strongest semiconductor company on Earth. I’m a big admirer of what they’ve achieved. It’s just incredible what they’ve achieved.
+
+And, by the way, it may be a wonderful investment. The fact that I don’t like it because I’m an old man and I don’t like learning new tricks, but that doesn’t mean it isn’t right for some younger person who understands it better than I do.
+
+Q17: In 2007, you said, “I’m not entitled to have an opinion on this subject unless I can state the arguments against my position better than the people who are supporting it.”16 Does this also apply to your Wall Street Journal article on banning cryptocurrencies? And, if yes, would you care to share the arguments against your position?
+
+CM: I don’t think there are good arguments against my position. I think the people who oppose my position are idiots.
+
+CM: I don’t think there is a rational argument against my position. This is an incredible thing. Naturally, people like to run gambling casinos where other people lose. The people who invented this crypto crappo, which is my name for it, sometimes I call it crypto crappo and sometimes I call it crypto shit.
+
+It’s just ridiculous that anybody would buy this stuff. You can think of hardly nothing on Earth that has done more good to the human race than currency, national currencies. They were absolutely required to turn man from a goddamn successful ape into a modern successful humans and human civilization, because it enabled all these convenient exchanges. So if somebody says I’m going to create something that sort of replaces the national currency, it’s like saying I’m going to replace the national air. It’s asinine. It isn’t even slightly stupid, it’s massively stupid.
+
+It’s very dangerous and the governments were totally wrong to permit it. I’m not proud of my country for allowing this crap — what I call the crypto shit. It’s worthless, it’s no good, it’s crazy, it will do nothing but harm, and it’s anti-social to allow it. The guy who made the correct decision on this is the Chinese leader. The Chinese leader took one look at crypto shit and said not in my China. And, boom, there isn’t any crypto shit in China. He’s right and we’re wrong. There is no good argument on the other side. I can’t supply it.
+
+BQ: Does that counter what you said back at USC?
+
+CM: No, it isn’t counter. I do think you ought to be able to state, on a lot of issues, [the opposing argument].
+
+How big should the social safety net be? That’s a place where reasonable minds can disagree. And you should be able to state the case on the other side about as well as the case you believe in. But, when you’re dealing with something as awful as crypto shit, it’s just unspeakable. It’s an absolute horror and I’m ashamed of my country that so many people believe in this kind of crap and that the government allows it to exist. It’s totally, absolutely crazy stupid gambling with enormous house odds for the people on the other side — and they cheat in addition. It’s just crazy.
+
+That is something that there’s only one correct answer for intelligent people — just totally avoid it. And avoid all the people that are promoting it.
+
+BQ: How do you feel about the gambling that took place at the Super Bowl and the legalized gambling taking place in this country at this point?
+
+CM: It’s not as bad as crypto shit. I don’t think there’s much harm in betting a modest amount that you can afford on a Super Bowl game. That strikes me as pretty… [provided] you do it with a friend and not with a bookie. I don’t have the same feeling. I obviously don’t think you should have a gambling compulsion, going around betting against odds. If you take all of the money that I’ve bet against odds in my whole life, I don’t think it’s more than a few thousand dollars. In other words, I’m all in favor of betting with the odds.
+
+Q18: If Bitcoin and Ethereum are “rat poison”, have you ever profited by shorting them?
+
+CM: No, I don’t short. That isn’t right — I have made three short sales in my entire life and they were all more than thirty years ago. One was a currency and there were two stock trades. The two stock trades, I made a big profit on one and made a big loss on the other and they canceled out. On my currency bet, I made a million dollars — but it was a very irritating way to make a million dollars.
+
+BQ: Not worth the headache, I guess?
+
+CM: You can laugh, but that’s true. It was irritating.
+
+CM: Because they kept asking me for more margin. I kept sending over treasury notes. It was very unpleasant. I made a profit in the end, but I never want to do it again.
+
+Q19: What do you think can hurt Costco’s economic moat in the long term?
+
+CM: As long as Costco keeps the faith with its strong culture and extreme low mark-up policy, I don’t see any stopping it. The trouble with Costco is that it’s 40x earnings, but except for that it’s a perfect damn company and it has a marvelous future. It has a wonderful culture and it’s been run by wonderful people. I love everything about Costco. I’m a total addict. And I’m never gonna sell a share.
+
+Q20: President Biden has proposed increasing the tax on stock buybacks from its current level of 1% to a new, higher level of 4%. What are your views on taxing stock buybacks?
+
+CM: I’m strongly opposed. A good culture has a lot of people who are good fiduciaries and it is like stealing to do something dumb with the corporate money when you can get more advantage for your shareholders by buying back your own stock. I like encouraging morality and decency and honor and so forth when you’re dealing with the people you’re the fiduciary for. I agree with our president on some things, but this is not one of them.
+
+BQ: Do you vehemently disagree?
+
+CM: I’m not vehement because it’s not as bad as cryptocurrency. It’s a forgivable error. But, yes, I disagree strongly. I think it’s a big mistake to adopt that policy, but I’m a Republican. I sometimes vote for Democrats, but I am a Republican.
+
+Q21: Berkshire share repurchases slowed considerably from $3 billion in the first quarter of 2022 to a billion dollars in the second quarter and a billion dollars in the third quarter, even though the price declined somewhat as did the general market. Does Berkshire adjust its buyback price based on the intrinsic value of the approximately $300 billion stock portfolio or the quoted price?
+
+CM: I never pay any attention to how they do it. They’re cautious and careful people. If you take the amount that’s been bought back in the last three years, it’s a lot — and I thoroughly approve of what we are doing. I don't consider it at all fair that we’re being taxed because we’re doing something good for our own shareholders.
+
+BQ: The president says that something like north of 90% of executives are paid with stock compensation, at least in part. He says that’s not fair — the best way to goose your own compensation is to buy back your shares. It helps the executives, it helps the shareholders, but it doesn’t help the employees or other constituents.
+
+CM: There’s no question about the fact that he sympathizes with the employees more — and that’s understandable. A lot of people would have the president’s orientation on that issue.
+
+I don’t have a big opinion about how wealth ought to be distributed in the country. I don’t know the answer. I do think we need a capitalistic system if we want to have a productive economy that makes civilization advance.
+
+Q22: Can you offer Berkshire shareholders any reassurance that the company will not be broken up in the future?
+
+CM: I don’t think it’s at all likely that it would be broken up for a long, long time. A lot of companies are worth more dead than alive — meaning, at the current price for whole businesses, you could sell things at higher prices — but you can only do it once and shareholders would pay a big tax and then you’d have the problem of what to do with the money and so forth.
+
+All factors considered — and with Berkshire buying in its own shares when they’re reasonably priced — I think Berkshire is a pretty damn good bet for shareholders to hold it long-term in the future. I don’t think it’s any hardship that it isn’t being broken up. It works pretty damn well. Everybody that bought Berkshire and held it for twenty years has done well. I think that will be true for those who buy it at the current price. I don’t think it will be as good in the future as it was in the past, but it will be okay considering how poorly everything else is going to do.
+
+BQ: Why do you think everything else is going to do so poorly?
+
+CM: Because the valuations start higher now and because government is so hostile to business.
+
+BQ: And that’s a view over the next five, ten, twenty years? How far out are you thinking?
+
+CM: I would say it will fluctuate, naturally, between administrations and so on. But I think, basically, the culture of the world will become more and more anti-business in the big democracies and I think taxes will go up, not down. I think, in the investment world, it’s going to get harder for everybody. But it’s been almost too easy in the past for the investment class. It’s natural that it would have a period of getting harder.
+
+I don’t worry about it much because I’m gonna be dead. It won’t bother me very much when I’m lying there dead. (Laughs)
+
+BQ: (Laughs) I guess you want to point out to people that you’re 99 and nobody lives forever — that’s what you’re referring to.
+
+BQ: You’re not sick at the moment, right?
+
+CM: No, I’m eating this good peanut brittle. That’s what you want to do if you want to live to be 99. I hate to advertise my own product, but this is the key to longevity. (Holds up a piece of peanut brittle from See’s Candies.)
+
+Q23: Do you think exercising a lot when you’re younger is important to longevity?
+
+CM: I have [done] almost no exercise, except for when the Army Air Corps made me do exercise. I’ve done almost no exercise on purpose in my life. If I enjoyed the activity, like tennis, I would exercise. But, for the first 99 years, I’ve gotten by without doing any exercise at all.
+
+BQ: And you’re not planning on changing that any time soon?
+
+SMJ: Other peoples’ mileage may vary. (Laughs)
+
+Q24: What would your 100th birthday look like and how would you want to spend it when you step out of bed in the morning?
+
+CM: CM: I step out of my bed these days and then sit down in my wheelchair. I’m paying some price for old age, but I prefer it to being dead. Whenever I feel sad about being in a wheelchair, I think that [Franklin Delano] Roosevelt ran the whole damn country for twelve years in a wheelchair. I’m just trying to make this wheelchair thing last as long as Roosevelt did.
+
+Q25: In “The Psychology of Misjudgment”17, you listed senescence as a cause of misjudgment. You went on to say that age-related decline was inevitable. Would 71-year-old Charlie trust the judgment and mental capacity of 99-year-old Charlie?
+
+CM: There’s no question about the fact that you lose some mental acuity as you get older, but some people get shrewder at adapting to their limitations and they do pretty well. So far, I’ve had plenty of decline but I’m pretty shrewd about the way I handle it and, so far, the results have not been that bad in my old age.
+
+My sex life would be a different subject. (Laughs)
+
+Q26: Given the increasing rate environment, what are the ramifications of moving away from a close to zero interest rate policy? What do you do now that the interest rate environment is changing?
+
+CM: There’s no question about the fact that, as the interest rates have gone up, it’s hostile to stock prices. But they should go up. We couldn't have kept them forever at zero and I just think this is one more damn thing to adapt to. In investment life, there are headwinds and there are tailwinds. One of the headwinds is inflation and I think more inflation over the next hundred years is inevitable given the nature of democratic politics. Politics in a democracy. I think we’ll have more inflation. That’s one of the reasons the Daily Journal owns common stocks instead of government bonds.
+
+BQ: When you say the nature of democratic policies, are you talking about the Democratic Party or democracy as a whole?
+
+CM: No. Listen, Trump ran a deficit that was bigger than the Democrats did. All politicians in a democracy tend to be in favor of printing the money and spending it and that will cause some inflation over time. It may avoid a few recessions, too, [so] it may not be all bad. It will do more harm than good, I think, from this point forward.
+
+Q27: On that point, should we continue to maintain a debt limit? What’s the purpose if we continue to budget beyond our means and then the bill comes due?
+
+CM: If you take the history of democracy in the world and go back far enough, it fails a lot and gets succeeded by dictatorships and all kinds of awful things. As a matter of fact, the worst thing that happened to the human race in my lifetime was when an advanced civilization like Germany was taken over by a dictator as awful as Adolf Hitler. That happened as a consequence of a big worldwide depression. It would never have happened if we hadn’t had a big depression.
+
+Once Hitler got in, that meant World War II was inevitable — and that could have worked out a lot worse than it did for people like the United States. So these things are quite important and they’re not going to be done perfectly in the future, no more than they were done perfectly in the past. You’ve got to expect a certain amount of future trouble in the world and your government is going to do some things that aren’t exactly right.
+
+On the other hand, I would argue that the U.S. government did some things magnificently right. I have said on many an occasion that the thing that makes me proudest of my own government is the way we handled the sequel to World War II. Instead of punishing the Germans and the Japanese, we made them into some of our best friends on Earth. Now, that was a stunt.
+
+It was to the credit of our country that that was done — and it was done on a bipartisan basis. I think we can all be proud of that. That was a smart thing to do, it took some generosity, we had to give up some of our money to help them rebuild. It was a credit to our species that we behaved that well on that occasion. I don’t think our future behavior will lack similar episodes of some kind.
+
+BQ: Will lack similar episodes or will have—
+
+CM: We’ll do some things very right and some things very wrong. That’s the way it happens.
+
+BQ: That’s very Churchill-esque. We’ll try all the wrong things until we do the right thing?
+
+CM: No, we’ll keep doing both wrong and right as far ahead as you can see. (Laughs)
+
+Q28: Do you think we will have on-and-off waves of inflation like we did prior to when Volcker stepped in at the Fed in the ‘70s era?
+
+CM: Of course, it will happen some in the future. Yes, I think we’ll have some of that in the future.
+
+BQ: Do you think we’ll have it immediately, right now, with what Jay Powell is dealing with?
+
+CM: I don’t regard myself… I think I’m pretty good at long run expectations, but I don’t think I’m good at short-term wobbles. I don’t have the faintest idea what’s going to happen short term.
+
+Q29: Do you have faith in Jay Powell? Are you expecting a soft landing?
+
+CM: The way I feel about Jay Powell is that I feel he’s about as good as we have any right to expect. I think he’s honorable and intelligent and doing the best he can. I have no feeling that I know a lot of people who would do it a lot better, so I’m glad we have him.
+
+Q30: As index funds continue to expand in size, their influence on corporate boards and, ultimately, management is ever increasing. Are you alarmed by this concentration in voting power? What reforms would you suggest to address that issue?
+
+CM: It’s a very serious issue because it’s an enormous amount of power. For a while, these index funds got to feeling they were suddenly made god-like to clean up the world. But Vanguard has retreated from that policy and, I think, wisely so. I have some hope that Larry Fink will follow.
+
+I don’t think it’s smart for these index funds to try and influence the policy and politics of the country just because they’re an index fund. I think they should be satisfied to eliminate some of the folly from investment management and do a better job for their clients — which I think they do very well. I think they should be pleased with that and not try and run the whole damn country as a matter of corporate governance. I have no feeling that anybody at Vanguard or Larry Fink’s operation18 has any special genius at how American corporations ought to be run. And, to the extent that they ask Berkshire to do this or that, I wish they would stop.
+
+BQ: Ask Berkshire to do what? Oh, to follow their guidance?CM: Anything. I’m just not interested in their views as to how Berkshire should behave.
+
+Q31: How do you perceive the rise of stock-based compensation in recent years and what’s a healthy level of incentives?
+
+CM: I think you will find in American corporations very good incentive systems and others that are too liberal and others that are too niggardly. What else would you expect of human nature but a certain amount of variety?
+
+In many a corporation, everybody would vote to being allowed to have stock-based compensation [if you] didn’t count it in computing the earnings. They just want any damn way of making the earnings appear higher. It’s just human nature. It’s like a little kid going off to school, they want to bring in good grades, not bad grades.
+
+Sure, there’s a big problem of excess corporation paying in some places. Other places, like Costco, I would say the compensation system is damn near perfect. There’s a fair amount of stock[-based compensation], but we always buy in enough stock in Costco to pay for the stock we’re issuing. A lot of people in high tech issue the stock and they don’t buy it in, so it’s a net dilution. I think that there’s a lot that’s wrong in American compensation systems, but why wouldn’t there be?
+
+By the way, when I was young, it wasn’t so bad. This is something that’s happened in the last fifty years.
+
+CM: I don’t know, it’s just the history of the way things came up and the greater hardship and the pioneering ethos. Whatever it was, when I was young, nobody complained about executive compensation. Now, practically everybody in the investment world thinks, in many cases, that executive compensation has gotten too high.
+
+Take General Electric in its heyday. Think of all the big compensation packages they paid and think of how they were phony-ing up the earnings and so forth to pay for it. It was disgusting. If that kind of crap creeps in everywhere in our civilization, then the civilization will perish. We need more honor, not less. But I have no suggestion as to how to fix the places where it’s excessive. It’s a difficult issue. Really difficult.
+
+Q32: Do you think Elon Musk’s ownership of Twitter, specifically his hands-off approach to content moderation, is good or bad for American society?
+
+CM: I don’t use Twitter, so I’m not a good judge on that subject. My policy on Elon Musk is that he’s a very talented man, but also quite peculiar. I don’t buy him and I don’t sell him short. I just say, well, he’s a very unusual person.
+
+BQ: You said some nice things about him the last time I talked to you in what he’s done with Tesla.
+
+CM: Oh, it’s unbelievable. Who else has that talent, except BYD? It just shows how tough capitalism is. Even if you’re a genius like Musk is in some ways, there’s always some little BYD that comes out and does better. Capitalism is not easy.
+
+Q33: In 2022, a Missouri court awarded a victim $5.2 million in compensation from Berkshire’s subsidiary, GEICO, after a woman was infected with an STD in a car that was insured by GEICO auto insurance. The claimant says that the man was negligent and didn’t tell her about his health diagnosis. Did the Missouri court get this verdict right?
+
+CM: I would doubt it, myself, but it’s in the nature of things that not every court is going to be right in every verdict or every judgment. Again, you’ve raised a very tough subject. You will get occasional verdicts that are just totally outrageous. That’s inevitable. And, of course, that’s what appellate courts are for19, but sometimes the appellate courts are very sympathetic with crazy verdicts. Again, I can’t fix everything that’s wrong with human life — including a few crazy verdicts.
+
+BQ: You’d put that in the category of a crazy verdict, though?
+
+Q34: There was a lot of excitement about the relationship between Berkshire and 3G for the Kraft Heinz transaction. Has your perception of the private equity business changed on the back of that partnership?
+
+CM: Like every other human being on Earth, some deals work out better than others for 3G. They would love to have a way of going back and turning all of their bad deals into good deals. Berkshire would like to have the same option, but we don’t get it either. Averaged out, 3G did pretty well. But, recently, their approach hasn’t worked as well in recent years as would be ideal. Again, welcome to human life. It isn’t so damned easy.
+
+Q35: The Florida governor and legislative body has recently taken a stand to try to control Disney’s exclusive, self-governing authority20. As your organization still owns Disney shares, do you think Disney is still a good investment given this backdrop?
+
+CM: We’ve never owned Disney shares at Daily Journal.
+
+CM: Disney is an interesting case. Practically every business that Disney has has gotten tougher than it used to be. Again, welcome to human life. Think about [how] Disney once owned the world. The Lion King was running a long run on the theater district in New York. They went from triumph to triumph, marching, marching, marching. All of a sudden, on practically every front, it’s more difficult. This is what happens.
+
+Imagine Kodak, which totally dominated photography in the world and they invented this new technology. Kodak wiped out its common shareholders.
+
+BQ: Do you think Disney is headed down the same path or do you think they’ll be able to pivot? I know you’ve followed the company closely.
+
+CM: No, no, I think Disney has a lot of assets in it, but it’s unpleasant to have something… How would you like running the sports, ESPN, now at Disney compared to its heyday? It’s going to be way harder for them.
+
+CM: Movies look, to me, like it’s going to be a bloodbath, too. It’s not a bit easy. And it was easy — in the heyday of ESPN, Disney made nothing but money out of ESPN. It was a total goldmine.
+
+Q36: What about other movie businesses? I’m thinking of Paramount, which is a huge holding that Berkshire now owns21.
+
+CM: I live within a few blocks from Paramount Studios and I don’t even know anybody at Paramount. I have avoided the movies like the plague as an investor all my life. I’ve never made an investment in the movie business in any way, shape, or form. It always gives me the willies. I don’t like the unions, I don’t like the crazy agents, I don’t like the goddamn crazy lawyers, I don’t like the crazy movie stars, I don’t like the people who sell dope to the musicians.
+
+Everything about it is not my culture. I liked those old English actors when they came over. I grew up with them. But, basically, movies are not my scene, so I’ve avoided it. It’s always been very hard for the people who put up the money. It may be a very good place to make a living as an actor or a writer or a musician, but it’s a hard place to make money if you’re an investor.
+
+Q37: Is there a point where the biggest existential threat to humanity is the population growth of humanity? If so, how do we discern when that point has arrived?
+
+CM: That’s an interesting subject. If you had looked at the way things had happened in the past, you would have concluded — like Paul Ehrlich22 did — that the world’s headed for an absolute population disaster.
+
+But what actually has happened is quite different. What’s happened is as the world has gotten more and more prosperous — including in places like China — the birth rate has gone down, down, down, down. There’s actually sort of a population shortage in a place like Japan. The prediction of all the great experts, based on extrapolating the past graphs, turned out to be totally wrong. It now looks as though the world’s population in the advanced countries will sort of self-limit.
+
+BQ: That kind of puts you in the same camp with Elon Musk. He’s made some of the same arguments that it’s really a shrinking population that’s a bigger threat to humanity.
+
+CM: Well, as I said, he’s a smart man. Sometimes. (Laughs) Like all the rest of us.
+
+Q38: When assessing the character and competence of a business’s management, have you ever made a mistake? If so, when did this occur and what did you learn from the experience?
+
+CM: Everybody makes mistakes. I’d say one of the most interesting things that happened in my lifetime was the rise of IBM and the fall of IBM. IBM was the most admired company in America for most of my young life. They just marched from triumph to triumph to triumph and, in the last ten or fifteen years, they’ve slipped and they’re falling back in relation to other people in their field. As the Apples and the Googles and so forth came ahead, IBM just kind of missed the boat. I think that’s almost inevitable. Kodak missed the boat of the change to digital photography, too.
+
+I’ve heard Bill Gates say that it’s almost the rule that [when] a really disruptive technology comes along, the incumbents screw up their reaction to it. It’s hard to change your ways when they’ve been successful for a long time and go into a totally different way of behaving and thinking.
+
+Look at where we’re sitting. We’re sitting at the Daily Journal Corporation. We’re adapting to the new world. Think of how different it is, publishing a newspaper and inventing software for courts to automate. These are two radically different businesses.
+
+Q39: Do you think that currently in the United States that we have systemic racism?
+
+CM: I suppose we’ve got some, sure. Of course, you’re going to have a certain amount of animosity, one group toward another. In the whole history of the human race, we’ve had a certain amount of that. I think it’s gotten way better in my lifetime, however. I would argue that racism has gone down — a lot.
+
+Q40: What, if any, impact do you think the insurance industry will see because of climate change over the next twenty-five years?
+
+CM: I’m not sure I’m any good at answering that kind of a question. I don’t think I know particularly how well… I think there’s a good chance that climate change will be less important than a lot of people think. That doesn’t mean it will be unimportant, but I think it won’t be an absolute, full-blooded horror catastrophe with no possibility to adjust.
+
+Q41: What should undergraduate students be taught in introductory finance classes to give them the foundation and common sense to effectively deal with personal or corporate finance problems later in life?
+
+CM: That’s a good question, but of course it’s a big question. If you have good judgment, your life will work a lot better than if you have bad judgment. You get good judgment gradually over time, partly by making bad judgments and having them work out poorly. My counsel has always been to start trying to be better and keep trying to improve all of your life — and you’ve got about half a chance. If you don’t do that, you’ve got no chance.
+
+I used to say I could only teach what the other person almost knows. Then I can just [push] him over the brink when he’s hanging on the edge. But if a guy is not within miles of even starting, I never succeed. In removing idiocy, I have a 100% failing talent. (Laughs) I have never succeeded.
+
+BQ: What would you push in that direction if you had a class full of finance students in college? What are a few lessons?
+
+CM: I would teach to the people who can learn and, if the others couldn’t keep up, the hell with them. What can’t be improved, can’t be improved. I don’t believe in butting my head against the wall. By the way, that’s the way most education works. They just throw out those who can’t keep up. That’s the way academia works. That’s the reason they get so good at the top.
+
+I talked yesterday on Zoom with a law professor at a great place. My god, this is an admirable guy. He’s just so goddamn smart and balanced. Incredible. But he’s a very senior law teacher at one of the great law schools of the world, so I would expect him to be pretty good, but he was more than pretty good, he was awesome. I thought, my god, academia is quite competitive.
+
+By the time you get to the top of the professors at a good place, you’ll find some very remarkable people. But there’s a limit to what they can accomplish. One of the reasons that they turn out such good people is they take in such good people. That’s their secret. They can’t fix the clods. Nobody can. There’s an old saying, “Dumb is forever.”
+
+Q42: Many entrepreneurs say that you have to dream really big. Instead, you say Charlie that the secret to a happy life is having low expectations. Could you please expand on that?
+
+CM: Yes. You climb as hard as you can by just advancing one inch at a time. That’s the secret of life. Now, there’s always somebody who’s a little nuts and who succeeds, but for every guy who succeeds there are a thousand failures.
+
+BQ: Is this an under-promise, over-deliver situation, too?
+
+CM: Of course. Who in the hell in his right mind would like going around, making a lot of commitments, and failing time after time after time at doing what you promised to do? Everybody would hate you, right? There’s no more guaranteed way to make people hate you than to fail them in their reasonable expectations. So, of course, you want to live a life where, by and large, you’re meeting the reasonable expectations of other people. That’s what civilization requires of all of us
+
+Q43: Did you get Covid during the pandemic and how do you stay healthy? What’s your advice to elderly people?
+
+CM: I did get Covid, but I got it after I was vaccinated. I had a tiny sniffle for about ten minutes and that was my Covid. But I tested positive during that time.
+
+In terms of the general idea of cautious adjustment, I’ve had a lot of elderly friends who either died or had terrible injuries from falls. So, when I got old myself and it got time to use something to avoid falling down, people tried to sell me on the cane. But I noticed that my friends who used canes would fall down occasionally, so I never used the goddamn cane. Instead, I bought one of these modern walkers and, wherever I was worried about falling down, I pushed my walker. I did that for six-and-a-half years and I never fell down once in six-and-a-half years — just because I was more cautious. That is my advice to old people — just be a little more cautious.
+
+Now, I’ve gone to the wheelchair and I’ve got another six-and-a-half years probably, but some of it I’ve already used up. I’m just as cautious with my wheelchair. What is the harm of having a little extra caution?
+
+Q44: Will Occidental Petroleum and Chevron be long-term holdings for Berkshire going forward?
+
+CM: That is a very good question. I think having a big position in the Permian Basin through those two companies is likely to be a pretty good long-term hold, so I like that aspect of that position.
+
+Ben Graham used to say if it’s a good investment, it may be a good speculation — and I think that’s generally true — but I don’t do those short-term speculations. At least not very often.
+
+But I like the big position that Berkshire has in the Permian through those two. I kind of admire both places a lot. Both Occidental and Chevron are very admirable places. By the way, Oxy didn’t start like that. If you go back thirty or forty years, Oxy was run by a crook23. It’s evolved into a wonderful place, but it started as a sleaze bag.
+
+BQ: Who was running it thirty or forty years ago?
+
+CM: Before your time, Becky. You’re too young.
+
+BQ: I know Armie Hammer. The younger one.
+
+Q45: You’re largely credited with Warren Buffett’s evolution to buying great businesses at a reasonable price. Given Ben Graham’s exceptional insights and understanding of investing, how or why did he himself not evolve to foresee the inability to scale his net-net cigar butt approach? What do you attribute your early willingness to pay up stems from?
+
+CM: A lot of Ben Graham’s rise in life was during a period when there was plenty of low-hanging fruit among mediocre businesses that were way too cheap. He was relatively rare in doing his hunting in that garden, so he made a pretty good living for himself buying these. What happened is that low-hanging fruit eventually went away as the aftermath of the Great Depression went away.
+
+Ben Graham actually made more than half of all the money he made in his life out of one stock — and that stock was GEICO, which was a great business. If you actually looked at the great Ben’s own life, you’d see that what he taught wasn’t the way he got rich himself. (Laughs)
+
+And, by the way, he told that story on himself late in life. He carefully computed how much he made in GEICO compared to everything he had ever done in his previous life, so you can argue that Ben Graham himself woke up once.
+
+BQ: Why do you think that you, so early on, were willing to pay up for great businesses?
+
+CM: Because it’s so obvious and I’m good at doing things that are obvious. Of course, it was obvious that if you wanted to have particularly good results, you’ve got to do a great company. (Laughs) I recognized that greatness is good. Big deal. Charlie Munger, genius, recognizes that greatness is good. Of course, greatness is good.
+
+Q46: When you’re evaluating a company for a potential investment, what do you place the most emphasis on — the business or the management? Do you differ with Warren when it comes to what you place first?
+
+CM: No, I think we’re the same. We like the business great first. Then, second, we want a great manager. But we have not made a huge success by investing in great managers who take over lousy businesses. That is not the way we rose. If you’re a lousy manager, you really need a great business.
+
+BQ: Can a great business be run by a lousy manager?
+
+CM: Sometimes. Coca-Cola was run for years by a man with very severe mental impairment. The directors just assumed he was drunk and let him stay there year after year. Now, that’s my idea of a wonderful business — you can be mentally defective and run it pretty well. That was Coca-Cola in its heyday.
+
+BQ: How far back are we talking?
+
+BQ: I’ll let somebody else do the math on that and figure out the timing.
+
+Q47: You’ve described too much diversification as “diworsification”. In light of that thought, if one was allowed only one stock to hold for a very long time and it would be the most important asset to him, his family, and their future well-being, please describe what you would look for in that stock?
+
+CM: It helps to have somebody that’s lucked into a good position, so a great business would be what you’d like and, of course, you’d like a great management, too. Occasionally, we’ve had both to ride together for a long, long period. But, of course, everybody’s looking for the same thing. The trouble with it is you will find, when you get into those good businesses in a place that’s picked over and analyzed as [much as] American stocks are, you can imagine the amount of time spent thinking about American stocks.
+
+You will find, by and large, in America, if it’s really a great business, it’s at least 25x earnings and maybe 30x or 35x or something. That makes it much harder because if something goes wrong, you can lose a lot of your investment. Of course, that’s what makes investment so difficult, the fact that good businesses don’t stay cheap. They’ve got to somehow recognize a good business before it’s recognizable as a good business. That’s very hard to do. Some people get good at it, but not many. 95% of the people who are America’s professional asset managers, I wouldn’t want working for me.
+
+CM: I think it’s that hard. I think you need to be in the top 5% to have a reasonable chance. It’s very difficult. Now, it’s not difficult to just buy an index fund and sit on your ass. That’s the great default position.
+
+At the Daily Journal Corporation, we just put in a 401(k) plan. What are the investment options for the people who work [here]? Zero. It’s all index funds. What percentage of American 401(k)s have our plan — index funds required? About zero. Am I right or am I wrong? Of course, I’m right. It’s the logical thing to do.
+
+BQ: — percent worth two and twenty?
+
+CM: Sometimes. Being worth two and twenty, I would say, is way less than 5%. The man who’s worth two and twenty, that’s getting very rare indeed. Particularly under modern conditions where every niche is occupied. If you take early-stage venture capital like Sequoia does, how many people have a Sequoia-like record? I don’t think there’s one in a hundred that has a Sequoia-type record. And, by the way, even Sequoia makes an occasional mistake. Everybody does.
+
+Q48: You’ve said that you should destroy at least one good idea that you have each year. What good idea did you destroy in 2022 and anything in 2023 so far?
+
+CM: The idea that I destroyed — it wasn’t a good idea, it was a bad idea. When the internet came in, I got over-charmed by the people who were leading the online retailing and I didn’t realize it’s still retailing. It may be online retailing, but it’s also still retailing. I just got a little out of focus and that made me overestimate the future returns from Alibaba. I have never [had to eliminate a mistake] twice. I keep rubbing my own nose in my own mistakes, like I’m doing now, because I think it’s good for myself.
+
+Q49: Can you discuss your views on the healthcare industry, specifically the tradeoffs between capitalist systems like the United States and single-payer systems like Canada and the UK?
+
+CM: When somebody asked Warren what happened with their experiment with JPMorgan Chase and Amazon — they were going to improve what was wrong with American medicine and its cost — and when they gave that up as a total failure24, Warren just said the tapeworm won and that’s what happens. I think the American system costs way too much.
+
+Q50: I'm a big fan of your disciplined approach to life. Do you get up at the same time every day and go to bed at the same time? And, finally, what’s the first thing you focus on each day?
+
+CM: I vary a little in my time, but I’m pretty regular and I’m a pretty good sleeper in my old age. I’m very lucky in that respect.
+
+Q51: If you could inaugurate any one for President in 2024, who would you choose?
+
+CM: I think I’ll duck that one.
+
+CM: I don’t want to get into presidential politics.
+
+BQ: Okay, I hear that. I can understand that.
+
+Q52: Can you highlight the qualities that you admire in Ben Franklin?
+
+CM: Ben Franklin was a genius. It was a small country, but he started in absolute poverty. His father made soap out of the carcasses of dead animals that stank. Now, that is a very low place to start from. He was almost entirely self-educated, two or three years of primary school, and after that he had to learn it all himself. To rise from that kind of a starting position and become… By the time he died, he was the best inventor in his country, the best scientist in his country, the best writer in his country, the best diplomat in his country. Thing after thing after thing, he was the best there was in the whole United States — so he was a very unusual person.
+
+He just [had] an extremely high I.Q. and a kind of pithy way of talking that made him very useful to his fellow citizens. He kept inventing all these things. Imagine inventing the Franklin stove and bifocal glasses and all these things that we use all the time. I’m wearing bifocal glasses as I’m looking at you. These are Ben Franklin glasses. What the hell kind of a man just goes through life and his sight gets a little [imperfect], he invented the goddamn bifocals! It was just one of his many inventions. He was a very, very remarkable person. Of course, I admire somebody like that. We don’t get very many people like Ben Franklin.
+
+He was the best writer in his nation and also the best scientist and also the best inventor. When has that ever happened again?
+
+CM: Yes, yes, all these other things. Yes.
+
+And he played four different musical instruments, in addition to everything else.
+
+CM: The glass thing, where he’s rubbing his fingers on the glass25. They still play it occasionally. He actually played on four different instruments.
+
+BQ: He was a diplomat, helped write the rules of the country, and he taught us about compound interest with the trusts that he set up for both Philadelphia and for Boston that still, hundreds of years later, are paying out.
+
+CM: He was a very amazing person. The country was lucky to have him.
+
+BQ: Is it true, is there a new Poor Charlie’s Almanack coming out?
+
+CM: They are creating an online edition. By the way, the Chinese edition sold way more than the one in the United States.
+
+BQ: Well, there’s more people there.
+
+CM: That’s not the sole reason.
+
+CM: A rich old man looks like Confucius [in China]. In their system, there’s nothing better than a rich old man.
+
+Q53: How rational is it, for a person of your age and wealth, to practice delayed gratification? If it’s not rational at your age, how is it rational to delay gratification for the average adult? What’s the rational point in life to live with no delayed gratification?
+
+CM: I’m still doing it. Now that I’m old, I buy these apartment houses to give me something to do. We’re different in the way we run them from the way everybody else runs them. Everybody else is trying to show high income so they can have high distributions. We’re trying to find ways to intelligently spend money, to make them better. And, of course, our apartments do better than other people do, because the man who runs them does it so well for me. There are two young men who do it with me. But it’s all deferred gratification. We’re looking for opportunities to defer and other people are looking for ways to enjoy. It’s a different way of going at life. You get more enjoyment out of life doing it my way than theirs.
+
+BQ: Did you start out having to work at delayed gratification or is that just how you were born?
+
+CM: No, I learned this trick early. They’ve done that experiment with the two marshmallows with the little kids. They offer them two marshmallows if they’ll wait. They’ve watched them how they work out in life by now and the little kids who were good at deferring the marshmallows are also the people who succeed in life. It’s kind of sad that so much is inborn, so to speak. But you can learn it to some extent, too.
+
+I was very lucky. I just naturally took to deferred gratification very early in life and, of course, it’s helped me ever since.
+
+Q54: What makes Warren Buffett one of the greatest investors and compounders that the world’s ever seen?
+
+CM: Warren is not only a very good thinker and a good learner, which is important, but Warren has a big, strong fiduciary gene. He cares about what happens to the shareholders.
+
+Warren and I were lucky in that the early shareholders were people who trusted us. We were young and didn’t have a reputation and so on. Naturally, we feel an exceptional loyalty to those people. Of course, naturally they’re all dead now — but we’re still loyal to them. Warren and I still care what happens to the Berkshire shareholders. A lot. I think that helps us. I think it helps if you’re good at loyalty.
+
+Q55: Many large companies, including Meta (which owns Facebook) and various insurances, are choosing to self-insure against liability, either for directors or for the business risks. Would you share your thoughts on this, please?
+
+CM: In my own life, I’m a big self-insurer and so is Warren. It’s ridiculous for me to carry fire insurance on my houses because I could so easily rebuild a house that had burned down. Why would I want to bother fooling around with a claims process and all kinds of things?
+
+You should insure against things that you can’t afford to pay for yourself. But if you can afford to take the bumps — some unusual expense coming along doesn’t really hurt you that much — why would you want to fool around with some insurance company if your house burned down? I would just write a check and rebuild it.
+
+All intelligent people do it my way. Well, I won’t say all… Maybe I should say all intelligent people should do it my way. There should be way more self-insurance in life. There’s a lot of waste. You’re paying, when you buy insurance, for the other fellow’s frauds — and there is a lot of fraud in life.
+
+If you can afford to take the risk yourself and not fool around with claims and this and that and commissions and time, of course you should self-insure. It’s simpler and so forth. Think of what I’ve saved in my life. With one exception, I’ve never carried collision insurance on a car and, once I got rich, I stopped carrying fire insurance on houses. I just self-insure. That is the right way to do it.
+
+BQ: That’s a little bit of a surprising take from a guy who’s vice-chairman of Berkshire, which has so many insurance companies.
+
+CM: I’d rather tell it the way it is than tell it in a way that helps Berkshire. I’m not going to tell it differently than I think it really is just because it’s better for Berkshire. Even though it’s bad for Berkshire, I will tell you that if you can afford to self-insure, then self-insure.
+
+BQ: Even on things like medical? You might think you can afford—
+
+CM: That is different. The insurer pays the doctor and the hospital is a small fraction of what you pay, so that’s a different kind of calculus.
+
+The cost of American medical care and medical insurance is a disgrace. If you go to Singapore, you’ll find that they do the whole thing better than we do and it costs 20% of what we pay. And, by the way, I have no idea how to get from where we are to where Singapore is because all the people that are getting all of that extra money fight like fierce tigers to hold onto it. They control boards and cities and states, so I don’t know how to fix the costs in American healthcare. They are totally out of control.
+
+Warren tried to fix it with Amazon and all that stuff. He failed, too. Everybody has failed at it. Everybody in America has a marvelous record of failing at handling our cost of medicines.
+
+Q56: What are some of the most important things that we need to know about Greg Abel? Have you experienced examples of him also being a learning machine and, if so, could you share one?
+
+CM: Greg is just sensational at being a business leader — both as a thinker and as a doer. He’s also sensationally good at smoothly getting things done through other people. He’s a very remarkable human being and Berkshire is very lucky to have him. He’s also a tremendous learning machine. You can argue that he’s just as good as Warren at learning all kinds of things. One of the interesting things about Greg is that there’s some things he’s better at than Warren is — and Warren knows that and he just keeps dumping on Greg everything that Greg can do better — and that’s a lot.
+
+The system at Berkshire is working pretty damn well. We’re very lucky to have a 92-year-old in such good shape as Warren and we’re very lucky to have a chief executive like Greg. Greg is very remarkable.
+
+Greg is trusted by utility regulators — and rightly so. He is trying to run all those utilities as if he were the regulator. How many people think that way? But it’s such a smart way to think.
+
+CM: Yeah. Why not do it the way that you would want it done if you were on the other side of the transaction? How can you fail if you treat other people the way you’d like to be treated yourself? It’s the golden rule. Of course it works.
+
+Q57: Would you recommend taking Social Security at 67 or waiting until 70 when you would receive more per month?
+
+CM: I can’t make that choice for you. It depends. If you know you’re going to be dead pretty soon, I’d go ahead and have more money to spend. (Laughs) If you think you may live a long time, you may have a different calculus. I would say that most people who are healthy and who have a pretty good life expectancy, generally they’re wise to defer the Social Security taking and take more money later.
+
+BQ: I guess it’s optimistic thinking, too. If you think you’re going to live a long time, that’s the way to play it out.
+
+CM: Well, what do you do Becky?
+
+BQ: I’m not 65, so I haven’t thought about it yet. I’m waiting. My guess is that I would probably work longer.
+
+CM: I don’t think you’re going to need Social Security, Becky. I’m not worried about you.
+
+BQ: (Laughs) I think I would work longer. I’m naturally conservative.
+
+Q58: What should a good government do — and not do — for economic growth?
+
+CM: What you’ve got to do if you want growing GDP per capita, which is what everybody should want, you’ve got to have most of the property in private hands so that most of the people who are making decisions about how a property is going to be cared for own the property in question. That makes the whole system so efficient that GDP per capita grows.
+
+And a system where you have easy exchanges due to a currency system and so on. That’s the main way of a civilization getting rich — having all these exchanges and having all the property in private hands. If you like violin lessons and I need your money and we make a transaction, we’re gaining on both sides, so of course GDP goes [up] like crazy when you’ve got a bunch of people who are spending their own money and running their own businesses and so on.
+
+Nobody in the history of the world, that I’m aware of, has ever gotten from hunter-gathering to modern civilization except through a system where most of the property was privately owned and a lot of freedom of exchange. By the way, I just said something that’s perfectly obvious but isn’t really taught that way in most education. You can take a course in economics in college and not know what I just said. They don’t teach it exactly the same way.
+
+Q59: Throughout your experience with Berkshire Hathaway, what are a few of the things that surprised you most? How have you used some of those surprises in your quest to become a better learning machine?
+
+CM: Some of the things that surprised me the most was how much dies. The business world is very much like the physical world where all the animals die in the course of improving all the species, so they can live in niches and so forth. All the animals die and, eventually, all the species die. That’s the system.
+
+When I was young, I didn’t realize that that same system applied to what happens in capitalism to all the businesses. They’re all on their way to dying, is the answer, so other things can replace them and live. It causes some remarkable death.
+
+Imagine having Kodak die. It was one of the great trademarks of the world. There was nobody who didn’t use film. They dominated film. They knew more about the chemistry of film than anybody else on Earth. And, of course, the whole damn business went to zero.
+
+Look at Xerox, which once owned the world. It’s nothing compared to what it once was. Practically everything dies on a big enough timescale. When I was young, it was just as obvious then, [but] I didn’t see it for a while. Things that looked eternal and had been around for a long time, I thought would likely be that way when I was old. But a lot of them have disappeared. Practically everything dies in business. None of the eminents last forever.
+
+Think of all the great department stores. Think how long they were the most important thing in their little community. They were way ahead of everybody in furnishing credit, convenience in all seasons, convenience back and forth using the same banks of elevators and so forth [over] multiple floors. It looked like they were eternal — and they’re basically all dying or dead. Once I understood that better, it made me a better investor.
+
+BQ: The same can be said for managers. I’ve talked with Doug McMillon of Walmart who carries around in his wallet, on him, a list of the top retailers over the decades — and nobody is ever the same.
+
+CM: Yes, [retailers] who are gone. Retailers live in terror because you can die. Some guy gets a better way of doing it and you just die, like those department stores did.
+
+BQ: The ones you invested in early on, you mean, in Baltimore26?
+
+CM: No. Think of the department stores that are gone. Just chain after chain after chain in the big downtowns. They’re not weakened — they’re gone, dead.
+
+To have IBM have the huge position it once had in terms of utter dominance and, now, it’s just one of the also-rans. It’s still an admirable place. I’m sure they still have a lot of talent left in IBM, but it doesn’t help. You die even though you’re talented and hard-working.
+
+Q60: Who are some of the people you most admired and looked up to? What was it about them that made them so special?
+
+CM: I would argue that Jim Sinegal at Costco was about as well-adapted for the executive career he got. By the way, he didn’t go to Wharton, he didn’t go to the Harvard Business School. He started work at age eighteen in a store and he rose to be CEO at Costco. In effect, he was a founder under a man named Sol Price.
+
+I would argue that what he accomplished in his own lifetime was one of the most remarkable things in the whole history of business in the history of the world. Jim Sinegal and his life. He’s still very much alive, but he had one business throughout his whole life basically. He just got so damn good at it. There was practically nothing that he didn’t understand, large or small. There aren’t that many Jim Sinegals.
+
+I’ll tell you somebody else, for a job of the kind he has, Greg Abel, in a way, is just as good as Sinegal was. He has that kind of a genius for the way he handles people and problems. I can’t tell you how [much] I admire somebody who has enough sense to run these utilities as though he were the regulator. He’s not trying to pass on the costs because he can do it, he’s trying to do it the way he’d want it done if he were the regulator, instead of the executive. Of course that’s the right way to run a utility, but how many are really run that way?
+
+There are some admirable business people out there and I’ve been lucky to have quite a few of them involved in my life. The guy who ran TTI was a genius27. TTI is a Berkshire subsidiary. You Daily Journal people, think how lucky you’d be if we still had our monopoly on publishing our cases or something, we’d be like TTI. TTI has just marched from triumph to triumph. It was run by a guy, he got fired and created the business.
+
+CM: It was a defense contractor. I forget which one.
+
+CM: I can’t remember exactly. But he was a terrific guy. He ran the business for us [and] wouldn’t let us raise his pay. How many people have the problem with their managers that they won’t allow you to raise their pay?
+
+Q61: What quality has helped you the most in life?
+
+CM: That’s easy — rationality. If you’re just not crazy, you have a big advantage over 95% of the people. Most people have all kinds of crazy patches. If you’re just consistently not crazy, you get a big advantage in life. If you’re patient and a gratification-deferrer, in addition to being not crazy, then it’s practically a cinch. If you’re exceptionally good at satisfying your commitments to other people, then you’ve just automatically improved your resources and your chances in life enormously. It’s so simple.
+
+Why don’t more people do it? It’s an interesting question. I don’t think you can educate your children to do it automatically. If you have ten children, you’ll have some that are a lot better than others at doing this.
+
+BQ: Is it harder with success, age, wealth to hold onto rationality?
+
+CM: It’s always hard, but you get better at it if you get good at it young and keep practicing. But it’s never easy.
+
+That question somebody asked — what one stock would you buy if you had to just rely on that one stock only for your sole living expenses? You weren’t allowed to earn any income at all, just invest $1 million and live on that one stock. How many people would give an intelligent answer to that question in America? I don’t think it’s one in a hundred. They wouldn’t even know how to begin.
+
+BQ: One of my favorite things that I’ve heard you say is “Whatever you are, age and wealth makes you more so”. You came up with that a while ago. What led you to that and do you have any addendums to that?
+
+CM: Yes, of course. I think that’s true we all tend to get a little more so in every way. I thought of that when I woke up this morning and put on my trousers. I really economized in buying those trousers. Why am I economizing in my trouser buying?
+
+CM: But the habit is just so ingrained that I can’t stop. (Laughs)
+
+Q62: In 2018, you said Journal Technologies is not quite BYD, but added that it might work out just like BYD. Now, a few years on, do you still think Journal Technologies can turn out similar to BYD?
+
+CM: Well, it won’t be as fast. That I guarantee you. And I won’t be as great — I can also practically guarantee that.
+
+BYD is one of the most remarkable venture capital-type successes in the history of the world. [Wang Chuanfu] was the eighth son of a peasant. He had an older brother who recognized that his younger brother was a genius and the older brother sacrificed himself to get this peasant’s son into some good engineering school and he became an engineering professor and then an entrepreneur. How many times do you get a story like that?
+
+Imagine buying a little bankrupt auto company in China and turning it into something that this year will sell more electrical cars than anyone else in the world — at a time when electrical cars are hot. It’s a remarkable story. But, again, a very unusual human being, Wang Chuanfu.
+
+And, by the way, in his case, it wouldn’t have happened if Wang Chuanfu hadn’t been so unusual.
+
+CM: He’s a damn genius. He’s been thinking about the right things, seventeen hours a day, all his life. He’s a workaholic and he can do things that ordinary human beings can’t do.
+
+BQ: Is that the favorite stock you’ve ever purchased? BYD or Costco?
+
+CM: I would say that I’ve never helped do anything at Berkshire that was as good as BYD — and I only did it once. (Laughs) Our $270,000 investment29 there is worth about $8 billion now or maybe $9 [billion]. That’s a pretty good rate of return.
+
+BQ: That’s more than pretty good.
+
+CM: We don’t do it all the time. We do it once in a lifetime. We’ve had some other successes, too, but I don’t think hardly anything like that.
+
+We made one better investment. Do you know what it was? We paid an executive recruiter to get us an employee and he came up with Ajit Jain30. The return that Ajit has made us — compared to the amount we paid the executive recruiter — that was our best investment at Berkshire, was paying an executive recruitment firm to get us Ajit Jain. But, again, it only happened once.
+
+BQ: That’s quite an investment, too.
+
+BQ: Charlie, I just want to thank you for all of your time today and being so generous with us.
+
+CM: We’re all through, I guess. I guess our meeting is over.
+
+I’m glad I’m still here to do one more with you people. We’ve been at this quite a few years, so my best to all of you.
+
+When Myhill-Jones was named CEO, Munger said: “We are incredibly fortunate that Steven found his way into our lives. He’s whip smart and full of energy. He’s exactly the kind of leader we need at Daily Journal and Journal Technologies to take our business into the future.”
+
+Myhill-Jones founded web-based geography software company Latitude Geographics in 1999.
+
+Journal Technologies is an enterprise software company connected as a long-term subsidiary with Daily Journal Corporation. It provides case management software to courts, prosecutors, public defenders, probation offices, and other justice agencies throughout the United States and internationally.
+
+In 2022, Berkshire Hathaway fully exited Wells Fargo and slashed stakes in U.S. Bancorp and Bank of New York Mellon.
+
+DJCO owns 2.3 million shares of Bank of America, 1.59 million shares of Wells Fargo, and 140,000 shares of U.S. Bancorp.
+
+Guerin passed away on October 13, 2020, at the age of 90.
+
+“He was a self-made man,” Munger once said. “Rick had to raise himself. He worked his way through college. From that background, he became this very prosperous, very distinguished, and very generous man.”
+
+In Guerin’s obituary, Munger places their first meeting a year later. “We met on opposite sides of a deal in January of 1962,” he remembered. “And Rick quickly realized he was on the wrong side. From there on, we did a lot of deals as co-venturers.”
+
+Demosthenes was a Greek statesman and orator who lived between 384 B.C. and 322 B.C. The quote that Munger references is, “For what every man wishes, that he also believes to be true.”
+
+Since August 2022, Berkshire has sold approximately 42% of its BYD holding. Regarding TSMC, Berkshire surprisingly dumped 86% of its stake in the chipmaker during Q4 2022.
+
+For more on Li Lu, check out this article.
+
+In 2021, Daily Journal purchased 600,000 shares of Alibaba. By Q1 2022, though, Munger halved the position by selling 302,060 shares of the Chinese e-tailer.
+
+In his Buffett Partnership letters, he called these “work-outs”.
+
+A bipartisan act, passed in 2022, that seeks to bolster U.S. semiconductor production.
+
+From Munger’s 2007 commencement address at USC Law School. He called this his “iron prescription” that helps keep him sane.
+
+A speech delivered at Harvard University in 1995.
+
+BlackRock owns 8% of Berkshire’s Class B shares.
+
+In January 2023, the Missouri Supreme Court unanimously overturned this verdict and sent the case back to the lower court for further deliberation. For now, GEICO is off the hook.
+
+Earlier this month, the Florida legislature voted to allow the state to appoint a new board for the Reedy Creek Improvement District at Walt Disney World. RCID handles bond issuance, fire and emergency response, taxation and millage rates, etc. for Disney’s property.
+
+Berkshire owns 15.4% of Paramount’s (non-voting) Class B shares.
+
+Ehrlich wrote The Population Bomb in 1968.
+
+During the 1970s, the SEC charged Occidental Petroleum with four violations ranging from misleading earnings projections to using corporate funds for illegal political contributions. Armand Hammer was also tangled up in the Watergate scandal.
+
+Haven, a joint venture between Berkshire Hathaway, Amazon, and JPMorgan Chase to improve outcomes in healthcare (at lower costs), was disbanded in January 2021.
+
+In 1961, Franklin invented the glass armonica, which built on the concept of rubbing the tip of your finger around a glass to make a sound. He nested multiple glass bowls inside each other, turned them on their sides, and then played the contraption like a piano.
+
+In 1966, Charlie Munger, Warren Buffett, and Sandy Gottesman teamed up to purchase Hochschild-Kohn, a venerable old department store in Baltimore. It didn’t work out. “Buying Hochschild-Kohn was like the story of a man who buys a yacht,” Munger once drily observed. “The two happy days are the day he buys it and the day he sells it.”
+
+Paul Andrews founded TTI (originally called Tex-Tronics) in 1971. The electronic component distributor was acquired by Berkshire Hathaway in 2007.
+
+Berkshire actually spent about $230 million on BYD in 2008. Even so, still a huge return.
+
+Ajit Jain, now the vice-chairman of insurance operations, joined Berkshire in 1986.
+
+Thank you for putting in the work to make this conversation accessible...much appreciated

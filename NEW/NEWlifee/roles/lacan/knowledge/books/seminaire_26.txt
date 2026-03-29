@@ -1,0 +1,2853 @@
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\Illustrations\nanpizu_.jpg][C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\Illustrations\Madaraneko_by_Takechi_Seiho.jpg]
+
+LACAN
+
+La topologie et le temps
+
+1978-1979
+
+Table des séances
+
+21 novembre 1978
+
+12 décembre 1978
+
+19 décembre 1978
+
+09 janvier 1979
+
+16 janvier 1979
+
+20 février 1979
+
+13 mars 1979
+
+20 mars 1979
+
+08 mai 1979 A. Didier-Weill
+
+15 mai 1979 J-D. Nasio, J-M.Vappereau
+
+21 Novembre 1978 Table des séances
+
+Il y a une correspondance entre la topologie et la pratique.
+
+Cette correspondance consiste en les temps.
+
+La topologie résiste, c’est en cela que la correspondance existe.
+
+Il y a une bande de Mœbius que nous avons tracée :
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\34.jpg]
+
+C’est ce qu’on appelle une bande triple. On peut remarquer que cette bande triple,
+
+ce qui la caractérise c’est qu’elle a des bords et que ses bords sont à peu près comme ceci :
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\11.bmp]
+
+Ses bords sont ceci :
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\11a.bmp]
+
+pour mieux dire ceci :
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\12.jpg]
+
+Si vous rabattez ces bords, vous obtenez quelque chose qui se présente comme ça :
+
+Et le cercle noir prend alors cet aspect là. Voilà à peu près ce que ça donne.
+
+Ici le cercle noir est blanc. [Lacan désigne un rond de ficelle blanc passant à l’intérieur d’un enroulage de ficelle jaune].
+
+Voilà, je vous le passe.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\36.jpg]
+
+  ----------------------- ----------------------- -----------------------
+                                                  
+
+                                                  
+
+                                                  
+  ----------------------- ----------------------- -----------------------
+
+Il y a une façon - cette bande - de la couvrir [pointillés] :
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\34a.jpg]
+
+Après ça, ça passe derrière la bande suivante.
+
+Mais ce qu’il faut voir, c’est que ce qui passe derrière la bande suivante est précisément ce qui revient en avant de la bande 3, après quoi ça revient derrière ce qui est là inscrit, je veux dire derrière la bande de Mœbius triple.
+
+C’est pourquoi ça revient en avant.
+
+De sorte que ce qu’on a, c’est
+
+-   en avant : 1, 3, 5,
+
+-   derrière : 2, 4, 6,
+
+...6 qui rejoint le 1.
+
+C’est bien ce que j’ai - de la bande enveloppante – marqué [en pointillés].
+
+Vous pouvez la manipuler et même en recouvrir la bande triple.
+
+Vous avez ici un autre exemplaire de ce que j’ai appelé pour l’instant « la bande enveloppante ».
+
+Vous pouvez en constater l’identité avec...
+
+Ce qu’il y a de frappant, c’est qu’une bande de Mœbius normale...
+
+  en voilà un exemple :
+
+  [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\14d.jpg]
+
+...une bande de Mœbius normale - c’est à dire une bande de Mœbius comme ça - a également le 1 et le 2 et le 3 et le 4
+
+à la même place :
+
+-   tous ceux-là : 2, 4, 6, sont derrière,
+
+-   et ceux-là : 1, 3, 5, sont devant.
+
+Voilà le 1, il passe derrière ici au 2 et il passe devant au 3. Au 4, il passe derrière,
+
+ce qui lui permet de revenir devant au 5 et de passer par derrière pour rejoindre le 1 par ce qu’on appelle le 6.
+
+La bande enveloppante a donc deux bords dans la bande de Mœbius à 3.
+
+Ce qu’on voit facilement sur la bande que je fais circuler à l’instant.
+
+C’est un point important, vous pourrez le contrôler sur ce que je vous ai fait circuler à l’instant.
+
+Il y a quelque chose de commun entre toutes les bandes de Mœbius, ne serait-ce que cette alternance.
+
+Est-ce qu’il est possible - c’est certain... - de couper les bandes de Mœbius ?
+
+Non seulement on peut couper chacune, mais on peut couper aussi ce que j’appelle la doublure.
+
+Qu’est ce que la doublure ?
+
+Il peut y avoir une doublure toute seule. Mais dans ce cas, il faut couper la bande de Mœbius,
+
+la bande de Mœbius qui est en somme l’âme de l’affaire.
+
+Il y a un moyen de tracer sur un tore une bande de Mœbius.
+
+Voilà comment on le trace s’il s’agit de la bande à trois.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S12b\Topo\Tore\unnamed.jpg]→ [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S12b\Topo\Tore\3651473-torus-knot-3d.jpg] → [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S12b\39.jpg] → [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S24\95a.jpg]
+
+Il faut pour cela pincer le tore et accoler les deux surfaces qui sont celles du tore [1].
+
+La face intérieure disparaît, elle est tamponnée, écrasée.
+
+Il est aussi facile de faire avec le tore une bande à 3...
+
+ce que je voulais dire c’était qu’il était aussi facile de faire une bande à 1.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\104b.jpg]
+
+Il y a quand même une béance entre la psychanalyse et la topologie.
+
+Ce dont je m’efforce, c’est - cette béance - de la combler.
+
+La topologie est exemplaire, elle permet dans la pratique de faire un certain nombre de métaphores.
+
+Il y a une équivalence entre la structure et la topologie.
+
+C’est ça le « Ça » dont il s’agit dans Groddeck, c’est ça qui est « Ça ».
+
+Il faut s’orienter dans la structure.
+
+Il n’y a pas que les nœuds borroméens.
+
+Pour généraliser ce qu’on appelle les nœuds borroméens, il peut y avoir une façon de faire
+
+qui ne fait pas qu’un nœud soit, en en coupant un, libéré de tous les autres.
+
+Il y a une certaine façon de préciser qu’en en coupant 2 sur 5,
+
+c’est très précisément ce qui nécessite que les 3 qui restent soient libres.
+
+C’est ce qu’on appelle la généralisation des nœuds borroméens.
+
+En en coupant 2 sur 5, les 3 autres sont libres.
+
+J’essaierai de vous en donner un exemple d’ici la fin de l’année.
+
+Voilà, j’ai parlé une heure. Je vous remercie de votre attention.
+
+12 décembre 1978 Table des séances
+
+Je me suis aventuré à annoncer que peut-être je prendrai un exemple de ce qu’on appelle « le borroméen généralisé »,
+
+c’est à savoir que j’énoncerai comment on peut rendre borroméen, je veux dire à partir de quel moment
+
+s’avère borroméen un nombre de cinq cercles, puisque dans le borroméen c’est de cercles qu’il s’agit.
+
+Le borroméen généralisé, je l’avais annoncé pour deux cercles retirés sur cinq.
+
+La solution m’a été donnée en main par deux personnes, à savoir
+
+-   M^(me) Parizot dont j’espère qu’elle est ici présente,
+
+-   et un nommé Vappereau qui a bien voulu aussi contribuer à cette solution.
+
+Il n’y a rien de plus facile que de rendre borroméen,
+
+-   c’est-à-dire de déchaîner,
+
+-   c’est-à-dire de libérer 5 cercles.
+
+En voici 1, en voici 2, voici le 3^(ème), voici le 4^(ème) et voici le 5^(ème).
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\15a.jpg]
+
+Ça c’est le 3^(ème), ça c’est le 2^(ème).
+
+Le 2^(ème) est violet, le 3^(ème) est en beige, le 4^(ème) est en vert et le 5^(ème) est en rouge.
+
+La façon de libérer deux cercles sur ces cinq est tout à fait claire.
+
+Les personnes qui s’en sont mêlées ont bien voulu l’une et l’autre dire de quelle façon c’est possible :
+
+c’est possible de dix façons.
+
+Il suffit de libérer, c’est-à-dire de couper le 1 et le 2, le 1 et le 3, le 1 et le 4, le 1 et le 5, les trois autres se déchaînent, comme il est facile de le voir du fait que ce violet-là par exemple file jusqu’à se réduire à quelque chose qui vient là. Ce violet se réduit à ce quelque chose qui glisse jusque là et qui, du fait du 5 disparu, est dénoué du vert, du beige et du violet.
+
+Ceci est libre, ces trois, puisqu’il s’agit ici de cercles, ces trois cercles sont libres l’un par rapport à l’autre.
+
+Le vert, le violet et le beige sont libres par rapport au violet, à savoir que
+
+-   le vert se dénoue,
+
+-   le beige se dénoue aussi,
+
+-   et le violet ici se dénoue également.
+
+Il est facile de voir qu’en dénouant le 2 associé au 3, le 2 associé au 4, le 2 associé au 5, on aura le même résultat.
+
+Le 3 associé au 4 et le 3 associé au 5 aura le même résultat, le 4 associé au 5 aura aussi le même résultat.
+
+Il y a donc 10 façons de sectionner 1 de ces cercles qui sont 5, de le sectionner de façon à ce que le résultat soit atteint.
+
+J’ai poussé plus loin mon investigation, à savoir que j’ai interrogé sur un groupe de 6 cercles,
+
+j’ai questionné sur la façon dont on obtient un borroméen généralisé en en coupant trois.
+
+Il y a effectivement 35 façons de le faire.
+
+Pour cela, il faudrait, de la même façon que nous avons fait ces 5 cercles, en produire un 6^(ème).
+
+Cette façon, je vous en dispense, car aussi bien ça serait un peu forcé.
+
+Mais il est possible de le construire.
+
+Parmi les 35 façons de couper les 3 cercles en obtenant ce nœud que j’appelle borroméen
+
+parce qu’il est symbolisé à partir de trois, c’est-à-dire que les trois sont dénoués quand on retire un...
+
+il suffit d’en couper un pour que les trois autres soient dénoués.
+
+Dans le borroméen à 6, il suffit également d’en couper 1 pour que les 6 soient dénoués.
+
+Je précise qu’il y a 10 façons de dénouer 5 cercles et qu’il y a 35 façons de dénouer 6 cercles en en coupant 3.
+
+Peut-être je vais distribuer ce qui a été obtenu ce matin par Soury [2] qui a bien voulu s’en charger de photocopier
+
+d’une photo en couleur, c’est-à-dire que les couleurs elles n’apparaissent pas,
+
+mais qu’à couper trois de ces cercles, on peut s’apercevoir que les autres sont libres.
+
+Ça demande un certain soin de colorier chacun de ces cercles, mais on peut voir que ça marche.
+
+Ceci suppose qu’on en retire d’abord 2 et ensuite un 3^(ème).
+
+C’est au 3^(ème) que chacun de ces cercles s’avère être libre.
+
+C’est vous Vappereau ? Je vous écoute.
+
+Vappereau
+
+Vous faites une erreur dans la façon de compter les différentes manières de dénouer la chaîne à 6 en coupant 3.
+
+Vous avez donné le résultat pour la chaîne à 7 en en coupant 4, c’est à dire 35.
+
+Lacan : J’ai dit qu’en en coupant 3 sur les 6, on obtient une chaîne borroméenne...
+
+Vappereau : Vous dites qu’il y a 35 façons de le faire, or il n’y en a que 20.
+
+Lacan
+
+Oui, c’est vrai qu’il n’y en a que 20.
+
+C’est vrai qu’il n’y en a que 20 et que, de ce fait, je me suis trompé.
+
+Il me reste à m’en excuser et à vous promettre que la prochaine fois je ne vous entretiendrai pas sur les cercles.
+
+Bien, au revoir !
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\Soury 001.jpg]
+
+19 décembre 1978 Table des séances
+
+Je vous avertis tout de suite que je ne ferai pas mon séminaire.
+
+Je vous en avertis parce que chez moi, ce matin, il y avait une panne d’électricité,
+
+« les lumières » comme on dit, c’est à dire la lumière électrique, ne s’allumaient plus.
+
+Naturellement Gloria ici présente m’a aidé : elle m’a porté des chandelles, ce qu’on appelle de nos jours bougies.
+
+Qu’est-ce que Gloria a à faire avec mon enseignement,
+
+c est-à-dire avec ce que j’enseigne cette année de la topologie et du temps ?
+
+Elle m’aide, elle m’aide à couper les ficelles quand j’ai à faire des ronds de ficelles.
+
+Les ronds de ficelle, c’est théorique, ça a affaire avec des cercles, des cercles souples et même élastiques, ça s’imagine. Mais l’imagination ne va pas loin.
+
+La topologie est imaginaire.
+
+Elle n’a pris son développement qu’avec l’imagination.
+
+Il y a une distinction qui est à faire entre l’Imaginaire et ce que j’appelle le Symbolique :
+
+-   le symbolique, c’est la parole.
+
+-   l’imaginaire en est distinct.
+
+Il y a des surfaces qui sont à l’occasion sans bord : un tore, par exemple, est une surface sans bord.
+
+Néanmoins un tore peut être aplati et si on l’aplatit, ça fait une surface avec bords.
+
+C’est même pour ça que le tore peut servir à faire une bande de Mœbius.
+
+Voilà comment ça se dessine. Ca fait une bande de Mœbius, à condition de l’aplatir.
+
+Mais on peut gonfler cette surface, auquel cas ça refait un tore.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S12b\Topo\Tore\unnamed.jpg]→ [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S12b\Topo\Tore\3651473-torus-knot-3d.jpg]→ [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S12b\Topo\Tore\unnamed.jpg]
+
+Il n’en reste pas moins que le tore et la bande de Mœbius, c’est distinct.
+
+[dernières minutes du séminaire inaudibles par absence de sono]
+
+9 janvier 1979 Table des séances
+
+Il n’y a pas de rapport sexuel, c’est ce que j’ai énoncé.
+
+Qu’est-ce qui y supplée, parce que il est clair que les gens...
+
+  ce qu’on appelle tel, soit les êtres humains
+
+...les gens font l’amour.
+
+Il y a à ça une explication : la possibilité...
+
+  notons que « le possible », c’est ce que nous avons défini comme « ce qui cesse de s’écrire »
+
+...la possibilité d’un 3^(ème) sexe.
+
+Pourquoi il y en a 2 d’ailleurs, ça s’explique mal.
+
+C’est ce qui est évoqué dans la doublure d’Ève, à savoir Lilith.
+
+L’évocation n’est pourtant pas une chose précise.
+
+C’est justement de précision, c’est-à-dire de Réel, que j’ai fait état en rêvant à ce qu’il en est du nœud borroméen.
+
+Le nœud borroméen a comme consistance de s’imaginer.
+
+Quelle est la différence entre l’Imaginaire et ce qu’on appelle le Symbolique, autrement dit le langage.
+
+Le langage a ses lois dont l’universalité est le modèle, la particularité ne l’est pas moins.
+
+Ce que l’Imaginaire fait, il imagine le Réel : c’est une réflexion.
+
+Une réflexion tient au miroir, c’est donc dans le miroir que s’exerce une fonction.
+
+Le miroir est le plus simple des appareils.
+
+C’est une fonction en quelque sorte toute naturelle.
+
+C’est curieux que j’aie choisi le nœud borroméen pour en faire quelque chose.
+
+Mais le nœud borroméen a pour propriété qu’on peut commencer par n’importe lequel.
+
+Tout au contraire, celui-ci (I) : on ne peut pas commencer par n’importe lequel.
+
+Si on commence par celui-là (le vert), il y a un obstacle, ça fait tresse comme le démontre le dessin qui est à gauche (III), mais si on tire celui-là vers la droite, ce sont les deux autres qui sont entraînés
+
+et on ne sait pas ce qu’il est de ce qui peut résulter de cet entraînement.
+
+En tout cas, ce sont les deux autres.
+
+C’est le même cas pour celui-ci (II) et c’est bien pourquoi ce qui est là ne peut pas servir à symboliser l’Imaginaire,
+
+le Symbolique et le Réel. Car ce qu’on symbolise dans l’Imaginaire, le Symbolique et le Réel, c’est l’intérieur du cercle (V), c’est le champ intérieur du cercle, le champ : c.h.a.m.p.
+
+De sorte que ce dont il s’agit c’est d’une métaphore. Il serait beaucoup plus difficile d’installer une métaphore
+
+dans ce dessin-là (I) que dans celui-ci (V), à plus forte raison dans le 3^(ème) dessin (II).
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\17.jpg] [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\18.jpg] [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\19.jpg]
+
+I V II
+
+Car le troisième dessin (II) a l’air plus compliqué, mais c’est le même.
+
+C’est le même étant donné que le rouge a là une inflexion qui pourrait permettre de régulariser,
+
+de faire rentrer le dessin de gauche (I) dans le dessin de droite (II).
+
+La différence, c’est que celui-ci (II) colle avec celui-là (III)
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\19.jpg] [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\20.jpg]
+
+  II III
+
+et que celui-ci (V) se tresse comme celui-là (IV) :
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\18.jpg] [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\16a.jpg]
+
+V IV
+
+La métaphore du nœud borroméen à l’état le plus simple est impropre.
+
+C’est un abus de métaphore, parce qu’en réalité il n’y a pas de chose qui supporte l’Imaginaire, le Symbolique et le Réel. Qu’il n’y ait pas de rapport sexuel, c’est ce qui est l’essentiel de ce que j’énonce.
+
+Qu’il n’y ait pas de rapport sexuel parce qu’il y a un Imaginaire, un Symbolique et un Réel, c’est ce que je n’ai pas osé dire.
+
+Je l’ai quand même dit.
+
+Il est bien évident que j’ai eu tort, mais je m’y suis laissé glisser... je m’y suis laissé glisser tout simplement.
+
+C’est embêtant, c’est même plus qu’ennuyeux.
+
+C’est d’autant plus ennuyeux que c’est injustifié.
+
+C’est ce qui m’apparait aujourd’hui, c’est du même coup ce que je vous avoue. Bien !
+
+16 janvier 1979 Table des séances
+
+Je suis plutôt embêté de ce que je vous ai annoncé la dernière fois, à savoir qu’il faut un troisième sexe.
+
+Ce troisième sexe ne peut pas subsister en présence des deux autres.
+
+Il y a un forçage qui s’appelle l’initiation.
+
+La psychanalyse est une anti-initiation.
+
+L’initiation, c’est ce par quoi on s’élève, si je puis dire, au Phallus.
+
+Ce n’est pas commode de savoir ce qui est initiation ou pas.
+
+Mais enfin l’orientation générale, c’est que le phallus, on l’intègre.
+
+Il faut bien qu’en l’absence d’initiation, on soit homme ou on soit femme. Bon.
+
+Je m’en vais vous parler de quelque chose qui est une tresse à cinq.
+
+Vous voyez ici il y en a deux qu’il franchit au-dessus et deux qu’il franchit au-dessous.
+
+Il faudrait redoubler cette séquence, c’est-à-dire ici (bas du schéma de la tresse)
+
+On peut voir ici dans notre dessin deux fois reproduit qu’il y a une trame qui concerne....
+
+Bon c’est ennuyeux que je m’embrouille, mais je dois dire que je dois avouer que je m’embrouille.
+
+Bien. Ça sera assez pour aujourd’hui.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\21.jpg]
+
+20 février 1979 Table des séances
+
+Lacan
+
+Je suis embêté à cause du borroméen généralisé.
+
+Je ne peux pas croire que les [nœuds borroméens] généralisés, ça soit :
+
+-   4 moins 2,
+
+-   5 moins 3,
+
+-   6 moins 4,
+
+-   7 moins 5,
+
+-   8 moins 6.
+
+Je ne peux pas le croire parce que dans tous ces cas, il y a 2 de différence
+
+et que ceci implique que de les prendre 2 par 2 ça soit neutre, que de les prendre 3 par 3 ça soit borroméen.
+
+J’ai le sentiment qu’il faudrait que la généralisation du borroméen s’étende à 4 et même - pourquoi pas - à 5.
+
+De sorte qu’il faudrait que ça ne soit pas 2 de différence qu’il s’agisse.
+
+La question est de savoir si tout est neutre avant 4, et même 5.
+
+Alors aujourd’hui je réserverai cette question et j’espère que je vous apporterai quelque chose la prochaine fois.
+
+Car il est un fait que le borroméen généralisé a toujours une différence de 2
+
+et qu’il faudrait bien que le borroméen généralisé procède autrement.
+
+Je voudrais aujourd’hui vous dessiner autre chose, c’est à savoir une bande de Slade.
+
+Chose curieuse, c’est la même bande que celle-ci, ce qui se voit en rabattant d’abord ceci,
+
+ça vous permet de rabattre ceci et ça aboutit, du même coup, à rendre identique ceci avec ceci.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\22.jpg] ← ceci = ceci →[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\23.jpg] si vous rabattez ceci
+
+En d’autres termes, en rabattant ceci, c’est-à-dire ceci, ça vous permet, celui-ci, de le rabattre d’une façon telle
+
+que c’est égal à ceci, c’est à dire aux 6 croisements de cette figure, alors que celle-ci en a 8.
+
+  [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\25.jpg]
+
+Peut-être cela m’aidera-t-il à résoudre la question du borroméen généralisé.
+
+Questions
+
+Posez la question.
+
+M^(me) Mouchonnat :
+
+Excusez-moi, Monsieur, de vous poser une question dans mon style, c’est-à-dire assez naïf,
+
+je pense que je ne suis pas la seule ici d’ailleurs, mais vous y répondrez si vous pensez que ça vaut la peine,
+
+c’est une question qui, pour moi, vaut.
+
+On en est à 6 et 8, or je suis complètement dépassée... Jusqu’à 3, ça va !
+
+Je me pose la question, à vrai dire depuis que vous [...]
+
+X
+
+[...] avons avancé, il n’y a pas longtemps, il y a à peu près deux séminaires,
+
+que peut-être la métaphore du nœud borroméen, c’est-à-dire les 3...
+
+  je m’arrête là pour le moment
+
+...ça ne convient pas pour rendre compte du R.S.I.
+
+Alors je ne sais pas ce qu’il en est de mes camarades, ça m’a beaucoup touché, ça m’a paru extrêmement important, je pense que même on pourrait dire qu’il y a de quoi ne plus dormir, ce qui est peut-être pas mal.
+
+Alors voilà un petit peu mes réflexions : le nœud borroméen, comme tout ce qu’amène Lacan, il faut...
+
+  en tout cas, pour moi, c’est comme ça
+
+...il me faut quelques années pour comprendre, entendre...
+
+Bon, j’en suis arrivé à un petit peu entendre ce que c’est que le nœud borroméen
+
+et en tout cas, moi, ça me sert dans l’analyse. C’est un moyen.
+
+Mon truc, c’est pas les mathématiques, je m’en fiche comme de ma première liquette, je dirai même plus !
+
+Mais c’est un moyen pour une fin, c’est-à-dire que ça me permet de mieux me démêler avec ce qu’est la psychanalyse. Alors l’intérêt du nœud borroméen, c’est que c’est une façon d’écrire le R.S.I.
+
+En gros - bon, je le rappelle- il y a trois ronds qui s’attachent, au milieu il y a un trou : c’est le petit a.
+
+Mais ils s’attachent d’une certaine façon, ça c’est très important - non ? –
+
+je crois que depuis le temps qu’on nous le serine ça, jusque là c’est fait, le travail d’avoir saisi...
+
+Quand même, je veux dire quelque chose, c’est qu’à propos du nœud borroméen,
+
+l’intérêt que Lacan a suscité chez moi, avec tout ça, je le vois à deux niveaux :
+
+d’abord il nous a fait une monstration qui a duré, qui dure, qui est une vraie démonstration,
+
+c’est-à-dire, il se collète avec le Réel, il s’emmêle, il nous le montre, je dirais même qu’il y met une certaine complaisance, et je pense que c’est une leçon, enfin pour moi, c’en est une.
+
+Le deuxième niveau, ça m’intéresse parce que, comme je le disais, ça m’aide pour travailler dans la psychanalyse. Alors pour en revenir à nos moutons, je dirais que c’est-à-dire une histoire de bélier,
+
+en gros, je reconnais là une histoire de bélier, c’est-à-dire
+
+-   le corps primordial qu’on incorpore, comme chacun sait, dont l’origine est peut-être mythique, enfin je le mettrais plutôt du côté du R, du Réel,
+
+-   et puis il y a, deuxième, c’est le « Tu dois une vie à ton père », le S à peu près...
+
+Non, bien sûr, je me suis trompé pour le premier, c’est l’Imaginaire que je voulais dire, le bélier, le corps imaginaire.
+
+-   et ensuite le Symbolique du côté de Jéhovah : « Tu dois une mort à Dieu ». Quel dieu, peu importe! La question de dieu se pose à chacun, comme chacun sait, même aux athées.
+
+Bon, alors, moi ça me sert le nœud borroméen.
+
+Je dois dire que quand Lacan nous dit, il y a 2 ou 3 séances, que peut-être que cette métaphore ne convient pas, vraiment ça m’a bouleversée. Alors, voilà, je me suis dit : « ça ne convient pas », ça veut dire quoi ?
+
+Enfin il a dit quelque chose...
+
+  Je n’ai pas retrouvé mes notes, je les ai prêtées à quelqu’un, je n’ai pas pu revoir exactement
+
+...mais c’était quelque chose, enfin il y avait un adjectif en « able » du genre « c’est pas convenable »,
+
+c’était peut-être un autre... disons « injustifiable » ?
+
+Alors, c’est injustifiable, je me suis dit : pourquoi c’est injustifiable ?
+
+Injustifiable, ça veut dire que notre démonstration ne convient pas bien, notre modèle que nous avions avancé...
+
+  je dis nous parce qu’on assiste à son séminaire, et même après quelques années
+
+  je pense qu’on assiste son séminaire, c’est pour cela que je me permets de parler
+
+...bon, alors c’est « injustifiable »
+
+-   parce que ce modèle ne convient pas, on s’est trompé quelque part, comme on sait bien qu’on fait, c’est à revoir, retourner un peu en arrière,
+
+-   ou bien alors, vraiment ça ne peut pas convenir, ce modèle ne peut pas convenir ?
+
+Alors voilà, ma question arrive là - pour moi c’est une question importante.
+
+Il a dit : cette métaphore est, disons, « injustifiable ».
+
+Alors est-ce qu’on peut dire qu’une métaphore est liquidée parce qu’elle n’est pas bien... juste ?
+
+Moi, je pense que non, une métaphore, ça n’est jamais tout à fait juste sinon ça ne serait pas une métaphore.
+
+Seulement on ne peut pas parler si on n’utilise pas des métaphores,
+
+et dans ce sens le nœud borroméen, ça m’est utile comme métaphore.
+
+Alors je l’entends un tout petit peu du côté de la métaphore paternelle, mais peut-être que je comprends mal Lacan. La question que je voudrais poser, c’est celle-ci : est-ce que simplement c’est un problème de mathématiques,
+
+auquel cas, je suis tranquille, enfin ça ne m’intéresse pas, pas spécialement, non vraiment !
+
+Mais si le R.S.I, cet arrangement particulier de ces trois catégories, liées comme elles le sont, avec ce trou au milieu, c’était la métaphore paternelle ou bien peut-être en ajoutant un quatrième rond, comme ça a été évoqué,
+
+peut-être Freud avait joué avec le père comme ça, à l’autre rond là...
+
+Bon, eh bien, si ça ne convient pas, ça nous entraîne loin, je crois que c’est une question très importante.
+
+Enfin la question...
+
+  mais je crois que c’est pas très clair ce que je dis, je le dis comme je le peux
+
+...la question que je pose à Lacan, c’est : sommes-nous, nous tous, emmêlés dans des nœuds là devant des difficultés proprement mathématiques, mais ça n’a-t-il pas des incidences, puisque quand même il nous parle
+
+dans la psychanalyse là, pour la psychanalyse ?
+
+Est-ce que ça ne nous réinterroge pas dans nos catégories psychanalytiques ?
+
+Est-ce qu’il n’y a pas là quelque chose au niveau des noms du père qui serait à réajuster ?
+
+On se serait trompé :
+
+-   ou notre modèle ne convient pas,
+
+-   ou il faut repenser quelque chose au niveau de la métaphore paternelle.
+
+Alors la troisième solution étant qu’évidemment je n’aie pas compris, ce qui n’est pas du tout exclu, c’est sûr...
+
+Lacan
+
+Ce qui me tracasse dans le nœud borroméen, c’est une question mathématique
+
+et c’est mathématiquement que j’entends la traiter.
+
+X
+
+Docteur, permettez-moi de rectifier votre troisième schéma.
+
+Dans le cadre de la bande de Slade, si on donne 1-2-3 à l’ordre de départ, ça arrive en bas en 1-2-3,
+
+mais dans le cadre du troisième schéma, si c’est 1-2-3 au départ, c’est 2-3-1 à l’arrivée.
+
+Lacan
+
+C’est tout à fait vrai...
+
+C’est tout à fait vrai, mais je suis embrouillé.
+
+Bien, je vous dis au revoir. J’essaierai de faire mieux la prochaine fois.
+
+13 Mars 1979 Table des séances
+
+Il y quelque chose que je vous ai dit : pourquoi n’y aurait-il pas un troisième sexe ?
+
+Tout ça vient de ce que j’ai étudié le borroméen généralisé.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\24ba.jpg]→ [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\24bb.jpg]
+
+→ [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\24bc.jpg] → [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\24bd.jpg]
+
+Nœud dénoué
+
+Le borroméen généralisé, il va de soi que je n’y comprends rien, je m’embrouille...
+
+Je m’embrouille, ce dont vous témoigne le fait qu’en écrivant au tableau,
+
+je m’y suis, c’est le cas de le dire, absolument embrouillé.
+
+Je voudrais aujourd’hui vous faire sentir que le borroméen généralisé, ce n’est pas une petite affaire...
+
+Je m’embrouille et je vous congédie de ce fait.
+
+20 mars 1979 Table des séances
+
+Il y a quelqu’un qui m’a écrit pour me dire ce qu’il avait pensé de mon dernier séminaire.
+
+Eh bien, à la vérité, ce que j’avais fait était ça : c’est un borroméen généralisé [ I ]...
+
+  alors que la personne qui m’a écrit l’a réduit à ce qui est [un borroméen] normal [ II ],
+
+...à savoir que ceci [bo. généralisé] a été découvert en mettant en continuité ces deux : vert et noir [ III ].
+
+Le vert et le noir sont là.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\27b.jpg] [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\26b.jpg] [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\26a.jpg]
+
+I II III
+
+Une autre façon de le résoudre :
+
+-   ça serait de mettre en continuité ce que j’ai dessiné d’abord en jaune (orange) et ce que j’ai dessiné en rouge [ II ],
+
+-   ou bien encore de mettre en continuité ce que j’ai dessiné là en rouge avec ce que j’ai dessiné en noir [ II ].
+
+La question est de savoir ce qui est homotopique : ce qui est homotopique est à l’intérieur d’une consistance [ IV ].
+
+J’ai commis la dernière fois, quelque chose qui était de cet ordre [ IV ],
+
+je veux dire qu’à l’intérieur d’une même corde l’homotopie consiste à pouvoir transgresser la figure.
+
+Il en résulte que le nœud se défait. Il suffit de traverser la corde en un point *. C’est de la même corde qu’il s’agit.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\27.jpg] → [C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\27b.jpg]
+
+1^(er) état 2^(ème) état
+
+IV V
+
+X - Il faut que la même corde se traverse en trois points.
+
+Lacan : Oui, vous croyez cela.
+
+X :
+
+-   La torsion à droite... pardon : la torsion à gauche en haut,
+
+-   à droite en bas
+
+-   et à gauche...
+
+Si vous ne corrigez qu’un point, comme vous l’avez dit, elle ne se dénoue pas.
+
+Lacan : vous croyez qu’en modifiant ceci, elle ne se dénoue pas ? Alors il faut modifier ces points-là ?
+
+X : (inaudible)
+
+Lacan : Bien. Au revoir !
+
+8 mai 1979 Table des séances
+
+Lacan - Je vais passer la parole à Alain Didier-Weill
+
+Alain Didier- Weill
+
+Je ne vous demanderai pas d’être indulgent avec ce que je vais essayer de vous dire,
+
+mais tout au moins de tenir compte de ce que c’est un travail qui a été préparé dans la hâte,
+
+voire la précipitation, puisque le D^(r) Lacan m’a demandé de vous en faire part hier.
+
+Alors tenez compte que ça n’a pas la qualité vraiment d’un écrit.
+
+Et je vais essayer de vous transmettre, je vais essayer de vous rendre compte de la rencontre,
+
+je dirai de deux enseignements, que je reçois
+
+-   et de Lacan,
+
+-   et du dialogue analytique.
+
+Double rencontre en ce qu’il m’a fallu longtemps je dirai, pour repérer en quoi et comment
+
+les élucubrations qui se sont trouvées s’imposer à moi dans le cadre du dialogue analytique,
+
+en quoi finalement ces élucubrations étaient
+
+-   d’une part inscriptibles sur le graphe dont - je dois vous dire - les ressources n’ont pas fini de m’étonner,
+
+-   et d’autre part, en s’inscrivant, inscriraient comme je vais essayer de vous le montrer, une relation articulée entre la topologie et le temps, c’est-à-dire rencontraient finalement le thème du séminaire de cette année.
+
+En l’occurrence , cette articulation entre topologie et temps que j’ai soumise au D^(r) Lacan se supporte d’un repérage, dont je vais maintenant essayer de vous rendre compte, d’une dialectique de la parole du sujet parlant
+
+en tant qu’habité je dirai, par un certain rythme temporel, rythme à trois temps comme la valse,
+
+qui exigerait finalement que le sujet ait à compter jusqu’à trois pour dire un mot.
+
+Ce rythme à trois temps, je vais essayer de vous transmettre la façon dont il m’apparait inférable
+
+à l’existence de trois surmoi, représentant chacun synchroniquement dans la structure et diachroniquement
+
+une étape nécessaire de franchissement pour qu’advienne la parole.
+
+Je vais annoncer, si vous voulez, d’emblée la couleur avant la démonstration proprement dite
+
+et provisoirement donc, j’avance ce que je vais essayer de soutenir, c’est qu’il y aurait :
+
+-   un 1^(er) surmoi dont la fonction serait d’enjoindre au sujet : « tu ne diras pas un mot »,
+
+-   un 2^(ème) surmoi dont la fonction serait d’énoncer « tu n’en diras pas deux »,
+
+-   un 3^(ème) dont la fonction serait : « tu n’en diras pas trois ».
+
+Dans la mesure où dans le cadre d’une séance de séminaire ça me parait ardu d’exposer point par point cette notion, il faut bien prendre un fil : l’idée qui m’est venue pour rentrer dans cette histoire est de me supporter
+
+d’un petit apologue de Freud, et ce petit apologue c’est celui que prend Freud dans la Traundeutung
+
+la 1ère fois qu’il introduit le terme de « censure » qui est cet ancêtre du Surmoi, et dans la Traundeutung,
+
+si vous voulez vous y reporter, c’est après le commentaire que Freud fait du « rêve de l’oncle Joseph ».
+
+Alors cet apologue est le suivant. Si vous voulez, cet apologue va me permettre d’essayer de vous montrer
+
+en quoi la division du sujet est inférable à une division du surmoi.
+
+Dans cet apologue, Freud compare le surmoi, le censeur, à un souverain qui régnerait sur des sujets, et des sujets
+
+qui se trouvent en position de rebeller, de se révolter contre un ministre devenu impopulaire, cause de révolte.
+
+Ce que repère Freud tout de suite, c’est que les sujets ont à leur disposition leur révolte et ont un savoir élémentaire, le Roi, le censeur, est dans la position d’un savoir d’une autre structure, puisque la position du Roi est la suivante, c’est qu’il sait qu’il doit compter sur l’opinion publique, mais il sait qu’il doit faire comme si cette opinion publique
+
+ne comptait pas pour lui, c’est-à-dire que, schématiquement, la révolte éclate aux cris : « À bas le ministre ! ».
+
+Ce que dit Freud dans un premier temps, il dit : eh bien voilà, le censeur pour apaiser la révolte, il fonctionne comme quelqu’un qui ne considère pas que ses sujets sont représentés comme sujets par ce signifiant, « À bas le ministre ! »,
+
+et il fait donc comme si ses sujets parlant n’existaient pas comme tels, sans que se soit pour autant une provocation
+
+- ça c’est important- et il répond, on pourrait dire, par un message inversé, cette réponse étant le fait qu’il promeut
+
+le ministre à une distinction supérieure, c’est-à-dire qu’il répond à la limite, si vous voulez, par « En haut le ministre ».
+
+J’ai écrit ceci là, sur ces graphes, vous voyez, j’en suis au point (I) : le sujet dit un premier mot.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\28.jpg]
+
+Le premier mot, nous sommes sur la cellule élémentaire du graphe, un premier mot : « À bas le ministre ! ».
+
+À ce premier mot, le Surmoi répond, parce que le Surmoi il est bon prince, on pourrait dire.
+
+Il est bon prince parce qu’il dit : « Un mot : passe... pour un mot je passe, d’accord, mais n’insiste pas ! »
+
+c’est-à-dire pour un mot ça va, mais pas un deuxième.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\30.jpg]
+
+Et la stratégie du surmoi... c’est pour ça que vous voyez, le Surmoi, j’ai écrit cette réponse du surmoi en utilisant l’inversion de l’étage inférieur moïque, c’est-à-dire ce qui introduit le champ de la dénégation
+
+dans la mesure où la censure est alliée avec le moi à ce niveau-là.
+
+Et le message inversé qui consiste à écrire ici « En haut le ministre ! » : j’élève le ministre,
+
+eh bien, a pour effet, remarque Freud, de suspendre le message du sujet qui, alors qu’il disait : « À bas le ministre ! » , de l’effet de cette réponse du surmoi, le message va être interrompu et le sujet va la boucler.
+
+Je veux dire que Freud ne va pas plus loin que ce petit apologue, mais il a le mérite quand même de montrer
+
+que cette stratégie, s’il l’écrit ainsi, c’est qu’elle se révèle opérante, comme l’expérience l’apprend,
+
+et en quoi est-ce que c’est opérant, en quoi est-ce que cette réponse de la censure
+
+a-t-elle le pouvoir d’interrompre le message du sujet ?
+
+Une série de points...
+
+Si vous voulez, cliniquement vous pouvez repérer que l’injonction de la censure a ceci de particulier :
+
+ça peut vous évoquer qu’à son injonction le commandement surmoïque a ceci de particulier
+
+de s’opposer au commandant que serait un commandant à galon, c’est que le commandement surmoïque,
+
+il ne représente pas le sujet pour un autre signifiant, à l’opposé du commandant de division qui,
+
+s’il donne un ordre si féroce soit-il et qui voudrait se rapprocher de l’ordre surmoïque, n’y atteint pas.
+
+Si vous souscrivez à l’ordre du commandant de division, je dirais que ce n’est pas pour autant que vous êtes désubjectivés, c’est par exemple pour ne pas avoir d’emmerdements, pour avoir votre permission.
+
+Mais si vous obéissez à l’injonction surmoïque, c’est que vous êtes dans cette position que me disait d’une façon très pertinente une analysante: qu’est-ce qui fait que devant certains que je rencontre, qui me disent un mot si bête soit-il éventuellement, je suis dans l’impossibilité radicale de contredire, pas possible de dire non. Non.
+
+Ceci dit, ce qu’il faut - ça, c’est le premier point - ce qu’il faut comprendre, c’est que, comme je vous le disais...
+
+  parce que, vous le voyez, la censure a laissé passer un premier mot
+
+...l’important c’est de comprendre que « pour une fois ça passe, mais n’insiste pas ».
+
+« N’insiste pas », ça veut dire : n’en rajoute pas, et vous sentez là que ce « N’insiste pas », c’est la racine même
+
+de cette dimension qui saisit le sujet qui est celle de l’angoisse du ridicule. Regardez autour de vous, écoutez, observez vous-même : généralement l’angoisse du ridicule, l’angoisse du paraître con, de paraître idiot, voire de paraitre laid, n’est pas autre chose que l’obéissance finalement à cette idée : n’insiste pas, écrase, tu serais ridicule.
+
+Et effectivement le sujet, à ce moment-là, se dédit et quand il se dédit de cette façon-là, quand il se rétracte,
+
+il est dans la position de culpabilité la plus intense et il a raison de l’être parce que c’est ça la culpabilité :
+
+c’est de céder sur la responsabilité, c’est-à-dire sur la responsabilité à répondre.
+
+Autre point, si vous voulez : à la censure qui a laissé passer un mot, mais qui ne veut pas qu’un 2^(ème) mot soit dit, c’est-à-dire qui ne veut pas que ce 1^(er) dit soit soutenu par un 2^(ème) dit, dans le fond c’est tout ce que l’enseignement
+
+du rêve nous apprend... Regardez par exemple cet exemple qui a été commenté par Lacan
+
+dans « Les formations de l’inconscient », ce rêve que vous connaissez, je pense : une analysante rêve sur le mot « canal »,
+
+je ne reprends pas le rêve en détail, mais la signification, à l’issue de l’interprétation du rêve, révèle que le mot « canal », elle veut dire là à Freud : « Vos théories me font bidonner, c’est pas sérieux ».
+
+La censure laisse passer le mot « canal ». Ce qu’elle ne laisse pas passer, c’est que le sujet disant « canal » reconnaît que s’il soutenait ce mot là, c’est-à-dire que s’il voyait d’où il parlait, ça le mettrait en position de dire à Freud :
+
+« Vos théories me font marrer, ne sont pas sérieuses ». Et éventuellement on peut penser que si elle avait dit à Freud
+
+dans le cadre de sa séance : « Vos théories, du sublime au ridicule, il n’y a qu’un pas ! », si elle le lui avait dit,
+
+elle aurait fait l’économie de ce rêve.
+
+Donc la censure, comme vous le voyez, ne voulant pas que le 1^(er) mot soit confirmé par un 2^(ème) mot, ce à quoi la censure fait obstacle, c’est que le sujet trouve en lui le point d’au-delà d’où il peut soutenir le 1^(er) dit qu’il a avancé.
+
+Autre point décisif que je veux souligner avant d’aller plus loin, c’est que le sujet ayant dit un mot,
+
+il ne fait pas de doute qu’il est un sujet parlant. La censure va avoir une autre stratégie :
+
+comme il ne fait pas de doute, il va prendre, je dirais, le biais de rendre le sujet douteux, c’est-à-dire que le sujet
+
+est mis en position, s’il insistait, d’être confronté à un autre qui est en position de le soupçonner.
+
+Quelle est la différence entre, un sujet « soupçonné » ou un sujet « supposé » ?
+
+Eh bien, je dirais
+
+-   qu’un sujet supposé c’est un sujet qui est éventuellement supposé pouvoir vous surprendre,
+
+-   un sujet soupçonné, à l’encontre, c’est un sujet dont fondamentalement rien ne saurait surprendre venant de lui, puisqu’il y a, par rapport au sujet soupçonné, une prévention, une présomption plus exactement, et que rien de lui ne saurait surprendre : quoi qu’il dise, ça sera intégré quelque part et ça n’aura rien de surprenant.
+
+Si vous voulez, vous voyez par là que nous sommes très proches, ce censeur, il est très proche du « non-dupe »
+
+dont nous a parlé Lacan en son temps, il en est très proche parce qu’il est dans la position :
+
+  « tu ne m’auras pas, on ne me la fait pas, quoi que tu disais je sais où situer ce que tu as à dire
+
+  et dans cette position de méfiance, de soupçon, je t’ai à l’œil, je ne serai pas surpris. »
+
+Je débouche là sur un point tout à fait fondamental, c’est qu’une fonction tout à fait décisive de la censure...
+
+  c’est un point qui, à mon avis, n’a pas assez été retenu
+
+...est de considérer ce prévenu qu’est le sujet pour elle, de prévenir toute surprise possible venant de lui
+
+et en particulier - ça c’est textuellement dans Freud - Freud dit qu’une des fonctions de la censure
+
+est de dépouiller de son intensité ce qu’il appelle « le signifiant de haute valeur psychique ».
+
+Ce signifiant de haute valeur psychique autour duquel je vais centrer ce travail, c’est - je vous le signale en passant -
+
+le signifiant qui est la cause du rêve, c’est le signifiant que le sujet a rencontré dans la journée
+
+et auquel ayant été confronté il est resté coi, bouche bée, sans répondant et avec l’esprit d’escalier qui caractérise ce sujet qui n’a pas pu répondre, il lui faut le temps d’incubation de la journée et il n’arrive à répondre que dans la nuit avec l’aide d’un rêve à ce signifiant qui l’a, pour l’instant interloqué avant de voir de plus près de quoi il retourne.
+
+Le problème de la censure, c’est que sa fonction c’est surtout de prévenir le sujet contre le fait qu’il puisse accéder
+
+à cet état de fading, de sidération par ce signifiant de haute valeur psychique qui est donc dépouillé de son efficace.
+
+Encore un mot de ce censeur, ou ce « non-dupe », vous pouvez imaginer que c’est dans la mesure où le fait de ne pas pouvoir être surpris nécessite chez lui le développement - je crois qu’on peut le dire- d’une intelligence importante, puisqu’il aura réponse à tout, rien ne saurait le surprendre.
+
+Maintenant je vais me permettre de continuer cet apologue que Freud avait commencé, et de faire un peu de fiction.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\30.jpg]
+
+On en est là : « n’insiste pas ».
+
+Effectivement le sujet s’est désisté, il n’a pas insisté sous l’effet de ce que je viens d’essayer de dire.
+
+Maintenant rien ne nous empêche d’imaginer quelles sont les conditions qui permettraient au 1^(er) mot dit par le sujet...
+
+  c’est-à-dire « À bas, le ministre ! »
+
+...quelles seraient les conditions qui feraient que cet « À bas, le ministre ! » revienne, c’est-à-dire soit repris.
+
+Alors là on pourrait - je passe un peu - mais on pourrait en détaillant les choses,
+
+montrer par quel processus le sujet accéderait au savoir ou à la tromperie qui est celle du censeur.
+
+Mais pour l’instant retenons cette idée : c’est qu’à un moment donné, après un temps, disons d’effacement du sujet,
+
+de silence, se reproduit un 2^(ème) mot par lequel le sujet reprend sa révolte, c’est-à-dire : « À bas, le ministre ! ».
+
+Mais, vous voyez, ce 2^(ème) mot ne s’écrit pas sur le graphe
+
+-   de la même façon,
+
+-   c’est-à-dire au même lieu,
+
+-   c’est-à-dire que ça peut être le même mot, il n’est pas le même parce qu’il est situé topologiquement tout à fait différemment.
+
+Alors quel est l’impact de ce 2^(ème) mot, de cette reprise disons de la révolte, quel est son impact, qu’est-ce qui se passe quand il se situe à cet étage supérieur du graphe, c’est-à-dire quand il reprend le fait qu’il se soit dédit et il ne se dédit pas dans un premier temps. C’est l’amorce de la persévération.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\31.jpg]
+
+Je dirais qu’il y a deux éléments qui concourent à la production de ce 2^(ème) mot :
+
+-   je dirais d’abord, il y a l’insistance de répétition, c’est-à-dire de la production de cet au-delà d’où le sujet peut répondre de son 1^(er) dit,
+
+-   et puis il y a ensuite le fait que cette relation d’ordre imaginaire avec le censeur qui prend comme point d’appui la haine, la haine du persécuteur et qui représente un point d’appui pour le sujet, dans cette relation spéculaire de « Tu ne m’auras pas, tu ne feras pas taire, c’est moi qui aurait le dernier mot », il y a cette dimension dans cette reprise également.
+
+Maintenant une fois que le mot a été dit, il se passe quelque chose de tout à fait important qui est la chose suivante, une fois que le mot une 2^(ème) fois a été dit : « À bas, le ministre ! », ce qui se passe c’est que le censeur qui disait :
+
+« Tu ne diras pas deux fois », le censeur est en position j’allais dire d’être censuré, mais en tout cas : le censeur, on passe outre, c’est-à-dire que le censeur devant cette position, sa vocation de censeur, sa fonction n’a plus lieu d’être
+
+et je crois qu’on peut avancer là que le censeur est objectivement sidéré.
+
+Que le censeur soit objectivement sidéré se traduit par le fait que le sujet est alors déshabité par la censure
+
+qui le déshabite littéralement, et ce vide qui se fait en lui du fait de cette censure qui le déshabite,
+
+c’est le sujet qui en reçoit le contrecoup qui est, lui, d’être sidéré.
+
+Prenons un exemple tout bête dans les étapes de la Révolution Française, quand après les premières émeutes,
+
+un matin le peuple de Paris ayant appris que son 16^(ème) censeur s’était enfui à Varennes, avait abdiqué, en était sidéré. Michelet raconte dans les « Mémoires » que pendant quelques heures dans la matinée, le peuple de Paris
+
+était littéralement comme sidéré, c’est-à-dire sans voix, du fait que brusquement la consistance de l’autre,
+
+qui était là pour soutenir une relation persécutive de censeur, disparaissant, le sujet du coup c’est lui qui en recevait
+
+le contrecoup que j’appelle de sidération. Je m’expliquerai après sur ce mot d’avantage.
+
+Ce qui va se produire, c’est que dans le vide qui se produit du fait de la sidération de la censure, dans ce vide-là,
+
+à ce moment-là, ce vide va laisser le champ au surgissement effectivement de quelque chose de nouveau
+
+et de radicalement surprenant et étonnant, qui est - comme je vous l’ai écrit sur le graphe -
+
+la voix que Lacan dit quelque part « mugissante » du « Che vuoi ? » c’est-à-dire que la censure est sidérée.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\32.jpg]
+
+Le contrecoup de cette sidération fait que ce que j’appelle, dans la façon dont je présente les choses ce matin,
+
+« le 3^(ème) surmoi » va se faire entendre.
+
+C’est-à-dire que dans ce vide constitué, à ce moment-là le sujet entend ce « Che vuoi ? »
+
+et ce qui apparaît de tout à fait nouveau, c’est que ce « Che vuoi ? » n’a plus la consistance d’un censeur persécutif,
+
+ce « Che vuoi ? » n’est pas quelqu’un qui répond, qui donne des réponses comme un censeur puisque la réponse énigmatique, radicalement énigmatique et étonnante...
+
+  mais quand je dis étonnante, c’est au sens fort, il faut entendre le mot tonnerre
+
+...c’est que ce « Che vuoi ? », il donne une réponse qui est une question : « Che vuoi ? ».
+
+Alors vous voyez que le surgissement de ce « Che vuoi ? » dont l’origine est le signifiant de l’Autre,
+
+qui est en rapport avec le signifiant du Nom du Père, mais j’essayerai peut-être de mieux le soutenir tout à l’heure,
+
+dont je dirais qu’à ce moment-là tout se passait comme si le signifiant du Nom du Père chutait dans le Réel,
+
+qu’il avait cet effet : il fonctionne à ce moment-là ce « Che vuoi ? » comme ce « signifiant de haute intensité psychique »
+
+que Freud met à la racine de la cause du rêve.
+
+Et ce « Che vuoi ? » il met à ce moment-là le sujet en position de soutenir son désir avec d’autres coordonnées
+
+que celles par lesquelles il le soutenait quand par exemple il avait repris sa révolte ici :
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\31.jpg]
+
+...mais avec comme point d’appui un persécuteur qui, s’il était inconscient, était quand même articulé à la structure du moi, parce que la censure et le moi travaillent en collaboration.
+
+Donc ce qu’on peut dire, ce que je dirais, si vous voulez, du surgissement du « Che vuoi ? »,
+
+ce que je dirais, du surgissement du « Che vuoi ? », c’est que la question qui est renvoyée au sujet, c’est :
+
+  « Bon, je prends acte du fait que tu as insisté et maintenant qu’est-ce que tu vas faire. C’est-à-dire est-ce que cette insistance,
+
+  tu vas pouvoir la soutenir par un 3^(ème) mot, est-ce qu’un 3^(ème) mot va te permettre de trouver les coordonnées
+
+  d’articuler un 3^(ème) mot, un 3^(ème) signifiant qui va faire que cette insistance, tu vas la transmuter en persévérance ? »
+
+« Persévérance », entendez là le « perseverare diabolicum » que Freud avait repéré dans la compulsion de répétition
+
+qu’il avait alors qualifiée de « démoniaque ».
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\32.jpg]
+
+Vous voyez que tout à l’opposé du censeur...
+
+  qui, lui, serait en position de dire : « Pour une fois je passe : errare humanum est »,
+
+  « l’erreur n’est pas grave » en un mot
+
+...là où ça devient grave, c’est si l’insistance se transforme en persévérance.
+
+Quelques mots maintenant sur l’effet de ce signifiant sidérant qu’est le « Che vuoi ? ».
+
+Il est repérable, ce signifiant sidérant, dans de nombreux écrits de Freud :
+
+il est repérable dans la Traumdeutung, mais sans que Freud ait fait un lien entre ses différentes manifestations.
+
+Dans la Traumdeutung donc, il le situe après le rêve en particulier de « la monographie botanique »,
+
+il le situe comme ce « signifiant de haute intensité psychique » cause du rêve.
+
+Il est situé également dès le début dans le premier chapitre de la « Psychopathologie de la vie quotidienne »,
+
+le premier exemple, l’exemple de Signorelli qui est fondé sur le refoulement du signifiant « Herr » (seigneur),
+
+ce signifiant « Herr », on peut dire incarne en tant que signifiant du père mort, incarne cette question du « Che vuoi ? » que Freud dans cet exemple s’emploie à ne pas entendre, mais parce que Freud est Freud
+
+il se trouve que ça ne tombe pas aux oubliettes et qu’il va aller le repêcher et le retrouver et l’articuler
+
+en son nom propre à la fin et il en fait un écrit.
+
+C’est repérable également, ce signifiant sidérant, dans « Les mots d’esprit... » quand Freud repère que la dialectique
+
+par laquelle l’éclat de rire survient, il la décrit après une dialectique qu’il appelle « sidération et lumière » :
+
+dans un 1^(er) temps, l’auditeur reçoit le mot et avant d’éclater de rire, avant que la métaphore accomplisse son œuvre,
+
+il y a un temps de sidération où le sujet est en suspens.
+
+Le terme de Freud pour qualifier ce signifiant sidérant qui...
+
+je ne dis pas que ce mot « sidérant » est la meilleur traduction, c’est la traduction qui est proposée par Marie Bonaparte et Nathan dans « Les mots d’esprit... », c’est la traduction du terme Verblüffung. Voici ce que le dictionnaire,
+
+le catalogue des mots que donne le dictionnaire sur Verblüffung : foudroyé, étonné, sidéré, interloqué, atterré, stupéfié, abasourdi.
+
+Enfin, vous voyez, par cette constellation de signifiants, il y a la notion d’une position subjective par laquelle le sujet serait frappé d’imbécillité ou il resterait sans mot.
+
+Et vous voyez que trois directions finalement s’imposent de ce cernage par ce signifiant :
+
+-   je dirais qu’une 1^(ère) direction désigne la nature de ce qui se manifeste au « parl’être » qui est le surgissement d’une manifestation inattendue du Réel : par le sidéral, par le tonnerre, par la foudre, le sujet se trouve étonné, foudroyé, sidéré.
+
+-   2^(ème) direction qui regroupe des signifiants évoquant la réponse du sujet à cette manifestation du Réel par laquelle le sujet consiste à choir du lieu symbolique où il se soutenait équivoquement entre 2 signifiants, à choir de façon univoque, comme cette loque qu’est l’objet (a), dans le réel,
+
+  et ces signifiants nous disent qu’alors le sujet tombe des nues interloqué, comme une loque. Où tombe-t-il effectivement ? Il tombe là où on tombe : par terre, il est atterré.
+
+-   Et la 3^(ème) direction qui s’impose de ce cernage, c’est de repérer le moment d’immobilité, d’imbécillité stupide,
+
+  à laquelle est réduit le sujet fixé à terre, puisque là ce sont les termes de stupeur, stupidité, stupéfié...
+
+  qui en ancien français veut dire paralysé,
+
+  ...qui qualifient cette impossibilité de déplacement par laquelle le corps, pas plus que la parole, ne peuvent être dits de ce que le sujet reste interdit.
+
+Bon. Vous voyez donc qu’après ce « Che vuoi ? » redoutable, il se trouve que le sujet peut abdiquer :
+
+-   il a encore le temps, c’est le cas de Freud quand le « Herr » terrifiant surgit dans un premier temps,
+
+-   et puis il se trouve pouvoir insister et prolonger son insistance et le défi du « Che vuoi ? »,
+
+-   il ne lui reste qu’une voix et il l’articule ici :
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\32.jpg]
+
+C’est - vous voyez, j’ai marqué - à ce moment-là le sujet pour la 3^(ème) fois dit : « À bas le ministre ! ».
+
+Cette 3^(ème) fois, c’est toujours le même mot, mais j’espère vous faire sentir que même si c’est le même mot,
+
+ce n’est pas du tout le même mot, c’est-à-dire qu’il est situé dans de tout autres coordonnées que celles qui lui ont fait dire
+
+-   « À bas le ministre ! »n° 1,
+
+-   « À bas le ministre ! » n° 2.
+
+Dans celui-ci qui intervient, il y a cette inversion du « Che vuoi ? », dont la formule est : « Que veux-tu ? », cette inversion...
+
+-   qui part d’ici au niveau de la Demande où le sujet est en position de se demander : « Je me demande ce que tu veux et... »,
+
+-   joignant, arrivant jusqu’au fantasme : « ...ce qu’est je ».
+
+Vous voyez qu’au niveau du fantasme il y a 2 flèches divergentes et que le franchissement est possible
+
+avec la production de ce 3^(ème) mot écrit par Lacan : S(A) et que la production de ce signifiant, 3^(ème) mot,
+
+a ceci de tout à fait énigmatique, je dirais que c’est le mot le plus risqué qui soit,
+
+parce que c’est un mot qui engage à quelque chose de radicalement énigmatique puisqu’il engage le sujet
+
+-   à ne plus se désister sur son insistance,
+
+-   à ne plus se désister sur une promesse quant à son désir, une promesse qui a ceci d’énigmatique, c’est qu’elle n’est pas un serment qui a un contenu explicite, elle est promesse d’il ne sait quoi, simplement de soutenir ce désir sans même savoir ce qu’il est.
+
+Vous voyez qu’on arrive donc au terme de ces schémas à l’idée que 3 temps intérieurs doivent être franchis
+
+pour que le sujet articule le mot qui dans l’existence engage son être.
+
+Peut-être sommairement on peut voir une métaphore de ce chiffre 3
+
+-   dans le fait qu’une représentation au théâtre par exemple, s’annonce par « toc-toc-toc », les 3 coups,
+
+-   par le fait que sans même que vous comptiez sur vos doigts, si vous vous annoncez à la porte de quelqu’un, vous ferez « toc-toc-toc » sans compter ça se fait tout seul.
+
+Maintenant... vous voyez je me suis permis de qualifier
+
+-   le 2^(ème) Surmoi de fascinant,
+
+-   le [3^(ème)] Surmoi « Che vuoi ? » de sidérant parce qu’il me paraît qu’il y a un certain nombre de raisons...
+
+  je ne vais peut-être pas avoir le temps de les développer là vraiment
+
+  ...mais il y a un certain nombre de raisons qui nous autorisent à repérer que le surmoi procède de la structure d’un regard.
+
+Par regard, il ne faut pas entendre quelque chose qui a un rapport quelconque avec l’organe de la vue.
+
+Par regard, j’entends quelque chose tel que Lacan l’articule dans le Séminaire XI
+
+où il montre qu’un sujet peut être brusquement sous le regard de l’Autre alors que surpris dans la forêt ou à l’affût, c’est un bruit où un craquement qui s’imposent à lui comme la dimension d’une présence regardante
+
+qui n’a rien à voir avec le problème de la vue.
+
+Rien n’illustre d’ailleurs mieux cette incarnation du regard que, par exemple, les films de Fritz Lang
+
+où il met si souvent en scène des aveugles, des aveugles qui précisément incarnent, on ne peut mieux,
+
+cette présence surmoïque du regard.
+
+Alors je reviens puisque j’ai dit au début que je pensais qu’on pouvait isoler 3 « surmoi ».
+
+Le 1^(er) Surmoi qui me paraît isolable, je l’ai appelé surmoi médusant, surmoi fascinant, surmoi sidérant.
+
+Surmoi médusant, vous voyez là je l’ai illustré du fait qu’il dirait : « Pas un mot » (I).
+
+Et je pense qu’on peut l’incarner de la façon la plus élémentaire du graphe de Lacan,
+
+c’est-à-dire que les lignes Δ et SS’ ne crochent pas.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\28.jpg]
+
+I
+
+Ce surmoi médusant, il me semble qu’on pourrait le repérer comme étant ce qui est à l’œuvre
+
+dans l’univers de certains psychotiques, c’est-à-dire un univers dans lequel le sujet est littéralement médusé,
+
+c’est-à-dire sous le regard de cette Méduse qu’est son Autre...
+
+  je vous rappelle que sous le regard de la Méduse un sujet est pétrifié, c’est-à-dire que
+
+  pour l’éternité, il n’y a plus de temps, il n’y a plus de diachronie,
+
+  pour l’éternité il est figé, il perd la disposition du mouvement langagier ou du mouvement corporel
+
+...on peut ajouter que le psychotique, pensez au petit Dick dans le Séminaire II, est un être qu’on pourrait dire invisible, il se considère comme invisible en tant qu’il serait regardé de partout.
+
+Vous entendez effectivement certains schizophrènes qui qualifient ce regard qui vient de partout,
+
+ils sont regardés par les animaux, par tout les gens qu’ils croisent dans le métro, par le soleil, par les étoiles.
+
+Le problème, c’est que ce regard médusant, ce regard qui serait le surmoi le plus féroce, le plus archaïque qui soit,
+
+qui ne donne pas la possibilité d’un mot, parce que sous le regard l’Autre dit :
+
+« Je sais tout de toi, tu n’as rien à dire, puisque mon regard fonctionne comme ce savoir absolu »,
+
+Le sujet n’est plus dans la dimension d’une supposition quelconque dans son rapport à l’Autre. Je vous ferai remarquer...
+
+  ça mérite tout de même la peine d’être marqué
+
+...que le regard chez le psychotique, par opposition au Surmoi chez le névrosé, participe...
+
+  en tout cas dans la Traumdeutung
+
+...participe de l’inconscient, la censure est inconsciente en partie et c’est pour cela que Freud l’a isolé très tardivement.
+
+Je vous ferai remarquer que Freud a d’abord isolé le surmoi chez le psychotique dans « L’introduction au narcissisme »
+
+et si vous lisez ce texte, vous verrez que cette présence surmoïque qu’il isole chez le psychotique est une présence regardante.
+
+C’est extrêmement net chez Freud, il en décrit dans le délire l’influence où cette instance qui surveille, qui ne cesse d’observer, qui a sans cesse à l’œil, c’est une dimension d’une présence qui n’attend pas une parole de l’Autre, puisqu’elle met l’Autre, le psychotique, en position, non pas de parler, mais de se montrer,
+
+et c’est ça la dimension monstrueuse de la monstration.
+
+Quelle est la différence entre le surmoi fascinant et le surmoi médusant ?
+
+Je dirais que le surmoi fascinant est limité dans l’espace et dans le temps :
+
+-   c’est-à-dire que le sujet peut se déprendre du regard fascinant, le sujet il n’est pas impossible qu’il la rompe dans la temporalité.
+
+-   Ceci dit, dans le cadre spatial, dans l’espace, dans le regard fascinant, le sujet est regardé d’un lieu qu’il voit, qui est localisable. Prenez l’exemple du rêve d’Irma qui est commenté dans le Séminaire II, eh bien, on peut dire que Freud, c’est ce regard fascinant sous lequel il se décompose quand Irma bouche bée lui offre sa gorge ouverte, et on peut dire que cette bouche bée lui dit : « Regarde, je te regarde » et sous ce regard qui sort de cette bouche bée, Freud pendant tout un temps est l’objet d’une fascination dont il se déprendra - j’y reviendrai tout à l’heure, je signale juste ça - par le fait que ce surmoi fascinant, il va pouvoir être castré par un certain processus, c’est-à-dire il va pouvoir être interrompu et Freud va pouvoir passer à autre chose.
+
+Maintenant ce que je me suis permis d’appeler regard « sidérant », c’est parce que le « Che vuoi ? » me parait incarner encore une fois cette dimension d’une présence regardante, à la différence près qu’il ne s’agit pas d’un regard
+
+qui serait visible pour le sujet, mais à ce moment-là le sujet serait regardé d’un lieu qu’il ne connait pas,
+
+il ne sait pas d’où il est regardé, c’est un regard qui introduit l’Autre comme radicalement invisible
+
+et c’est en ceci que si dans la fascination, point important, je dirais que Freud en aucun cas n’est surpris, il est fasciné, mais il n’est pas surpris parce que ce qu’il voit est quelque chose de l’ordre de la contiguïté,
+
+est quelque chose de l’ordre de l’étrange non inquiétant, de trop familier pour qu’il soit surpris.
+
+Dans le signifiant sidérant, ce qui sidère, c’est que là effectivement le sujet est radicalement surpris
+
+et que cette surprise passe par le fait que la spécularité, l’imaginaire éclate.
+
+Maintenant je voudrais essayer de prolonger cette dialectique diachronique par laquelle on peut passer ainsi
+
+d’un surmoi à un autre avec une certaine dialectique du sujet et essayer de rendre compte d’une dialectique topologique.
+
+Si ces différences pour moi sont effectivement isolables, comment rendre compte...
+
+  dans la mesure où l’identification dite primordiale d’incorporation est à la racine du surmoi
+
+...comment rendre compte de la dialectique entre
+
+-   incorporation du signifiant su Nom du Père,
+
+-   et métaphore paternelle, métaphore du signifiant du Nom du Père.
+
+Effectivement nous sommes fondés à reconnaître l’incorporation comme présidant à l’origine du surmoi précoce. Ceci, c’est quelque chose que Lacan nous a habitués à comprendre, c’est-à-dire on peut considérer
+
+que l’enfant par exemple dans sa forme la plus précoce, alors qu’il adresse à l’Autre cette demande,
+
+la demande d’une présence autre, symbolique, d’être reconnu, enfin d’une reconnaissance d’une présence,
+
+quand l’Autre à ce niveau-là est défaillant, au niveau de la reconnaissance symbolique,
+
+on peut dire que l’enfant supplée à ce défaut de satisfaction symbolique, à cette Versagung,
+
+qu’il supplée à cette déficience du don par l’incorporation de l’objet,
+
+c’est-à-dire qu’il substitue à la satisfaction symbolique une satisfaction de l’ordre du besoin, de la tendance.
+
+Voyez une autre métaphore incarnant le surmoi ainsi dans le fait que... c’est repéré par Spitz dans le jeu où l’enfant rit dans l’échange avec l’adulte qui se masque et se démasque. L’adulte se démasque, l’enfant effectivement
+
+se trouve éclater de rire, il jubile et cette joie, nous pouvons la comprendre comme la découverte pour l’enfant
+
+qu’il y a un au-delà du regard qu’incarne le masque, parce que la fonction du masque c’est d’incarner la présence du regard, mais si sous ce masque, quand l’adulte se démasque, il se trouve qu’il y a un deuxième masque,
+
+alors là ce qui apparaît chez l’enfant c’est quelque chose de l’ordre de l’angoisse, et cette angoisse pourquoi ?
+
+C’est qu’à lui, brusquement est révélé qu’au-delà du masque en fait il débouche sur le fait qu’il n’y a pas d’au-delà
+
+et il est alors en présence effectivement d’un regard irréductible face auquel il ne peut répondre
+
+que par ce processus tout à fait énigmatique de l’incorporation.
+
+Vous voyez qu’on peut repérer dans l’incorporation
+
+-   aussi bien l’incorporation de la parole, ce moignon de parole qui va être l’ancêtre du surmoi précoce,
+
+-   que l’incorporation vraisemblablement du regard.
+
+Voyez encore une image de ce surmoi regardant dans cette métaphore qu’a soutenue Lacan de l’aveugle et du paralytique où c’est effectivement l’aveugle le véritable maître moïque et surmoïque du paralytique.
+
+Enfin je n’insiste pas là sur ce point.
+
+Alors maintenant comment rendre compte de la dialectique entre incorporation et refoulement originaire.
+
+Très brièvement je pense qu’on est peut-être fondé à repérer au moins trois incorporations :
+
+-   une incorporation pré-œdipienne, celle que Freud repère dans le couple Bejahung-Ausstossung, incorporation qui a été repérée par Mélanie Klein d’ailleurs quand elle repère que l’enfant dans la mère incorpore un signifiant du père, le signifiant phallique,
+
+-   une incorporation œdipienne qui correspond à l’incorporation qui marquerait la résolution du complexe d’Œdipe,
+
+-   une incorporation post-œdipienne, si on peut dire, qui correspondrait à l’incorporation de ce père qui est l’auteur de l’avoir si mal foutu.
+
+Ces incorporations ont des destins différents et en tout cas leurs destins - que j’essaierai de montrer si j’ai le temps -c’est d’être ponctué chacun par un certain refoulement originaire.
+
+Maintenant pour rendre compte d’une façon fondée d’une telle incorporation, je crois qu’il faut prendre des sources que nous avons, les sources premières que nous avons sur l’incorporation qui sont dans « Totem et tabou »
+
+et voici un point que je voudrais faire saillir à propos de « Totem et tabou », c’est le point suivant : ce livre,
+
+ce qui est frappant c’est qu’il ait été l’objet d’une exécration générale, bien qu’il ait été au dire de Freud son livre préféré.
+
+Et quelque chose m’a retenu, c’est : qu’est-ce qui fait que des gens, au moins comme Lévi-Strauss, soient tellement passés à côté de la lecture d’un livre comme « Totem et tabou »,
+
+-   c’est-à-dire qu’est ce qui fait que quelqu’un comme Lévi-Strauss ait été amené à faire à Freud la critique qu’il a faite à Malinowski,
+
+-   c’est-à-dire qu’il a fait cette lecture de « Totem et tabou » consistant à repérer que Freud ne ferait qu’une théorie affective du sacré,
+
+-   c’est-à-dire qu’il n’y aurait pas d’après Lévi-Strauss de promotion du signifiant dans « Totem et tabou ».
+
+Et alors si nous nous demandons ce qui fait que le signifiant est effectivement assez... il semble comme ça pas
+
+évidemment repérable, on peut remarquer que la notion d’ambivalence qui centre le travail de Freud,
+
+eh bien, cette notion d’ambivalence effectivement prête à confusion parce que Freud, dans l’ambivalence, il oppose en gros des couples affectifs, l’amour - la haine, l’horreur - l’intérêt et dans ce couple affectif quelque chose prête à confusion parce qu’on peut, dans une lecture superficielle, avoir le sentiment qu’il promeut le domaine de l’affect.
+
+En vérité ce n’est pas le cas, mais si on veut serrer les choses de plus près, il faudrait montrer que substituer
+
+à ce couple ambivalentiel que Freud a repéré, je crois que nous aurions intérêt à substituer deux couples ambivalentiels
+
+en tant qu’il y a deux séries de constellations signifiantes qu’il faut opposer, les associer et les dissocier.
+
+Alors quels sont ces couples ?
+
+Si vous voulez, je pense qu’en particulier dans le chapitre où Freud parle du père mort
+
+-   en tant que le père mort va donner, si on peut dire, l’ancêtre quand les rites sont convenablement rendus,
+
+-   ou en tant que le père mort va donner naissance au revenant, au démon, au spectre.
+
+Entre l’ancêtre et le revenant, il y a effectivement une dialectique très particulière où j’essaierai de montrer
+
+tout à l’heure que la notion de réversibilité à laquelle nous avons été sensibilisés au Séminaire de l’an dernier
+
+peut nous aider peut-être à comprendre quelque chose.
+
+Dans le mythe en tout cas, dans la forme héroïque du mythe, quelque chose nous est rendu de cette dialectique,
+
+de ce va-et-vient très particulier qu’il y a entre l’ancêtre et le spectre qui est ceci...
+
+  ces choses sont rapportées par Durkheim, par Frazer, par les sources de Freud, Spencer et Gillen
+
+...eh bien, le mouvement de va-et-vient qu’il y a entre le spectre et l’ancêtre se manifeste par exemple par le fait que : il y a le père mort, dans un premier temps l’âme va rester ici-bas, elle ne veut pas foutre le camp, elle reste là, elle demeure là et pourquoi, c’est la question que nous abordons? Pourquoi ?
+
+Il se trouve qu’elle est malfaisante et dangereuse. Ce spectre qui ne veut pas foutre le camp, qui reste là,
+
+il y a toute une série de rites qui le convient à rejoindre l’île des Morts, l’au-delà et alors on nous raconte,
+
+par exemple chez Durkeim c’est assez joliment décrit, qu’il y a des trajets incessants comme ça :
+
+-   c’est-à-dire que le spectre est là pendant un certain temps, les rites sont rendus : il fout le camp dans l’île des Morts, il y reste,
+
+-   il fait un deuxième retour, il revient parce qu’il ne se plait pas à l’île des Morts, il revient de nouveau roder, de nouveau des rites sont faits : il repart une 2^(ème) fois,
+
+-   il se trouve qu’il revient une deuxième fois et enfin, si les rites sont parfaitement exécutés :
+
+  il repart pour la 3^(ème) et dernière fois à l’île des Morts d’où il ne reviendra pas.
+
+Vous voyez qu’il y a une réversibilité entre
+
+-   cet ancêtre, ce signifiant du Nom du Père en tant qu’assumant sa fonction symbolique,
+
+-   et cette possibilité de retour dans le Réel et sous une forme qui n’est plus celle d’un signifiant, mais d’un objet que nous pouvons qualifier de petit (a) .
+
+Alors pourquoi devons-nous dissocier deux couples « ambivalentiels » ?
+
+On a intérêt parce que l’ancêtre et le spectre, autour de chacun d’entre eux, il y a deux mouvement « ambivalentiels » que chacun soutient et qui sont comparables, mais qui doivent être différenciés.
+
+Chacun des deux, effectivement il y a une position ambivalente sur chacun des deux en tant que l’ancêtre soutient... chacun des deux, je dirais, à la fois incarne un intérêt et un mouvement de répulsion.
+
+Mais cet intérêt et cette répulsion sont de structure tout à fait différente à cause des différences de topologie.
+
+L’ancêtre, je dirais, dans le mouvement d’intérêt ou positif qu’il soutient, l’ancêtre - les mouvements positifs,
+
+ce sont les sentiments de l’ordre de la vénération, du respect, voire de l’extase dans une certaine communion avec lui et les sentiments de répulsion sont de l’ordre de la terreur sacrée, sont de l’ordre de l’effroi sacré,
+
+sont de l’ordre de ce que j’ai qualifié tout à l’heure de la sidération, de l’étonnement le plus radical
+
+quand cet au-delà qui est évoqué - dans la prière par exemple - s’il arrive que cet au-delà du Symbolique
+
+alors que la prière semble appeler cet au-delà, si jamais cet au-delà se manifeste dans le Réel - il faut songer à ce vers de Prévert : « Notre Père qui êtes aux Cieux, restez-y » - eh bien c’est ça, parce que si jamais il vient dans le Réel,
+
+s’il vient chuter dans le Réel, c’est la catastrophe, enfin la catastrophe c’est tout au moins cette sidération
+
+et ce mugissement du « Che vuoi ? ».
+
+Le problème, c’est que tout à l’inverse, le mouvement ambivalentiel du spectre mérite d’être différencié
+
+parce que l’intérêt qu’il suscite, je dirais qu’il est de curiosité, d’une attraction comme disent certains,
+
+une attraction malsaine, voyez la fréquentation et les délices que certains semblent éprouver à voir les films d’horreur où il s’agit ni plus ni moins tout à fait bêtement et débilement de mettre en scène les revenants et les spectres,
+
+qu’est ce que le délice d’avoir des angoisses avec l’appréhension de ce retour de cet objet ?
+
+Ce que je voudrais vous faire remarquer, c’est que l’étonnement que suscite la rencontre du spectre justement
+
+n’est pas un étonnement parce que c’est quelque chose que dans le fond le sujet s’attend toujours à rencontrer,
+
+ce n’est pas un étonnement, ça n’a rien à voir avec la Verblüffung, ça n’est pas sans rapport,
+
+mais ça n’est pas un étonnement parce que c’est quelque chose de l’ordre de l’inquiétante étrangeté,
+
+de cette familiarité qui fait que je dirais que le sujet ne cesse de s’attendre à voir retourner dans le Réel cette présence qu’il attend tout le temps à voir se manifester.
+
+Et peut-être ne faut-il pas voir dans autre chose que dans ce retour que le sujet attend le fait que,
+
+si vous l’observez, quand vous êtes dans une salle, bien souvent vous ne pouvez pas vous empêcher
+
+de vous retourner derrière vous pour voir ce qui se passerait, comme s’il pouvait se passer ou passer quelque chose. Parce qu’effectivement on peut penser que cette présence qui est dans le Réel ne vous oublie pas
+
+parce qu’elle est inoubliable, elle n’est pas de l’ordre de ce qui peut être refoulé.
+
+Alors vous voyez que la dimension du spectre, du fantôme est quelque chose qui soutient une ambivalence
+
+d’un autre ordre que terreur sacrée et sidération, mais qui soutien quelque chose de l’ordre de l’angoisse et l’autre pôle étant l’intérêt est quelque chose qui est proche de la tentation.
+
+Freud dit d’ailleurs du mana dans « Totem et tabou » qu’il a comme pouvoir de rappeler au sujet des désirs refoulés
+
+et, les lui rappelant, de ressusciter ces désirs oubliés, c’est-à-dire que la notion de tentation est là présente.
+
+À partir de là, nous allons voir que nous pouvons faire deux lectures du « Che vuoi ? ».
+
+Ces deux lectures du « Che vuoi ? » je dirais qu’on peut les faire selon la façon dont dans le graphe
+
+le poinçon qui sépare le sujet du petit a , selon que dans le graphe,
+
+-   c’est l’Autre qui est en position de (a), ça c’est le cas du spectre,
+
+-   ou que c’est le sujet qui se trouve choir en position de (a) du fait de la sidération par le signifiant Verblüffung.
+
+En ceci on pourrait dire que le « Che vuoi ? » incarne cette ambivalence qui n’est pas explicitée dans Freud mais écrit du fait du poinçon, du fait que le petit (a), on peut le faire jouer :
+
+-   il peut ou bien incarner l’angoisse par l’apparition, et remarquez que la première fois dont Lacan introduit le « Che vuoi ? », c’est en se référant au « Diable amoureux » de Cazotte où il apparaît comme une apparition, comme ce chameau mugissant et qui va fonctionner comme tentateur,
+
+-   l’autre fonction du « Che vuoi ? », c’est celle par laquelle ça serait, non pas l’angoisse qui prévaudrait, mais cette sidération par le signifiant que Freud qualifie de signifiant de « haute valeur psychique », le signifiant de la Verblüffung.
+
+Maintenant Freud, si vous voulez, ce qui est très intéressant si on lit ligne à ligne...
+
+  je me permets de le faire pendant cinq minutes
+
+...Freud, du fait qu’il n’a pas distingué très nettement ces deux catégories, qu’il n’a pas à sa disposition l’objet petit (a) peut-être, ni celle du Réel, Freud est très flottant dans l’interprétation qu’il donne de de la crainte de l’ancêtre
+
+où de la crainte du fantôme et il interprète la crainte du mort comme une agressivité refoulée qui serait projetée.
+
+Ce qu’on peut voir cependant, c’est qu’il n’est pas satisfait du terme de « projection » qu’il emploie
+
+et ce qui ne le satisfait pas dans le terme de « projection » qu’il emploie est tout à fait perceptible.
+
+Voilà ce qu’il écrit : cette projection énigmatique, cette projection au dehors d’une perception intérieure, dit-il,
+
+il en dit ceci : dans des conditions encore insuffisamment élucidées, nos perceptions internes de nos processus intellectuels et affectifs...
+
+  c’est tout à fait énigmatique chez Freud
+
+  cette notion de perception interne de processus intellectuels et affectifs
+
+...sont comme des perceptions sensorielles projetées au dehors.
+
+Perceptions sensorielles, vous voyez par là que la dimension du Réel lacanien est promue par Freud
+
+par la dimension d’un retour sensoriel par le Réel. À propos de cette perception interne de ce qui serait sensoriel, rappelons ce que Freud écrit 4 pages plus loin, c’est dans la page où il pose que c’est sur le terrain de l’ambivalence affective que la conscience morale s’inscrit, voilà ce qu’il écrit :
+
+« la conscience morale est la perception interne de la forclusion de certains désirs que nous éprouvons »
+
+Il dit bien forclusion, c’est-à-dire Verwerfung.
+
+Alors là, je crois qu’on peut créditer Freud quand il emploie le terme de Verwerfung et pas de Verdrangung
+
+qu’il sait ce qu’il fait, même s’il est un peu flottant dans ce petit bouquin, et qu’il faut prendre au pied de la lettre
+
+le fait qu’il utilise le terme là de Verwerfung.
+
+On peut cependant, rien ne nous empêche de le faire, c’est de voir dans l’évolution de la pensée de Freud,
+
+sept ans plus tard, dans « La dénégation », comment il reprend le terme de Verwerfung;
+
+dans « La dénégation », où il traite également de l’incorporation du destin du père,
+
+il a pour qualifier la présence de ce qui n’a pas pu échoir à l’incorporation positive, à la Bejahung,
+
+il a pour qualifier le destin de ce qui n’a pas été Bejahung, de ce qui n’a pas échu à la symbolisation,
+
+il a différents termes : le terme qui été retenu par Lacan est celui d’Ausstossung qui a été traduit par expulsion, rejet, et
+
+il a un autre terme qui me paraît tout à fait retenable et intéressant qui est le terme de Werfen,
+
+c’est-à-dire qu’il n’emploie plus le terme de Verwerfung, il emploie Verfen, c’est-à-dire que ce qui me paraît important, c’est que supprimant le préfixe « ver » qui dans Verwerfung qualifie un rejet avec cette connotation d’impossibilité de retour, c’est-à-dire quelque chose de l’ordre de l’irrémédiable.
+
+Avec la notion de ce qui est Werfen, il y a effectivement une notion d’exclusion radicale,
+
+-   mais l’impossibilité de retour n’est pas exclue radicalement,
+
+-   c’est-à-dire qu’une réversibilité de retour n’est pas exclue radicalement,
+
+-   c’est-à-dire qu’une réversibilité n’est pas impossible,
+
+-   ça ne veut pas dire qu’elle va se faire comme ça, mais elle n’est pas impossible.
+
+Alors vous voyez que j’en arrive à la pensée qu’on peut dire que ce qui était de l’ordre de cette perception interne, dont parle Freud, des désirs qui ont été Werfen, eh bien nous pouvons là repérer
+
+-   la notion de ce qui du père incorporé n’a pas pu être entièrement incorporable,
+
+-   la notion de ce déchet, de ce reste, parce que tout du père n’est pas incorporable : il y a un déchet.
+
+Il faut sans doute corriger le texte de « La Verneinung » où Freud semble, pour qualifier à la fois ce qui est introjecté
+
+et ce qui est expulsé, Freud prend le parti de dire, comme s’il y avait une position antécédente du sujet :
+
+ceci je le mets dans le bon dedans, et ceci je le mets dans le bon dehors, comme si préexistait un choix.
+
+Il semble que nous sommes plutôt autorisés à penser qu’il n’y a pas deux « ceci », mais qu’il n’y en a qu’un seul,
+
+que le sujet incorpore et qu’il se trouve que quelque chose déchoit de cette incorporation.
+
+Maintenant avant d’essayer de passer à autre chose, pour fixer les idées je voudrais rappeler que le rêve d’Irma
+
+et le commentaire qu’en donne Jacques Lacan donne la possibilité de situer ces deux réels que j’essaie de situer,
+
+-   c’est-à-dire ce réel qu’incarnerait l’ancêtre comme étant ce qui est au-delà et qui ne se manifeste pas au sujet,
+
+-   et ce réel qui est de l’ordre de celui qui se manifeste par le biais du revenant.
+
+X dans la salle : (Inaudible)
+
+Alain Didier-Weill :
+
+Oui, on pourrait sûrement montrer par rapport à ce que vous dites, peut-être que le drame en particulier du psychotique, c’est celui de ne pas accéder dans le fond à l’inconscient, c’est-à-dire d’être fondamentalement celui qui serait conscient du fait de ne pas être arrivé à refouler et de ce que son univers serait peuplé uniquement effectivement de quelque chose de l’ordre du Verwerfung.
+
+On peut penser que la conscience du névrosé, qui n’est pas une conscience, mais une mauvaise conscience,
+
+est une mauvaise conscience en ceci qu’elle est le produit d’un mauvais inconscient qui n’arrive pas tout à symboliser et que c’est ce reste dans le fond qui éveille, qui nous empêche ou qui nous donne des insomnies,
+
+ou qui nous empêche de refouler plus avant.
+
+Pour reprendre et concrétiser un peu ce que je disais, on peut voir sur le rêve d’Irma, repérer les différents temps
+
+qui ont été dit là.
+
+1^(er) temps dans le rêve d’Irma, on peut dire que Freud est fasciné, angoissé par le regard qui se pose sur lui.
+
+Le propre de Freud, sans doute parce que c’est lui, c’est qu’il ne répond pas à ce réel...
+
+  mais ça a été déjà remarqué,
+
+...en se réveillant ni en faisant un rêve de désir sexuel, le propre de Freud c’est que cette angoisse,
+
+on pourrait dire cette fascination, va laisser place à la sidération, de ce que vraisemblablement on peut dire qu’il y a eu une castration du regard fascinant qui est sur lui, castration qui va être opérée justement par la mise en œuvre
+
+d’un au-delà - au-delà du Principe de Plaisir - et cette sidération qui va succéder à l’angoisse,
+
+je dirais qu’elle s’introduit selon la dialectique du mot d’esprit : sidération et lumière,
+
+c’est-à-dire que Freud va faire une sorte de mot d’esprit, c’est-à-dire qu’il va articuler ce signifiant S(A)
+
+par la mise en jeu finalement de cette présence qui est en lui quand tout est perdu,
+
+puisque sous l’effet de ce Réel horrible et angoissant qui se montre à lui, il se dissout, tout fout le camp,
+
+et au moment où tout fout le camp, eh bien, il ne trouve que quelque chose qui tient bon,
+
+quelque chose répond présent et répond en l’occurrence « triméthylamine » et répond présent,
+
+comme je l’ai démontré tout à l’heure sur la dialectique, après la survenue de cette sidération du « Che vuoi ? ».
+
+On pourrait dire que cet au-delà seul a pu répondre à l’action dissolvante du petit (a) dans le Réel
+
+en tant que cet au-delà est le Réel même de l’inconscient.
+
+Je sais que cette notion, j’en ai parlé avec quelques amis qui la trouve critiquable, ça l’est peut-être,
+
+c’est peut-être un peu sommairement dit d’opposer 2 Réels qui entretiendraient entre eux une réversibilité,
+
+enfin l’important c’est qu’en tout cas le rêve d’Irma que nous connaissons tous,
+
+permet de fixer les choses de la façon suivante : ces 2 réels sont particulièrement présents dans le rêve même,
+
+dans le texte du rêve, mais qui est dans une petite note en bas de page - il y a une fonction topologique de la note vraisemblablement - eh bien, ce 2^(ème) Réel correspond à une 2^(ème) béance que Freud nous indique prendre le relais
+
+de son principe de plaisir qui est dissout et cette 2^(ème) béance, c’est celle qui ressort à l’ombilic du rêve
+
+où dans sa réponse à Marcel Ritter, Lacan a reconnu cette dimension de l’Unnerkannte, de l’impossible à reconnaître, du refoulement originaire.
+
+Ces 2 béances qui sont dans ce rêve d’Irma,
+
+eh bien de cette 2^(ème) béance, jaillit ce « triméthylamine » dans cette relation avec le 1^(er) Réel.
+
+Alors pour terminer - parce que c’est plus tard que je pensais - je voudrais maintenant essayer de...
+
+là c’est des élucubrations, je dois dire que c’est quelque chose que j’aborde avec beaucoup d’humilité,
+
+mais il me semble qu’il n’est pas impossible de rendre compte avec les idées que nous apportées
+
+la notion de retournement de tore du séminaire de l’an dernier, de ces deux béances, de ces deux réels,
+
+il n’est peut-être pas impossible d’en rendre compte topologiquement.
+
+Je dois vous dire que cette possibilité effectivement qui m’est apparue l’an dernier avec l’aide de Cantardo Calligaris, je suis effectivement assez timide dans son maniement pour en parler de façon soutenue,
+
+mais enfin le D^(r) Lacan ne m’a pas complètement découragé de tenter de le faire,
+
+alors je vous soumets ce que ça va donner.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\33.jpg]
+
+Alors pour aujourd’hui je me contente de dessiner très succinctement ce que représenterait...
+
+voilà, je vais vous faire passer ça, c’est deux tores - j’ai pris des chaussettes - deux tores,
+
+-   l’un qui représenterait ce mythique « bon dedans »,
+
+-   l’autre le mythique « mauvais dehors »,
+
+dans lequel je me suis permis de faire 2 trous, et je me suis permis de créer une couture,
+
+une couture qui est là (voir schéma), elle est là - c’est très mauvais - le tore Ausstossung Werfung,
+
+parce que le problème c’est que je suis en train d’essayer de parler d’un réel qui ne serait pas le Réel,
+
+disons dont nous sommes habitués à reconnaître les causes d’une forclusion irréversible,
+
+il s’agit d’essayer de voir en quoi quelque chose de la forclusion ou du Werfung serait réversible.
+
+Voilà, ce « mauvais dehors », ce « bon dedans », le retournement, vous verrez...
+
+je vais vous faire passer ça, c’est retourné déjà, vous voyez qu’en vert j’ai dessiné ce qui serait
+
+le trou symbolique dans le Réel, en rouge le trou réel dans le Symbolique
+
+...et vous verrez que si vous vous amusez en manipulant deux tels tores dont la particularité est d’être séparés
+
+et liés en même temps par deux trous dont je me suis permis de métaphoriser la liaison par une couture,
+
+à procéder au retournement en invaginant par le trou mis en commun, le tore du « mauvais dehors »
+
+dans celui du « bon dedans », vous vous apercevrez qu’après retournement les deux tores de départ se retrouvent,
+
+non plus béants l’un dans l’autre, articulation dont se supporterait peut-être le surmoi archaïque...
+
+  c’est un soutien provisoire que je me donne
+
+...mais séparé l’un de l’autre par une torsion qui, amenant le trou réel dans le trou symbolique,
+
+pourrait métaphoriser cette nouvelle articulation dont se supporterait le 2^(ème) surmoi qui ainsi se substituerait
+
+au 1^(er) surmoi du fait donc d’un refoulement originaire du signifiant phallique,
+
+refoulement dont le retournement serait le support et qui ferait passer de ce 1^(er) surmoi archaïque au 2^(nd).
+
+Je prends là l’exemple du passage entre le 1^(er) et le 2^(ème) surmoi, c’est-à-dire que le 2^(ème) surmoi incarnerait ce qui reste
+
+du Réel du 1^(er) surmoi après symbolisation. Le Réel subsiste, mais d’une façon plus symbolisable,
+
+enfin plus articulée et on pourrait peut-être avec le 3^(ème) surmoi continuer l’opération, c’est-à-dire aller jusqu’au point de réduction ultime du Réel, voir jusqu’où le refoulement originaire peut arriver à frayer dans le Réel, à l’articuler.
+
+Je n’en suis pas là. Alors je vous fais passer cette « chaussette », vous verrez, si ça peut vous...
+
+Bon, je vais conclure le plus rapidement possible par quelques considérations sur le signifiant du Nom du Père.
+
+Je voulais vous rappeler qu’avant que Lacan ait introduit le problème de la métaphore du Nom du Père
+
+dans le séminaire « Les formations de l’inconscient », il l’a introduit par une réflexion sur la fonction de l’ennui ?
+
+Ça m’a paru tout à fait saisissant et au point où j’en suis, il m’est apparu que de l’ennui,
+
+on pourrait articuler par rapport à ce que j’ai essayé de dire aujourd’hui que l’ennui dans le fond,
+
+c’est ce qui se produit quand un sujet n’est plus apte à la surprise, à l’étonnement,
+
+je parle toujours de l’étonnement au sens fort, au sens de la Verbluffung, de la sidération.
+
+Sans aller bien loin, regardez les enfants dont la relance du désir est incessamment articulée par le fait que l’ennui
+
+ils ne connaissent pas : tout les étonne. Qu’est-ce qui fait qu’un sujet puisse perdre l’aptitude à être étonné,
+
+à être surpris et à connaître l’ennui ?
+
+Dans l’ennui, je dirais, ce qui nous arrive, c’est que nous accédons à une perception douloureuse de la répétition,
+
+la répétition se donne à nous sous le biais du monotone et par cette dimension du monotone, ce qui se produit,
+
+si vous y pensez bien, vous verrez que ça coïncide avec quelque chose...
+
+  je m’excuse d’aller un peu vite, mais je crois qu’on peut le dire quand même
+
+...ça correspond avec quelque chose de l’ordre de l’usure de la métaphore paternelle.
+
+Les métaphores s’usent : regardez un mot d’esprit, il fait de l’effet un temps, un mot d’esprit s’use,
+
+une fois usé, effectivement il est monotone. Je dirais que l’usure de la métaphore, l’effet de cette usure...
+
+  et cette usure se produit justement sous l’effet de l’impact de ces signifiants
+
+  qui persistent dans le Réel et qui sont corrodants sur la métaphore
+
+...cette usure, je dirais qu’elle est liée à l’apparition du déchet dans notre univers.
+
+Sans aller bien loin, regardez par exemple un symptôme, le cas que je vous citais tout à l’heure,
+
+l’oubli de mot de Freud de Signorelli, Freud n’a pas réussi à métaphoriser le signifiant de haute intensité psychique « Herr », le seigneur, et n’étant pas arrivé à le symboliser, qu’est-ce qui arrive ?
+
+Il arrive que ce qui reste, c’est des déchets, et des déchets métonymiques parce que la métonymie,
+
+c’est quelque chose de l’ordre du déchet, de la contiguïté et c’est quelque chose qui essentiellement ne surprend pas. Rien de moins surprenant que la contiguïté dans la mesure où elle renvoie d’un autre à l’autre,
+
+à un autre qui ne s’écrit jamais avec une majuscule.
+
+L’usure de la métaphore, vous pouvez repérer qu’elle est lié à l’apparition dans notre univers du déchet,
+
+-   que ce déchet soit de l’ordre subjectif avec ce qu’on appelle la culpabilité ou le pêché,
+
+-   ou que ce déchet soit même l’apparition de ce déchet qu’est notre corps propre dans la mesure ou notre corps dans la perspective de cet ennui ou de cette monotonie, ce qui lui arrive, c’est qu’il peut se mettre parfois à être, je dirais, soumis à une loi qui serait la loi exclusive du réel, je veux dire la loi de la pesanteur, je veux dire par là que lorsque notre corps se mettrait à se manifester par le fait qu’il pèse parce qu’il ne serait soumis qu’à la loi de la pesanteur, eh bien, vous avez là, l’accentuation de la fonction de ce déchet qu’est notre corps tout à l’opposé, si vous voulez, quand le corps est soumis à cet autre Réel qui est celui du signifiant qui l’allège, ce qui fait que vous voyez certaines personnes marcher dans la rue qui semblent ne pas peser, qui semblent être comme une plume, quel que soit leur poids, c’est quelque chose de cette nature et on peut dire que ce déchet qu’est le corps quand il se met à peser, eh bien, nous pouvons l’opposer à ce qui arrive au corps quand brusquement il s’allège, il s’allège par exemple dans la fête ou dans le repas totémique, ou tout simplement dans l’amour, dans le coup de foudre, la foudre sidération, ce que représente pour un homme ce signifiant de haute intensité psychique qu’est la femme, ce signifiant sidérant, il faut reconnaître qu’il a le pouvoir, en suscitant l’amour - et puis le terme de ce terme de femme fatale nous fait peut-être sentir que par cette fatalité, ce que l’homme rencontre de fatal, c’est quelque chose de l’ordre du signifiant du Nom du Père - eh bien, qu’est-ce qui se passe quand on perd la tête dans l’amour, ou le corps, c’est que vous devenez tellement légers ou allégés que comme à la limite, comme le maniaque vous perdez votre lest, vous devenez fous, ne pesez plus rien, vous perdez le corps, la tête.
+
+Et alors ce que je voulais vous signaler, c’est que cette consomption ou cette consumation du reste
+
+qu’est cette consumation du corps quand il ne pèse plus, eh bien, repérez que justement dans le repas totémique
+
+ou dans les fêtes qui sont étudiées dans les sociétés magiques, les restes, corrélativement à l’incorporation du père,
+
+il y a cette cérémonie, ce qui a été peu retenu par Freud, qui consiste à brûler les restes.
+
+Tout ce qui est de l’ordre du déchet, de la moisissure est entassé pendant le temps de la vie profane
+
+et brûlé avec la plus grande précaution dans le temps du repas totémique.
+
+Et je crois que c’est quelque chose qui nous permettrait d’articuler une question que Freud pose sans aller plus loin,
+
+il se demande qu’est-ce qui fait que périodiquement il vit la menace - il parle de l’homme totémique -
+
+la menace de la disparition en lui de la force du père qui a été incorporé.
+
+Il pose cette question, il repère que c’est du fait de cette menace de disparition, que l’incorporation doit avoir lieu, sans effectivement poser la question : qu’est-ce qui procède à cette dégénérescence, si on peut dire,
+
+de la puissance paternelle incorporée.
+
+Je conclurai là en vous rappelant que Freud a écrit « Totem et tabou » dans le cadre...
+
+  cette recherche sur le signifiant du Nom du Père qu’est « Totem et tabou »
+
+...il l’a écrit dans le cadre de sa diatribe avec Jung et il l’écrit pour rompre avec Jung
+
+et pour rompre avec ce qu’il appelle la religion aryenne.
+
+Et à Jung se posait la question de la dégénérescence de l’énergie vitale des allemands, de la race allemande...
+
+  je ne vais pas avoir le temps d’aller beaucoup plus loin
+
+...à Jung qui se posait cette question, Freud répond en partie, comme il peut, dans ce texte.
+
+Ce qui est intéressant, c’est de voir la façon dont Jung pose le problème.
+
+Jung se dit quand le national-socialisme éclot, la question qu’il se pose est d’une naïveté extraordinaire...
+
+  c’est une question qui est d’autant plus frappante qu’elle a été posée à un congrès des langues romanes par un analyste qui pensait faire le reproche le plus cinglant possible à l’enseignement de Lacan,
+
+...Jung se pose la question suivante : mais avant l’explosion de cette énergie extraordinaire
+
+que manifeste le national-socialisme, où était cette énergie inouïe ?
+
+Il pose un problème là, non pas de topologie, mais pratiquement de topographie, c’est-à-dire qu’il se dit :
+
+si ça apparait, c’est que ça devait bien être quelque part. C’est tout à fait la théorie des psychanalystes
+
+qui promeuvent l’affect au rang du signifiant et qui vous disent : quand un affect apparait,
+
+il faut bien qu’avant d’apparaitre il ait été quelque part, il devait être quelque part, ça ne nait pas de rien du tout.
+
+Alors à Jung qui pose cette question, et effectivement vous sentez que ce qui est en question pour Jung
+
+dans cette démarche, c’est le drame dans le fond que représente pour tout individu le fait que ce soit le même père,
+
+le même père mort qui soit à l’origine à la fois du signifiant du Nom du Père et à la fois du Surmoi,
+
+de ce Surmoi persécutif quasiment mélancolique, parce que l’incorporation dans le fond que nous faisons du père,
+
+le deuil que nous faisons du père en tant qu’il est ou qu’il serait cet individu infoutu de nous avoir mieux foutus que ça, c’est un deuil impossible qui confine à la mélancolie.
+
+Il faut vivre avec, il faut faire avec, mais on conçoit que ce ne soit pas facile, pour ne pas dire impossible
+
+et on conçoit que dans la religion totémique ce qui se passe, c’est que le signifiant sait d’emblée ce qu’il a incorporé : c’est le père. Je dis ça parce qu’il faut le démarquer des religions de possession.
+
+Dans les religions de possession ou chamaniques, le sujet est possédé par un esprit, il ne sait pas lequel,
+
+ce n’est que dans un temps ultérieur que la divinité va se nommer et va déclarer ses insignes.
+
+Donc ça ne va pas de soi de savoir quel est le père incorporé et effectivement la doctrine de Jung
+
+montre que ça ne va pas de soi, puisque le père qui a été incorporé, eh bien, ça ne va pas de soi,
+
+qu’il aurait fallu effectivement attendre les découvertes de Chamberlain pour avoir situé ça du côté des Indes.
+
+En conclusion, je terminerai en disant ceci, c’est que dans le fond, la métaphore paternelle a pour fonction
+
+de soutenir une antinomie qui est celle qui consiste à susciter cet excès d’énergie dont parle Jung,
+
+dont parlent tous les gens qui sont angoissés par la notion d’une décadence, d’une déperdition énergétique,
+
+qui consiste à susciter un excès d’énergie pulsionnel qui déborde toute parole, toute nomination...
+
+  c’est un petit peu le mana dont nous parle Lévi-Strauss
+
+...et en même temps qui consiste à ne pas céder à ce mouvement d’une force vitale qui voudrait s’émanciper, n’appartenir qu’à lui-même dans la fraîcheur d’une innocence retrouvée.
+
+Le signifiant du Nom du Père fonde l’excédent pulsionnel pour autant que ne cédant pas au le fait qu’il le fonde
+
+et, s’il cède, nous voyons l’émancipation de ces forces de vie dont Jung fait l’apologie,
+
+dont les psychotiques font l’expérience que nous connaissons...
+
+  Artaud par exemple qui toute sa vie évoque la présence vitales qui le côtoient avec la nostalgie
+
+  de ne pas en être possédé comme cela se passait dans le théâtre antique,
+
+  parce que ces forces, il en a la conscience, le savoir, mais il ne peut pas les articuler
+
+...quand il ne cède pas, il peut arriver que le sujet parvienne conformément au graphe qui est aussi la façon
+
+dont le parl’être peut travailler à utiliser l’effet de l’insistance de cet excès en le pointant sur le même point d’où en lui insiste cet excès, alors que cet excès sourcé dans le manque de signifiant accepte, fait retour sur lui-même et procède à la nomination, à la métaphorisation donc de ce signifiant toujours nouveau du fait de cesser de ne pas trouver
+
+le point ou il insiste.
+
+C’est en somme une des grandes leçons, un des grands exemples que nous pouvons retenir de Freud ou de Lacan. Mais pour prendre exemple sur le fait de proférer des énoncés dont la consistance n’a pas à être octroyée
+
+par la conscience, n’a pas a être octroyée par le souci de l’élaboration secondaire de se contredire,
+
+mais par celui de ne pas se dédire. Et effectivement que deviendrait notre travail s’il était raidi par un surmoi prémunissant de la fonction de l’étonnement. Voilà.
+
+15 mai 1979 Table des séances
+
+Lacan : Aujourd’hui, ça va être un dialogue entre Nasio et Jean-Michel Vappereau.
+
+Nasio
+
+Il semblerait que monter sur cette estrade conduit presque automatiquement à vous demander,
+
+vous les auditeurs de Lacan, l’indulgence. Car c’est seulement hier, lundi à midi, que M. Lacan m’a demandé
+
+de vous parler d’une question dont je lui avais fait état. Elle concerne la théorie du sujet de l’inconscient.
+
+Si je devais intituler cette intervention, j’écrirais :
+
+« l’enfant magnifique de la psychanalyse ».
+
+Alors qu’au début de l’année, mon projet était d’étudier l’articulation entre le savoir inconscient et l’interprétation, progressivement, au fur et à mesure de certains développements, la question du sujet a pris le dessus,
+
+est devenue le problème principal.
+
+Ce matin, je me bornerai à un rappel succinct des abords possibles du concept de sujet,
+
+abords certainement connus de la plupart d’entre vous, afin de vous soumettre ensuite quelques interrogations.
+
+Divisons ce résumé en trois parties :
+
+-   selon le rapport du sujet au savoir inconscient,
+
+-   selon le rapport du sujet à la logique de Frege,
+
+-   et enfin selon le rapport du sujet à la castration.
+
+I
+
+Notre point de départ sera celui de la psychanalyse elle-même, constitué par ce fait de langage qui s’énonce :
+
+« Je ne sais pas ce que je dis ».
+
+Si le désir de l’hystérique est fondateur du transfert, le « je ne sais pas ce que je dis »
+
+est le fondateur de la notion d’inconscient chez Freud et de la notion d’inconscient comme savoir chez Lacan.
+
+Donc « Je ne sais pas ce que je dis ».
+
+Je ne sais pas quoi ?
+
+Je ne sais pas que ce que je dis est un signifiant et comme tel ne s’adresse pas au parlant, mais à un autre signifiant.
+
+Il s’adresse à l’Autre.
+
+Je parle, j’émets des sons, je construis des sens, mais le dit, lui, m’échappe.
+
+Il m’échappe parce qu’il n’est pas du pouvoir du sujet de savoir avec quel autre dit, ce dit va se lier.
+
+« Le signifiant s’adresse à l’Autre » veut dire qu’il va se lier à un autre signifiant, ailleurs, à côté, après...
+
+Donc, je ne sais pas quoi ?
+
+L’effet de ma parole sur vous, sur l’Autre.
+
+Et de ne pas savoir ce que je dis, je dis plus que je ne voudrai.
+
+En un mot, je ne sais pas ce que je dis parce que mon dit va ailleurs :
+
+-   à mon insu, il s’adresse à l’Autre,
+
+-   et à mon insu aussi, il me vient de l’Autre.
+
+Il vient de l’Autre et il s’adresse à l’Autre, il part de l’Autre.
+
+Il existe encore une raison à ce « Je ne sais pas ce que je dis », c’est que le sujet qui énonce son dit...
+
+  j’insiste : « le sujet qui énonce... »
+
+...n’est pas le même lorsque le message, ou dit, peut lui revenir.
+
+Nous ne sommes plus le même parce que dans l’acte de dire, je change.
+
+L’expression « sujet effet du signifiant » veut dire justement que le sujet change avec l’acte de dire.
+
+En bref, je ne sais pas quoi ?
+
+1)  Je ne sais pas que j’étais là, sous tel signifiant.
+
+Que tel dit a été le signifiant, mon signifiant, le signifiant du sujet.
+
+  Donc j’étais là, un point de non-savoir.
+
+Et ce point de non-savoir représente ce qui a échappé à l’Autre et qui s’adresse à lui.
+
+2)  De ne pas savoir quel est le signifiant sous la coupe duquel je me trouvais,
+
+j’ignore du même coup l’autre signifiant auquel il s’adresse.
+
+Autrement dit : je ne sais pas - en disant - quel signifiant m’attend.
+
+3)  Je ne sais pas qui je suis.
+
+En somme vous avez :
+
+-   d’une part le sujet fixé, suspendu à un signifiant, celui de son acte de dire,
+
+-   d’autre part les signifiants se succédant l’un derrière l’autre,
+
+le sujet, en fait, n’est nulle part.
+
+Je répète, car c’est la conclusion à laquelle je voulais aboutir : le sujet est dans l’acte, son acte d’énoncer le dit,
+
+mais étant donné que celui-ci vient de l’Autre et s’adresse à l’Autre, que tout se passe entre des dits,
+
+le sujet reste suspendu, perdu, effacé dans l’ensemble ouvert des signifiants enchaînés :
+
+-   nous sommes le sujet de l’acte et avec cet acte, cependant nous disparaissons,
+
+-   nous sommes le sujet de l’acte et nous ne sommes pas [3].
+
+Voilà ce qu’on pourrait appeler l’antinomie du sujet.
+
+II
+
+Nous pouvons, tout d’abord, nous représenter cette antinomie moyennant un objet topologique
+
+introduit depuis longtemps dans la théorie lacanienne.
+
+Au lieu de définir le sujet, la bande de Mœbius va nous le montrer.
+
+Mais il serait faux d’identifier directement le sujet à la bande et de dire en le signalant : voici le sujet. Non.
+
+Ce qui nous intéresse dans la bande de Mœbius, c’est que sa propriété d’avoir un seul bord
+
+change si on opère une coupure médiane (tout au moins, c’est le cas pour un ruban tordu d’une seule demi-torsion). À ce moment, c’est-à-dire au moment d’accomplir une courbe fermée (qui rejoint son point de départ),
+
+la bande proprement dite disparaît, il en résulte un ruban qui n’est plus une bande mœbienne.
+
+Il ne suffit donc pas de représenter le sujet dans l’espace, il faut aussi l’acte de couper, de tracer une courbe fermée. L’acte de dire est du même type, puisque le signifiant détermine, fend le sujet en deux : il le représente et le fait disparaître.
+
+Venons-en à une 2^(ème) façon - logique, cette fois - de considérer l’antinomie.
+
+Pour ce faire, reprenons l’analyse, établie de longue date par le discours lacanien, du rapport entre l’Un et le zéro
+
+en correspondance au rapport du sujet et du signifiant. Je n’entrerai pas dans les détails de la démonstration,
+
+elle a été rigoureusement traitée par J. A. Miller dans son texte « La Suture » [Cahier pour l’analyse, n° 1-2, p.39-51, Paris, 1966].
+
+Je me limiterai aux points essentiels de cette corrélation afin de répondre à la question qui nous préoccupe :
+
+-   comment rendre compte de ce fait théorique que le sujet est impossible et cependant nommé et plus que nommé, compte pour un (soit-il un en plus, ou un en moins) ?
+
+-   Comment cette chose fuyante qu’est le sujet peut-elle être fixée avec un signifiant ?
+
+Le rapprochement avec la définition du zéro fournie par Frege est ici éclairant :
+
+c’est un nombre doté de deux propriétés
+
+-   d’une part, il désigne le concept d’un objet impossible, non pas à l’égard de la réalité, mais de la vérité, parce que non-identique à soi,
+
+-   et d’autre part - par rapport à la suite des nombres - le zéro compte comme un. Le zéro se définit alors en tant que concept de l’impossible et en tant qu’élément occupant une place dans la succession numérique.
+
+De même le sujet, tout en étant rejeté de la chaîne signifiante, reste cependant représenté par un signifiant
+
+et, partant, élément comptable.
+
+Il y a donc une étroite affinité entre le sujet et le zéro, encore plus serrée et importante si l’on considère cette fonction qui leur est commune : l’un aussi bien que l’autre assure par sa place singulière le mouvement de la suite des nombres. Ainsi, quand nous définissons le sujet de l’inconscient comme effet du signifiant dans l’être parlant,
+
+nous voulons dire que le défilé des signifiants à travers nous, fait de nous une constante, un zéro, un manque,
+
+un manque-pilier qui va précisément soutenir toute la chaîne.
+
+Comment tout ceci se joue-t-il dans l’analyse ? N’est-ce pas une spéculation décharnée ?
+
+Quelle autre visée analytique pouvons-nous attendre, si ce n’est que le sujet, dans une analyse, parle,
+
+non pas pour dire du sens, pour signifier, mais pour se signifier ?
+
+C’est-à-dire qu’un sujet parle -là réside la paradoxe- pour disparaître.
+
+Pour qu’il fasse acte et s’efface aussitôt.
+
+Nous sollicitons, nous attendons que le sujet démissionne, vienne à l’Autre,
+
+disparaisse et du même coup relance la chaîne des signifiants inconscients.
+
+Le sujet dit, et en disant il devient sujet (espace blanc) et disparaît :
+
+-   avant l’acte, il n’était pas,
+
+-   après l’acte, il n’est plus.
+
+Le sujet « ex-siste » en dehors de cette chaîne, mais par rapport à elle.
+
+À ce point de la démonstration, avant d’entrer dans le problème de la castration,
+
+anticipons déjà l’interrogation dont je voulais vous faire part :
+
+pourquoi, si tout le système est signifiant, si l’ordre est signifiant, y introduire le terme de sujet ?
+
+Pourquoi Lacan tient-il à garder ce terme là où, en principe, tout conduit à dire qu’il n’y en a pas ?
+
+Or, il est déjà clair que nier l’existence du sujet, tout au moins du point de vue de la théorie lacanienne, est une erreur.
+
+Si vous dites : le sujet est sous le signifiant, puis il n’est plus, vous commettez une erreur.
+
+Le sujet est divisé, il est donc aussi dans la chaîne.
+
+Lacan a tenu à conserver ce terme de sujet, voire l’utiliser pour démarquer la psychanalyse du formalisme.
+
+Même par rapport à Freud, il tient au sujet.
+
+Il y a une très belle citation où, parlant de la satisfaction du désir...
+
+  vous savez que le désir se satisfait avec du symbole, du signifiant
+
+...Lacan affirme :
+
+« Freud nous dit : « le désir se satisfait », alors que moi je vous propose : le sujet du désir se satisfait ».
+
+Pourquoi ne démord-il pas de cette question du sujet ?
+
+À reprendre cet écart, cette nuance par rapport à Freud, on peut se demander si c’est le concept de satisfaction
+
+qui le conduit à ne pas abandonner le sujet. Le sujet lui est-il nécessaire pour parler de jouissance ou de satisfaction?
+
+À mon avis, ce n’est pas la voie à suivre :
+
+vous verrez plus tard que le rapport entre le sujet et la jouissance est un rapport d’opposition.
+
+On pourrait dire, avec quelques réserves : là où il y a de la jouissance, il n’y a pas de sujet.
+
+Ce n’est donc pas cette problématique de la jouissance qui explique son attachement au sujet.
+
+III
+
+Avant d’exposer quelle problématique ce terme de sujet va résoudre,
+
+venons-en directement à notre 3^(ème) rapport, celui du sujet à la castration.
+
+C’est dans le cadre de la castration que nous trouverons chez Lacan une première réponse,
+
+inspirée du terme d’aphanisis extrait de Jones, auquel il se réfère dans la plupart de ses séminaires
+
+pour en faire - non sans admiration - la critique. D’ailleurs certains concepts importants dans la théorie lacanienne portent si fortement le sceau de Jones que je me suis dit que Lacan aime Freud comme son double,
+
+mais que c’est Jones qu’il désire.
+
+Donc, quand Freud écrit : « le désir se satisfait », lui [Lacan] dit : « le sujet du désir se satisfait ».
+
+Jones propose : aphanisis du désir, lui dit : non, c’est l’aphanisis du sujet.
+
+Il a donc trouvé le moyen de dire :
+
+-   ce n’est pas que le sujet soit absent de la chaîne des signifiants,
+
+-   ce n’est pas que nous ne soyons pas dans les mille et un événements qui vont succéder,
+
+-   c’est que le sujet est, mais comme effacé, que le sujet « s’aphanise », s’évanouit chez l’Autre.
+
+Si maintenant, nous nous rapportons à la castration et à la distinction établie par Lacan, il y a déjà plusieurs années, entre avoir le phallus et l’être, nous verrons ce concept d’aphanisis se dédoubler d’après la place que le sujet occupe
+
+en référence au signifiant ou bien à l’objet phallique.
+
+Je ne puis entrer ici dans l’examen approfondi d’un point que nous avons traité ailleurs.
+
+Demandons-nous simplement, en manière de rappel, ce que nous voulons dire quand nous utilisons l’expression bien connue d’« être châtré ».
+
+Nous y mettons trois significations.
+
+Tout d’abord que l’être parlant ne s’affronte au sexe qu’avec deux moyens :
+
+-   le signifiant (symptôme ou pas),
+
+-   et le fantasme,
+
+moyen artisanaux car incapables de résoudre l’impasse de la jouissance, entendue ici comme inexistence du rapport sexuel.
+
+Ensuite, que le recours au signifiant est une contrainte et une soumission :
+
+-   contrainte à une répétition inutile car la suppléance ne s’accomplit pas, elle rate,
+
+-   soumission au terme qui ordonne cette répétition : le signifiant phallique. Avoir le phallus veut dire ceci, n’avoir rien du tout et rester cependant soumis à la fonction phallique.
+
+Et, enfin, voici que ce travail inexorable de mettre des signifiants l’un après l’autre au cours d’une vie,
+
+le sujet s’éteint passivement, s’aphanise. C’est là une des formes de disparition.
+
+L’autre forme relative à être le phallus dépend d’une dimension bien différente,
+
+celle du fantasme où nous voyons disparaître le sujet caché derrière l’objet fantasmatique.
+
+Il faut donc très sommairement distinguer deux classes d’aphanisis, deux façons de ne plus être là
+
+(ce qui est tout autre chose que de ne pas être là) :
+
+-   une façon propre à la répétition,
+
+-   l’autre propre à l’occultation.
+
+On voit donc que la castration n’est pas, comme on pourrait le croire, une opération négative d’élimination d’un organe.
+
+Au contraire, châtrer est un travail de prolifération inexorable de signifiants successifs.
+
+Et, si quelque chose est affecté de privation, ce n’est pas le pénis, c’est le sujet lui-même.
+
+Châtrer c’est décapiter, car plus les signifiants insistent et se répètent, plus le sujet est en moins.
+
+Si maintenant, pour résumer, nous changeons de vocabulaire et nous demandons à nouveau : qu’est-ce que la castration ? nous dirons qu’elle est une initiation, une entrée de l’enfant dans le monde de l’échec en vue d’aborder la jouissance (même pas la connaître, seulement la signifier) , au prix de disparaître.
+
+Une fois de plus, nous aboutissons à la même conclusion : l’enfant entre dans le monde et il pâlit.
+
+Retournons au questionnement de tout à l’heure : de quelle sorte d’obstacle ce terme de sujet nous affranchit-il ?
+
+Je soumets à votre appréciation l’idée que l’impasse que Lacan a dû lever : l’alternative déjà très ancienne de l’être et du non-être. Il lui fallait ne pas ontologiser le sujet, ne pas en faire un substrat, il lui fallait, autrement dit, ne pas le plaquer à la notion de représenté.
+
+Il était nécessaire que le sujet ne soit pas seulement une chose marquée par la représentation,
+
+ce qui pour un Berkeley se traduirait sa célèbre formule : « l’être, c’est l’être perçu »
+
+et, pour nous, par : « le sujet, c’est le sujet représenté ».
+
+Il s’agit donc pour Lacan d’éviter ce sujet-substrat, identifié exclusivement à une représentation.
+
+Si le sujet n’était que cela, pure représentation, nous serions naturellement conduits à l’ériger en entité absolue, substantielle. Or il fallait, pour ne pas finir dans le filet de la métaphysique, que le sujet soit autre.
+
+Lacan, donc, garde d’une main cette notion de représenté mais, pour que cela ne soit pas un substrat,
+
+il introduit alors de l’autre la notion de sujet effacé dans toute la chaîne. L’inverse étant valable :
+
+la nécessité de ne pas faire disparaître complètement le sujet explique le recours à la notion de sujet représenté.
+
+Cette double main, bien sûr, c’est le sujet divisé.
+
+Je veux être clair sur ce point : l’astuce n’est pas tant d’avoir divisé le sujet...
+
+  il aurait pu le diviser en être et non-être
+
+...que de l’avoir divisé entre la représentation et l’ensemble des représentations.
+
+Quel intérêt à cela ? C’est que, de cette façon-là, il divise le sujet entre
+
+-   l’être représenté,
+
+-   et d’autre part, le fait éclater en autant de dires, en autant de signifiants qui s’ordonnent en chaîne.
+
+Ainsi, il garde le sujet et conserve surtout la chaîne : la chaîne des représentations inconscientes, ou bien la chaîne des signifiants.
+
+J’insiste encore sur le fait que la division du sujet n’est pas entre l’être et le non-être,
+
+-   mais entre l’un et l’Autre,
+
+-   entre un signifiant qui le représente et l’évanouissement dans la chaîne,
+
+-   ou encore, pour reprendre nos lettres, entre S₁ et S₂ (S indice 1 et S indice 2).
+
+Or la solution de diviser le sujet en éludant ces deux risques repose tout entière sur la fonction représentative :
+
+un signifiant représente le sujet pour un autre signifiant. Sans ce concept de représentation,
+
+la division du sujet serait impensable, car c’est par un représentant que le sujet demeure attaché au système.
+
+Mais - et voici l’interrogation dont j’ai fait état à Lacan, et que je vous soumets - cette amarre de la représentation n’est-elle pas trop mince pour maintenir ensemble 2 dimensions si hétérogènes :
+
+-   la détermination signifiante,
+
+-   et l’effet d’un sujet disparu ?
+
+Comment concevoir que la représentation puisse réunir
+
+-   la détermination et le rejet,
+
+-   la cause de l’abolition et ce qui est aboli ?
+
+Pour certains d’entre vous une telle question peut susciter des objections parmi lesquelles quelques-unes
+
+pourraient même se trouver déjà dans la trame de cet exposé, voir être avancées par moi-même.
+
+Cependant, je préfère au contraire ne pas taire la question et la laisser nous conduire,
+
+quitte à ce que, plus tard, nous soyons obligés de revenir sur nos pas.
+
+Donc, à partir de cette mise en cause de la représentation en tant que diviseur du sujet il me semble possible,
+
+-   plutôt que de diviser horizontalement le sujet,
+
+-   de le multiplier verticalement en autant de signifiants qui composent une chaîne.
+
+Un sujet étagé, feuilleté en somme.
+
+Cette conception spatiale du sujet nous est apparue avec la considération d’une certaine classe de surfaces topologiques, nommée « surface de Riemann » [4], définie par une fonction analytique.
+
+Riemann, savant et mathématicien du XIX^(ème) siècle, avait génialement résolu,
+
+dans le cadre de la théorie des fonctions analytiques à variables complexes, le cas anormal d’une fonction multiforme.
+
+C’est le cas - je ne fais que le mentionner - d’une variable (relative à un nombre complexe, par exemple racine carré de z ) à laquelle correspond plus d’une fonction. Afin de lever l’obstacle d’une irrégularité gênante pour d’autres calculs (calcul intégral), Riemann sort du champ propre des fonctions algébriques et recourt à l’espace géométrique,
+
+voire à l’imaginaire de l’espace.
+
+Ainsi, il procède à une multiplication de la variable en autant de valeur qu’il y a de fonctions.
+
+Au lieu donc de chercher à réduire le nombre de fonctions et accorder une fonction à une variable,
+
+il trouve ce même accord en découpant la valeur de la variable,
+
+en un mot, au lieu de diminuer les fonctions, il démultiplie les variables [5].
+
+Or cette multiplication aura, tout au moins dans cette démarche de Riemann (cela a été modifié depuis),
+
+un support spatial, topologique. Il dresse en hauteur un bâti composé de feuillets superposés,
+
+chacun correspondant à une valeur et l’ensemble recouvrant le plan des nombres complexes.
+
+Le nombre d’étages ou de feuillets peut, selon le genre de surface, monter à l’infini.
+
+C’est cette structure, précisément, que l’on nomme « surface de Riemann ».
+
+L’analogie d’une analyse de ce type avec le sujet est pour nous remarquable.
+
+Pourquoi ne pas supposer - quitte à nous reprendre - que le sujet subit le même accroissement,
+
+le même feuilletage que Riemann faisait subir à la valeur de la variable et supposer encore
+
+que si le sujet se multiplie ainsi à la mesure des signifiants composant de la chaîne, il finit par s’y identifier ?
+
+Nous savons bien que ceci signifierait libérer le sujet de toute attache au système, puisque ce système, il le devient. Nous savons aussi qu’il existe un nom pour désigner cette assimilation du sujet à la chaîne : le sujet supposé savoir.
+
+Nous savons encore, comme j’ai essayé de l’expliquer, qu’il ne faut pas confondre la négation du sujet
+
+et dépendance du sujet :
+
+-   qu’une chose est de dire que le sujet n’est pas,
+
+-   et une autre qu’il s’aphanise.
+
+Tout, ceci, nous le savons.
+
+Mais d’ordinaire, quand les psychanalystes que nous sommes pratiquent aussi bien la théorie que l’analyse, ce sujet glisse entre nos doigts, nous raisonnons et philosophons comme si en fait le sujet n’était qu’un ornement surajouté, un « joker » commode dans le jeu théorique.
+
+Tout se passe comme si nous étions « sujettistes » de pensée mais « formaliste » de cœur.
+
+Or quand nous proposons, avec l’appui de la surface de Riemann, de voir le sujet se feuilleter et disparaître,
+
+nous sommes en train de confirmer cette intuition, mieux : peut-être sommes nous en train de l’interroger
+
+comme un symptôme au lieu d’essayer obstinément de la corriger.
+
+Le terrain serait alors plus dégagé pour reconnaître aisément la nécessité d’approfondir l’aphanisis effective du sujet,
+
+et du même coup, en conséquence, de retravailler la dimension imaginaire du moi.
+
+À partir de nos formulations sur le sujet, c’est tout ce thème du moi et de l’intuition qui s’offre à l’examen.
+
+Si le sujet reste confiné à la chaîne comme nous le supposons, s’impose alors la nécessité de nous pencher
+
+sur la portée de l’instance imaginaire du moi et d’analyser plus à fond son rapport à l’intuition.
+
+Bref, il s’agirait de maintenir vive la question : « qui est le sujet ? ».
+
+-   Si nous reprenons notre terminologie en parlant de la castration,
+
+-   si au lieu du sujet nous disons l’enfant,
+
+-   si au lieu de la chaîne nous traduisons loi du père,
+
+-   si au lieu d’affirmer simplement « jouissance », nous ajoutons « jouissance de la mère »,
+
+-   si enfin, nous nous demandons qui est cet enfant de la psychanalyse, qui est cet enfant magnifique dont la psychanalyse parle tant pour soutenir ses hypothèses,
+
+...nous devons alors répondre que cet enfant, ce sujet donc, est celui qui parle et pense avec les mots du père, attiré par la jouissance de la mère.
+
+L’enfant magnifique de la psychanalyse, nous les êtres parlants, nous ne sommes que des êtres de vent,
+
+des messagers évanouissant entre la jouissance qui aspire les mots et le nom du père qui les ordonne.
+
+(Ce texte a été revu par J. D. Nasio )
+
+Vappereau
+
+Je n’ai pas voulu interrompre Nasio au moment ou il parlait de la bande de Mœbius, parce que je crois que,
+
+comme avec l’espace de Riemann, on imagine que c’est à partir de là que nous pourrions dialoguer.
+
+Alors je vais dessiner cette bande de Mœbius et vous trouverez le commentaire du dessin que je vais faire dans L’étourdit qui se trouve dans Scilicet.
+
+Je n’ai pas l’intention d’illustrer ce texte et je vais plutôt m’en servir pour répondre à la question...
+
+enfin, disons, le D^(r) Lacan m’a incité à vous parler, il m’a présenté les quatre volumes du Séminaire qui sont édités
+
+et il m’a demandé d’en tirer quelque chose pour vous, et j’ai fait quelques dessins.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\1.jpg]
+
+Alors voilà la bande de Mœbius dont Nasio a parlé à propos du S_(1 →) S₂ en termes de mathèmes,
+
+et je vais tracer le dessin de la coupure dont il a très bien parlé. Voilà cette coupure.
+
+Si vous extrayez le lambeau de surface que vous obtenez après avoir coupé selon le trait bleu qui est un trait continu, vous obtenez une surface à un seul bord et une seule face, qui est elle même une surface de Mœbius.
+
+Et de l’autre côté du tableau, je vais dessiner de l’autre extrémité une chaîne borroméenne
+
+dont je pourrais d’ailleurs mettre une consistance en bleu.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\2.jpg]
+
+Alors voilà, c’est entre ces deux dessins, que je vais essayer de vous parler des quatre volumes du Séminaire,
+
+à propos de deux termes :
+
+-   d’abord du terme de « machine »,
+
+-   et de celui de « nœud ».
+
+Alors dans ces quatre volumes, les machines occupent une place très importante dans le second, dans le livre II.
+
+Et il est bien évident que, quand j’ai commencé à lire le livre I, parce qu’il est paru en même temps que « Encore »...
+
+le livre XX, j’avais assisté au Séminaire, j’étais très content de l’avoir, comme ça, pour pouvoir le lire
+
+...eh bien, le Livre I, je dois dire que je ne comprenais pas très bien le début où il était question de l’Ego,
+
+un terme que je ne connaissais pas parce que ce n’est pas, disons, un endroit d’où je viens, alors j’ai attendu un peu
+
+et c’est seulement à propos de cette question de l’au-delà de la psychologie que je me trouve intéressé.
+
+Or cette question est développée dans le Séminaire en termes d’Imaginaire et de Symbolique que dans un premier temps, je vous propose de considérer comme étant les 2 phases de la bande bipartite qui sont ici de part et d’autre du bleu, parce qu’il faudrait que vous vous rendiez compte, soit en le découpant, soit en le dessinant,
+
+qu’on obtient sur la bande de Mœbius ainsi, on obtient une bande bipartite,
+
+c’est-à-dire qu’on sépare la bande, non pas en deux parties, n’importe lesquelles, mais en deux faces.
+
+Je vais vous les colorier : en voilà une verte, ici il y a une torsion, alors il va y avoir l’autre côté, mais c’est le vert
+
+de nouveau qui réapparaît là, et encore du vert si je continue, ici ça va être l’autre côté,
+
+ici voilà le vert qui va réapparaître là. Et puis il y a une partie que je colorie en rouge qui est l’envers du vert.
+
+Alors c’est à propos de cette bande, si je vous propose en essayant de rester très près du livre I du Séminaire,
+
+je me suis rendu compte que la partie qui concernait le bleu, c’était le Réel. Alors là en fin de compte,
+
+c’est très maladroit de présenter les choses comme ça, parce que c’est carrément de la représentation.
+
+Mais dans le Séminaire, le Livre I, il se trouve qu’effectivement il est question du Réel à propos, il m’a semblé,
+
+de la Verneinung de Freud, commentée par Hyppolite, et c’est ainsi que je rattache à cela l’exposé de M^(me) Lefort,
+
+à propos de ces deux termes « Le loup ! Le loup ! ».
+
+Bien, mais venons-en aux « machines ».
+
+Le Séminaire suivant, le Livre II développe, me semble-t-il, là cette question des machines
+
+que j’ai été très surpris de rencontrer sous cet aspect dans la mesure où je les avais étudiées
+
+comme des automates abstraits chez les mathématiciens et puis que j’avais eu l’idée de ce qu’une machine pouvait être,
+
+bien qu’on ne pense pas assez souvent qu’une poulie ou un dé soit une machine.
+
+Et ce vers quoi je voudrais aller, c’est parler de machines qui sont un petit peu différentes les unes des autres
+
+et parler du nœud et des chaînes comme machines.
+
+Alors si je m’en tiens pour l’instant à l’époque de ce Livre II du Séminaire du D^(r) Lacan,
+
+si je m’en tiens aux machines mathématiques, les machines récursives
+
+-   qui produisent une répétition d’une certaine opération aussi longtemps qu’on veut,
+
+-   qui ont des limitations,
+
+-   et qui ont échoué à rendre compte des langages naturels,
+
+...eh bien, ces machines ont une tête de lecture ou d’écriture, eh bien, je crois qu’il ne faut pas se préoccuper excessivement de la tête ou uniquement.
+
+Les mathématiciens et les logiciens, le problème qu’ils se sont posé avec cette tête,
+
+c’est de savoir si elle passait dans différents états : on appelle ça les états de la machine et on note ça S₁, S₂, etc.
+
+Or ça m’a beaucoup servi comme analogie, au début, de suivre le programme, la grammaire de cette tête.
+
+Mais j’ai très vite été amené à dédoubler cette tête et maintenant
+
+-   je me rends compte parfaitement que ce qu’il y a en face de la tête c’est ce qu’on appelle « la bande-machine »,
+
+-   je me rends compte tout à fait qu’il faut s’occuper de la bande.
+
+Seulement les bandes dans les machines de Mœbius - non justement : pas de Mœbius mais de Turing ! - n’ont pas de torsion, c’est à dire que ce sont des machines forcément linéaires, et avec ces machines on n’arrive jamais
+
+à leur faire faire autre chose que ce qu’elles savent faire, mais qui rencontrent - dès que contraintes - une limite :
+
+c’est à dire que la limite se trouve du côté de l’infini,
+
+c’est-à-dire qu’il faut brancher, pour rendre compte des langues naturelles, semble-t-il, une infinité de machines,
+
+les unes à côté des autres, pour réussir à leur faire faire - quoi ? - on pourrait se le demander...
+
+Mais du côté de la bande, il faut s’intéresser à la bande comme machine,
+
+et c’est déjà une étape comme celle que j’ai dessinée là.
+
+Et vous voyez bien que ce n’est pas suffisant de le monter par un seul dessin,
+
+il faut transformer, il faut faire fonctionner cette machine.
+
+C’est une étape des machines donc.
+
+Et il me semble qu’avec ça on pourrait faire quelque chose.
+
+Alors comme je m’intéresse sérieusement à cette bande avec ses torsions et ses trous,
+
+je vais vous dessiner une autre représentation de cette bande avec un trou et vous monter une petite machination assez surprenante, enfin plutôt vous en monter les deux termes parce que c’est très long de faire des dessins intermédiaires et c’est tout un exercice.
+
+Alors il s’agit, d’une part de cette bande sur laquelle je perce un trou.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\3.jpg]
+
+Si je perce un trou ici et que j’étends ce trou au point d’élargir les bords de ce trou, j’obtiens cela.
+
+Je vais dessiner ici assez gros.
+
+C’est-à-dire que je fais faire au bord du trou le trou du trou central et je vais remettre la partie bleue. Voilà.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\4.jpg]
+
+Eh bien, cette figure, sur laquelle on peut reporter le rouge et le vert, il se trouve que cette figure est ce qu’on appelle un carrefour de bande, si on découpe la partie bleue que j’ai coloriée, on va obtenir un carrefour de bande deux fois fendues et que je vais redresser.
+
+Alors ces objets que je dessine ont des propriétés et il se trouve, quand je lis, j’essaye de puiser dans l’ensemble
+
+des figures d’un certain nombre d’objets que j’ai déjà dessinés, j’essaye de puiser dedans et de voir si ce que je lis donne quelque chose, répond, ou résonne avec les dessins et les problèmes qui ici sont des problèmes de surfaces.
+
+Or ça ne marche jamais très longtemps.
+
+Ça, je crois que c’est une constante, une constante de cette façon de faire qui est qu’on arrive à chaque fois
+
+à un moment ou les choses paraissent insuffisantes. Mais ce que je voudrais essayer de dire, c’est qu’il y a un saut, parce qu’on a déjà commencé à faire marcher une autre machine, quand on abandonne un certain type de machine.
+
+Et il ne faut pas chercher à les pousser à l’extrême, c’est-à-dire nulle part.
+
+Par exemple, je vais vous le montrer sur cette figure :
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\5.jpg]
+
+Il y a déjà le dessin des bords et je peux m’intéresser aux bords.
+
+Or qu’est-ce que ces bords vont me donner ?
+
+Eh bien, je vois ici qu’il y a un trou.
+
+Or le trou, si on raisonne sur le trou, le bord du trou, on imagine très bien qu’il est indépendant,
+
+tout à fait indépendant des autres bords qui sont sur cette surface, parce qu’on voit bien ici qu’il est indépendant
+
+de la partie bleue et l’autre bord rouge extérieur. Ici on voit bien que le bord de ce trou noir est tout à fait indépendant. Cette petite pastille, elle n’est pas nouée.
+
+Par conséquent, je peux par contre dessiner la partie bleue et la partie rouge :
+
+-   la partie bleue, ça va être un huit intérieur sur lequel vient se nouer en rouge une consistance,
+
+-   la partie bleue, c’est le bord de la bande de Mœbius, qui est tracée sur la bande de Mœbius et le bord du trou, c’est un rond noir.
+
+Alors j’essaye de faire comme ça monstration d’un cheminement qui échoue et qui reprend successivement...
+
+Dans le Livre II où il est question des machines, à propos du Séminaire, j’ai essayé d’appliquer cette machine,
+
+c’est-à-dire celle-ci, ce carrefour de bande, au rêve que fait Freud à propos d’Irma et dont part le D^(r) Lacan.
+
+Alors effectivement je situe le mouvement du rêve et je m’aperçois qu’effectivement dans le commentaire
+
+on peut suivre très précisément Freud qui s’écarte, qui se met à l’écart avec Irma.
+
+Alors il part, au lieu de rester sur la bande là, qui est traversée de la partie bleue,
+
+il emprunte une bretelle ici, c’est-à-dire qu’au carrefour il va s’écarter du trajet normal de la bande bleue.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\4a.jpg]
+
+Et vous voyez qu’il va être entraîné pour passer sous la bande.
+
+Or c’est à ce moment là qu’il voit la bouche ouverte d’Irma et la remarque qui était faite dans le Séminaire,
+
+c’était qu’à ce moment là il aurait dû se réveiller, or il ne se réveille pas.
+
+Alors qu’est-ce que je me suis posé comme question ?
+
+Je me suis dit : qu’est-ce qui fait qu’il ne se réveille pas ?
+
+Et en travaillant ces bandes d’une part, et en rêvant aussi, je suis arrivé à situer le réveil du côté de la torsion,
+
+c’est-à-dire qu’il semblerait que dans ce dessin Freud n’a pas rencontré de torsion.
+
+Alors je voulais vous montrer comment, si on découpe selon ses trois bords cette bande, que je vais finir de colorier, si on découpe cette bande, on peut réussir à la présenter comme ceci, on peut réussir à la présenter ainsi sans torsion, c’est-à-dire que vous imaginez la complexité pour monter ça directement par des transformations continues.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\6a.jpg]
+
+Alors c’est là que je suis amené à faire un petit peu de mathématique.
+
+Ce que j’entends par faire des mathématiques à ce moment-là, c’est chercher des moyens intermédiaires
+
+qui me permettent de justifier cette transformation, que j’ai rencontrée parce que je travaillais avec ses objets.
+
+Alors j’hachure la bande dans son plein, il n’y a plus de torsion et il s’agit d’une véritable spirale.
+
+Or il me semble par conséquent que tout ça tient très très bien avec les problèmes de l’analyse,
+
+c’est-à-dire que cette spirale sans torsion, je dis tout de suite que je ne crois pas que ce soit une psychose,
+
+je dirai que ça a quelque chose qui est de l’ordre de l’analyse dans un 1^(er) schéma que j’ai retrouvé assez évocateur dans le livre I du Séminaire, au cours de la dernière réunion où le D^(r) Lacan nous a proposé un schéma de l’analyse qui est daté de cette époque du Livre I du Séminaire.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S1\13a.jpg]
+
+Alors vous voyez la question qui s’élabore, c’est qu’il y a une part d’illustration, il y a une part mathématique
+
+que je préserve et qu’à mon avis, il n’est pas indispensable de développer autrement
+
+et je vais essayer de m’expliquer sur ça en parlant justement du Livre XI qui, lui, reprend...
+
+  à mon avis, enfin tel que je l’ai lu
+
+...le Livre I.
+
+Il m’a semblé que c’était un développement analogue, or il est question dans ce Livre XI énormément de mathèmes, d’écritures mathématiques qui correspondent donc à un autre ordre que ce que tout à l’heure disait Nasio,
+
+qui n’est pas topologique, mais ensuite parlant de logique avec le zéro de Frege, ces choses effectivement
+
+sont très présentes, ces différentes façons d’aborder une question, si on veut s’en tenir à cela,
+
+soit avec des bandes, soit avec des écritures.
+
+Et c’est autour de ces termes que nous tournons.
+
+Eh bien, je dirais que le Livre XI dans lequel il y a beaucoup de mathèmes qui surprennent les mathématiciens
+
+parce qu’ils n’y comprennent rien, il faut être un peu logicien pour suivre cela et je crois qu’avec les chaînes
+
+et les nœuds, on arrive particulièrement bien à s’y plier.
+
+Alors c’est pour cela que je vais sauter au Livre XX qui, lui, me paraît extrêmement dense, très concis,
+
+mais dans lequel il est question de cette faille compacte que les mathématiciens peuvent lire,
+
+et reconnaître là la définition tout à fait correcte de ce que nous connaissons comme compacité.
+
+Et je crois qu’on peut renvoyer cette faille compacte à ce qui en sort, s’apercevoir que par exemple elle renvoie au Séminaire XI, si on le lit, au moment justement ou le réseau du signifiant est présenté dans le chapitre juste avant,
+
+qui s’appelle « L’inconscient freudien » et où Lacan...
+
+  après avoir parlé de Lévi-Strauss et de « La pensée sauvage »,
+
+...dit qu’il y a quelque chose d’un petit peu différent de la pensée magique, c’est la discontinuité.
+
+Alors ça doit faire rigoler encore plus les mathématiciens, la discontinuité, de parler de discontinuité à ce moment-là, parce que justement la topologie se définit justement des fonctions continues.
+
+Donc ceci peut paraître extrêmement difficile et pourtant je pense, sur le plan de l’enseignement de Lacan,
+
+que c’est à dessiner, à éviter justement mes mathématiques en tant que pratique de l’écriture, que les nœuds et les chaînes,
+
+ça apporte quelque chose justement, et qu’il faut différencier des surfaces que j’ai dessinées ici au tableau
+
+qui, elles, ces surfaces, sont des machines encore sommaires à l’égard des chaînes qui sont des machines,
+
+je dirais, plus consistantes, qu’on peut pratiquer très simplement, comme les dés sont des machines :
+
+on peut jeter les dés, on peut aussi jeter les chaînes, borroméennes ou pas, par terre, les ramasser, les reprendre.
+
+Or je suis de l’avis que les dessiner, quand on arrive à les dessiner, produit des contraintes de structure
+
+qui peuvent être mieux suivies qu’avec la manipulation du modèle physique.
+
+Et j’en viens par là à discuter ce terme de modèle, parce que, si j’évoque
+
+-   ces machines d’une part,
+
+-   et les mathématiques d’autre part,
+
+c’est un critère que de pouvoir construire en mathématique ce que l’on appelle des modèles.
+
+Et là je dis qu’il ne s’agit pas de modèles parce que finalement je dessine...
+
+  ici j’ai même dessiné assez maladroitement
+
+...mais je vous proposerai pour cela justement le fait suivant : ce ne sont pas des modèles parce que le D^(r) Lacan
+
+a poussé le travail sur les écritures des mathèmes au point, dans « Encore », de nous produire quelque chose...
+
+  il ne le dit peut-être pas dans ce séminaire, mais un peu plus tard
+
+...que quelqu’un d’autre avait déjà remarqué et il s’agit en l’occurrence du « Pas-tous ».
+
+Or effectivement si on étudie les mathématiques,
+
+-   c’est-à-dire la question de la théorie des mathématiques,
+
+-   c’est-à-dire la question de la théorie des modèles,
+
+-   de la théorie des ensembles dans le langage du calcul des prédicats,
+
+on ne comprend rien au « Pas-tous », on ne le découvre jamais, puisque toute l’affaire est faite pour que justement avec le tau [τ] de Hilbert les choses n’apparaissent pas.
+
+Par conséquent il faut avoir une autre idée de ce qu’on cherche pour trouver le « pas-tous »
+
+dans la théorie des ensembles et dans le calcul des prédicats.
+
+Mais c’est parfaitement articulé et c’est avec cet argument qu’on arrive à produire quelque chose.
+
+Or je dis qu’après - dans ce séminaire XX - après avoir articulé précisément à propos du mathème
+
+la borne par-dessus laquelle le mathématicien qui fait le calcul des prédicats n’est pas obligé de sauter,
+
+eh bien, on rencontre les chaînes, c’est-à-dire on revient aux machines, on quitte ces modèles et la théorie des ensembles même plus mécanisée et on revient à des machines beaucoup plus simples.
+
+Et c’est des machines beaucoup plus simples qui me semblent avoir un intérêt à être pratiquées.
+
+Alors je dirai : qu’est-ce qu’il y a de particulier avec ces chaînes, pour finir ?
+
+Pour reprendre la question que Nasio a posée avec la question du Un et de l’Autre, je dirai...
+
+  pour répondre aussi à cette question de la représentation de la représentation ou du Rien
+
+...que, si je trace une chaîne à 4, si je trace une chaîne borroméenne à 4, eh bien, il y a 3 ronds...
+
+  et ça, le D^(r) Lacan le dit très bien dans les séminaires qui sont parus dans Ornicar
+
+...il y a 3 ronds que je vais désigner l’un en bleu comme dans la figure précédente, c’est-à-dire celui-ci,
+
+un autre en rouge et un troisième en vert.
+
+Si on coupe un des trois qui sont colorés, le quatrième étant resté noir, les deux autres colorés sont libres,
+
+donc ils sont noués... ils présentent quelques analogies avec la structure borroméenne,
+
+c’est-à-dire que si on en coupe un des trois, un quelconque des trois, les deux autres sont libres.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\8.jpg]
+
+Or qu’est-ce qui se passe dans la structure borroméenne ?
+
+Il se trouve que le 4^(ème) est implicite...
+
+  dit Lacan quelque part après, dans les Séminaires qui suivent
+
+...le 4^(ème) est implicite, eh bien, la question, elle est de savoir qu’est-ce qui tient les trois.
+
+Chacun des 3 tient les 3, chacun des 3 tient les 2 autres, peut-on dire, mais on peut même dire qu’il tient les 3.
+
+Mais rien - mais alors est-ce qu’on tombe dans la mystique ? - rien, mais c’est un rien qui compte, c’est-à-dire un vide, parce qu’il n’est pas question de le représenter ici par un 4^(ème).
+
+Ici, je dirai que le 4^(ème) est explicite.
+
+Ici le 4^(ème) est explicite, je le nomme S, ici qu’est-ce qui tient les trois ?
+
+C’est la structure borroméenne qui fait ça, qui les tient, c’est un rien qui compte.
+
+Voilà comment je dirais que cet effet de nodalité - voilà comment je le vois ou comment je le dis,
+
+cet effet de nodalité permet, à mon sens, de faire jouer quelque chose qui n’est pas représentable
+
+et ne peut pas être épuisé par aucune machine, c’est-à-dire que c’est une machine.
+
+Mais par contre c’est une machine soi-même qui se pratique, c’est-à-dire qui est à la portée de la main
+
+et qui est, à mon sens, quelque chose comme...
+
+pour évoquer l’endroit dans le Séminaire où pour la 1^(ère) fois, apparaît la nodalité
+
+...c’est quelque chose comme le tir à l’arc.
+
+C’est-à-dire - je prends cette référence dans le livre XI, le D^(r) Lacan a présenté la pulsion dans ces termes
+
+en faisant ce dessin à propos d’un bord- eh bien, c’est le circuit aller et retour de la pulsion qui contourne le (a).
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\7.jpg]
+
+C’est la première occurrence de la nodalité dans les dessins du Dr Lacan.
+
+Regardez comment j’ai été frappé de retrouver un autre dessin qui, lui, n’est jamais commenté,
+
+qui présente exactement ce bord et ce circuit.
+
+[C:\Users\Alain\Desktop\Lacan séminaires\Ressources\Doc S26\9.jpg]
+
+Ici il s’agit encore d’une chaîne à 3 avec une consistance qui passe dans un trou, enfin que je considère comme un trou et qui se trouve être une chaîne borroméenne. Or je voudrais dire que le recours à ces figures,
+
+la question que moi je me pose, c’est, à propos justement que ce soit de l’idée d’enseigner ou de pouvoir discuter, c’est quel type exactement de mise en œuvre il faut effectuer pour réussir à en faire quelque chose ?
+
+C’est-à-dire qu’il me semble qu’effectivement là...
+
+  je ne me suis toujours guidé que là-dessus
+
+...il y avait quelque chose qui jouait dans le texte des Séminaires, c’est-à-dire que le D^(r) Lacan écrivait ou parlait...
+
+  c’est ça que j’intitulerai volontiers ça « machine à écrire »,
+
+  parce que ça donne finalement quelque chose d’écrit
+
+...eh bien, il parlait , disons, d’une manière matérielle et consistante.
+
+Qu’il ait réussi à développer différentes machines jusqu’à rencontrer la chaîne borroméenne qui maintenant....
+
+qu’on peut se fabriquer pour quoi ? Pour fonctionner, et à ce moment-là, avec cette machine qui, il me semble, lorsqu’on la pratique, donne des effets, surtout assure, je dirais une très grande consistance matérielle au discours, c’est-à-dire qu’elle permet de faire des étapes dans la lecture comme dans l’écriture d’une part...
+
+  et ça je le prends dans un sens très ample
+
+...elle permet de faire des parcours, des petits parcours machiniques qui échouent.
+
+Mais c’est exactement comme dans l’interprétation d’un mot d’esprit, c’est-à-dire que lorsqu’on n’a pas épuisé la structure, lorsqu’on a fait fonctionner l’analyse d’un mot d’esprit, on n’a pas épuisé, mais on a d’une certaine façon
+
+l’impression qu’on a tari, détérioré, le brillant de cette lampe qu’est le mot d’esprit.
+
+Eh bien, avec la structure ici en présence, vous pouvez faire fonctionner, vous pouvez travailler les chaînes,
+
+mais vous n’épuiserez jamais, jamais vous ne direz quelle est en l’occurrence dans la chaîne à 3
+
+et s’il ne s’agit pas de la représenter et je ne crois pas que ce soit rien puisque ça fait tenir les chaînes
+
+et que vous vous trouvez affronté à la matérialité de la chaîne.
+
+Donc là ce qui me paraît important, c’est qu’avec le dernier donc de ces séminaires, quand on atteint la nodalité,
+
+ce que je reconnais comme tel, eh bien, il n’est pas question de continuer dans un mouvement infini
+
+de constitution de machine, parce que là on rencontre une machine qu’on n’épuise pas, il me semble,
+
+qui est dans l’espace, structure l’espace de telle manière qu’elle n’épuise pas et ne peut pas épuiser l’espace.
+
+Alors toutes les étapes précédentes, c’était constamment cette structure qui rejaillissait,
+
+qui faisait rebondir les différentes machines qu’il fallait faire fonctionner.
+
+Et ce que ça nous apprend, c’est qu’il faut les faire marcher, c’est-à-dire que ce n’est pas simplement à les regarder qu’on peut en apprendre quelque chose.
+
+Alors du côté de l’écriture mathématique, moi, je dois dire que je l’ai pratiquée très cabalistiquement au point de lire Bourbaki, c’est-à-dire pour finir, je dirai qu’il y a une torsion dans les écrits mathématiques très difficile,
+
+il me semble que les espaces feuilletés dont tu faisais référence, c’est très difficile, c’est inimaginable même,
+
+mais je ne crois pas qu’on ait une meilleure garantie de structure.
+
+Du côté d’une chose qui peut mathématiquement être inscrite en calcul des prédicats,
+
+si on lit la question du « pas-tous » telle que Lacan l’articule dans le Séminaire « Encore »,
+
+on voit que même sur le calcul des prédicats- il est là question de modèle- les espaces feuilletés,
+
+il ne faut pas y retomber en tant que modèle.
+
+Voilà, ça a été assez difficile.
+
+Table des séances
+
+[1] Cf. « L’étourdit » : « Un peu de topologie vient maintenant. », Scilicet n° 4, Seuil, 1973, p. 26
+
+[2] Cf. Pierre Soury, « Chaînes et nœuds », Volume 2, texte 83, édité par Michel Thomé et Christian Léger, Paris, 1988.
+
+[3] Je prononce « nous sommes ». Or, d’après ce qui précède, « nous sommes » est une inexactitude. Car, si je dis que le sujet est dans l’acte, puis qu’il
+
+s’efface dans tous les dits qui se succèdent, il reste la question : mais qui est ce nous ? Je dis nous sommes, car comment indiquer autrement que :
+
+« nous ne saurions spéculer sur le sujet sans partir de ceci, que nous-même comme sujets, nous sommes impliqués dans cette profonde duplicité du sujet » (Lacan).
+
+[4] La surface de Riemann ou structure de variété analytique complexe est une des sources communes à la théorie des fonctions algébriques et
+
+à la topologie. Une des propriétés, qui peut particulièrement nous intéresser dans le maniement des objets topologiques introduits par Lacan,
+
+est l’orientabilité de la surface de Riemann. Inversement, toute surface fermée orientable est homéomorphe à une surface de Riemann,
+
+c’est le cas de la sphère, du tore, du tore troué (à p trous). Pour cette dernière remarque, on peut consulter sans trop de peine le II^(ème) chapitre
+
+de G. Springer : « Introduction to Riemann surfaces », Reading, 1951.
+
+[5] Il est intéressant de noter que cette découverte de Riemann est en étroite dépendance avec sa théorie des multiplicités (très marquée par la
+
+philosophie de Herbart). Cf. B. Russell, « Fondements de la Géométrie », Gautier-Villars, 1901.

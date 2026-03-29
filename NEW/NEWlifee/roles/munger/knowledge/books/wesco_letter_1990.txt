@@ -1,0 +1,1189 @@
+91 10 9097
+RECI RODO
+APR 4-1991
+Pe
+PROCESSED BY
+59-59
+APR 8 1991
+L9A
+DISCLOSURE
+INCORPORATED
+AR/S
+WESCO FINANCIAL CORPORATION
+Annual Report 1990
+Form 10-K Annual Report 1990
+
+WESCO FINANCIAL CORPORATION
+LETTER TO SHAREHOLDERS
+To Our Shareholders:
+
+Consolidated "normal" operating income (i.e., before all net gains from sales of marketable
+securities) for the calendar year 1990 increased to $25,038,000 ($3.52 per share) from $24,414,000
+($3.43 per share) in the previous year.
+
+Consolidated net income (i.e., after net gains from sales of marketable securities) decreased to
+$25,429,000 ($3.57 per share) from $30,334,000 ($4.26 per share) in the previous year.
+
+Wesco has three major subsidiaries, Mutual Savings, in Pasadena, Wesco-Financial Insurance
+Company, headquartered in Omaha and currently engaged principally in the reinsurance business, and
+Precision Steel, headquartered in Chicago and engaged in the steel warehousing and specialty metal
+products businesses. Consolidated net income for the two years just ended breaks down as follows (in
+000s except for per-share amounts)(1):
+
+Year Ended
+December 31, 1990
+December 31, 1989
+Per
+Per
+Wesco
+Wesco
+Amount
+Share
+Amount
+Share
+"Normal" net operating income of:
+Mutual Savings ........................................................................................
+$ 4,099
+$ .58
+$ 4,191
+$.59
+Wesco-Financial Insurance business .......................................................
+14,924
+2.10
+14,276
+2.00
+Precision Steel's businesses ...................................................................
+1,985
+.28
+2,769
+.39
+All other "normal" net operating income(2)
+4,030
+.56
+3,178
+.45
+25,038
+3.52
+24,414
+3.43
+Net gains on sales of marketable securities
+391
+.05
+5,920
+.83
+Wesco consolidated net income
+$25,429
+$3.57
+$30,334
+$4.26
+
+(1) All figures are net of income taxes.
+(2) After deduction of Interest and other corporate expenses. Income was from ownership of the Mutual Savings
+headquarters office building, primarily leased to outside tenants, interest and dividend income from cash equivalents and
+marketable securities owned outside the savings and loan and insurance subsidiaries, and the electrical equipment
+manufacturing business, 80%-owned by Wesco since yearend 1988.
+
+This supplementary breakdown of earnings differs somewhat from that used in audited financial
+statements which follow standard accounting convention. The supplementary breakdown is furnished
+because it is considered useful to shareholders.
+
+Mutual Savings
+
+Mutual Savings' "normal" net operating income of $4,099,000 in 1990 was almost equal to the
+$4,191,000 figure the previous year.
+
+As usual, these "normal-income" figures come from an abnormal savings and loan association.
+
+Separate balance sheets of Mutual Savings at yearend 1989 and 1990 are set forth at the end of this
+annual report. They show (1) total savings accounts declining to $286 million from $293 million the year
+before, (2) a very high ratio of shareholders' equity to savings account liabilities (near the highest for
+any mature U.S. savings and loan association), (3) a substantial portion of savings account liabilities
+offset by cash equivalents and marketable securities, and (4) a loan portfolio (mostly real estate
+mortgages) of about $131 million at the end of 1990, down moderately from $154 million at the end of
+1989.
+
+As pointed out in Note 9 to the accompanying financial statements, the book value of Wesco's
+equity in Mutual Savings overstates the amount realizable, after taxes, from sale or liquidation at book
+value. Wesco would get only about $30.8 million, after paying income taxes, from the liquidation at book
+value of the $47 million portion of Mutual Savings' shareholders' equity which is considered bad debt
+reserves for income tax purposes. The $4.1 million Mutual Savings earned in 1990 is an inadequate
+return (8.7%) on the $47 million amount at which we try to maintain shareholders' equity, but this same
+1
+
+$4.1 million is a respectable return (13.3%) on the $30.8 million which would be the after-tax proceeds
+of liquidation at book value.
+
+The loan portfolio at the end of 1990, although containing almost no risk of loss from defaults, bore
+an average interest rate of only 9.20%, probably near the lowest among U.S. savings and loan
+associations and roughly the same as the 9.23% rate at the end of 1989. Because the loan portfolio is
+almost entirely made up of instruments of short maturity or bearing interest rates that adjust automati-
+cally with the market, there is now much less unrealized depreciation in the loan portfolio than the net
+unrealized appreciation in Mutual Savings' interest-bearing securities and public utility preferred stocks.
+That appreciation at December 31, 1990 was about $11 million.
+
+While the "spread" between Mutual Savings' average interest rates paid on savings and received
+on loans remains too low to provide respectable profits, this "spread" improved again last year. The
+"spread" improved because interest rates paid on savings declined. Moreover, the disadvantage from
+inadequate "spread" has been reduced in each recent year by the effect of various forms of tax-
+advantaged investment, primarily preferred stock and municipal bonds. The negative side of this tax-
+advantaged antidote to inadequate interest rate margin on loans is the risk that preferred stock and
+municipal bonds, with their fixed yield and long life, will decline in value, and not provide enough income
+to cover Mutual Savings' interest and other costs, if the general level of interest rates should sharply
+rise. In view of this risk, Mutual Savings' total commitment has been kept conservative, relative to the
+amount of its net worth.
+
+New federal legislation enacted in 1989, widely known under the acronym "FIRREA," is now
+causing Mutual Savings, step by step, to dispose of the preferred stock portion ($54.4 million, at cost, at
+December 31, 1990) of its tax-advantaged assets. Ownership of preferred stock has heretofore helped
+preserve earning power because tax-equivalent yield is so high (about 15% at December 31, 1990).
+Adding to our forced-disposition-of-desirable-assets problem, recent changes in income-tax law now
+make impracticable the replacement, as they mature, of Mutual Savings' direct holdings of municipal
+bonds ($16.9 million, at cost, at December 31, 1990). The municipal bonds also have a high tax-
+equivalent yield (about 17.5% at December 31, 1990). By mid-1994, and possibly much sooner, we
+expect virtually all benefit from tax-advantaged investment to vanish from Mutual Savings.
+
+Mutual Savings remains a "qualified thrift lender" under the old federal regulatory standard (which
+ends June 30, 1991) requiring 60% of assets to be in various housing-related categories. It will shortly
+change its asset mix as necessary to comply with a new standard, imposed by FIRREA, which requires
+that 70% of assets be maintained in a more restricted list of housing-related assets.
+
+Until U.S. laws governing financial institutions are further revised, Mutual Savings expects to keep
+its required 70% in housing-related assets within the following five categories:
+
+(1) mortgages issued in the course of sale of individual parcels, as Mutual Savings disposes of
+foreclosed seaside property in Santa Barbara, California;
+
+(2) directly made, fixed-rate house mortgages with short expected lives;
+
+(3) indirectly made fixed-rate house mortgages with short expected lives, purchased in the open
+market in the form of mortgage-backed securities;
+
+(4) a modest amount of directly made, long-term house mortgages with variable interest rates that
+fluctuate with the market up to 25% per annum;
+
+(5) a substantial number of directly made, long-term, fixed-rate house mortgages given only to
+persons of low-to-moderate income, many in minority groups, who have good credit, reside
+within seven miles of Mutual Savings' office, and support Mutual Savings' loans with house
+equities amounting to at least 20% of house value, with the maximum size of mortgage
+permitted being about $191,000.
+
+We will work hard to expand assets in category (5), covering small, long-term, fixed-rate house
+mortgages for local people of low-to-moderate income. Indeed this category is expected to cover a
+majority in number of all new directly made mortgages. We expect to impose no loan fees and to charge
+slightly below-market interest rates. Therefore, each new loan will cause an immediate economic loss,
+which will hit our earnings statement even before we sell the loans, as we plan to do. The loans will be
+2
+
+resold, not because they are inferior credit instruments, but because we do not wish to endure the
+asset-versus-liability maturity mismatch imposed by any long-term, fixed-rate mortgage.
+
+FIRREA has increased pressure on both banks and associations to expand lending of the sort
+covered by category (5). As a result, in our area there can now be no lack of availability in this category
+of market-rate loans, meeting legislative objectives, for persons with good credit. Instead, all lenders
+face a shortage of qualified applicants. Given this shortage, as we now compete with bigger, better loan
+departments of larger institutions, the most efficient way to get our share of qualifying loans is to quote
+below-market interest rates and loan charges.
+
+We do not resent making these loss-causing loans. We intend, with pleasure, to make more than
+our share, which we can well afford to do. We regret that we waited so long to compete vigorously for
+these loans and that we required regulatory prompting before we found a satisfactory solution of such
+simplicity. We were formerly brain-blocked, because (1) we didn't want to hold any long-term, fixed-rate
+loans, (2) we didn't want to impose on moderate-income borrowers the risks implicit in the only kind of
+variable-rate loan we were willing to make, (3) we had never routinely resold loans or deliberately
+loaned at a loss, and (4) we were preoccupied with avoiding calamitous results which came to many
+other savings and loan operators. Regulators, of course, have not demanded that we now lend at a loss.
+That aspect of our program is the result of our initiative alone.
+
+We have had trouble attracting a significant volume of loans, with satisfactory characteristics, in
+category (4), covering our variable-rate loans which can escalate to bear interest rates of 25%. These
+loans have been in short supply despite our use of a very low interest rate spread (about 2 percentage
+points over the one-year U.S. Treasury rate). Moreover, while we have realized no losses on our
+variable-rate loans, we have encountered several collection delays, partly attributable to an incompetent
+policy decision of the Chairman. These two factors cause us to expect this category to shrink to minor
+significance.
+
+Category (3), the short-term, fixed-rate, mortgage-backed security category, is a "last-resort"
+category for us. But it could eventually amount to a substantial percentage of assets, depending on what
+is available elsewhere.
+
+As we select mortgage-backed securities, we will probably not be buying any complex instruments.
+Despite our love of comedy, we are going to avoid the newest form of "Jump Z tranches in REMICS."
+This refers to a particular contractual fraction the "Z Form" of a pool of mortgages, now
+subdivided by obliging issuers, advised by obliging investment bankers, into two new contractual
+fractions: (1) the "Sticky Jump Z" and (2) the "Non-Sticky Jump Z." At this rate, subdivision will soon
+get down to quarks.
+
+We are deterred from buying such securities partly by our hatred of complexity. We also dread the
+prospect of state and federal examiners, none of whom has a Ph.D. in physics, reviewing, one after the
+other, our choices for soundness and billing us on a cost-plus basis to reflect value thus added. Some of
+the wonders of modern finance go on without us as we yearn for a lost age when most reasonable
+people could, with effort, understand what was going on.
+
+In total, during the next few years, our policies will very likely cause our housing-related assets
+(exclusive of the one-time effect of development of our foreclosed seaside property) to continue to
+produce close to the lowest average gross return in the savings and loan industry. Incremental returns
+may not quite cover incremental interest and operating costs as we invest each new dollar of savings. It
+is quite conceivable that Mutual Savings will decline in size because it should decline in size.
+
+Even so, we expect that Mutual Savings will muddle through in a manner satisfactory to Wesco
+shareholders with moderate expectations. Our optimism comes mainly (1) from an expected minor
+profit boost from disposition of our foreclosed seaside property and (2) from an expected major profit
+boost caused by ownership of our large holding of Freddie Mac stock. Both of these grounds for
+optimism are discussed below.
+
+Mutual Savings has a buried value in a piece of foreclosed property: 22 seaside acres in Santa
+Barbara, acquired in 1966. By the time Mutual Savings started development (into 20 houses and 12
+lots) in order to facilitate sale, the value of this property had appreciated by at least $12 million. The
+built-in appreciation will now be captured through development, assuming no large reverses caused by
+collapse of housing prices or unanticipated new regulatory troubles.
+
+3
+
+The first house is nearly finished, and about 15 houses are under construction. We expect to close
+sale of about half the parcels during the next year. There will be little or no profit added to built-in
+appreciation by the development process. Seaside land development, under present regulatory and
+market conditions in California, tends to be a no-profit activity if you are lucky. It is full of queer
+happenings and closely resembles a Chevy Chase movie of extreme duration.
+
+In 1988 Mutual Savings made a large and unusual purchase. It increased its holdings of Federal
+Home Loan Mortgage Corporation (widely known as "Freddie Mac") to 2,400,000 shares, 4% of total
+shares outstanding. Mutual Savings' average cost is $29.89 per share, compared to a price of $48.75
+per share in trading on the New York Stock Exchange at the end of 1990. Thus, based on 1990 yearend
+trading prices, Mutual Savings had an unrealized pre-tax profit in Freddie Mac shares of about $45.3
+million. At current tax rates the potential after-tax profit is about $26.7 million, or $3.75 per Wesco share
+outstanding.
+
+Freddie Mac, created and long run by a federal agency (the Federal Home Loan Bank Board), is
+now owned privately, largely by institutional investors. It is now led by a very smart CEO, Leland
+Brendsel, and governed by an outstanding independent board of directors, including John B. McCoy of
+Banc One and Henry Kaufman, former chief economist of Salomon Brothers. Freddie Mac supports
+housing primarily by purchasing housing mortgage loans for immediate transmutation into mortgage-
+backed securities that it guarantees and promptly sells. In the process Freddie Mac earns fees and
+"spreads" while avoiding most interest-rate-change risk. This is a much better business than that
+carried on by most (or indeed most of the top 10% of) savings and loan associations, as demonstrated
+by Freddie Mac's high percentage returns earned on equity capital in recent years. One ironic cause of
+the high returns is that this creation of federal regulators pays no deposit-insurance premiums as it
+replaces much of the former function of the savings and loan industry. Freddie Mac's high returns on
+equity are caused by a strong competitive position that is likely to last a long time. In its activities it faces
+only one other competitor of similar size, efficiency and reputation: Federal National Mortgage Associa-
+tion (widely known as "Fannie Mae"), a similar private corporation with governmental overtones.
+
+At Freddie Mac's 1990 dividend rate ($1.60 per annum per share), Mutual Savings' pre-tax yield
+was only 5.35% on its $29.89 average cost per share. Post-tax, the dividend yield was only 4.4%, but this
+amounted to about 75% of the current after-tax yield from very high grade mortgages. Moreover,
+Freddie Mac has a creditable history of avoiding really hurtful loan losses and increasing its earnings
+and dividend rate, virtues that contribute to increases in the market price of its stock. Following are
+figures for 1985-1990:
+Year Ended 12/31:
+Earnings
+per Share
+Dividends
+per Share
+Year-End
+Market Price
+per Share
+Freddie Mac's
+Return Earned
+on All
+Average Equity
+1985
+$2.98
+$.53
+$ 9.19
+30.0%
+1986
+3.72
+1.13
+15.17
+28.5
+1987
+4.53
+1.10
+12.12
+28.2
+1988
+5.73
+1.25
+50.50
+27.5
+1989
+7.28(1)
+1.60
+67.12
+25.0
+1990
+6.90
+1.60(2)
+48.75
+20.4
+(1) restated
+(2) raised to annualized rate of $2.00 per share on March 8, 1991
+
+Despite Freddie Mac's strong competitive position, its stock declined in market value by 27% in
+1990 (from $67.12 per share to $48.75 per share, in trading on the New York Stock Exchange). One
+reason for the decline was unanticipated losses from apartment house loans, particularly in New York
+and Atlanta. As a result, Freddie Mac wisely discontinued the most obviously dangerous part of its
+apartment house loan buying program. But it remains the guarantor or owner of some old loans
+(fortunately a small portion of total apartment house loans and a really tiny portion of total loans) that
+will create misery for years. It was probably ill-advised for Freddie Mac, given its position and financial
+leverage and the nation's needs, (1) ever to finance anything except owner-occupied, single-family.
+non-vacation houses, for which substantial down payments had been made by credit-worthy people,
+and (2) ever to deal with anyone other than mortgage originators and servicers of obvious integrity and
+4
+
+competence. Just as it is unwise for an individual to risk losing what he has and needs in an effort to gain
+what he doesn't have and doesn't need, it seems unwise for Freddie Mac to stretch its leveraged
+resources beyond purchase from obviously responsible people of carefully selected first mortgages on
+individual houses. Each lender, including the one writing this letter, seems destined to learn through
+painful, personal experience two obvious lessons from the past:
+
+(1) The first chance you have to avoid a loss from a foolish loan is by refusing to make it; there is
+no second chance.
+
+(2) As you occupy some high-profit niche in a competitive order, you must know how much of your
+present prosperity is caused by talents and momentum assuring success in new activities, and
+how much merely reflects the good fortune of being in your present niche.
+
+In common experience, including ours, lesson (1) is eventually learned, but lesson (2) resists learning,
+despite high pain inflicted by multiple reverses.
+
+As nearly as we can foretell, Freddie Mac's troubles with apartment house loans are endurable in
+scale and will no more significantly impair its long-term prospects than the salad oil swindle of 1963
+impaired the long-term prospects of American Express. Moreover, the present managers and directors
+of Freddie Mac all seem to have absorbed a catechism appropriate for Freddie Mac and to be willing to
+endure political friction burns as necessary to keep operations sound. We like our large position.
+
+Strangely, Mutual Savings' holdings of Freddie Mac, while lawful to own under FIRREA, (1) so far
+do not count as "housing-related assets" in the new 70%-of-assets test, and (2) must be written down,
+in stages, to a value of zero for regulatory accounting purposes. As these provisions start to bind,
+Mutual Savings will dispose of part of its Freddie Mac stock. One option is the transfer of stock to
+another Wesco subsidiary in return for cash.
+
+What future in the savings and loan business do we expect? We don't know anything more than that
+we are satisfied at the moment with our temporizing strategy. We expect further changes, possibly
+radical, in the bank/savings-and-loan-association field, to which we will adapt as they unfold.
+
+The present situation, with its many insolvent and almost-insolvent institutions, is such a mess that
+further legislation seems inevitable. We can predict neither the changes, nor whether the changes will
+make matters better or worse. But we do have some opinions. These opinions are almost totally out of
+step with current thinking in academia, among government officials, among banking executives and,
+most of all, among banking lobbyists. Despite this unconventionality, our opinions are now given to
+Wesco shareholders because they may provide some insight into our institutional nature and likely future
+action. We also hope, but only slightly, that the opinions, set forth below, will have a wider, civic utility.
+
+First, let us turn to banking, after which we will consider the savings and loan business.
+
+The sum of all deposit-insurance losses in banking will probably be much lower than the $200 billion
+or so recently caused by savings and loan associations. But there are a lot of very sick banks, and
+deposit-insurance losses are sure to be large. Moreover, even if there had been no such losses, there
+would be much to regret in the nature of our modern banks as they have increasingly emphasized
+lending for consumption (even lending at 20% for vacations in Tahiti) and lending to financial promoters
+and real estate developers. We have come a long way from an ideal emphasizing the banker's provision,
+to both big and small businesses, of what Pierre DuPont provided to General Motors. Plainly, we have a
+two-forked banking problem, with a questionable shift in priorities accompanying rising insolvencies.
+
+Let us attempt to diagnose the causes of our problem. By and large, our problem did not come
+because banks couldn't branch across state lines, sell insurance, or underwrite corporate securities.
+Instead, it came because banks "reached" for higher yields on assets as they faced higher interest
+costs that came from (1) decontrol of interest rates paid by insured institutions plus (2) pressure from
+new competitors, including money-market funds possessing a large competitive edge.
+
+Exactly how great is the money-market funds' competitive edge? To see, compare the average
+heavily regulated bank, paying high deposit-insurance premiums, with what has been created in an
+5
+
+extreme form of uninsured money-market fund. In the fiscal year ended June 30, 1990 one such $4
+billion fund (The Common Fund for Short Term Investments) did all of the following:
+(1) kept its assets in liquid short-term obligations of the U.S. government and other credit-worthy
+entities;
+(2) furnished efficient checkwriting privileges and wire transfer service to its depositors;
+(3) kept its total operating costs under two-tenths of 1% of deposits per annum as it avoided costs
+of maintaining branch offices, deposit insurance, etc.;
+(4) furnished no capital of its own as a cushion supporting promises to depositors; and
+(5) paid very competitive rates on its interest-bearing accounts, as a result of which it grew 27% in
+size.
+
+This example demonstrates the raw competitive power of keeping things simple. Indeed, in this
+example all costs combined have been controlled so as to be roughly equal to what the average local
+bank pays for federal deposit insurance alone! We are not dealing with some minor competitive
+advantage. The new competition is a juggernaut.
+
+How important has the new competitor become? Naturally, the new competitor has taken a huge
+bite out of the market formerly served by banks (and savings and loan associations) burdened by much
+higher costs. How could it be otherwise? Here is a dramatic graph reprinted from what is surely among
+the best magazines in the world, England's The Economist:
+
+600
+From nowhere
+Amounts outstanding, December
+Bbn
+500
+Super-NOW
+accounts
+400
+Money-markat
+mutual funds
+4977 76 79 80 81 82
+Source: Federal Reserve
+300
+200
+Money-market
+deposil accounts
+100
+0
+
+The money-market funds are, in substance, "non-bank" banks, furnishing interest-bearing savings
+and checking accounts. And, by an odd stroke of good fortune, their light regulation by an overburdened
+SEC has turned out to be more advantageous than no regulation at all. The rules of the SEC force
+investment largely confined to reasonably safe and liquid categories. This has spawned simple
+operations with very low costs.
+
+The simple, low-cost, cream-the-market approach thus taken (or stumbled into) often works well
+in business. For instance, look at (1) GEICO, a hugely successful auto insurer almost 50% owned by
+Wesco's parent corporation or (2) various membership warehouse clubs, in the form invented by Sol
+Price, which are now clobbering retailing competitors as they get total "markup" under 10%. And this
+approach, as would be expected, is working like gangbusters for the money-market funds, as you see in
+the graph from The Economist.
+
+What were the effects on banks as these new and successful, low-cost competitors took more and
+more of the market while, at the same time, each bank's banking competitors could bid as they wished
+
+* Total costs are low, even though they include fees containing a substantial profit element that are paid by the
+"non-bank" banks to the "non-independent" independent managing companies employed in conformity with
+mutual fund practice. While Lewis Carroll might have liked the consistency of the nomenclature just used, it is
+not clear that it befits a banking system. "Pretending" under misleading labels is not a good idea in banks. All
+"pretending" habits tend to spread.
+
+6
+
+for funds, using the government's credit? Well, naturally, almost every bank, being inherently saddled
+with much higher costs, and not wanting to go out of business, tried to get higher contractual interest
+rates on its loans. And this caused greater emphasis on loans for consumption and loans to financial
+promoters and real estate developers. Indeed, many of our most decisive bankers, quite logically,
+stopped trying to make loans to their most credit-worthy customers, accepting the disappearance of any
+important linkage between our best banks and our best businesses. The banks had been forced into an
+entirely different market niche (which already had some occupants): high-interest-rate lending.
+
+And what can be expected when virtually all banks become specialists in high-interest-rate lending?
+It is hard to know for sure, because, throughout the past, high-Interest-rate lending was hard to fund
+since it came from skeptical sources, instead of from government-insured deposits. Really large-scale,
+high-interest-rate lending is a comparatively recent phenomenon, made possible by governmental
+support in the form of deposit insurance used by banks with altered natures. But such experience as
+exists gives a likely answer: many bank insolvencies will come. Just as the simple, low-cost, cream-the-
+market strategy is a common business winner, the opposite strategy, involving high costs and high
+prices, is a common loser. High interest rate lending as a field has usually provided (1) some winners
+and (2) many casualties, often coming in bunches after periods of "follow-the-leader" asset-quality
+debasement. (Remember the widespread disasters in R.E.I.T. lending.) And the past bad experience
+should naturally worsen as the high-interest-rate lending field both expands and becomes overcrowded,
+driven by governmental support.
+
+We are not alone in our diagnosis. Here is an excerpt from a recent Wall Street Journal editorial:
+"When more efficient, uninsured and less regulated financial institutions creamed off profitable lines of
+business, the [Bank of New England] was left concentrated in commercial real estate. This artificially
+diverted money into Boston's building boom, which inevitably became a bust."
+
+Granting the presence of perverse incentives, what are the operating mechanics that cause
+widespread bad loans (where the higher interest rates do not adequately cover Increased risk of loss)
+under our present system? After all, the bad lending, while it has a surface plausibility to bankers under
+cost pressure, is, by definition, not rational, at least for the lending banks and the wider civilization. How
+then does bad lending occur so often?
+
+It occurs (partly) because there are predictable irrationalities among people as social animals. It is
+now pretty clear (in experimental social psychology) that people on the horns of a dilemma, which is
+where our system has placed our bankers, are extra likely to react unwisely to the example of other
+peoples' conduct, now widely called "social proof." So, once some banker has apparently (but not
+really) solved his cost-pressure problem by unwise lending, a considerable amount of imitative "crowd
+folly," relying on the "social proof," is the natural consequence. Additional massive irrational lending is
+caused by "reinforcement" of foolish behavior, caused by unwise accounting convention in a manner
+discussed later in this letter. It is hard to be wise when the messages which drive you are wrong
+messages provided by a mal-designed system.
+
+In chemistry, if you mix items that explode in combination, you always get in trouble until you learn
+not to allow the mixture. So also, in the American banking system. To us, a lot of foolish, unproductive
+lending and many bank insolvencies are the natural consequences, given existing American banking
+culture, of the combination of the following two elements alone:
+
+(1) virtually unlimited deposit insurance; and
+
+(2) uncontrolled interest rates on insured deposits.
+These two elements combine to create a Gresham's law effect, in which "bad lending tends to drive out
+good." Then, if factor (3) below is added to an already unsound combination, we think deposit-
+insurance troubles are sure to be further expanded and not by a small amount:
+
+(3) relatively unregulated, non-insured, low-cost "non-bank" banks.
+
+Moreover, when the government starts suffering big deposit-insurance losses, if it continuously
+responds (in a natural, unthinking reaction) by raising deposit-insurance prices, we think it creates a
+"runaway-feedback" mode and makes its problems worse. This happens because the government, by
+adding even more cost pressure on banks, increases the cause of the troubles it is trying to cure. The
+price-raising "cure" is the equivalent of trying to extinguish a fire with kerosene.
+
+7
+
+Many eminent "experts" would not agree with our notions about systemic irresponsibility from
+combining (1) "free-market" pricing of interest rates with (2) government guarantees of payment. If
+many eminent "experts" are wrong, how could this happen? Our explanation is that the "experts" are
+over-charmed with an admirable, powerful, predictive model, coming down from Adam Smith. Those
+discretionary interest rates on deposits have a "free-market" image, making it easy to conclude,
+automatically, that the discretionary rates, like other free-market processes, must be good. Indeed, they
+are appraised as remaining good even when combined with governmental deposit insurance, a radical
+non-free-market element.
+
+Such illogical thinking displays the standard folly bedeviling the "expert" role in any soft science:
+one tends to use only models from one's own segment of a discipline, ignoring or underweighing others.
+Furthermore, the more powerful and useful is any model, the more error it tends to produce through
+overconfident misuse.
+
+This brings to mind Ben Graham's paradoxical observation that good ideas cause more investment
+mischief than bad ideas. He had it right. It is so easy for us all to push a really good idea to wretched
+excess, as in the case of the Florida land bubble or the "nifty fifty" corporate stocks. Then mix in a little
+"social proof" (from other experts), and brains (including ours) often turn to mush. It would be nice if
+great old models never tricked us, but, alas, "some dreams are not to be." Even Einstein got tricked in
+his later years.
+
+We may be right or wrong. But, if we are right, if there are deep, structural faults in the American
+banking system, it follows that merely giving banks the right to branch across state lines, to sell
+insurance, or to enter investment banking (or all of the above) is not going to end our troubles.
+
+Instead, a good long-term fix can come only after the government considers more extreme
+modifications in the system, each of which has powerful, vocal opponents. What are the more extreme
+modifications to consider? We think the list includes:
+
+(1) greatly reducing deposit insurance;
+(2) eliminating money-market funds;
+(3) bringing back some form of controls on interest paid on insured deposits;
+(4) intensifying regulatory control of bank lending in an attempt to reduce loan losses;
+(5) forcing more conservative accounting covering bank lending;
+(6) forcing weak banks into other hands before the weak banks become insolvent; and
+(7) forcing insolvent banks into competing local banks, or entirely out of business, instead of into
+strong, out-of-state banks.
+
+Let us next attempt a brief discussion of the merits and/or political prospects of each of these seven
+governmental options.
+
+Option (1): greatly reducing deposit insurance:
+
+To many people, remembering former banking panics, this option, adopted fully, seems like trying to
+solve the overcrowding problem by bringing back cholera. Accordingly, proponents of this option
+typically would limit its effects by (1) bringing back bank "runs" only for small banks (big banks,
+regardless of law, are "too big to fail" in all advanced countries) and (2) bringing back deposit losses
+only to some rich depositors. Because voters don't like bank "runs" of any size, and small banks don't
+like discrimination, it seems unlikely that reductions in deposit insurance are going to be made on a scale
+that solves the structural defect problem. Conceivably, "brokered" deposits could be removed from
+insurance coverage, in a move driven by legislative remembrance of many abuses involving stockbro-
+ker-assisted financing of despicable insured institutions. (Many stockbrokers could easily see that the
+insured certificates of deposit they were paid to sell were issued by institutions managed by knaves and
+fools, presiding over piles of junk loans and junk securities. The stockbrokers thus knew, or should have
+known, that their government was being robbed. To sell certificates under such conditions was a lot like
+finding currency in a post office bag and deciding it was ethical to keep it.)
+
+8
+
+Option (2): ellminating the money-market funds:
+This option is almost never discussed. This seems peculiar. The money-market funds came into
+being without public policy input when some clever person combined (1) mutual fund status under the
+S.E.C. with (2) purchase, under subcontract, of services from a bank. What was created was, in
+essence, a virtually unregulated, uninsured bank furnishing interest-bearing savings and checking
+accounts. The creation of such entities would probably not have been authorized if new legislation had
+been necessary. Where else do we have virtually identical regulated and unregulated entities operating
+on the same scale, side by side? If new legislation had been needed, the following questions might have
+been raised:
+
+(1) What do money-market funds do for "community" lending, lifeline services to the elderly, etc.?
+(2) Are they fair to existing institutions?
+(3) Won't the new "non-bank" banks make it harder for the Federal Reserve System to render
+constructive economic service?
+(4) Since the public is already on the hook as guarantor of solvency of existing institutions, is it
+wise for the guarantor to risk losses from allowing uninsured, cream-the-market, more efficient
+operators to add to the competition? (This question would not be hard to answer in a private
+setting. If you were guarantor of all obligations of your brother-in-law's hamburger joint, you
+would consider it very foolish to allow McDonald's to commence operations by his side when
+you possessed the ability to prevent it.)
+(5) Considering all of the above (and more), are the money-market funds in the long-term interest
+of the soundness and service of the total banking system?
+These questions are still good questions. But possession is strength under law. The money-market
+genie is now out of the bottle. And, considering his size, it would be hard to put him back. The prospects
+of rebottling are plainly remote.
+
+Option (3): bringing back some form of controls on interest paid on insured deposits:
+This option, too, is now seldom discussed. Again, this seems peculiar. It is among the first things
+you or I would consider if we had to guarantee all obligations of that hamburger joint owned by a
+brother-in-law. We would no more guarantee an 11% obligation for him, when we could easily borrow at
+8%, than we would burn currency in the fireplace. In fact, we would suspect dishonorable "monkey
+business" if an 11% transaction occurred.
+
+One reason for present lack of legislative interest in interest-rate controls lies in the knowledge that
+a former version of such controls constricted housing credit when interest rates rose to high levels. No
+one now seems interested in trying to develop new controls, more flexible in form and practice, that
+would avoid former defects. Nor is anyone much interested in the success the Japanese (or the United
+States) had during a long period of control of interest rates paid by banks. The interest-rate-control
+option, at the moment, seems dead.
+
+Option (4): intensifying regulatory control of bank lending in an attempt to reduce loan losses:
+This option is already being exercised erratically with effects both good and bad. It certainly
+has successful counterparts in non-banking businesses. For instance, take McDonald's franchised
+restaurants. If you want to use the McDonald's authenticating name and arches on your restaurant, you
+have to operate in a very limited, foolproof way. Moreover, the McDonald's approach once worked in
+banking. When deposit insurance first came in, and long thereafter, most insured banks operated in
+simple, sound fashion, often through ill-paid employees. But, based on all recent precedents, the
+government won't now act like McDonald's, or itself in a former era. (If it wished to do that, it might now
+give deposit insurance to all the simple, sound money-market funds, lending to big business through
+purchases of commercial paper, and take deposit insurance away from all the banks and savings and
+loan associations!) Government, instead, will probably take the more limited approach of concurrently:
+(1) leaving banking over-stressed by competition, (2) leaving banking very complicated, (3) trying to
+prevent problems by writing massive, hard-to-understand regulations that create more work for lawyers,
+and then (4) monitoring bank operations through overburdened civil servants. These limited remedies
+may be better than nothing, but their prospects for causing a real banking fix seem poor. It is almost a
+9
+
+general rule of American life that, when incentives are all wrong, controls (even criminal-law controls)
+can't fix our troubles. We can expect limited good effects from Option 4 and the continuation of
+important, basic problems.
+
+Option (5): forcing more conservative accounting covering bank lending:
+Bank accounting is a hot current topic, but conservatism is not the goal. Everyone is wondering how
+much to delay loan write-offs, when loans go sour, so as not to over-correct weak banks. We are not
+going to enter the lists on that problem.
+
+The almost-never-discussed problem that interests us is that presented by newly made loans,
+bearing high interest rates, that under current bank accounting tend to be treated as "born good." The
+result is that all interest accrued, and sometimes some up-front fees, are treated as fully earned, even
+though the final outcome of the whole loan transaction is far from clear. To us, this is counterproductive
+accounting, even though we use it ourselves when pushed by convention.
+
+We think current accounting for many high-interest-rate loans has terrible consequences in the
+banking system. In essence, it "front ends" into reported income revenues that would have been
+deferred until much later, after risky bets were more clearly won, if more conservative accounting had
+been employed. This practice turns many a banker into a human version of one of B. F. Skinner's
+pigeons, since he is "reinforced" into continuing and expanding bad lending through the pleasure of
+seeing good figures in the short term. The good figures substitute nicely in the mind for nonexistent
+underlying institutional good, partly through the process, originally demonstrated by Pavlov, wherein we
+respond to a mere association because it has usually portended a reality that would make the response
+correct.
+
+Under prevailing accounting, banks now ordinarily report increases in both earnings and equity
+capital during any transition they make toward less conservative lending. And then, if more lending of
+that type is done, and is accompanied by growth in institutional size, good reported figures will continue
+for an additional period. If an increase in institutional size is deemed necessary, it is, of course, assured
+by the bank's access to the government's credit through deposit insurance.
+
+We think acculturated corporate nature, in American financial institutions, simply cannot, on
+average, handle temptations implicit in this sort of accounting. Indeed, the succumbing to the tempta-
+tions, in a manner not consistent with long-term institutional interest, often occurs through a subcon-
+scious process. The subconscious process includes bad effects from both (1) "social proof," and (2) a
+"reality-denial" mode that creates bias in people stimulated, honored and paid in proportion to
+institutional size. Under our present system a Columbia Savings, and many less obscene versions of its
+model, are almost inevitable.
+
+Of course, a large minority, even a majority, of bankers will remain sound, despite the temptations.
+But this outcome is not sufficient to protect the deposit insurer from unacceptable ultimate losses. In due
+course, given present conditions, the deposit insurer will suffer from what some wag cailed the problem
+of there being so many more banks than bankers.
+
+What should now be considered are mandatory accounting changes, including changes in account-
+ing to shareholders, designed to force "back-ending" into reported income of revenue from various
+types of gamy lending (and letters of credit), in lieu of allowing "front-ending" to continue. The changes
+would cause American bank accounting, by fiat, to imitate what some of the best European bankers
+have long done by choice. Eventually, credibility might be returned to banks' audited financial state-
+ments, now often regarded as fairy tales.
+
+Despite the obvious (to us) accounting defects that bedevil our system, we don't think any wise and
+important accounting changes will be made. Typical bank reaction to such proposals is, at best, that of
+the man who asked, well before his ultimate sainthood: "God, give me chastity, but not yet." Also, time
+periods for accomplishing even the simplest, "no-brainer" changes in accounting convention tend to
+stretch into years.
+
+Option (6): forcing weak banks into other hands before the weak banks become insolvent:
+This option is also a hot topic. Usual governmental practice at the moment is to force merger only
+when all shareholders' equity is gone and the deposit insurer has a large loss. This is "bonkers," due
+process gone mad. It seems entirely logical now to commence the forced merger or closure of many of
+the nation's 13,000 banks and to do it in many cases before a weak bank is insolvent. Because the need
+10
+
+is so obvious, laws and customs may possibly change to cause more of this to happen. And interstate
+branching may be allowed in order to enlarge the number of potential bank buyers.
+
+While these steps seem helpful, they won't fix the problem of deep structural fault in the system
+at least within any acceptable time period. Look at the present carnage in airlines. Even when we are
+down to fewer than a dozen significant operators, messy airline failures continue. If we wait for an
+airline-style solution in banking, we will have to endure years, maybe decades, of suffering.
+
+Option (7): forcing insolvent banks Into competing local banks, or entirely out of business,
+instead of into strong out-of-state banks:
+
+According to Martin Mayer, writing recently in The Wall Street Journal, the FDIC now typically deals
+with an insolvent bank by choosing between two options:
+
+(1) forcing the insolvent bank into a competing local bank, or entirely out of business, thus
+dampening local competition; or
+
+(2) first, replacing all the insolvent bank's bad assets with good assets, and, second, selling it to
+some skillful out-of-state buyer, after which process the new bank can help clobber the
+remaining also-weak-and-also-insured banks in the area.
+
+Mayer believes it was "insane" for the FDIC to do as it did in many instances, which was to select
+option (2). According to Mayer, the FDIC thus arranged that "overcapacity was rigorously maintained."
+Mayer raises an interesting question. Coming back to the analogy earlier used, if you or I were really
+unlucky and were guarantor for seven local brothers-in-law, each with a troubled hamburger joint, what
+would we do when the first one went broke? We would surely reject the idea of, first, fixing up the
+defunct joint so that it was better than the others, and, second, guaranteeing the obligations of a new
+and more skillful out-of-state operator who wanted to enter the market by taking over the improved
+facility.
+
+Mayer is right insofar as he implies that there are too many banks and bank branches, just as there
+were formerly too many filling stations, sometimes three or four at an intersection. The departed filling
+stations "never will be missed," so perhaps the FDIC should "have a little list," like the bloodthirsty
+figure in the Mikado.
+
+Beyond that, we are not certain that Mayer's conclusions will always prove right. The basic banking
+system is right out of Alice in Wonderland, so maybe it's like non-Euclidean geometry and only Alice-in-
+Wonderland-type cures really fit in. After all, the scenario which troubles Mayer has a perverse beauty, at
+least to a government. The bank failures cascade, on and on, refreshed by new governmental acts, so
+that the FDIC can be saving a large part of the banking system each year for a long time.
+
+And we must admit that, if we were the FDIC and were thus forced to participate heavily in our
+present banking system, like it or not, we would occasionally do what Mayer finds objectionable, in those
+rare cases when we saw a chance for greatly improving banking culture in some community. We would,
+for instance, occasionally sell a sick bank to John McCoy (of Banc One), even when this brought a new
+bank to a state full of troubled banks, if every in-state bank seemed too weak or foolish to be selected as
+an alternative buyer. We would figure that (1) some subsequent insolvencies of other local banks were
+in our long-term interest, (2) we were supporting a sound model, and (3) eventually, as the example
+spread, our troubles as deposit-insurer of a silly system would be reduced. We would then have a
+pleasant lull before the silly system caused new troubles to pop up, maybe even under McCoy's
+successors at Banc One.
+
+While Mayer's subject is interesting, we probably don't have to worry much about worldly
+consequences. Outside science, it is amazing how little impact there can be from a powerful idea,
+published in a prominent place (such as the Journal). Everyone's experience is that you teach only what
+a reader almost knows, and that seldom.
+
+If our foregoing comments about systemic irresponsibility and chances for a rational cure are right,
+or substantially right, it is hard to be optimistic about coming legislative "reform" of banking. Perhaps
+the best we can hope for is Menckenian reform where old error is replaced, not by truth, but by new
+error. It is also possible that we will see exactly the same old systemic error repeated, but bearing bells
+
+11
+
+and whistles in the form of new bank powers. This outcome is roughly what is recommended by the
+banking lobby, which has evidently learned nothing from the history of the savings and loan laws.
+
+Let us next turn to the savings and loan field. Here, faced with a more disastrous mess, the
+legislators were so outraged that they attempted what they thought was extreme reform: FIRREA. This
+legislation took a "back-to-basics" approach and has since been interpreted by regulators who seem to
+believe, understandably, that they must act as though they were tough "bouncers," given the job of
+bringing order to a drunken brawl (a description that understates what the regulators faced).
+This regulatory approach is now squeezing out (1) much folly, and (2) some non-folly needed to
+keep institutions healthy. Most executives we know at other associations concentrate only on the
+negative side and are outraged at instances of regulatory elimination of non-folly. They tend to construe
+present FIRREA enforcement as the equivalent of Mark Twain's prescription for preventing children's
+stuttering: "Remove the lower jaw."
+
+Our view is different, even though we are much harmed by FIRREA. We think the system needed
+new rules, interpreted by tough "bouncers," and that the "bouncing" process, done with sufficient vigor,
+inevitably involves some lumps for the undeserving. There may even be some deaths from "friendly
+fire." Nonetheless, the process must go on.
+
+What concerns us is the most important question of all. Did our legislators, through FIRREA, even
+with their "never again" mindset, fix the most important systemic error in the savings and loan industry?
+We think not.
+
+As the dust has cleared, the best savings and loan associations are clearly worse businesses than
+the best banks (which themselves have plenty of troubles). This conclusion is supported by both
+(1) stock market prices and (2) action of governmental liquidators in response to market conditions.
+Stocks of the best associations now sell at much lower price/book-value ratios than stocks of the best
+banks. And governmental liquidators are constantly selling association branches to banks while almost
+never selling bank branches to associations. FIRREA has not made associations, on average, as
+desirable for owners as banks. The two institutional types remain different and unequal, while quite
+comparable in essential residual function, now that Fannie Mae and Freddie Mac exist to perform a
+lion's share of the finance function supporting housing.
+
+The savings and loan system, in a modern era in which the government is always a large net
+borrower, still tries to use short-term savings accounts to finance long-term housing lending. This is, in
+essence, a very bad idea, violating the logic of an elementary prescription: "If a thing isn't worth doing at
+all, it isn't worth doing well."
+
+To be sure, some fix of systemic maturity-mismatch risk is now attempted, through encouragement
+of variable-rate loans. But the variable-rate loans typically "cap" interest rate escalation at a few
+percentage points, which must be done for moderate-income borrowers to prevent both (1) unaccept-
+able hardship and (2) sudden falls in non-housing spending. This compromise is like having building
+codes in California protect only up to 5 points on the Richter earthquake scale. The compromise is
+almost sure to bring back, probably at a remote date, another horrible collapse of the savings and loan
+system.
+
+As we say this, we are not critical of the best California associations, such as Home Savings, Great
+Western Savings and World Savings. These people have logical operations bearing one big systemic
+risk that cannot be avoided by permanent players. If we had to play forever under current rules, we
+would try to imitate them. But we would have a big disadvantage: "we don't know how to get there from
+here," because they have such momentum in systems, particularly in loan origination. Fortunately, no
+one is sentencing us to play forever in a game with a systemic risk we don't like and in which we are at a
+big disadvantage. Instead, we have temporized with a different, acceptable "there" in a form combining
+(1) a big holding of Freddie Mac, with (2) financial flexibility to adapt as we choose to new conditions.
+So much for ridicule, pessimistic speculations, and excuses for our defects, always easy to provide.
+As any responsible calamity-howler should, we will now risk playing the fool in public by attempting to
+say what we would do with the bank/money-market fund/savings and loan system if we were
+Congress:
+
+(1) Because we have a help-housing bias, we would keep government-assisted housing finance
+for low-to-moderate-income people. We would do this by forcing pension funds to maintain a
+significant portion of their assets in housing-related assets in the form of Freddie Mac and
+Fannie Mae mortgage-backed securities representing interests in fixed-rate mortgages. This
+12
+
+requirement strikes us as fair, given the tax exemption possessed by the pension funds. And
+the pension funds are the logical suppliers of housing finance because they by nature have
+(a) massive assets, and (b) liabilities with maturities matching homeowners' needs for long-
+term, fixed-rate credit. Our reason for specifying Freddie Mac and Fannie Mae securities as a
+conduit for housing assistance is our belief that these entities would assure loan quality better
+and more cheaply than would any government bureaucracy. In quantitative terms, we would
+leave housing finance more assisted than it is now, particularly for first-time home buyers who
+have won their spurs.
+
+(2) We would merge the banks, money-market funds and savings and loan associations into one
+banking system, with insured deposits. The new banking system would be separate from both
+(a) industry and (b) the part of investment banking likely to disappoint investors. It would have
+the following characteristics:
+(i) There would be one federal regulator that also served as deposit-insurer, in lieu of the
+truly crazy, inefficient Balkanization of our present regulatory and insurance apparatus.
+(Eliminating Balkanization would do more than reduce costs, delays, confusion and
+competition in laxity. There is a system-design advantage in making the deposit-
+insurance loss payer and the bank-controlling loss preventer one and the same. The
+system then becomes more "responsible" in the Frankelian sense, requiring that
+systems be organized, to the extent feasible, so that decision-makers, not others, bear
+consequences of decisions.)
+(ii) There would be no bank-holding companies, but the new banks would have a monopoly
+in offering check-writing privileges, debit cards and credit cards, except for credit cards
+offered on behalf of a single vendor. (The new law would permit tax-free spinoffs of
+existing banks, newly organized banks, and non-banks to help existing corporations
+come into compliance. Spun-off non-banks could include specialists in high-interest-rate
+lending to businesses.)
+(iii) Flexible, government-regulator-run controls would set a ceiling on interest that could be
+paid on bank accounts. (If you are going to guarantee the credit of an entire industry,
+there is a limit to the competition that is desirable. Besides, many banks will behave badly
+in their important function when they are under the extreme cost pressure, not normal in
+business, that occurs when one's competitors are all financed without limit by the
+government, through deposit insurance.)
+(iv) All capital satisfying regulatory requirements would have to be in the form of stock, either
+common or preferred, except for "grandfathered" debt.
+(v) Stockbrokers (and others) could buy for customers all the insured certificates of deposit
+they wished, but they could not, in exchange, receive commissions or other advantages
+from the banks issuing the certificates. ("Abuse it and lose it," is our motto.)
+(vi) The federal regulator would have clear power, exercisable without an excess of "due
+process" or "second guessing," to close out or force sale or merger of weak banks well
+before they became insolvent. Banks could ordinarily avoid such calamities, after a first
+warning, by raising new capital through "rights" issues, or in some other way. (There is
+nothing novel in such a system. Close-out orders, issued well short of insolvency, have
+long been standard practice under regulatory practice governing securities and currency
+traders.)
+(vii) Bank accounting for all purposes would count much revenue as profit only after all
+significant risk had been removed from the transactions generating the revenues. Bank
+dividends, of course, could be paid only from the more conservatively reported profits.
+Income tax would be deferred on the deferred revenues required by this new conserva-
+tism in accounting. (It is a terrible mistake, a novice's mistake, to try to control important
+behavior with an all-stick-and-no-carrot approach. Therefore, the carrot-providing tax
+deferment would be wise.)
+(viii) There would be no 2,000-page mass of government regulations. But there would be
+some rule for business and real estate loans such as: loan as you wish, but no new loans
+count as bank assets unless supported by substantial equity, a stipulation that would
+create a large margin of safety.
+
+13
+
+(ix) Deposit-insurance rates would promptly be lowered from present levels, but under a new
+system so tough that risk of loss to the deposit insurer would be reduced, even after
+taking into account the effects from lower rates.
+(x) The whole system would be designed to have the best businesses, small and large,
+again become intimate with the best banks. The banks would again concentrate on being
+(1) relatively low-interest-rate lenders to high-quality businesses, and (2) lenders to
+consumers who are not "fiscaholics". High-interest-rate lending, to people with weak
+credit, would be forced into non-banking systems retaining no common-management or
+common-premises links with banking.
+
+There is, no doubt, much wrong with our recommendations. But there is also much wrong with our
+present system, which has helped cause a questionable shift in banking priorities and a big mess, with
+every prospect for more of the same. In contrast, there is little in history to suggest that our
+recommendations would be as bad. And even if the new system had serious faults, it would probably be
+a better way station on the path to a banking system befitting a great country.
+
+In recent years the government has tried to maintain a useful, relatively trouble-free banking system
+by making the banking business bear increased competitive burdens, and, when the system has
+responded by working worse, the government has increased both the burdens and the permitted scope
+of banks' activities. After such revisions the system has again worked worse. Surely it is time to reverse
+our approach. We should act like the artillery officer who, when he has put one shell over the target, next
+tries to put a shell clearly short, expecting to get the desired result in due course.
+
+Some people might worry that banking would get too profitable under the system we recommend.
+To this worry there are three answers:
+(1) The prospect of better profits, with less risk, would tend to (a) reduce governmental losses as
+many billions of dollars worth of foreclosed thrift and bank assets are sold off by the FDIC, and
+(b) enable the government, through tough capital standards, to cause eager private augmen-
+tation of banking capital by shareholders, precisely what is needed.
+(2) Based on past experience, the nation's bankers (including us) may, on average, be up to the
+challenge of not earning excessive profits, even in an easier system.
+(3) If excessive profits came, they could easily be reduced in due course by a new governmental
+tax, charge or burden.
+
+We now quitclaim legislative reform to those who make it their business. We also assure Wesco
+shareholders that this reform-minded section of our letter to shareholders is an unlikely-to-be-repeated
+aberration. It was caused, in part, by a combination of (1) overwhelming disgust with the present scene,
+and (2) long association by the writer with an eccentric fellow who may not share all the notions herein
+expressed but who encourages this kind of writing.
+
+This eccentric, who heads Berkshire Hathaway, Wesco's parent corporation, believes for some
+reason that accumulated wealth should never be spent on oneself or one's family, but instead should
+merely serve, before it is given to charity, as an example of a certain approach to life and as a didactic
+platform. These uses, plus use in building the platform higher, are considered the only honorable ones
+not only during life but also after death. Shareholders who continue in such peculiar company are hereby
+warned by our example in writing this section: some of the eccentricities of this fellow are contagious, at
+least if association is long continued.
+
+Precision Steel
+The businesses of Wesco's Precision Steel subsidiary, located in the outskirts of Chicago at
+Franklin Park, Illinois, contributed $1,985,000 to normal net operating income in 1990, down 28%
+compared with $2,769,000 in 1989, when earnings were increased by $337,000 through termination of a
+pension plan. The decrease in 1990 profit occurred as pounds of product sold declined by 3%. Revenues
+were down slightly more, by 4%, to $57,018,000.
+
+Under the skilled leadership of David Hillstrom, Precision Steel's businesses in 1990 continued,
+during one more year, to provide an extraordinary return on resources employed.
+
+The good financial results have an underlying reason, although not one strong enough to cause the
+results achieved in the absence of superb management. Precision Steel's businesses, despite their
+mundane nomenclature, are steps advanced on the quality scale from mere commodity-type
+businesses.
+14
+
+It is not common that steel warehouses have results like Precision Steel's. What we see, year after
+year, under David Hillstrom's leadership is boring, repetitive excellence as he remembers a basic
+catechism emphasizing service of the highest quality. We hope to remain associated with him for a long
+time.
+
+Wesco-Financial Insurance Company ("Wes-FIC")
+Wes-FIC's "normal" net income for 1990 was $14,924,000, versus $14,276,000 for 1989. The
+"normal" income figures excluded securities gains, net of income taxes, of $391,000 in 1990 versus
+$5,910,000 in 1989. These items are reported as "Net Gains on Sales of Securities," below.
+
+At the end of 1990, Wes-FIC retained $68 million in invested assets, offset by claims reserves, from
+its former reinsurance arrangement with the Fireman's Fund Group. This arrangement was terminated
+August 31, 1989, but it will take years before all claims are settled. Meanwhile Wes-FIC is helped by
+proceeds from investing "float."
+
+Wes-FIC has another reinsurance arrangement, patterned after the one with Fireman's Fund, with
+Cypress Insurance Company, a wholly owned subsidiary of Berkshire Hathaway, Wesco's ultimate
+parent. Wes-FIC's share of premiums earned under this arrangement was about $1.8 million in 1990. It is
+too early to forecast how this will work out, but the arrangement is very small and was not nearly so
+promising at outset as the Fireman's Fund deal, which began at a time when premium rates were being
+raised by dramatic, double-digit percentages. In contrast, premium rates on virtually all insurance have
+now been driven down by competition to levels that, at best, will produce small profits, even after
+including benefit from investing "float."
+
+Wes-FIC is also writing a small amount of direct insurance business, as distinguished from
+reinsurance. It is licensed in Nebraska, Utah, and lowa and can write "surplus lines" insurance in
+Alabama. Total direct premiums earned in 1990 were only $133,000.
+
+Wes-FIC continues to have a "longage" of capital and a shortage of good insurance business. But
+every year that passes sees Wes-FIC's credit, and that of the Berkshire Hathaway Insurance Group,
+enhanced relative to the average competing insurer or reinsurer. We expect expansion of earned
+premiums in due course, made possible by (1) balance sheet strength, (2) a disciplined rejection of
+under-priced business, combined with quick, non-bureaucratic acceptance of fairly priced risks, and
+(3) more worry among insurance buyers about claims-paying capacity of competing insurers.
+
+All Other "Normal" Net Operating Income
+All other "normal" net operating income, net of interest paid and general corporate expenses,
+increased to $4,030,000 in 1990 from $3,178,000 in 1989. Sources were (1) rents ($2,647,000 gross,
+excluding rent from Mutual Savings) from Wesco's Pasadena office building block (predominantly
+leased to outsiders although Mutual Savings is the ground floor tenant), (2) interest and dividends from
+cash equivalents and marketable securities held outside the savings and loan and insurance subsidiar-
+ies, and (3) earnings of New America Electrical Corporation.
+
+Net Gains On Sales Of Securities
+Wesco's aggregate net gains on sales of securities, combined, after income taxes, decreased to
+$391,000 in 1990 from $5,920,000 in 1989. As noted above, all $391,000 of these gains were realized in
+the Wes-FIC insurance subsidiary in 1990, versus $5,910,000 realized in 1989.
+
+Convertible Preferred Stockholdings
+At the end of 1990, Wesco and its subsidiaries owned $175 million, at cost, in convertible preferred
+stocks, all requiring redemption at par value within 10 years or so, and all purchased at par value:
+
+Preferred
+Dividend
+Rate
+Par Value of
+Holding
+Conversion Price
+at Which Par
+Value May Be
+Exchanged for
+Common Stock
+Market Price
+of Common Stock
+on 12/31/90
+Security
+Salomon Inc
+9.00%
+$100 Million
+$38.00
+$24.37
+The Gillette Company
+8.75%
+40 Million
+50.00
+62.75
+USAir Group, Inc....
+9.25%
+12 Million
+60.00
+15.75
+Champion International Corporation
+9.25%
+23 Million
+38.00
+25.62
+
+15
+
+These preferred stocks were purchased at the same time Berkshire Hathaway purchased additional
+amounts of the same stocks at the same price per share.
+
+Last year we described these convertible preferred stock investments as "sound but not exciting,"
+noting that "few, if any, investors have ever prospered mightily from investing in convertible preferred
+stocks of leading corporations." Our ideas have not changed. In aggregate these holdings are probably
+worth a little more than we paid for them (with the Gillette holding now worth more and the USAir
+holding worth less than was paid for it). Effective April 1, 1991 conversion of the Gillette preferred will be
+forced, causing us to hold Gillette common stock which pays a much lower annual dividend.
+
+New America Electrical Corporation ("New America Electric")
+The financial results from Wesco's $8.2 million payment, made at the end of 1988, for 80% of the
+stock of New America Electric are included in our residual category: "All Other "Normal" Net Operating
+Income." New America Electric caused this category to benefit by only $158,000 in 1990 after
+adjustments under consolidated accounting convention.
+
+Ignoring adjustments under consolidated accounting convention, Wesco's 80% share of New
+America Electric's earnings was $234,000 in 1990 versus $134,000 in 1989.
+
+Balance sheet liquidity improved. Wesco's 80% share of New America Electric's cash at the end of
+1990 was $2.8 million, versus $2 million at the end of 1989.
+
+If you deduct from Wesco's cost ($8.2 million) Wesco's share of cash ($2.8 million), this leaves
+Wesco at risk for $5.4 million, on which it is earning an inadequate, but improving return.
+
+The people at New America Electric have responded superbly to a difficult environment. It is a
+pleasure to watch Glen Mitchel, Thomas Vogele, Thomas Johnson and Jeff Mowry meet challenge. They
+have recently purchased, under terms showing promise, some of the assets, the trade name and the
+sales organization of another manufacturer of high-quality electrical equipment. And they continue to
+"shake down" the large new plant into which they recently moved.
+
+Effective at the beginning of 1991, Thomas Vogele, a capable and enthusiastic manager, was
+promoted to President of New America Electric, assuming responsibility for operations. Glen Mitchel
+remains heavily involved as CEO. They, and the other executives, face large tasks: (1) incorporating
+complex, newly acquired product lines into the existing manufacturing base; and (2) generating
+increased sales of all products, new and old.
+
+Even with the hard tasks ahead, we would not be surprised to see better financial results in 1991
+and 1992, despite a recession that is bound to be extra hard on most manufacturers of electrical
+equipment, dependent as they are on new construction.
+
+Consolidated Balance Sheet and Related Discussion
+Wesco's consolidated balance sheet (1) retains a strength befitting a company whose consolidated
+net worth supports large outstanding promises to others and (2) reflects a continuing slow pace of
+acquisition of additional businesses because few are found available, despite constant search, at prices
+deemed rational from the standpoint of Wesco shareholders.
+
+As indicated in the accompanying financial statements, the aggregate market value of Wesco's
+marketable equity securities was higher than their aggregate carrying value at December 31, 1990 by
+about $46 million, down significantly from about $98 million one year earlier. The consolidated aggregate
+market value of all marketable securities, including bonds and other fixed-income securities, exceeded
+aggregate carrying value by about $61.3 million. As earlier emphasized, about $56.2 million of this
+unrealized appreciation lies within the savings and loan subsidiary and includes $45.3 million of
+appreciation in stock of Freddie Mac.
+
+The foregoing paragraph deals only with unrealized appreciation of securities above "carrying
+value." Wesco also has some unrealized appreciation in securities that is already in "carrying value."
+This has happened because Wesco's insurance subsidiary at December 31, 1990 had about $40.9
+million in appreciation in common stocks (mostly stock of The Coca-Cola Company). Under a peculiar
+accounting convention applicable only to insurance companies, this appreciation, minus the income
+16
+
+taxes that would be due if the stocks were sold, is already included in Wesco's audited net worth, even
+though the gain has never passed through any audited report of income.
+
+Wesco's Pasadena real estate comprises a full block containing (1) about 125,000 first-class net
+rentable square feet, including Mutual Savings' space, in a modern office building, plus (2) an additional
+net rentable 34,000 square feet of economically marginal space in old buildings, which it would probably
+be wiser to destroy than improve. This real estate has a market value substantially in excess of carrying
+value. The existence of unrealized appreciation is demonstrated by (1) mortgage debt ($4,524,000 at
+9.25% fixed) against this real estate exceeding its depreciated carrying value ($3,163,000) in Wesco's
+balance sheet at December 31, 1990, and (2) substantial current net cash flow (about $1 million per
+year) to Wesco after debt service on the mortgage. The modern office building is 99% rented, despite a
+glut of vacant office space in Pasadena. We charge just-below-standard rents and run the building as a
+sort of first-class club for tenants we admire. With these practices, a prime location and superior parking
+facilities, we anticipate future increases in cash flow, but not in 1991 and 1992. The next two years are
+not likely to be good years for most owners of commercial real estate.
+
+Wesco remains in a prudent position when total debt is compared to total shareholders' equity and
+total liquid assets. Wesco's practice has been to do a certain amount of long-term borrowing in advance
+of specific need, in order to have maximum financial flexibility to face both hazards and opportunities. It
+values its AA+ credit rating.
+
+It is expected that the balance sheet strength of the consolidated enterprise will in due course be
+used in one or more business extensions. The extension activity requires patience, at least for people
+like us.
+
+As indicated in Schedule I accompanying Wesco's financial statements, investments, both those in
+the savings and loan and insurance subsidiaries and those held temporarily elsewhere pending sale to
+fund business extension, tend to be concentrated in very few places. Through this practice of
+concentration of investments, we seek to better understand the few decisions we make.*
+
+The ratio of Wesco's annual reported consolidated net income to reported consolidated sharehold-
+ers' equity, about 12% in 1988-90, was dependent to a significant extent on securities gains, irregular by
+nature.
+
+When Berkshire Hathaway bought into Wesco in 1973, the present stock (adjusted for a later three-
+for-one split) traded at about $6. At yearend 1990, the stock traded at $47% and it has paid modest
+dividends, increased every year, during Berkshire Hathaway's stewardship.
+
+The financial results for Wesco shareholders have not been bad. But they are not outstanding,
+considering the power of compound interest and the generally favorable business climate. And now,
+
+* It is interesting to compare Wesco's approach (deliberate non-diversification of investments in an attempt to
+be more skillful per transaction) with an approach promoted for years by Michael Milken to help sell junk
+bonds. The Milken approach, supported by theories of many finance professors, argued that (1) market
+prices were efficient in a world where investors get paid extra for enduring volatility (wide swings in
+outcomes); (2) therefore, the prices at which new issues of junk bonds came to market were fair in a
+probabilistic sense (meaning that the high promised interest rates covered increased statistical expectancy
+of loss) and also provided some premium return to cover volatility exposure; and (3) therefore, if a savings
+and loan association (or other institution) arranged diversification, say, by buying, without much examination,
+a large part of each new Milken issue of junk bonds, the association would work itself into the sure to-get-
+better-than-average-results position of a gambling house proprietor with a "house" edge. This type of
+theorizing has now wreaked havoc at institutions, governed by true-believers, which backed their conclusions
+by buying Milken's "bonds." Contrary to the theorizing, widely diversified purchases of such "bonds" have in
+most cases produced dismal results. We can ali understand why Milken behaved as he did and believed what
+he had to believe in order to maintain an endurable self-image. But how can we explain why anyone else
+believed that Milken was paid 5% commissions to put "bond" buyers in the position of the house in Las
+Vegas? We suggest this cause: many of the foollsh buyers, and their advisers, were trained by finance
+professors who pushed beloved models (efficient market theory and modern portfolio theory) way too far,
+while they ignored other models that would have warned of danger. This is a common type of "expert" error,
+as we have earlier indicated.
+17
+
+after all these years, Wesco continues to have (1) a very strong balance sheet, and (2) a shortage of
+direct ownership of businesses with enough commercial advantage in place to assure permanent high
+future returns on capital employed. In contrast, the parent company, Berkshire Hathaway, is better
+positioned. This outcome was explained in Wesco's annual report last year, to which we refer Wesco
+shareholders, new and old.
+
+On January 24, 1991, Wesco increased its regular quarterly dividend from 20½ cents per share to
+21½ cents per share, payable March 12, 1991, to shareholders of record as of the close of business on
+February 28, 1991.
+
+This annual report contains Form 10-K, a report filed with the Securities and Exchange Commission,
+and includes detailed information about Wesco and its subsidiaries as well as audited financial
+statements bearing extensive footnotes. As usual, your careful attention is sought with respect to these
+items.
+
+Charles Munger
+Charles T. Munger
+Chairman of the Board
+
+March 8, 1991
+
+18
