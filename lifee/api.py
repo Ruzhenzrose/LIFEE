@@ -160,8 +160,11 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             current_pid = ""
             current_text = ""
 
+            chunk_count = 0
             async for participant, chunk, is_skip in moderator.run(question, max_turns=len(all_participants)):
+                chunk_count += 1
                 if is_skip:
+                    print(f"[API] skip from {participant.info.display_name}")
                     continue
                 pid = _find_persona_id(participant, participants)
                 if pid != current_pid:
@@ -174,6 +177,9 @@ async def _handle_decision(req: DecisionRequest, request: Request):
 
             if current_text:
                 messages.append({"personaId": current_pid, "text": current_text.strip()})
+
+            if not messages:
+                messages.append({"personaId": "system", "text": f"Debug: {chunk_count} chunks, question='{question[:50]}', participants={[p.info.display_name for _, p in participants]}"})
 
             return {"messages": messages, "options": []}
 
