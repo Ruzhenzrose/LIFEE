@@ -144,16 +144,20 @@ class GeminiProvider(LLMProvider):
             temperature=temperature,
         )
 
+        async def _collect() -> list:
+            chunks: list = []
+            stream_obj = await self._client.aio.models.generate_content_stream(
+                model=self._model_name,
+                contents=contents,
+                config=config,
+            )
+            async for chunk in stream_obj:
+                if chunk.text:
+                    chunks.append(chunk.text)
+            return chunks
+
         try:
-            async with asyncio.timeout(30):
-                stream = await self._client.aio.models.generate_content_stream(
-                    model=self._model_name,
-                    contents=contents,
-                    config=config,
-                )
-                async for chunk in stream:
-                    if chunk.text:
-                        yield chunk.text
+            chunks = await asyncio.wait_for(_collect(), timeout=30)
         except asyncio.TimeoutError:
             raise RateLimitError("Gemini 流式请求超时（可能触发速率限制重试）")
         except Exception as e:
@@ -163,3 +167,6 @@ class GeminiProvider(LLMProvider):
             if "503" in error_str or "unavailable" in error_str or "overloaded" in error_str:
                 raise ServiceUnavailableError(f"Gemini 服务不可用: {e}") from e
             raise
+
+        for chunk in chunks:
+            yield chunk
