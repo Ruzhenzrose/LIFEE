@@ -175,9 +175,14 @@ async def _handle_decision(req: DecisionRequest, request: Request):
 
         if stream:
             return StreamingResponse(
-                _stream_sse(moderator, participants, question),
+                _stream_sse(moderator, participants, question, mod_module, original_delay),
                 media_type="text/event-stream",
-                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+                headers={
+                    "Cache-Control": "no-cache",
+                    "X-Accel-Buffering": "no",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Headers": "Content-Type",
+                },
             )
         else:
             # 非流式：收集所有回复后返回 JSON
@@ -220,13 +225,14 @@ def _find_persona_id(participant, participants_map):
     return "unknown"
 
 
-async def _stream_sse(moderator, participants, question):
+async def _stream_sse(moderator, participants, question, mod_module=None, original_delay=None):
     """生成 SSE 事件流"""
     all_participants = [p for _, p in participants]
     current_pid = ""
     current_text = ""
 
-    async for participant, chunk, is_skip in moderator.run(question, max_turns=len(all_participants)):
+    try:
+      async for participant, chunk, is_skip in moderator.run(question, max_turns=len(all_participants)):
         if is_skip:
             continue
         pid = _find_persona_id(participant, participants)
@@ -239,12 +245,15 @@ async def _stream_sse(moderator, participants, question):
         else:
             current_text += chunk
 
-    if current_text:
-        msg = {"personaId": current_pid, "text": current_text.strip()}
-        yield f"event: message\ndata: {json.dumps(msg, ensure_ascii=False)}\n\n"
+      if current_text:
+          msg = {"personaId": current_pid, "text": current_text.strip()}
+          yield f"event: message\ndata: {json.dumps(msg, ensure_ascii=False)}\n\n"
 
-    yield f"event: options\ndata: {json.dumps({'options': []})}\n\n"
-    yield f"event: done\ndata: {{}}\n\n"
+      yield f"event: options\ndata: {json.dumps({'options': []})}\n\n"
+      yield f"event: done\ndata: {{}}\n\n"
+    finally:
+      if mod_module and original_delay is not None:
+          mod_module.SPEAKER_DELAY = original_delay
 
 
 if __name__ == "__main__":
