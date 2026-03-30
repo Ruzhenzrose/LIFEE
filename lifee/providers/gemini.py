@@ -115,7 +115,7 @@ class GeminiProvider(LLMProvider):
                 raise RateLimitError(f"Gemini 速率限制: {e}") from e
             if "503" in error_str or "unavailable" in error_str or "overloaded" in error_str:
                 raise ServiceUnavailableError(f"Gemini 服务不可用: {e}") from e
-            if "timeout" in error_str or "timed out" in error_str:
+            if "timeout" in error_str or "timed out" in error_str or "timeout" in type(e).__name__.lower():
                 raise RateLimitError(f"Gemini 连接超时: {e}") from e
             raise
 
@@ -168,7 +168,7 @@ class GeminiProvider(LLMProvider):
                 raise RateLimitError(f"Gemini 速率限制: {e}") from e
             if "503" in error_str or "unavailable" in error_str or "overloaded" in error_str:
                 raise ServiceUnavailableError(f"Gemini 服务不可用: {e}") from e
-            if "timeout" in error_str or "timed out" in error_str:
+            if "timeout" in error_str or "timed out" in error_str or "timeout" in type(e).__name__.lower():
                 raise RateLimitError(f"Gemini 连接超时: {e}") from e
             raise
 
