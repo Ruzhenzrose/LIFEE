@@ -3,6 +3,7 @@
 支持 Google Gemini API (使用新的 google-genai SDK)
 API 文档：https://ai.google.dev/
 """
+import asyncio
 import base64
 from typing import AsyncIterator, List, Optional
 
@@ -98,11 +99,16 @@ class GeminiProvider(LLMProvider):
         )
 
         try:
-            response = await self._client.aio.models.generate_content(
-                model=self._model_name,
-                contents=contents,
-                config=config,
+            response = await asyncio.wait_for(
+                self._client.aio.models.generate_content(
+                    model=self._model_name,
+                    contents=contents,
+                    config=config,
+                ),
+                timeout=30,
             )
+        except asyncio.TimeoutError:
+            raise RateLimitError("Gemini 请求超时（可能触发速率限制重试）")
         except Exception as e:
             error_str = str(e).lower()
             if "429" in error_str or "rate" in error_str or "quota" in error_str or "resource_exhausted" in error_str:
@@ -139,14 +145,17 @@ class GeminiProvider(LLMProvider):
         )
 
         try:
-            stream = await self._client.aio.models.generate_content_stream(
-                model=self._model_name,
-                contents=contents,
-                config=config,
-            )
-            async for chunk in stream:
-                if chunk.text:
-                    yield chunk.text
+            async with asyncio.timeout(30):
+                stream = await self._client.aio.models.generate_content_stream(
+                    model=self._model_name,
+                    contents=contents,
+                    config=config,
+                )
+                async for chunk in stream:
+                    if chunk.text:
+                        yield chunk.text
+        except asyncio.TimeoutError:
+            raise RateLimitError("Gemini 流式请求超时（可能触发速率限制重试）")
         except Exception as e:
             error_str = str(e).lower()
             if "429" in error_str or "rate" in error_str or "quota" in error_str or "resource_exhausted" in error_str:
