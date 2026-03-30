@@ -232,6 +232,8 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
     current_text = ""
 
     try:
+      # 立即发送注释保持连接
+      yield ": keepalive\n\n"
       async for participant, chunk, is_skip in moderator.run(question, max_turns=len(all_participants)):
         if is_skip:
             continue
