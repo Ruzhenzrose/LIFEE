@@ -1,0 +1,40 @@
+Jack Welch's Approach to Breaking Down Silos Still Works
+By Ron Ashkenas, Harvard Business Review, September 2015
+
+Working across organizational boundaries was pioneering 25 years ago under Jack Welch's leadership at GE. Welch recognized that globalization and technological innovation would demand companies operate differently — with faster decisions, greater employee involvement, and enhanced cross-functional collaboration. He championed the "boundaryless organization" concept and created the GE Work-Out process, structured forums bringing together people across hierarchical levels, functions, and geographic locations to solve problems and decide in real time.
+
+The Persistent Challenge:
+
+Despite improved communications technology and instant information access, many organizations remain hierarchical and siloed. Complex matrix structures have actually made coordinating across departments more difficult, not easier. "The lack of standard operating procedures for using these tools, and the sheer number of them, have even exacerbated this challenge."
+
+Real-World Example:
+
+A major high-tech engineering firm faced program delays and budget overruns. A program manager called "Tom" struggled coordinating a dozen specialized engineers reporting to different departments. Managing supply chain partners, quality, sales, and finance teams dispersed globally proved nearly impossible. Video conferencing and messaging helped communication but failed to align priorities or enable rapid decision-making.
+
+The Work-Out Solution:
+
+Rather than restructuring, the company implemented Work-Out sessions. A neutral facilitator brought together 20-30 key participants around a single customer program. Over two days, cross-functional teams reached consensus on solutions, presented recommendations at a town meeting, and received on-the-spot approval from senior executives.
+
+One example involved engineers disagreeing on customizing a critical component without compromising overall design. Through structured collaboration, they reached consensus, established change limits, and created an implementation plan saving millions.
+
+Current Applications:
+
+Similar initiatives have expanded across industries — consumer products firms using forums to increase cross-boundary communication and electronics companies accelerating product launches through R&D and business collaboration.
+
+Key Takeaway:
+
+Organizational boundaries remain difficult to breach despite technology advances. The Work-Out methodology remains relevant for companies struggling with alignment and decision-making across functions and geographies. The principles Welch established — bringing the right people together, requiring real-time decisions, eliminating bureaucratic delays — are as important today as they were decades ago.
+
+---
+
+Welch on Boundaryless Behavior (from his own words):
+
+"Boundaryless behavior is the soul of today's GE. Simply put, people seem to come to work every day with a desire to find a better way to share best practices across all the businesses."
+
+"The aim is to get every mind in the game. Not just the top 500. Not just the managers. Every person. Because the person closest to the work is the one who knows it best."
+
+"We achieved this by taking the typical GE value system — which was all about hierarchy and control — and turning it on its head. We said: 'The person who knows the answer to a problem is the person closest to the problem. Not the person three levels up in the hierarchy.'"
+
+"Bureaucracy hates speed. Bureaucracy hates simplicity. Bureaucracy loves layers and approvals and reports and meetings. Our job was to kill bureaucracy wherever we found it."
+
+"NIH — Not Invented Here — was the most hated phrase at GE. If somebody in our aircraft engine business had a great idea for reducing cycle time, we wanted that idea in our plastics business, our medical systems business, our financial services business — everywhere — by Monday morning."

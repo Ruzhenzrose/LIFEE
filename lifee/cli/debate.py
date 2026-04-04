@@ -9,7 +9,7 @@ from typing import List, Optional, Tuple
 
 from lifee.config.settings import settings
 from lifee.providers import LLMProvider
-from lifee.providers.base import MediaItem
+from lifee.providers.base import MediaItem, Message, MessageRole
 from lifee.sessions import Session, DebateSessionStore
 from lifee.roles import RoleManager
 from lifee.debate import Moderator, Participant, DebateContext, clean_response
@@ -1245,7 +1245,6 @@ async def debate_loop(
                 )
                 if first_user_msg:
                     try:
-                        from lifee.providers.base import MessageRole
                         resp = await provider.chat(
                             messages=[Message(
                                 role=MessageRole.USER,

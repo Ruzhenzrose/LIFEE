@@ -1,5 +1,6 @@
 export interface Env {
-	GEMINI_API_KEY: string;
+	DEEPSEEK_API_KEY: string;
+	GEMINI_API_KEY?: string; // kept for backward compat but no longer primary
   }
   
   const corsHeaders: Record<string, string> = {
@@ -43,38 +44,27 @@ export interface Env {
 	return new TextEncoder().encode(chunk);
   }
 
-  function normalizeGeminiText(geminiData: any): string {
-	return (
-	  geminiData?.candidates?.[0]?.content?.parts
-		?.map((p: any) => p?.text)
-		.filter(Boolean)
-		.join("") || ""
-	).trim();
-  }
+  async function callLLM(env: Env, prompt: string): Promise<{ ok: true; text: string } | { ok: false; status: number; details: any }> {
+	const res = await fetch("https://api.deepseek.com/chat/completions", {
+	  method: "POST",
+	  headers: {
+		"Content-Type": "application/json",
+		Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`,
+	  },
+	  body: JSON.stringify({
+		model: "deepseek-chat",
+		messages: [{ role: "user", content: prompt }],
+		temperature: 0.8,
+	  }),
+	});
 
-  async function callGeminiText(env: Env, prompt: string): Promise<{ ok: true; text: string } | { ok: false; status: number; details: any }> {
-	const geminiRes = await fetch(
-	  `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`,
-	  {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({
-		  contents: [
-			{
-			  role: "user",
-			  parts: [{ text: prompt }],
-			},
-		  ],
-		}),
-	  }
-	);
-
-	const geminiData: any = await geminiRes.json();
-	if (!geminiRes.ok) {
-	  return { ok: false, status: geminiRes.status, details: geminiData };
+	const data: any = await res.json();
+	if (!res.ok) {
+	  return { ok: false, status: res.status, details: data };
 	}
 
-	return { ok: true, text: normalizeGeminiText(geminiData) };
+	const text = (data?.choices?.[0]?.message?.content || "").trim();
+	return { ok: true, text };
   }
 
   type TargetLang = "en" | "zh";
@@ -116,8 +106,8 @@ export interface Env {
 		return new Response("Not Found", { status: 404, headers: corsHeaders });
 	  }
   
-	  if (!env.GEMINI_API_KEY) {
-		return new Response(JSON.stringify({ error: "Missing GEMINI_API_KEY" }), {
+	  if (!env.DEEPSEEK_API_KEY) {
+		return new Response(JSON.stringify({ error: "Missing DEEPSEEK_API_KEY" }), {
 		  status: 500,
 		  headers: { ...corsHeaders, "Content-Type": "application/json" },
 		});
@@ -322,11 +312,11 @@ Round input (may be empty on the first round):
 ${userInput ? userInput : "(no new input — begin the debate)"}
 				  `.trim();
 
-				  const one = await callGeminiText(env, personaPrompt);
+				  const one = await callLLM(env, personaPrompt);
 				  if (!one.ok) {
 					await writer.write(
 					  sseEncode("error", {
-						error: "Gemini API error",
+						error: "LLM API error",
 						status: one.status,
 						details: one.details,
 					  })
@@ -368,7 +358,7 @@ Output JSON ONLY exactly in this format:
 { "options": ["...", "...", "..."] }
 				`.trim();
 
-				const opt = await callGeminiText(env, optionsPrompt);
+				const opt = await callLLM(env, optionsPrompt);
 				if (opt.ok) {
 				  const parsedOpt = extractJsonObject(opt.text);
 				  const options = Array.isArray(parsedOpt?.options) ? parsedOpt.options : [];
@@ -461,11 +451,11 @@ Output JSON ONLY exactly in this format:
   Now produce the JSON ONLY:
   `.trim();
   
-		const one = await callGeminiText(env, prompt);
+		const one = await callLLM(env, prompt);
 		if (!one.ok) {
 		  return new Response(
 			JSON.stringify({
-			  error: "Gemini API error",
+			  error: "LLM API error",
 			  status: one.status,
 			  details: one.details,
 			}),

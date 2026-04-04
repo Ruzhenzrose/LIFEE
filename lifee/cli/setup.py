@@ -246,34 +246,35 @@ PROVIDER_MODELS = {
     "deepseek": {
         "env_key": "DEEPSEEK_MODEL",
         "models": [
-            ("deepseek-chat", "DeepSeek V3 通用对话"),
-            ("deepseek-reasoner", "DeepSeek R1 推理"),
+            ("deepseek-chat", "V3.2 通用对话（推荐）"),
+            ("deepseek-reasoner", "V3.2 深度推理"),
         ],
     },
     "claude": {
         "env_key": "CLAUDE_MODEL",
         "models": [
-            ("claude-sonnet-4-6", "平衡能力和速度"),
-            ("claude-opus-4-6", "最强模型"),
-            ("claude-haiku-4-5", "快速响应"),
+            ("claude-sonnet-4-6", "Sonnet 4.6（推荐）"),
+            ("claude-opus-4-6", "Opus 4.6 最强"),
+            ("claude-haiku-4-5", "Haiku 4.5 快速"),
         ],
     },
     "qwen": {
         "env_key": "QWEN_MODEL",
         "models": [
-            ("qwen-plus", "通用对话，性价比高"),
-            ("qwen-max", "最强模型，复杂任务"),
-            ("qwen-turbo", "快速响应，简单任务"),
-            ("qwen-long", "超长上下文"),
+            ("qwen3-max", "Qwen3 旗舰"),
+            ("qwen3.5-flash", "Qwen3.5 快速（便宜）"),
+            ("qwen3.6-plus", "Qwen3.6 均衡"),
+            ("qwen-plus", "Qwen Plus 通用"),
+            ("qwen-max", "Qwen Max 旧旗舰"),
         ],
     },
     "openrouter": {
         "env_key": "OPENROUTER_MODEL",
         "models": [
+            ("deepseek/deepseek-v3.2", "DeepSeek V3.2"),
             ("google/gemini-2.5-flash", "Gemini 2.5 Flash"),
             ("google/gemini-2.5-pro", "Gemini 2.5 Pro"),
-            ("anthropic/claude-sonnet-4", "Claude Sonnet 4"),
-            ("deepseek/deepseek-chat-v3-0324", "DeepSeek V3"),
+            ("anthropic/claude-sonnet-4-6", "Claude Sonnet 4.6"),
             ("meta-llama/llama-4-maverick", "Llama 4 Maverick"),
         ],
     },
@@ -281,9 +282,9 @@ PROVIDER_MODELS = {
         "env_key": "GROQ_MODEL",
         "models": [
             ("llama-3.3-70b-versatile", "Llama 3.3 70B"),
+            ("deepseek-r1-distill-llama-70b", "DeepSeek R1 蒸馏"),
             ("llama-3.1-8b-instant", "Llama 3.1 8B 快速"),
             ("gemma2-9b-it", "Gemma 2 9B"),
-            ("mixtral-8x7b-32768", "Mixtral 8x7B"),
         ],
     },
     "opencode": {

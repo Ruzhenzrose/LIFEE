@@ -147,14 +147,29 @@ class Participant:
             triggered_context, dialogue_context, stock_data_context,
         )
 
-        # 6. 调用 LLM
+        # 6. 重映射消息角色：只有自己之前的发言保持 assistant，其他角色的发言转为 user
+        my_name = self.info.display_name
+        remapped = []
+        for msg in messages:
+            if msg.role == MessageRole.ASSISTANT and msg.name != my_name:
+                # 其他角色的发言 → user（模型会去"回应"而非"延续"）
+                remapped.append(Message(
+                    role=MessageRole.USER,
+                    content=msg.content,
+                    name=msg.name,
+                    media=msg.media,
+                ))
+            else:
+                remapped.append(msg)
+
+        # 7. 调用 LLM
         extra_kwargs = {}
         if self.tools and self.tool_executor:
             extra_kwargs["tools"] = self.tools
             extra_kwargs["tool_executor"] = self.tool_executor
 
         async for chunk in self.provider.stream(
-            messages=messages,
+            messages=remapped,
             system=system,
             temperature=0.7,
             **extra_kwargs,
@@ -216,7 +231,7 @@ class Participant:
         return "\n\n".join(parts)
 
     def _format_recent_dialogue(
-        self, messages: list[Message], max_messages: int = 16, max_chars: int = 400
+        self, messages: list[Message], max_messages: int = 16, max_chars: int = 0
     ) -> str:
         """格式化最近对话记录（用于分身互相可见）"""
         if not messages:
@@ -228,7 +243,7 @@ class Participant:
             content = msg.content.strip()
             if not content:
                 continue
-            if len(content) > max_chars:
+            if max_chars and len(content) > max_chars:
                 content = content[:max_chars] + "..."
 
             if msg.role == MessageRole.USER:
