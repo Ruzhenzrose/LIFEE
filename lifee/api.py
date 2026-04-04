@@ -61,6 +61,12 @@ def _get_provider():
             api_key=os.getenv("ANTHROPIC_API_KEY") or settings.anthropic_api_key,
             model=os.getenv("LLM_MODEL") or settings.claude_model or "claude-sonnet-4-20250514",
         )
+    elif provider_name == "deepseek":
+        from lifee.providers.openai_compat import DeepSeekProvider
+        return DeepSeekProvider(
+            api_key=os.getenv("DEEPSEEK_API_KEY") or settings.deepseek_api_key,
+            model=os.getenv("LLM_MODEL") or settings.deepseek_model or "deepseek-chat",
+        )
     else:
         raise ValueError(f"Unsupported provider for API: {provider_name}")
 
