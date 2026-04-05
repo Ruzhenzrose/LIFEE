@@ -83,8 +83,18 @@ class MemoryManager:
 
     @staticmethod
     def _stable_path_key(path: Path) -> str:
-        """用文件名作为稳定标识，避免部署路径变化导致重复索引"""
-        return path.name
+        """用相对于 knowledge 目录的路径作为稳定标识
+
+        例如 books/managing-oneself-full.txt
+        不管部署在哪台机器都一样，也不会因子目录同名文件冲突。
+        """
+        parts = path.parts
+        # 找到 "knowledge" 目录之后的部分
+        for i, p in enumerate(parts):
+            if p == "knowledge":
+                return "/".join(parts[i + 1:])
+        # fallback: 用最后两级
+        return "/".join(parts[-2:]) if len(parts) >= 2 else path.name
 
     def _needs_reindex(self, path: Path) -> bool:
         """检查文件是否需要重新索引"""
