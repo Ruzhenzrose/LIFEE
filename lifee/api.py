@@ -47,11 +47,12 @@ async def _init_knowledge():
     target_roles = [r.strip() for r in priority_roles if r.strip()]
 
     # 本地完整索引的 chunk 数（达到此数才算完整，跳过重建）
+    # 远端用文件名 key 的实际完整 chunk 数
     EXPECTED_CHUNKS = {
-        "buffett": 9440, "drucker": 3508, "krishnamurti": 3621,
-        "lacan": 20409, "munger": 3236, "shannon": 2069,
-        "turing": 984, "vonneumann": 4652, "welch": 2568,
-        "audreyhepburn": 1595,
+        "drucker": 1754, "welch": 1284, "buffett": 4927,
+        "munger": 3236, "audreyhepburn": 1595, "krishnamurti": 3027,
+        "lacan": 4172, "shannon": 1838, "turing": 913,
+        "vonneumann": 1876,
     }
 
     for role_name in target_roles:
