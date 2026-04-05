@@ -183,13 +183,7 @@ async def _handle_decision(req: DecisionRequest, request: Request):
     try:
         session = Session()
         all_participants = [p for _, p in participants]
-        moderator = Moderator(all_participants, session, enable_moderator_check=req.moderator)
-
-        # 主持人预审
-        if not req.context:
-            clarification = await moderator.check_clarification(question)
-            if clarification:
-                return {"messages": [{"personaId": "moderator", "text": clarification}], "options": [], "needsClarification": True}
+        moderator = Moderator(all_participants, session, enable_moderator_check=False)
 
         if stream:
             return StreamingResponse(
