@@ -22,6 +22,46 @@ load_dotenv()
 
 app = FastAPI(title="LIFEE API")
 
+# 知识库管理器缓存：role_name → MemoryManager
+_knowledge_managers: dict = {}
+_km_initialized = False
+
+
+async def _init_knowledge():
+    """启动时构建/加载所有角色的知识库索引"""
+    global _km_initialized
+    if _km_initialized:
+        return
+    _km_initialized = True
+
+    google_key = os.getenv("GOOGLE_API_KEY", "")
+    if not google_key:
+        print("[knowledge] No GOOGLE_API_KEY, skipping RAG index")
+        return
+
+    from lifee.roles import RoleManager
+    rm = RoleManager()
+
+    for role_name in rm.list_roles():
+        try:
+            km = await rm.get_knowledge_manager(
+                role_name, google_api_key=google_key, auto_index=True
+            )
+            if km:
+                stats = km.get_stats()
+                if stats.get("chunk_count", 0) > 0:
+                    _knowledge_managers[role_name] = km
+                    print(f"[knowledge] {role_name}: {stats['chunk_count']} chunks")
+        except Exception as e:
+            print(f"[knowledge] {role_name}: failed ({e})")
+
+    print(f"[knowledge] Loaded {len(_knowledge_managers)} roles with RAG")
+
+
+@app.on_event("startup")
+async def startup():
+    await _init_knowledge()
+
 # CORS — allow all origins for now
 app.add_middleware(
     CORSMiddleware,
@@ -170,7 +210,8 @@ async def _handle_decision(req: DecisionRequest, request: Request):
         role_name = _match_role(persona.id, persona.name)
         if not role_name:
             continue
-        p = Participant(role_name, provider, rm, knowledge_manager=None)
+        km = _knowledge_managers.get(role_name)
+        p = Participant(role_name, provider, rm, knowledge_manager=km)
         participants.append((persona.id, p))
 
     if not participants:
