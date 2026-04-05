@@ -46,16 +46,42 @@ async def _init_knowledge():
     priority_roles = os.getenv("RAG_ROLES", "drucker,welch").split(",")
     target_roles = [r.strip() for r in priority_roles if r.strip()]
 
+    # 本地完整索引的 chunk 数（达到此数才算完整，跳过重建）
+    EXPECTED_CHUNKS = {
+        "buffett": 9440, "drucker": 3508, "krishnamurti": 3621,
+        "lacan": 20409, "munger": 3236, "shannon": 2069,
+        "turing": 984, "vonneumann": 4652, "welch": 2568,
+        "audreyhepburn": 1595,
+    }
+
     for role_name in target_roles:
         try:
+            expected = EXPECTED_CHUNKS.get(role_name, 0)
+
+            # 先不索引，看 db 是否已完整
+            km = await rm.get_knowledge_manager(
+                role_name, google_api_key=google_key, auto_index=False
+            )
+            if km:
+                stats = km.get_stats()
+                existing = stats.get("chunk_count", 0)
+                if expected > 0 and existing >= expected:
+                    _knowledge_managers[role_name] = km
+                    print(f"[knowledge] {role_name}: {existing} chunks (complete)")
+                    continue
+                km.close()
+
+            # 不完整，需要补全
             km = await rm.get_knowledge_manager(
                 role_name, google_api_key=google_key, auto_index=True
             )
             if km:
                 stats = km.get_stats()
-                if stats.get("chunk_count", 0) > 0:
+                count = stats.get("chunk_count", 0)
+                if count > 0:
                     _knowledge_managers[role_name] = km
-                    print(f"[knowledge] {role_name}: {stats['chunk_count']} chunks")
+                    status = "complete" if count >= expected else f"partial {count}/{expected}"
+                    print(f"[knowledge] {role_name}: {count} chunks ({status})")
         except Exception as e:
             print(f"[knowledge] {role_name}: failed ({e})")
 
