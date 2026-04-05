@@ -115,12 +115,72 @@ class Moderator:
         participants: list[Participant],
         session: Session,
         user_memory_context: Optional[str] = None,
+        enable_moderator_check: bool = True,
     ):
         self.participants = participants
         self.session = session
         self.round_number = 0  # 轮次计数
         self.rotation = SpeakerRotation(participants, randomize_first=True)
         self.user_memory_context = user_memory_context  # 用户记忆上下文
+        self.enable_moderator_check = enable_moderator_check  # 主持人预审开关
+
+    async def check_clarification(self, user_input: str) -> str | None:
+        """主持人预审：判断用户输入是否需要补充信息。
+
+        仅在第一轮、开关开启时触发。
+        返回追问文本（需要补充时），或 None（信息已充分）。
+        """
+        if not self.enable_moderator_check:
+            return None
+        if self.round_number > 0:
+            return None
+        if not user_input or len(user_input.strip()) < 5:
+            return None
+
+        from lifee.providers.base import MessageRole
+
+        provider = self.participants[0].provider
+        names = "、".join(p.info.display_name for p in self.participants)
+
+        prompt = f"""你是一场深度讨论的主持人。{names} 即将就用户的问题展开讨论。
+你需要判断：用户提供的信息是否足够让专家们给出有针对性的建议？
+
+用户的问题：
+{user_input}
+
+判断规则：
+- 如果问题已经足够具体（包含了关键背景信息），直接输出 PASS
+- 如果缺少关键信息导致专家们只能泛泛而谈，生成 2-3 个温和自然的追问
+
+如果需要追问：
+- 语气温和、像朋友聊天，不要像问卷调查
+- 每个问题给出 2-3 个选项，让用户轻松选择或自由回答
+- 不要超过 3 个问题
+- 开头用一句话自然过渡
+
+示例：
+想更好地帮你分析，能先聊几个小问题吗？
+
+1. 你目前大概处于什么阶段？
+   A. 刚毕业/工作1-2年  B. 工作3-5年  C. 5年以上
+
+2. 你最在意的是什么？
+   A. 收入和稳定  B. 成长和学习  C. 自由和生活质量
+
+如果信息已充分，只输出：PASS"""
+
+        try:
+            response = await provider.chat(
+                messages=[Message(role=MessageRole.USER, content=prompt)],
+                max_tokens=400,
+                temperature=0.3,
+            )
+            result = response.content.strip()
+            if result.upper().startswith("PASS"):
+                return None
+            return result
+        except Exception:
+            return None
 
     async def run(
         self,

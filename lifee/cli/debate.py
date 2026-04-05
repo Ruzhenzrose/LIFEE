@@ -1184,6 +1184,12 @@ async def debate_loop(
                     clean_input = "请看这张图片"
                 user_input = clean_input
 
+            # 主持人预审：第一轮判断是否需要追问
+            clarification = await moderator.check_clarification(user_input)
+            if clarification:
+                print(f"\n🎙️ 主持人:\n{clarification}\n")
+                continue  # 回到输入循环，等用户回答后再进入辩论
+
             # 运行对话（统一的循环，包含所有角色的发言）
             current_participant = None
             skip_happened = False
