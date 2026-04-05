@@ -81,9 +81,15 @@ class MemoryManager:
         key = f"{path}:{start_line}:{end_line}:{chunk_hash}:{model}"
         return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
 
+    @staticmethod
+    def _stable_path_key(path: Path) -> str:
+        """用文件名作为稳定标识，避免部署路径变化导致重复索引"""
+        return path.name
+
     def _needs_reindex(self, path: Path) -> bool:
         """检查文件是否需要重新索引"""
-        cursor = self.db.execute(SELECT_FILE_SQL, (str(path),))
+        key = self._stable_path_key(path)
+        cursor = self.db.execute(SELECT_FILE_SQL, (key,))
         row = cursor.fetchone()
 
         if row is None:
@@ -134,7 +140,7 @@ class MemoryManager:
         embeddings = await self.embedding.embed_batch(texts)
 
         # 删除旧数据
-        path_str = str(path)
+        path_str = self._stable_path_key(path)
         self.db.execute(DELETE_FTS_BY_PATH_SQL, (path_str,))
         self.db.execute(DELETE_CHUNKS_BY_PATH_SQL, (path_str,))
 
