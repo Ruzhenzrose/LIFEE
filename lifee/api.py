@@ -13,7 +13,7 @@ from typing import Optional
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -95,6 +95,9 @@ def _match_role(persona_id: str, persona_name: str) -> Optional[str]:
 
 @app.get("/")
 async def root():
+    index = Path(__file__).parent.parent / "web" / "ui" / "index.html"
+    if index.exists():
+        return FileResponse(index)
     return {"status": "ok", "service": "LIFEE API"}
 
 
