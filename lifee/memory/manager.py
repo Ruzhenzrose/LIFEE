@@ -145,11 +145,15 @@ class MemoryManager:
         if not chunks:
             return 0
 
-        # 生成嵌入向量
+        # 生成嵌入向量（先生成，成功后再删旧数据，避免速率限制导致数据丢失）
         texts = [chunk.text for chunk in chunks]
         embeddings = await self.embedding.embed_batch(texts)
 
-        # 删除旧数据
+        # 验证 embedding 完整性
+        if len(embeddings) != len(chunks):
+            return 0  # embedding 不完整，放弃本次索引，保留旧数据
+
+        # 删除旧数据（embedding 已完整生成，安全删除）
         path_str = self._stable_path_key(path)
         self.db.execute(DELETE_FTS_BY_PATH_SQL, (path_str,))
         self.db.execute(DELETE_CHUNKS_BY_PATH_SQL, (path_str,))
