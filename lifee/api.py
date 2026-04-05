@@ -36,7 +36,7 @@ _RELEASE_URL = "https://github.com/Ruzhenzrose/LIFEE/releases/download/knowledge
 # GitHub Release 上可用的 db 文件
 _RELEASE_DBS = [
     "drucker", "welch", "buffett", "munger", "audreyhepburn",
-    "krishnamurti", "turing", "shannon", "vonneumann",
+    "krishnamurti", "turing", "shannon", "vonneumann", "lacan",
 ]
 
 
