@@ -94,52 +94,6 @@ def _match_role(persona_id: str, persona_name: str) -> Optional[str]:
     return None
 
 
-async def _moderator_check(provider, question: str) -> str | None:
-    """主持人预审：判断用户输入是否需要补充信息。
-
-    返回追问文本（需要补充时），或 None（信息已充分）。
-    """
-    from lifee.providers.base import Message, MessageRole
-
-    prompt = """你是一场深度讨论的主持人。用户刚提出了一个问题，你需要判断：这个问题的背景信息是否足够让专家们给出有针对性的建议？
-
-用户的问题：
-{question}
-
-判断规则：
-- 如果问题已经足够具体（包含了关键背景），直接输出 PASS
-- 如果缺少关键信息导致专家们只能泛泛而谈，生成 2-3 个温和自然的追问
-
-如果需要追问，请用以下格式（中文）：
-- 语气温和、像朋友聊天，不要像问卷调查
-- 每个问题给出 2-3 个选项，让用户轻松选择
-- 不要超过 3 个问题
-- 开头用一句话自然过渡，比如"想更好地帮你分析，能先聊几个小问题吗？"
-
-示例格式：
-想更好地帮你分析，能先聊几个小问题吗？
-
-1. 你目前大概处于什么阶段？
-   A. 刚毕业/工作1-2年  B. 工作3-5年  C. 5年以上
-
-2. 你最在意的是什么？
-   A. 收入和稳定  B. 成长和学习  C. 自由和生活质量
-
-如果问题已经足够具体，只输出：PASS""".format(question=question)
-
-    try:
-        response = await provider.chat(
-            messages=[Message(role=MessageRole.USER, content=prompt)],
-            max_tokens=400,
-            temperature=0.3,
-        )
-        result = response.content.strip()
-        if result.upper().startswith("PASS"):
-            return None
-        return result
-    except Exception:
-        return None  # 出错时不阻塞，直接进入辩论
-
 
 @app.get("/")
 async def root():
@@ -210,20 +164,12 @@ async def _handle_decision(req: DecisionRequest, request: Request):
     if req.context:
         question = f"{question}\n\nContext:\n{req.context}"
 
-    # ---- 主持人预审：判断是否需要向用户追问 ----
-    if req.moderator and question and not req.context:
-        clarification = await _moderator_check(provider, question)
-        if clarification:
-            return {"messages": [{"personaId": "moderator", "text": clarification}], "options": [], "needsClarification": True}
-
     # 映射角色
     participants = []
     for persona in req.personas:
         role_name = _match_role(persona.id, persona.name)
         if not role_name:
             continue
-        # Skip knowledge manager in API mode — knowledge.db doesn't exist on Render
-        # and rebuilding it per-request adds 20+ seconds of Gemini embedding calls
         p = Participant(role_name, provider, rm, knowledge_manager=None)
         participants.append((persona.id, p))
 
@@ -237,7 +183,13 @@ async def _handle_decision(req: DecisionRequest, request: Request):
     try:
         session = Session()
         all_participants = [p for _, p in participants]
-        moderator = Moderator(all_participants, session)
+        moderator = Moderator(all_participants, session, enable_moderator_check=req.moderator)
+
+        # 主持人预审
+        if not req.context:
+            clarification = await moderator.check_clarification(question)
+            if clarification:
+                return {"messages": [{"personaId": "moderator", "text": clarification}], "options": [], "needsClarification": True}
 
         if stream:
             return StreamingResponse(
