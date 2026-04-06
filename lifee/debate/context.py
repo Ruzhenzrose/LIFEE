@@ -28,13 +28,10 @@ class DebateContext:
             if p.name != self.current_participant.name
         ]
 
-        if not others:
-            return self._build_single_participant_prompt()
-
-        others_str = ", ".join([f"{p.emoji} {p.display_name}" for p in others])
-        example_name = others[0].display_name
-
-        base_context = f"""## Current Conversation
+        # 基础上下文：身份 + 消息格式说明
+        if others:
+            others_str = ", ".join([f"{p.emoji} {p.display_name}" for p in others])
+            base_context = f"""## Current Conversation
 
 You are {self.current_participant.display_name}, taking part in a group discussion with the user and {others_str}. This is round {self.round_number}.
 
@@ -42,8 +39,16 @@ In the conversation history:
 - The user's messages appear as `<user>...</user>`
 - Your own previous messages appear as `<msg from="{self.current_participant.display_name}">...</msg>`"""
 
-        for other in others:
-            base_context += f'\n- {other.display_name}\'s messages appear as `<msg from="{other.display_name}">...</msg>`'
+            for other in others:
+                base_context += f'\n- {other.display_name}\'s messages appear as `<msg from="{other.display_name}">...</msg>`'
+        else:
+            base_context = f"""## Current Conversation
+
+You are {self.current_participant.display_name}, in a one-on-one conversation with the user. This is round {self.round_number}.
+
+In the conversation history:
+- The user's messages appear as `<user>...</user>`
+- Your own previous messages appear as `<msg from="{self.current_participant.display_name}">...</msg>`"""
 
         base_context += """
 
@@ -53,7 +58,9 @@ Always reply in the same language the user is using.
 
 Note: the system will wrap your reply in message tags automatically — just speak directly, without adding any name, emoji, XML tag, or separator at the start."""
 
+        # 交互指导：第一个发言者 vs 后续发言者
         if not self.reply_to:
+            example_ref = f' (e.g. "As {others[0].display_name} said…")' if others else ""
             interaction_guide = f"""
 
 ### Your Turn
@@ -63,13 +70,12 @@ The user has just raised a question or topic. Respond from your own perspective.
 **Guidelines**:
 - Address the user's question directly
 - Draw on your knowledge and worldview to offer insight and concrete guidance
-- You may reference other participants (e.g. "As {example_name} said…") but it's not required
+- You may reference other participants{example_ref} but it's not required
 - Keep your voice and perspective distinct
-- Be substantive but concise — leave room for others to speak
+- Be concise — say only what matters
 - You may include brief action descriptions in parentheses when they feel natural — e.g. (leaning forward), (a long pause)
-- You must respond — staying silent is not an option
-- End with at least one actionable suggestion the user can actually try
-- If the user's situation is unclear, ask a clarifying question rather than guessing"""
+- If the user's situation lacks specifics (e.g. no mention of their age, experience, industry, constraints, or what they've already tried), weave 1-2 natural follow-up questions INTO your response — don't just answer generically, actively draw out their personal context
+- Connect abstract ideas to concrete, personal actions — end with at least one actionable suggestion the user can actually try"""
         else:
             interaction_guide = """
 
@@ -81,30 +87,8 @@ Others have already spoken. Now it's your turn to join the discussion.
 - Read the recent conversation and choose what you most want to engage with — the user's question, someone's argument, or the direction of the whole discussion
 - You don't have to respond to the previous speaker specifically; follow your own judgment
 - You may agree, build on, challenge, or open a new angle — your call
-- Keep it concise: 2–3 paragraphs
+- Be concise — say only what matters
 - You may include brief action descriptions in parentheses when they feel natural — e.g. (leaning back), (a long pause)
-- You must respond — staying silent is not an option"""
+- Connect abstract ideas to concrete, personal actions — end with at least one actionable suggestion the user can actually try"""
 
         return base_context + interaction_guide
-
-    def _build_single_participant_prompt(self) -> str:
-        return f"""## Current Conversation
-
-You are {self.current_participant.display_name}, in a one-on-one conversation with the user. This is round {self.round_number}.
-
-Always reply in the same language the user is using.
-
-Note: the system will wrap your reply in message tags automatically — just speak directly, without adding any name, emoji, XML tag, or separator at the start.
-
-### Your Turn
-
-The user has just raised a question or topic. Respond from your own perspective.
-
-**Guidelines**:
-- Address the user's question directly
-- Draw on your knowledge and worldview to offer insight and concrete guidance
-- Keep your voice and perspective distinct
-- You may include brief action descriptions in parentheses when they feel natural — e.g. (leaning forward), (a quiet smile)
-- You must respond — staying silent is not an option
-- End with at least one actionable suggestion the user can actually try
-- If the user's situation is unclear, ask a clarifying question rather than guessing"""
