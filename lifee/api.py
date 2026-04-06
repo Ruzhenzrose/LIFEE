@@ -356,38 +356,34 @@ def _find_persona_id(participant, participants_map):
 
 
 async def _stream_sse(moderator, participants, question, mod_module=None, original_delay=None, session_id="", provider=None, session=None):
-    """生成 SSE 事件流"""
+    """生成 SSE 事件流（逐 chunk 实时推送）"""
     all_participants = [p for _, p in participants]
     current_pid = ""
-    current_text = ""
-    all_messages = []
 
     try:
-      # 立即发送 sessionId 和 keepalive
       yield f"event: session\ndata: {json.dumps({'sessionId': session_id})}\n\n"
       yield ": keepalive\n\n"
+
       async for participant, chunk, is_skip in moderator.run(question, max_turns=len(all_participants)):
         if is_skip:
             continue
         pid = _find_persona_id(participant, participants)
         if pid != current_pid:
-            if current_text:
-                msg = {"personaId": current_pid, "text": current_text.strip()}
-                all_messages.append(msg)
-                yield f"event: message\ndata: {json.dumps(msg, ensure_ascii=False)}\n\n"
+            # 上一个角色说完
+            if current_pid:
+                yield f"event: messageEnd\ndata: {json.dumps({'personaId': current_pid})}\n\n"
+            # 新角色开始
             current_pid = pid
-            current_text = chunk
-        else:
-            current_text += chunk
+            yield f"event: messageStart\ndata: {json.dumps({'personaId': pid})}\n\n"
+        # 逐 chunk 发送
+        yield f"event: messageChunk\ndata: {json.dumps({'personaId': pid, 'chunk': chunk}, ensure_ascii=False)}\n\n"
 
-      if current_text:
-          msg = {"personaId": current_pid, "text": current_text.strip()}
-          all_messages.append(msg)
-          yield f"event: message\ndata: {json.dumps(msg, ensure_ascii=False)}\n\n"
+      if current_pid:
+          yield f"event: messageEnd\ndata: {json.dumps({'personaId': current_pid})}\n\n"
 
       # 生成后续选项
       options = []
-      if provider and all_messages:
+      if provider and session:
           options = await _generate_options(provider, session)
 
       yield f"event: options\ndata: {json.dumps({'options': options}, ensure_ascii=False)}\n\n"

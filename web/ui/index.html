@@ -502,7 +502,7 @@
             return res.text();
         }
 
-        async function fetchLifeeDecisionStream(payload, { onMessage, onOptions } = {}) {
+        async function fetchLifeeDecisionStream(payload, { onMessage, onMessageUpdate, onOptions } = {}) {
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), LIFEE_STREAM_TIMEOUT_MS);
             let res;
@@ -554,9 +554,23 @@
                 try { data = JSON.parse(dataStr); } catch (_) {}
 
                 if (eventName === "session") {
-                    // 保存 sessionId 用于多轮对话
                     if (data?.sessionId) window.__lifeeSessionId = data.sessionId;
+                } else if (eventName === "messageStart") {
+                    // 新角色开始说话
+                    if (data?.personaId) {
+                        window.__currentStreamPid = data.personaId;
+                        window.__currentStreamText = "";
+                        await onMessage?.({ personaId: data.personaId, text: "" });
+                    }
+                } else if (eventName === "messageChunk") {
+                    if (data?.chunk && window.__currentStreamPid) {
+                        window.__currentStreamText = (window.__currentStreamText || "") + data.chunk;
+                        await onMessageUpdate?.({ personaId: window.__currentStreamPid, text: window.__currentStreamText });
+                    }
+                } else if (eventName === "messageEnd") {
+                    window.__currentStreamPid = null;
                 } else if (eventName === "message") {
+                    // 兼容旧格式
                     if (data && typeof data === "object") await onMessage?.(data);
                 } else if (eventName === "options") {
                     const opts = (data && typeof data === "object") ? data.options : [];
@@ -1756,8 +1770,12 @@
                         }
                     };
 
-                    // 非流式模式（稳定）
-                    const data = await fetchLifeeDecisionProgressive(payload, handlers);
+                    // 非流式模式：一次请求所有角色
+                    const data = await fetchLifeeDecision(payload);
+                    if (Array.isArray(data?.messages)) {
+                        for (const m of data.messages) await handlers.onMessage(m);
+                    }
+                    if (Array.isArray(data?.options)) handlers.onOptions(data.options);
                     if (data?.sessionId) setSessionId(data.sessionId);
                 } catch (e) {
                     console.error(e);
