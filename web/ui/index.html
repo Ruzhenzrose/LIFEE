@@ -402,8 +402,8 @@
         const LIFEE_API = (location.hostname === "localhost" || location.protocol === "file:")
             ? "https://lifee-api.guolinn.workers.dev/decision"
             : "/decision";
-        const LIFEE_API_TIMEOUT_MS = 25000;
-        const LIFEE_STREAM_TIMEOUT_MS = 40000;
+        const LIFEE_API_TIMEOUT_MS = 60000;
+        const LIFEE_STREAM_TIMEOUT_MS = 90000;
 
         async function fetchLifeeDecision(payload, url = LIFEE_API) {
             const controller = new AbortController();
