@@ -1756,15 +1756,9 @@
                         }
                     };
 
-                    // Prefer SSE streaming (single request, progressive persona outputs).
-                    try {
-                        await fetchLifeeDecisionStream(payload, handlers);
-                        if (window.__lifeeSessionId) setSessionId(window.__lifeeSessionId);
-                    } catch (streamErr) {
-                        console.warn('stream failed; fallback to progressive JSON calls', streamErr);
-                        const data = await fetchLifeeDecisionProgressive(payload, handlers);
-                        if (data?.sessionId) setSessionId(data.sessionId);
-                    }
+                    // 非流式模式（稳定）
+                    const data = await fetchLifeeDecisionProgressive(payload, handlers);
+                    if (data?.sessionId) setSessionId(data.sessionId);
                 } catch (e) {
                     console.error(e);
                     setHistory(prev => [...prev, { personaId: "system", text: `(${e?.message || 'Request failed'})` }]);
