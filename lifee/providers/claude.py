@@ -6,11 +6,14 @@ import anthropic
 from .base import ChatResponse, LLMProvider, Message, MessageRole, RateLimitError, ServiceUnavailableError
 
 
-# Claude Code 版本号（用于 user-agent）
-CLAUDE_CODE_VERSION = "2.1.2"
+# Claude Code 版本号（用于 user-agent，需与本地安装的 claude --version 一致）
+CLAUDE_CODE_VERSION = "2.1.89"
 
-# Claude Code 身份声明（使用 OAuth token 时必须包含）
-CLAUDE_CODE_IDENTITY = "You are Claude Code, Anthropic's official CLI for Claude."
+# Claude Code 计费标头（OAuth token 调用时必须作为 system 第一条，否则会被 429 限流）
+CLAUDE_CODE_BILLING_HEADER = (
+    f"x-anthropic-billing-header: cc_version={CLAUDE_CODE_VERSION}.72a; "
+    "cc_entrypoint=cli; cch=00000;"
+)
 
 
 def is_oauth_token(token: str) -> bool:
@@ -43,16 +46,32 @@ class ClaudeProvider(LLMProvider):
 
         # 根据 token 类型选择认证方式
         if self._is_oauth:
-            # OAuth token: 模拟 Claude Code 的完整配置
+            import uuid
+            self._session_id = str(uuid.uuid4())
+            # OAuth token: 模拟 Claude Code 的完整请求格式
             self._client = anthropic.AsyncAnthropic(
                 api_key=None,
                 auth_token=api_key,
+                base_url="https://api.anthropic.com",
                 default_headers={
                     "accept": "application/json",
                     "anthropic-dangerous-direct-browser-access": "true",
-                    "anthropic-beta": "claude-code-20250219,oauth-2025-04-20,fine-grained-tool-streaming-2025-05-14,interleaved-thinking-2025-05-14",
+                    "anthropic-beta": (
+                        "claude-code-20250219,oauth-2025-04-20,"
+                        "interleaved-thinking-2025-05-14,"
+                        "context-management-2025-06-27,"
+                        "prompt-caching-scope-2026-01-05,"
+                        "effort-2025-11-24"
+                    ),
                     "user-agent": f"claude-cli/{CLAUDE_CODE_VERSION} (external, cli)",
                     "x-app": "cli",
+                    "x-claude-code-session-id": self._session_id,
+                    "x-stainless-lang": "js",
+                    "x-stainless-package-version": "0.74.0",
+                    "x-stainless-os": "Windows",
+                    "x-stainless-arch": "x64",
+                    "x-stainless-runtime": "node",
+                    "x-stainless-runtime-version": "v22.17.0",
                 },
             )
         else:
@@ -114,12 +133,23 @@ class ClaudeProvider(LLMProvider):
                 else:
                     converted.append({"role": msg.role.value, "content": content})
 
-        # Claude API 要求对话必须以 user 消息结尾
-        # 多角色对话中，上一个角色的 assistant 消息可能是最后一条
-        if converted and converted[-1]["role"] == "assistant":
-            converted.append({"role": "user", "content": "[Please respond to the conversation above]"})
-
         return system_prompt, converted
+
+    def _build_oauth_metadata(self) -> dict:
+        """构建 OAuth 请求所需的 metadata"""
+        if not self._is_oauth:
+            return {}
+        import json
+        import hashlib
+        return {
+            "metadata": {
+                "user_id": json.dumps({
+                    "device_id": hashlib.sha256(b"lifee-device").hexdigest(),
+                    "account_uuid": "56eb4902-266a-4546-a57d-85ecce8dd528",
+                    "session_id": self._session_id,
+                })
+            }
+        }
 
     def _build_system_prompt(
         self, user_system: Optional[str]
@@ -130,16 +160,35 @@ class ClaudeProvider(LLMProvider):
         如果使用 OAuth token，必须使用特定格式声明 Claude Code 身份
         """
         if self._is_oauth:
-            # OAuth token: 使用数组格式，包含 cache_control
+            # OAuth token: billing header 必须是 system 的第一条
             system_blocks = [
                 {
                     "type": "text",
-                    "text": CLAUDE_CODE_IDENTITY,
-                    "cache_control": {"type": "ephemeral"},
+                    "text": CLAUDE_CODE_BILLING_HEADER,
                 }
             ]
             if user_system:
-                system_blocks.append({"type": "text", "text": user_system})
+                # 拆分固定部分（SOUL/IDENTITY）和动态部分（RAG/对话记录）
+                # 用 "## Current Conversation" 作为分界线
+                parts = user_system.split("## Current Conversation", 1)
+                if len(parts) == 2:
+                    # 固定部分加 cache_control（SOUL + IDENTITY + skills）
+                    system_blocks.append({
+                        "type": "text",
+                        "text": parts[0].rstrip(),
+                        "cache_control": {"type": "ephemeral"},
+                    })
+                    # 动态部分不缓存
+                    system_blocks.append({
+                        "type": "text",
+                        "text": "## Current Conversation" + parts[1],
+                    })
+                else:
+                    system_blocks.append({
+                        "type": "text",
+                        "text": user_system,
+                        "cache_control": {"type": "ephemeral"},
+                    })
             return system_blocks
         else:
             # 普通 API Key: 使用字符串格式
@@ -164,14 +213,15 @@ class ClaudeProvider(LLMProvider):
                 temperature=temperature,
                 system=final_system,
                 messages=msg_list,
+                **self._build_oauth_metadata(),
                 **kwargs,
             )
         except anthropic.RateLimitError as e:
-            raise RateLimitError(f"Claude 速率限制: {e}") from e
+            raise RateLimitError(f"Claude 速率��制: {e}") from e
         except anthropic.InternalServerError as e:
             raise ServiceUnavailableError(f"Claude 服务不可用: {e}") from e
 
-        # 安全获取响应内容（防止空列表导致 IndexError）
+        # 安���获取响应内容（防止空列表导致 IndexError）
         content = ""
         if response.content and len(response.content) > 0:
             content = response.content[0].text
@@ -236,6 +286,7 @@ class ClaudeProvider(LLMProvider):
                 temperature=temperature,
                 system=final_system,
                 messages=msg_list,
+                **self._build_oauth_metadata(),
                 **kwargs,
             ) as stream:
                 async for text in stream.text_stream:
@@ -272,6 +323,7 @@ class ClaudeProvider(LLMProvider):
                     messages=messages,
                     tools=api_tools,
                     stream=True,
+                    **self._build_oauth_metadata(),
                     **kwargs,
                 )
             except anthropic.RateLimitError as e:
