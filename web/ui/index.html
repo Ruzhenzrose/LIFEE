@@ -1740,17 +1740,12 @@
                 }
 
                 try {
-                    const contextBlock = buildContextBlock();
                     const situation = (context.situation || "").trim();
-                    const finalSituation = contextBlock
-                        ? `Context:\n${contextBlock}\n\nUser situation:\n${situation || "Start the internal debate."}`
-                        : (situation || "Start the internal debate.");
 
                     const payload = {
-                        situation: finalSituation,
+                        situation: situation || "Start the internal debate.",
                         userInput: cleanInput,
-                        personas: debatePersonas.map(p => ({ id: p.id, name: p.name, knowledge: p.knowledge || '' })),
-                        context: contextBlock,
+                        personas: debatePersonas.map(p => ({ id: p.id, name: p.name })),
                         sessionId: sessionId
                     };
 
