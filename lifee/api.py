@@ -297,7 +297,7 @@ async def _handle_decision(req: DecisionRequest, request: Request):
 
         if stream:
             return StreamingResponse(
-                _stream_sse(moderator, participants, question, mod_module, original_delay, sid),
+                _stream_sse(moderator, participants, question, mod_module, original_delay, sid, provider),
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache",
@@ -333,10 +333,49 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             if not messages:
                 messages.append({"personaId": "system", "text": f"Debug: {chunk_count} chunks, question='{question[:50]}', participants={[p.info.display_name for _, p in participants]}"})
 
-            return {"messages": messages, "options": [], "sessionId": sid}
+            options = await _generate_options(provider, question, messages)
+            return {"messages": messages, "options": options, "sessionId": sid}
 
     finally:
         mod_module.SPEAKER_DELAY = original_delay
+
+
+async def _generate_options(provider, question: str, messages: list[dict]) -> list[str]:
+    """根据辩论内容生成 3-5 个后续选项"""
+    from lifee.providers.base import Message, MessageRole
+
+    debate_text = "\n".join(f"{m['personaId']}: {m['text'][:200]}" for m in messages)
+    prompt = f"""根据以下辩论内容，生成 3-5 个用户可能想继续探讨的问题或行动建议。
+
+用户的问题：{question[:200]}
+
+辩论摘要：
+{debate_text[:1500]}
+
+要求：
+- 每个选项 8-20 个中文字（或 4-10 英文单词）
+- 具体、可行动，不要泛泛而谈
+- 用用户提问的语言
+- 只输出 JSON 数组，不要其他内容
+
+示例：["深入分析薪资差异", "如何评估团队氛围", "两个岗位的成长路径对比"]"""
+
+    try:
+        response = await provider.chat(
+            messages=[Message(role=MessageRole.USER, content=prompt)],
+            max_tokens=200,
+            temperature=0.5,
+        )
+        import json
+        result = response.content.strip()
+        # 尝试提取 JSON 数组
+        start = result.find("[")
+        end = result.rfind("]")
+        if start != -1 and end != -1:
+            return json.loads(result[start:end + 1])
+    except Exception:
+        pass
+    return []
 
 
 def _find_persona_id(participant, participants_map):
@@ -347,11 +386,12 @@ def _find_persona_id(participant, participants_map):
     return "unknown"
 
 
-async def _stream_sse(moderator, participants, question, mod_module=None, original_delay=None, session_id=""):
+async def _stream_sse(moderator, participants, question, mod_module=None, original_delay=None, session_id="", provider=None):
     """生成 SSE 事件流"""
     all_participants = [p for _, p in participants]
     current_pid = ""
     current_text = ""
+    all_messages = []
 
     try:
       # 立即发送 sessionId 和 keepalive
@@ -364,6 +404,7 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
         if pid != current_pid:
             if current_text:
                 msg = {"personaId": current_pid, "text": current_text.strip()}
+                all_messages.append(msg)
                 yield f"event: message\ndata: {json.dumps(msg, ensure_ascii=False)}\n\n"
             current_pid = pid
             current_text = chunk
@@ -372,9 +413,15 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
 
       if current_text:
           msg = {"personaId": current_pid, "text": current_text.strip()}
+          all_messages.append(msg)
           yield f"event: message\ndata: {json.dumps(msg, ensure_ascii=False)}\n\n"
 
-      yield f"event: options\ndata: {json.dumps({'options': []})}\n\n"
+      # 生成后续选项
+      options = []
+      if provider and all_messages:
+          options = await _generate_options(provider, question, all_messages)
+
+      yield f"event: options\ndata: {json.dumps({'options': options}, ensure_ascii=False)}\n\n"
       yield f"event: done\ndata: {{}}\n\n"
     finally:
       if mod_module and original_delay is not None:
