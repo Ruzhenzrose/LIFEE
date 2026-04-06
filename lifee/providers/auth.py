@@ -136,7 +136,7 @@ def refresh_oauth_token(refresh_token: str) -> Optional[OAuthCredentials]:
         data=payload,
         headers={
             "Content-Type": "application/json",
-            "User-Agent": "claude-cli/2.1.2 (external, cli)",
+            "User-Agent": "claude-cli/2.1.89 (external, cli)",
         },
         method="POST",
     )
