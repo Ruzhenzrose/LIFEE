@@ -1198,6 +1198,10 @@ async def debate_loop(
             _turns = min(_max_spk, len(participants)) if _max_spk > 0 else len(participants)
             if mentioned_only:
                 _turns = 1  # @mention 时只让一个人说
+
+            # 每轮刷新用户记忆（USER.md 可能已被自动提取更新）
+            moderator.user_memory_context = user_memory.get_context()
+
             async for participant, chunk, is_skip in moderator.run(user_input, max_turns=_turns, media=media or None, mentioned_only=mentioned_only):
                 if is_skip:
                     # 清除当前角色之前输出的内容

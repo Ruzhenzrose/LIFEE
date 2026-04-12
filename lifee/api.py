@@ -11,9 +11,11 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, Request
+from uuid import uuid4
+
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -29,6 +31,147 @@ _km_initialized = False
 # 会话缓存：session_id → (Session, Moderator, participants, last_access_time)
 _sessions: dict = {}
 _SESSION_TTL = 3600  # 1小时过期
+
+# ---- Credits 系统（Supabase 持久化） ----
+FREE_CREDITS = 7
+REDEEM_CREDITS = 100
+
+_SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+_SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+_SB_HEADERS = {
+    "apikey": _SUPABASE_KEY,
+    "Authorization": f"Bearer {_SUPABASE_KEY}",
+    "Content-Type": "application/json",
+    "Prefer": "return=representation",
+}
+
+
+async def _get_balance(uid: str) -> int:
+    """获取余额，新用户自动创建并给免费额度"""
+    if not _SUPABASE_URL:
+        return FREE_CREDITS  # fallback: 无 Supabase 时总是给免费额度
+    import httpx
+    async with httpx.AsyncClient() as c:
+        r = await c.get(
+            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}&select=balance",
+            headers=_SB_HEADERS,
+        )
+        rows = r.json()
+        if rows:
+            return rows[0]["balance"]
+        # 新用户 → 插入
+        r2 = await c.post(
+            f"{_SUPABASE_URL}/rest/v1/user_credits",
+            headers=_SB_HEADERS,
+            json={"uid": uid, "balance": FREE_CREDITS},
+        )
+        return FREE_CREDITS
+
+
+async def _migrate_balance(from_uid: str, to_uid: str):
+    """把 from_uid 的余额迁移到 to_uid（IP → cookie 迁移用）"""
+    if not _SUPABASE_URL or not from_uid:
+        return
+    import httpx
+    async with httpx.AsyncClient() as c:
+        # 查 from_uid 是否有记录
+        r = await c.get(
+            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{from_uid}&select=balance",
+            headers=_SB_HEADERS,
+        )
+        rows = r.json()
+        if not rows:
+            return  # IP 没用过，不需要迁移
+        balance = rows[0]["balance"]
+        # 创建 to_uid 继承余额
+        await c.post(
+            f"{_SUPABASE_URL}/rest/v1/user_credits",
+            headers=_SB_HEADERS,
+            json={"uid": to_uid, "balance": balance},
+        )
+
+
+async def _deduct(uid: str, amount: int = 1) -> bool:
+    """扣 1 credit，返回是否成功"""
+    if not _SUPABASE_URL:
+        return True
+    import httpx
+    from datetime import datetime, timezone
+    bal = await _get_balance(uid)
+    if bal < amount:
+        return False
+    async with httpx.AsyncClient() as c:
+        await c.patch(
+            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}",
+            headers=_SB_HEADERS,
+            json={"balance": bal - amount, "updated_at": datetime.now(timezone.utc).isoformat()},
+        )
+    return True
+
+
+async def _redeem(uid: str, code: str) -> tuple[bool, str]:
+    """兑换码充值"""
+    if not _SUPABASE_URL:
+        return False, "no database"
+    import httpx
+    async with httpx.AsyncClient() as c:
+        # 查找未使用的兑换码
+        r = await c.get(
+            f"{_SUPABASE_URL}/rest/v1/redeem_codes?code=eq.{code}&used_by=is.null&select=credits",
+            headers=_SB_HEADERS,
+        )
+        rows = r.json()
+        if not rows:
+            return False, "invalid code"
+        credits = rows[0]["credits"]
+
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+
+        # 标记已使用
+        await c.patch(
+            f"{_SUPABASE_URL}/rest/v1/redeem_codes?code=eq.{code}",
+            headers=_SB_HEADERS,
+            json={"used_by": uid, "used_at": now},
+        )
+
+        # 增加余额
+        bal = await _get_balance(uid)
+        await c.patch(
+            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}",
+            headers=_SB_HEADERS,
+            json={"balance": bal + credits, "updated_at": now},
+        )
+
+        # 记录交易
+        await c.post(
+            f"{_SUPABASE_URL}/rest/v1/credit_transactions",
+            headers=_SB_HEADERS,
+            json={"uid": uid, "amount": credits, "reason": f"redeem:{code}"},
+        )
+
+        return True, f"+{credits} credits"
+
+
+async def _generate_redeem_codes(n: int = 10) -> list[str]:
+    """生成 n 个兑换码并存入数据库"""
+    import secrets
+    codes = []
+    rows = []
+    for _ in range(n):
+        code = secrets.token_hex(4).upper()
+        codes.append(code)
+        rows.append({"code": code, "credits": REDEEM_CREDITS})
+
+    if _SUPABASE_URL:
+        import httpx
+        async with httpx.AsyncClient() as c:
+            await c.post(
+                f"{_SUPABASE_URL}/rest/v1/redeem_codes",
+                headers=_SB_HEADERS,
+                json=rows,
+            )
+    return codes
 
 
 _RELEASE_URL = "https://github.com/Ruzhenzrose/LIFEE/releases/download/knowledge-v1"
@@ -112,14 +255,53 @@ async def _init_knowledge():
 async def startup():
     await _init_knowledge()
 
-# CORS — allow all origins for now
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+_COOKIE_NAME = "lifee_uid"
+_COOKIE_MAX_AGE = 365 * 24 * 3600  # 1 年
+
+
+def _get_ip_uid(request: Request) -> str:
+    """从 IP 生成 uid"""
+    ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or request.client.host
+    return f"ip:{ip}"
+
+
+async def _resolve_uid(request: Request) -> str:
+    """解析真实 uid：cookie 有效 → 用 cookie，否则打回 IP 池。
+    伪造不存在的 cookie 不会拿到新额度。"""
+    cookie_uid = request.cookies.get(_COOKIE_NAME, "")
+    if cookie_uid and _SUPABASE_URL:
+        # 验证 cookie uid 在数据库里是否存在
+        import httpx
+        async with httpx.AsyncClient() as c:
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{cookie_uid}&select=uid",
+                headers=_SB_HEADERS,
+            )
+            if r.json():
+                return cookie_uid  # 合法 cookie
+        # cookie uid 不在数据库 → 伪造的，打回 IP
+    elif cookie_uid:
+        return cookie_uid  # 无 Supabase 时信任 cookie
+    return _get_ip_uid(request)
+
+
+def _set_uid_cookie(response: Response, uid: str):
+    """种 httponly cookie"""
+    response.set_cookie(
+        _COOKIE_NAME, uid,
+        max_age=_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+    )
 
 
 class PersonaInput(BaseModel):
@@ -140,7 +322,7 @@ class DecisionRequest(BaseModel):
 def _get_provider():
     """创建 LLM Provider（不依赖 CLI 模块，避免 msvcrt 导入问题）"""
     from lifee.config.settings import settings
-    provider_name = (os.getenv("LLM_PROVIDER") or settings.llm_provider).lower()
+    provider_name = (os.getenv("API_LLM_PROVIDER") or os.getenv("LLM_PROVIDER") or settings.llm_provider).lower()
 
     if provider_name == "gemini":
         from lifee.providers import GeminiProvider
@@ -187,10 +369,17 @@ def _match_role(persona_id: str, persona_name: str) -> Optional[str]:
 
 
 @app.get("/")
-async def root():
+async def root(request: Request):
     index = Path(__file__).parent.parent / "web" / "ui" / "index.html"
     if index.exists():
-        return FileResponse(index)
+        resp = FileResponse(index)
+        if not request.cookies.get(_COOKIE_NAME):
+            # 新用户：种 cookie，把 IP 余额迁移到 cookie uid
+            new_uid = str(uuid4())
+            ip_uid = _get_ip_uid(request)  # "ip:x.x.x.x"
+            await _migrate_balance(ip_uid, new_uid)
+            _set_uid_cookie(resp, new_uid)
+        return resp
     return {"status": "ok", "service": "LIFEE API"}
 
 
@@ -207,6 +396,38 @@ async def debug_env():
         "python_version": sys.version,
         "has_asyncio_timeout": has_asyncio_timeout,
     }
+
+
+# ---- Turnstile 人机验证 ----
+_TURNSTILE_SECRET = os.getenv("TURNSTILE_SECRET", "1x0000000000000000000000000000000AA")  # 测试 key
+
+
+class TurnstileRequest(BaseModel):
+    token: str
+
+
+@app.get("/turnstile-key")
+async def turnstile_key():
+    """前端获取 Turnstile sitekey"""
+    return {"sitekey": os.getenv("TURNSTILE_SITEKEY", "1x00000000000000000000AA")}
+
+
+@app.post("/verify-human")
+async def verify_human(req: TurnstileRequest, request: Request, response: Response):
+    """验证 Turnstile token，通过后种 verified cookie"""
+    import httpx
+    async with httpx.AsyncClient() as c:
+        r = await c.post("https://challenges.cloudflare.com/turnstile/v0/siteverify", data={
+            "secret": _TURNSTILE_SECRET,
+            "response": req.token,
+            "remoteip": request.headers.get("x-forwarded-for", "").split(",")[0].strip() or request.client.host,
+        })
+        result = r.json()
+
+    if result.get("success"):
+        response.set_cookie("lifee_verified", "1", max_age=365 * 24 * 3600, httponly=True, samesite="lax")
+        return {"ok": True}
+    return {"ok": False, "error": result.get("error-codes", [])}
 
 
 @app.get("/test-llm")
@@ -226,9 +447,50 @@ async def test_llm():
         return {"error": str(e), "traceback": traceback.format_exc()}
 
 
+# ---- Credits API ----
+
+@app.get("/credits")
+async def get_credits(request: Request, response: Response):
+    """查询余额（从 cookie 读 uid，无 cookie 时用 IP）"""
+    uid = await _resolve_uid(request)
+    if not request.cookies.get(_COOKIE_NAME):
+        # 没有 cookie → 种一个，并迁移 IP 余额
+        new_uid = str(uuid4())
+        await _migrate_balance(uid, new_uid)
+        _set_uid_cookie(response, new_uid)
+        uid = new_uid
+    return {"balance": await _get_balance(uid)}
+
+
+class RedeemRequest(BaseModel):
+    code: str
+
+
+@app.post("/credits/redeem")
+async def redeem(req: RedeemRequest, request: Request):
+    """兑换码充值"""
+    uid = await _resolve_uid(request)
+    if not uid:
+        return {"ok": False, "message": "no session", "balance": 0}
+    ok, msg = await _redeem(uid, req.code.strip().upper())
+    return {"ok": ok, "message": msg, "balance": await _get_balance(uid)}
+
+
+@app.get("/credits/generate/{n}")
+async def gen_codes(n: int = 10):
+    """生成兑换码（管理员用，生产环境应加鉴权）"""
+    codes = await _generate_redeem_codes(n)
+    return {"codes": codes}
+
+
+# ---- Decision API ----
+
 @app.post("/decision")
 async def decision(req: DecisionRequest, request: Request):
     """处理辩论请求 — 兼容前端的 /decision 接口"""
+    # 人机验证检查
+    if not request.cookies.get("lifee_verified"):
+        return {"messages": [{"personaId": "system", "text": "请先完成人机验证。"}], "options": []}
     import traceback
     try:
         return await _handle_decision(req, request)
@@ -249,6 +511,22 @@ async def _handle_decision(req: DecisionRequest, request: Request):
 
     rm = RoleManager()
     provider = _get_provider()
+
+    # ---- Credits 检查（cookie → IP 双重标识） ----
+    uid = await _resolve_uid(request)  # 合法 cookie uid 或 "ip:x.x.x.x"
+    _need_set_cookie = not request.cookies.get(_COOKIE_NAME)
+    if _need_set_cookie:
+        # 无 cookie → 用 IP uid 查余额，后面种 cookie 时迁移
+        _new_cookie_uid = str(uuid4())
+    speakers = len([p for p in req.personas if p.id != "tarot-master"])
+    balance = await _get_balance(uid)
+    if balance < speakers:
+        return {
+            "messages": [{"personaId": "system", "text": "余额不足，请充值后继续。"}],
+            "options": [],
+            "balance": balance,
+            "needsPayment": True,
+        }
 
     # 构建问题
     question = req.userInput or req.situation or ""
@@ -288,7 +566,6 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             moderator = moderator_cached
             _sessions[sid] = (session, moderator, participants, now)
         else:
-            from uuid import uuid4
             session = Session()
             all_participants = [p for _, p in participants]
             moderator = Moderator(all_participants, session, enable_moderator_check=False)
@@ -296,16 +573,18 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             _sessions[sid] = (session, moderator, participants, now)
 
         if stream:
-            return StreamingResponse(
-                _stream_sse(moderator, participants, question, mod_module, original_delay, sid, provider, session),
+            resp = StreamingResponse(
+                _stream_sse(moderator, participants, question, mod_module, original_delay, sid, provider, session, uid),
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache",
                     "X-Accel-Buffering": "no",
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Headers": "Content-Type",
                 },
             )
+            if _need_set_cookie:
+                await _migrate_balance(uid, _new_cookie_uid)
+                _set_uid_cookie(resp, _new_cookie_uid)
+            return resp
         else:
             # 非流式：收集所有回复后返回 JSON
             messages = []
@@ -334,7 +613,17 @@ async def _handle_decision(req: DecisionRequest, request: Request):
                 messages.append({"personaId": "system", "text": f"Debug: {chunk_count} chunks, question='{question[:50]}', participants={[p.info.display_name for _, p in participants]}"})
 
             options = await _generate_options(provider, session)
-            return {"messages": messages, "options": options, "sessionId": sid}
+            # 扣 credits（每个有内容的角色回复 1 credit）
+            for msg in messages:
+                if msg.get("personaId") not in ("system", "moderator") and msg.get("text", "").strip():
+                    await _deduct(uid)
+
+            data = {"messages": messages, "options": options, "sessionId": sid, "balance": await _get_balance(uid)}
+            resp = JSONResponse(data)
+            if _need_set_cookie:
+                await _migrate_balance(uid, _new_cookie_uid)
+                _set_uid_cookie(resp, _new_cookie_uid)
+            return resp
 
     finally:
         mod_module.SPEAKER_DELAY = original_delay
@@ -355,7 +644,7 @@ def _find_persona_id(participant, participants_map):
     return "unknown"
 
 
-async def _stream_sse(moderator, participants, question, mod_module=None, original_delay=None, session_id="", provider=None, session=None):
+async def _stream_sse(moderator, participants, question, mod_module=None, original_delay=None, session_id="", provider=None, session=None, uid="anonymous"):
     """生成 SSE 事件流（逐 chunk 实时推送）"""
     all_participants = [p for _, p in participants]
     current_pid = ""
@@ -364,21 +653,28 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
       yield f"event: session\ndata: {json.dumps({'sessionId': session_id})}\n\n"
       yield ": keepalive\n\n"
 
+      has_content = False  # 当前角色是否有实际内容
+
       async for participant, chunk, is_skip in moderator.run(question, max_turns=len(all_participants)):
         if is_skip:
             continue
         pid = _find_persona_id(participant, participants)
         if pid != current_pid:
-            # 上一个角色说完
             if current_pid:
+                # 上一个角色结束 → 有内容才扣钱
+                if has_content:
+                    await _deduct(uid)
                 yield f"event: messageEnd\ndata: {json.dumps({'personaId': current_pid})}\n\n"
-            # 新角色开始
             current_pid = pid
+            has_content = False
             yield f"event: messageStart\ndata: {json.dumps({'personaId': pid})}\n\n"
-        # 逐 chunk 发送
+        if chunk and chunk.strip():
+            has_content = True
         yield f"event: messageChunk\ndata: {json.dumps({'personaId': pid, 'chunk': chunk}, ensure_ascii=False)}\n\n"
 
       if current_pid:
+          if has_content:
+              await _deduct(uid)
           yield f"event: messageEnd\ndata: {json.dumps({'personaId': current_pid})}\n\n"
 
       # 生成后续选项
@@ -387,7 +683,7 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
           options = await _generate_options(provider, session)
 
       yield f"event: options\ndata: {json.dumps({'options': options}, ensure_ascii=False)}\n\n"
-      yield f"event: done\ndata: {{}}\n\n"
+      yield f"event: done\ndata: {json.dumps({'balance': await _get_balance(uid)})}\n\n"
     finally:
       if mod_module and original_delay is not None:
           mod_module.SPEAKER_DELAY = original_delay

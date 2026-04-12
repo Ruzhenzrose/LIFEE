@@ -10,6 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script src="./data/navigation.js"></script>
         <script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
     <script src="./help/view.js"></script>
@@ -459,9 +460,7 @@
         ];
 
         // ✅ LIFEE API (JSON: { messages: [...], options: [...] })
-        const LIFEE_API = (location.hostname === "localhost" || location.protocol === "file:")
-            ? "https://lifee-api.guolinn.workers.dev/decision"
-            : "/decision";
+        const LIFEE_API = "/decision";
         const LIFEE_API_TIMEOUT_MS = 60000;
         const LIFEE_STREAM_TIMEOUT_MS = 90000;
 
@@ -474,6 +473,7 @@
                 res = await fetch(url, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    credentials: "include",
                     body: JSON.stringify(payload),
                     signal: controller.signal
                 });
@@ -511,6 +511,7 @@
                 res = await fetch(`${LIFEE_API}?stream=1`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    credentials: "include",
                     body: JSON.stringify(payload),
                     signal: controller.signal
                 });
@@ -525,6 +526,18 @@
                 clearTimeout(timer);
                 const text = await res.text();
                 throw new Error("LIFEE API stream failed: " + text);
+            }
+
+            // 余额不足时后端返回 JSON 而不是 SSE
+            const ct = res.headers.get('content-type') || '';
+            if (ct.includes('application/json')) {
+                clearTimeout(timer);
+                const data = await res.json();
+                if (data?.needsPayment) {
+                    window.__lifeeNeedsPayment = true;
+                    window.__lifeeBalance = data.balance || 0;
+                }
+                return;
             }
 
             if (!res.body) {
@@ -579,6 +592,7 @@
                     const errMsg = (data && typeof data === "object") ? (data.error || JSON.stringify(data)) : String(data);
                     throw new Error(errMsg);
                 } else if (eventName === "done") {
+                    if (typeof data?.balance === 'number') window.__lifeeBalance = data.balance;
                     done = true;
                 }
             };
@@ -779,12 +793,56 @@
             );
         };
 
+        const TURNSTILE_SITEKEY = '0x4AAAAAAC8YCs3sdJ7Sz6Kl';
+
         const AuthModal = ({ isOpen, onClose, onAuthed, onGuest }) => {
             const [mode, setMode] = useState('login');
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [loading, setLoading] = useState(false);
             const [message, setMessage] = useState('');
+            const [humanVerified, setHumanVerified] = useState(false);
+            const turnstileRef = useRef(null);
+            const widgetIdRef = useRef(null);
+
+            // 渲染 Turnstile widget
+            useEffect(() => {
+                if (!isOpen || humanVerified) return;
+                const renderWidget = () => {
+                    if (turnstileRef.current && window.turnstile && widgetIdRef.current === null) {
+                        widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
+                            sitekey: TURNSTILE_SITEKEY,
+                            callback: async (token) => {
+                                // 验证 token
+                                try {
+                                    const res = await fetch('/verify-human', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        credentials: 'include',
+                                        body: JSON.stringify({ token }),
+                                    }).then(r => r.json());
+                                    if (res.ok) setHumanVerified(true);
+                                } catch {}
+                            },
+                            theme: 'light',
+                        });
+                    }
+                };
+                // turnstile script 可能还没加载完
+                if (window.turnstile) renderWidget();
+                else {
+                    const timer = setInterval(() => {
+                        if (window.turnstile) { clearInterval(timer); renderWidget(); }
+                    }, 200);
+                    return () => clearInterval(timer);
+                }
+                return () => {
+                    if (widgetIdRef.current !== null && window.turnstile) {
+                        window.turnstile.remove(widgetIdRef.current);
+                        widgetIdRef.current = null;
+                    }
+                };
+            }, [isOpen, humanVerified]);
 
             if (!isOpen) return null;
 
@@ -820,6 +878,12 @@
                                 <Icon name="X" size={14} />
                             </button>
                         </div>
+                        {!humanVerified ? (
+                            <div className="flex flex-col items-center gap-4 py-6">
+                                <p className="text-sm text-neutral-500">Please verify you're human</p>
+                                <div ref={turnstileRef}></div>
+                            </div>
+                        ) : (
                         <div className="space-y-4">
                             <input type="email" placeholder="Email" className="w-full p-4 bg-[#FDFBF7] rounded-3xl border border-[#F0EDEA] transition-all focus-blue-brand" value={email} onChange={(e) => setEmail(e.target.value)} />
                             <input type="password" placeholder="Password" className="w-full p-4 bg-[#FDFBF7] rounded-3xl border border-[#F0EDEA] transition-all focus-blue-brand" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -839,6 +903,7 @@
                             </div>
                             <button onClick={() => { onGuest?.(); }} className="w-full py-3 bg-white border border-[#E8E6E0] rounded-full font-bold uppercase text-[10px] tracking-[0.2em] hover:shadow-md">Continue as Guest</button>
                         </div>
+                        )}
                     </div>
                 </div>
             );
@@ -1721,6 +1786,9 @@
             const [inputValue, setInputValue] = useState('');
             const [tarotDecision, setTarotDecision] = useState('');
             const [tarotModalOpen, setTarotModalOpen] = useState(false);
+            const [credits, setCredits] = useState(null);
+            const [showPaywall, setShowPaywall] = useState(false);
+            const [redeemCode, setRedeemCode] = useState('');
             const scrollRef = useRef(null);
             const inputFieldRef = useRef(null);
             const hasTarotMaster = selectedPersonas.some(p => p.id === 'tarot-master');
@@ -1728,6 +1796,13 @@
             const debatePersonas = selectedPersonas.filter(p => p.id !== 'tarot-master');
 
             useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [history]);
+
+            // 页面加载时拉取余额（uid 在 httponly cookie 里，自动带上）
+            useEffect(() => {
+                fetch('/credits', { credentials: 'include' }).then(r => r.json()).then(d => {
+                    if (typeof d.balance === 'number') setCredits(d.balance);
+                }).catch(() => {});
+            }, []);
 
             const runRound = async (userInput = null) => {
                 setIsDebating(true);
@@ -1776,18 +1851,38 @@
                         }
                     };
 
+                    // 先检查余额，不足直接弹付费墙
+                    if (credits !== null && credits <= 0) {
+                        setShowPaywall(true);
+                        setIsDebating(false);
+                        return;
+                    }
+
                     // 流式模式：逐 chunk 实时显示
                     try {
                         await fetchLifeeDecisionStream(payload, handlers);
+                        if (window.__lifeeNeedsPayment) {
+                            window.__lifeeNeedsPayment = false;
+                            setCredits(window.__lifeeBalance || 0);
+                            setShowPaywall(true);
+                            return;
+                        }
                         if (window.__lifeeSessionId) setSessionId(window.__lifeeSessionId);
+                        if (typeof window.__lifeeBalance === 'number') setCredits(window.__lifeeBalance);
                     } catch (streamErr) {
                         console.warn('stream failed; fallback to non-stream', streamErr);
                         const data = await fetchLifeeDecision(payload);
+                        if (data?.needsPayment) {
+                            setCredits(data.balance || 0);
+                            setShowPaywall(true);
+                            return;
+                        }
                         if (Array.isArray(data?.messages)) {
                             for (const m of data.messages) await handlers.onMessage(m);
                         }
                         if (Array.isArray(data?.options)) handlers.onOptions(data.options);
                         if (data?.sessionId) setSessionId(data.sessionId);
+                        if (typeof data?.balance === 'number') setCredits(data.balance);
                     }
                 } catch (e) {
                     console.error(e);
@@ -1922,6 +2017,7 @@
                                     ))}
                                 </div>
                             )}
+                            {credits !== null && <div className="text-center text-xs text-neutral-400 mb-2">Credits: {credits}</div>}
                             <div className="flex gap-3">
                                 <button disabled={isDebating} onClick={() => runRound(null)} className="hidden md:block flex-1 py-5 bg-blue-brand text-white rounded-full font-bold shadow-xl transition-all hover:translate-y-[-2px] disabled:opacity-50 uppercase tracking-widest text-xs">STAY SILENT</button>
                                 {hasTarotMaster && (
@@ -1960,6 +2056,43 @@
                         onClose={() => setTarotModalOpen(false)}
                         onInterpret={handleInterpretTarot}
                     />
+                    {showPaywall && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                            <div className="bg-white rounded-2xl p-8 max-w-sm mx-4 shadow-2xl text-center">
+                                <div className="text-4xl mb-4">🔒</div>
+                                <h3 className="text-lg font-bold mb-2">Credits Used Up</h3>
+                                <p className="text-sm text-neutral-500 mb-6">Enter a redeem code to continue the conversation.</p>
+                                <input
+                                    type="text"
+                                    placeholder="Enter redeem code"
+                                    value={redeemCode}
+                                    onChange={(e) => setRedeemCode(e.target.value)}
+                                    className="w-full px-4 py-3 border rounded-lg mb-4 text-center text-lg tracking-widest uppercase"
+                                />
+                                <button
+                                    onClick={async () => {
+                                        const res = await fetch('/credits/redeem', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            credentials: 'include',
+                                            body: JSON.stringify({ code: redeemCode })
+                                        }).then(r => r.json());
+                                        if (res.ok) {
+                                            setCredits(res.balance);
+                                            setShowPaywall(false);
+                                            setRedeemCode('');
+                                        } else {
+                                            alert(res.message || 'Invalid code');
+                                        }
+                                    }}
+                                    className="w-full py-3 bg-blue-brand text-white rounded-lg font-bold"
+                                >
+                                    Redeem
+                                </button>
+                                <button onClick={() => setShowPaywall(false)} className="mt-3 text-sm text-neutral-400">Cancel</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };

@@ -16,46 +16,63 @@ from lifee.providers.base import LLMProvider, Message, MessageRole
 LIFEE_DIR = Path.home() / ".lifee"
 MEMORY_DIR = LIFEE_DIR / "memory"
 
-# 默认 USER.md 模板
+# 默认 USER.md 模板（5 类记忆，参考 MemPalace 思路）
 DEFAULT_USER_TEMPLATE = """# USER.md - 关于你
 
-- **名字:** (待了解)
-- **称呼:** (待了解)
+## 事实 (Facts)
+*稳定不变的：年龄、职业、城市、家庭、教育背景*
 
-## 偏好
+## 事件 (Events)
+*正在发生或最近发生的：换工作、纠结的决定、近期经历*
 
-*(在对话中逐渐了解...)*
+## 发现 (Insights)
+*用户表达的自我洞察："我意识到我害怕失败"*
 
-## 背景
+## 偏好 (Preferences)
+*沟通风格、回答深度、不喜欢的话题*
 
-*(在对话中逐渐了解...)*
+## 建议 (Advice)
+*角色给过的、用户接受或拒绝的建议*
 
 ---
 *这个文件记录了你在讨论中透露的信息，帮助角色更好地理解你。*
 """
 
-# 提取用户信息的 Prompt（重写整个文件，避免重复积累）
-EXTRACT_PROMPT = """You are updating a user profile file based on a recent conversation.
+# 5 个分类标识符（用于按需加载）
+SECTIONS = ["事实", "事件", "发现", "偏好", "建议"]
 
-Current USER.md content:
+# 提取用户信息的 Prompt（5 类分类）
+EXTRACT_PROMPT = """You are updating a long-term memory profile based on a recent conversation.
+
+Current USER.md:
 {current_content}
 
-Recent conversation:
+Recent conversation (only user messages matter, character responses are noise):
 {conversation}
 
-The file has three key sections:
-- **What now** — what the user is currently focused on or thinking about (replace with latest)
-- **What not** — topics or behaviors to avoid
-- **背景参考** — stable background info (interests, personality)
+5 categories (the headers in USER.md are in Chinese, but this instruction is in English):
+- **Facts** (事实) — verifiable, stable facts the user EXPLICITLY stated about themselves (age, job, location, family, key experiences). NOT speculation.
+- **Events** (事件) — concrete things currently happening in user's life that they mentioned (decisions being weighed, recent changes, ongoing situations). Replace items that are clearly resolved or no longer active.
+- **Insights** (发现) — meta-level realizations the user articulated about themselves (e.g. "I realized I always avoid conflict"). Must be the USER's own words, not AI's interpretation.
+- **Preferences** (偏好) — how the user wants to be talked to (style, depth, topics to avoid). Only when EXPLICITLY expressed.
+- **Advice** (建议) — concrete actions the user committed to taking (not just nodded along to). Only record if the user explicitly said they would act on it.
 
-Task: Produce an updated USER.md that:
-1. Updates "What now" to reflect what the user seemed focused on in this conversation
-2. Adds to "What not" if the user showed discomfort with something
-3. Adds to "背景参考" only if genuinely new stable info was revealed
-4. Does NOT repeat items already covered; deduplicates similar items
-5. Keeps the file concise — prefer updating existing lines over adding new ones
-6. Preserves the structure and Chinese language
-7. If nothing new was learned, return the original content unchanged
+DO NOT record:
+- Temporary moods ("feeling tired today")
+- Anything the AI characters said
+- Anything you're guessing or interpreting — only what the user literally stated
+- Information already in the file (deduplicate)
+
+Quality bar:
+- If unsure whether to add something, DON'T add it
+- Better to keep the file unchanged than to add noise
+- Each line should be a single fact, no padding
+- Match the language the user used in their messages
+
+Output:
+- The full updated USER.md in markdown
+- Preserve the 5 ## headers exactly
+- Bullet points only, no prose
 
 Return ONLY the updated markdown content, no explanation."""
 
@@ -88,19 +105,15 @@ class UserMemory:
         """获取记忆上下文（用于注入 prompt）
 
         Returns:
-            USER.md 内容 + 今天的笔记（如果存在）
+            USER.md 完整内容 + 今天的笔记
         """
         parts = []
 
-        # 读取 USER.md
         if self.user_file.exists():
             content = self.user_file.read_text(encoding="utf-8")
-            # 检查是否有实际用户信息（不只是默认模板）
-            # 简单检查：如果内容与默认模板不同，说明有更新
             if content.strip() != DEFAULT_USER_TEMPLATE.strip():
                 parts.append(content)
 
-        # 读取今天的笔记
         daily = self._get_daily_file()
         if daily.exists():
             parts.append(daily.read_text(encoding="utf-8"))
