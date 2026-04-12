@@ -209,6 +209,11 @@ class Moderator:
         # 增加轮次计数
         self.round_number += 1
 
+        # 0. 上下文压缩检查（接近 token 上限时自动压缩）
+        provider = self.participants[0].provider
+        if await self.session.compact_if_needed(provider):
+            print("[compact] Context compressed to save tokens")
+
         # 1. 添加用户消息到会话
         self.session.add_user_message(user_input, media=media)
 
@@ -319,6 +324,10 @@ class Moderator:
 
                 if chunk_count > 0 and full_response.strip():
                     final_response = full_response
+                    # 更新精确 token 计数（从 API usage 获取）
+                    usage = getattr(participant.provider, '_last_stream_usage', None)
+                    if usage and usage.get('input_tokens'):
+                        self.session.update_token_count(usage['input_tokens'])
                     break
 
                 # 瞬时错误或空响应 → 重试

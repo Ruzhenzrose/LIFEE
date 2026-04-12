@@ -176,12 +176,14 @@ class OpenAICompatProvider(LLMProvider):
         msg_list = self._convert_messages(messages, system)
 
         try:
+            self._last_stream_usage = None
             stream = await self._client.chat.completions.create(
                 model=self._model,
                 messages=msg_list,
                 max_tokens=max_tokens,
                 temperature=temperature,
                 stream=True,
+                stream_options={"include_usage": True},
                 **kwargs,
             )
         except (APIConnectionError, httpx.ConnectError) as e:
@@ -215,6 +217,12 @@ class OpenAICompatProvider(LLMProvider):
         async for chunk in stream:
             if chunk.choices and chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
+            # 最后一个 chunk 带 usage 信息
+            if hasattr(chunk, 'usage') and chunk.usage:
+                self._last_stream_usage = {
+                    "input_tokens": chunk.usage.prompt_tokens,
+                    "output_tokens": chunk.usage.completion_tokens,
+                }
 
 
 class QwenPortalProvider(OpenAICompatProvider):
