@@ -1797,6 +1797,14 @@
             const verifyWidgetRef = useRef(null);
             const [redeemCode, setRedeemCode] = useState('');
             const [language, setLanguage] = useState(() => localStorage.getItem('lifee_lang') || '');
+            const detectLang = (text) => {
+                if (!text) return 'English';
+                const jp = (text.match(/[\u3040-\u30ff]/g) || []).length;
+                if (jp > 2) return 'Japanese';
+                const cjk = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+                if (cjk / text.length > 0.1) return 'Chinese';
+                return 'English';
+            };
             const scrollRef = useRef(null);
             const inputFieldRef = useRef(null);
             const hasTarotMaster = selectedPersonas.some(p => p.id === 'tarot-master');
@@ -1832,7 +1840,7 @@
                         personas: debatePersonas.map(p => ({ id: p.id, name: p.name })),
                         sessionId: sessionId,
                         userId: user?.id || "",
-                        language: language
+                        language: language || detectLang(cleanInput)
                     };
 
                     if (!payload.personas.length) {
