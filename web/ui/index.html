@@ -528,11 +528,14 @@
                 throw new Error("LIFEE API stream failed: " + text);
             }
 
-            // 余额不足时后端返回 JSON 而不是 SSE
+            // 后端返回 JSON（非 SSE）：可能是余额不足或需要验证
             const ct = res.headers.get('content-type') || '';
             if (ct.includes('application/json')) {
                 clearTimeout(timer);
                 const data = await res.json();
+                if (data?.needsVerification) {
+                    window.__lifeeNeedsVerification = true;
+                }
                 if (data?.needsPayment) {
                     window.__lifeeNeedsPayment = true;
                     window.__lifeeBalance = data.balance || 0;
@@ -1788,6 +1791,9 @@
             const [tarotModalOpen, setTarotModalOpen] = useState(false);
             const [credits, setCredits] = useState(null);
             const [showPaywall, setShowPaywall] = useState(false);
+            const [showVerify, setShowVerify] = useState(false);
+            const verifyRef = useRef(null);
+            const verifyWidgetRef = useRef(null);
             const [redeemCode, setRedeemCode] = useState('');
             const scrollRef = useRef(null);
             const inputFieldRef = useRef(null);
@@ -1861,6 +1867,11 @@
                     // 流式模式：逐 chunk 实时显示
                     try {
                         await fetchLifeeDecisionStream(payload, handlers);
+                        if (window.__lifeeNeedsVerification) {
+                            window.__lifeeNeedsVerification = false;
+                            setShowVerify(true);
+                            return;
+                        }
                         if (window.__lifeeNeedsPayment) {
                             window.__lifeeNeedsPayment = false;
                             setCredits(window.__lifeeBalance || 0);
@@ -1872,6 +1883,10 @@
                     } catch (streamErr) {
                         console.warn('stream failed; fallback to non-stream', streamErr);
                         const data = await fetchLifeeDecision(payload);
+                        if (data?.needsVerification) {
+                            setShowVerify(true);
+                            return;
+                        }
                         if (data?.needsPayment) {
                             setCredits(data.balance || 0);
                             setShowPaywall(true);
@@ -2056,6 +2071,42 @@
                         onClose={() => setTarotModalOpen(false)}
                         onInterpret={handleInterpretTarot}
                     />
+                    {showVerify && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                            <div className="bg-white rounded-2xl p-8 max-w-sm mx-4 shadow-2xl text-center">
+                                <div className="text-4xl mb-4">🛡️</div>
+                                <h3 className="text-lg font-bold mb-2">Please verify you're human</h3>
+                                <div ref={verifyRef} className="flex justify-center mb-4"></div>
+                                {(() => {
+                                    // 渲染 Turnstile widget
+                                    setTimeout(() => {
+                                        if (verifyRef.current && window.turnstile && !verifyWidgetRef.current) {
+                                            verifyWidgetRef.current = window.turnstile.render(verifyRef.current, {
+                                                sitekey: TURNSTILE_SITEKEY,
+                                                callback: async (token) => {
+                                                    try {
+                                                        const res = await fetch('/verify-human', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            credentials: 'include',
+                                                            body: JSON.stringify({ token }),
+                                                        }).then(r => r.json());
+                                                        if (res.ok) {
+                                                            setShowVerify(false);
+                                                            verifyWidgetRef.current = null;
+                                                        }
+                                                    } catch {}
+                                                },
+                                                theme: 'light',
+                                            });
+                                        }
+                                    }, 100);
+                                    return null;
+                                })()}
+                                <button onClick={() => setShowVerify(false)} className="text-sm text-neutral-400 hover:text-neutral-600">Cancel</button>
+                            </div>
+                        </div>
+                    )}
                     {showPaywall && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                             <div className="bg-white rounded-2xl p-8 max-w-sm mx-4 shadow-2xl text-center">
