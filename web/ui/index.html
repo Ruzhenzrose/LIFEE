@@ -1802,7 +1802,7 @@
                 const jp = (text.match(/[\u3040-\u30ff]/g) || []).length;
                 if (jp > 2) return 'Japanese';
                 const cjk = (text.match(/[\u4e00-\u9fff]/g) || []).length;
-                if (cjk / text.length > 0.1) return 'Chinese';
+                if (cjk / text.length > 0.3) return 'Chinese';
                 return 'English';
             };
             const scrollRef = useRef(null);
