@@ -172,12 +172,31 @@ class OpenAICompatProvider(LLMProvider):
         temperature: float = 0.7,
         **kwargs,
     ) -> AsyncIterator[str]:
-        """流式聊天请求"""
+        """流式聊天请求（支持 tool calling）"""
+        tools = kwargs.pop("tools", None)
+        tool_executor = kwargs.pop("tool_executor", None)
+
         msg_list = self._convert_messages(messages, system)
+
+        # 转换 tool 定义为 OpenAI 格式
+        openai_tools = None
+        if tools and tool_executor:
+            openai_tools = [
+                {"type": "function", "function": {"name": t.name, "description": t.description, "parameters": t.input_schema}}
+                for t in tools
+            ]
+
+        async for text in self._stream_impl(msg_list, max_tokens, temperature, openai_tools, tool_executor, **kwargs):
+            yield text
+
+    async def _stream_impl(self, msg_list, max_tokens, temperature, openai_tools=None, tool_executor=None, _depth=0, **kwargs):
+        """内部流式实现，支持 tool call 循环"""
+        if _depth > 3:
+            return  # 防止无限 tool call 循环
 
         try:
             self._last_stream_usage = None
-            stream = await self._client.chat.completions.create(
+            create_kwargs = dict(
                 model=self._model,
                 messages=msg_list,
                 max_tokens=max_tokens,
@@ -186,6 +205,10 @@ class OpenAICompatProvider(LLMProvider):
                 stream_options={"include_usage": True},
                 **kwargs,
             )
+            if openai_tools:
+                create_kwargs["tools"] = openai_tools
+
+            stream = await self._client.chat.completions.create(**create_kwargs)
         except (APIConnectionError, httpx.ConnectError) as e:
             if self._provider_name == "ollama":
                 raise ProviderConnectionError(
@@ -203,26 +226,63 @@ class OpenAICompatProvider(LLMProvider):
                 ) from e
             raise ModelNotFoundError(f"模型 '{self._model}' 未找到") from e
         except APIStatusError as e:
-            # 检查 HTTP 状态码
             if e.status_code == 503:
-                raise ServiceUnavailableError(
-                    f"{self._provider_name} 服务不可用: {e}"
-                ) from e
+                raise ServiceUnavailableError(f"{self._provider_name} 服务不可用: {e}") from e
             if e.status_code == 429:
-                raise RateLimitError(
-                    f"{self._provider_name} 速率限制: {e}"
-                ) from e
+                raise RateLimitError(f"{self._provider_name} 速率限制: {e}") from e
             raise
+
+        # 收集 tool calls
+        tool_calls_acc = {}  # index → {id, name, arguments}
+        content_text = ""
 
         async for chunk in stream:
             if chunk.choices and chunk.choices[0].delta.content:
-                yield chunk.choices[0].delta.content
-            # 最后一个 chunk 带 usage 信息
+                text = chunk.choices[0].delta.content
+                content_text += text
+                yield text
+
+            # 收集 tool call 片段
+            if chunk.choices and chunk.choices[0].delta.tool_calls:
+                for tc in chunk.choices[0].delta.tool_calls:
+                    idx = tc.index
+                    if idx not in tool_calls_acc:
+                        tool_calls_acc[idx] = {"id": "", "name": "", "arguments": ""}
+                    if tc.id:
+                        tool_calls_acc[idx]["id"] = tc.id
+                    if tc.function and tc.function.name:
+                        tool_calls_acc[idx]["name"] = tc.function.name
+                    if tc.function and tc.function.arguments:
+                        tool_calls_acc[idx]["arguments"] += tc.function.arguments
+
             if hasattr(chunk, 'usage') and chunk.usage:
                 self._last_stream_usage = {
                     "input_tokens": chunk.usage.prompt_tokens,
                     "output_tokens": chunk.usage.completion_tokens,
                 }
+
+        # 如果有 tool calls，执行工具后继续
+        if tool_calls_acc and tool_executor:
+            import json
+            # 把 assistant 的 tool call 消息加入对话
+            assistant_msg = {"role": "assistant", "content": content_text or None, "tool_calls": [
+                {"id": tc["id"], "type": "function", "function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                for tc in tool_calls_acc.values()
+            ]}
+            msg_list.append(assistant_msg)
+
+            # 执行每个 tool call
+            for tc in tool_calls_acc.values():
+                try:
+                    args = json.loads(tc["arguments"]) if tc["arguments"] else {}
+                    result = await tool_executor.execute(tc["name"], args)
+                except Exception as e:
+                    result = f"Tool error: {e}"
+                msg_list.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
+
+            # 递归：用工具结果继续生成
+            async for text in self._stream_impl(msg_list, max_tokens, temperature, openai_tools, tool_executor, _depth=_depth + 1, **kwargs):
+                yield text
 
 
 class QwenPortalProvider(OpenAICompatProvider):

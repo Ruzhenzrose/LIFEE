@@ -712,7 +712,7 @@ async def _handle_decision(req: DecisionRequest, request: Request):
         else:
             session = Session()
             all_participants = [p for _, p in participants]
-            moderator = Moderator(all_participants, session, enable_moderator_check=req.moderator, language=req.language)
+            moderator = Moderator(all_participants, session, enable_moderator_check=False, language=req.language)
             sid = sid or str(uuid4())
             _sessions[sid] = (session, moderator, participants, now)
             # 存档：创建 chat_session（用 Supabase user ID，不是 credits uid）
