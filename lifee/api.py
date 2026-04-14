@@ -155,7 +155,7 @@ async def _redeem(uid: str, code: str) -> tuple[bool, str]:
         return True, f"+{credits} credits"
 
 
-async def _generate_redeem_codes(n: int = 10) -> list[str]:
+async def _generate_redeem_codes(n: int = 10, credits_each: int = 100) -> list[str]:
     """生成 n 个兑换码并存入数据库"""
     import secrets
     codes = []
@@ -163,7 +163,7 @@ async def _generate_redeem_codes(n: int = 10) -> list[str]:
     for _ in range(n):
         code = secrets.token_hex(4).upper()
         codes.append(code)
-        rows.append({"code": code, "credits": REDEEM_CREDITS})
+        rows.append({"code": code, "credits": credits_each})
 
     if _SUPABASE_URL:
         import httpx
@@ -492,10 +492,10 @@ async def redeem(req: RedeemRequest, request: Request):
 
 
 @app.get("/credits/generate/{n}")
-async def gen_codes(n: int = 10):
-    """生成兑换码（管理员用，生产环境应加鉴权）"""
-    codes = await _generate_redeem_codes(n)
-    return {"codes": codes}
+async def gen_codes(n: int = 10, credits: int = 100):
+    """生成兑换码（管理员用）。credits 参数指定面额，默认 100"""
+    codes = await _generate_redeem_codes(n, credits)
+    return {"codes": codes, "credits_each": credits}
 
 
 # ---- 会话存档 API ----
