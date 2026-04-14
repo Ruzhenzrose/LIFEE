@@ -574,7 +574,7 @@ async def list_sessions(request: Request, userId: str = ""):
     async with httpx.AsyncClient() as c:
         # 获取有消息的 session（通过 inner join chat_messages）
         r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&select=id,title,personas,updated_at,chat_messages(id)&chat_messages=not.is.null&order=updated_at.desc&limit=20",
+            f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&select=id,title,personas,starred,updated_at,chat_messages(id)&chat_messages=not.is.null&order=updated_at.desc&limit=20",
             headers=_SB_HEADERS,
         )
         sessions = r.json()
@@ -597,6 +597,35 @@ async def get_session_messages(session_id: str):
             headers=_SB_HEADERS,
         )
         return {"messages": r.json()}
+
+
+class SessionUpdateRequest(BaseModel):
+    title: str = ""
+    starred: bool = None
+
+
+@app.patch("/sessions/{session_id}")
+async def update_session(session_id: str, req: SessionUpdateRequest):
+    """更新会话（重命名/Star）"""
+    if not _SUPABASE_URL:
+        return {"ok": False}
+    try:
+        import httpx
+        updates = {}
+        if req.title:
+            updates["title"] = req.title
+        if req.starred is not None:
+            updates["starred"] = req.starred
+        if not updates:
+            return {"ok": False, "message": "nothing to update"}
+        async with httpx.AsyncClient() as c:
+            await c.patch(
+                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
+                headers=_SB_HEADERS, json=updates,
+            )
+        return {"ok": True}
+    except Exception:
+        return {"ok": False}
 
 
 @app.delete("/sessions/{session_id}")

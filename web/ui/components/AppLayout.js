@@ -72,17 +72,36 @@ const AppLayout = ({ children, activeView, setView, user, isAdmin, onOpenAdmin, 
                                     }
                                     setIsMobileMenuOpen(false);
                                 }} className="flex items-center flex-1 min-w-0">
-                                    <Icon name="MessageSquare" size={14} className={isCollapsed ? "md:text-blue-brand" : "mr-2 opacity-40 flex-shrink-0"} />
+                                    <Icon name={s.starred ? "Star" : "MessageSquare"} size={14} className={isCollapsed ? "md:text-blue-brand" : `mr-2 flex-shrink-0 ${s.starred ? 'text-yellow-500 opacity-80' : 'opacity-40'}`} />
                                     <span className={`${isCollapsed ? 'md:hidden' : 'block'} truncate opacity-60`}>{s.title || 'Untitled'}</span>
                                 </button>
-                                <button onClick={async (e) => {
-                                    e.stopPropagation();
-                                    if (!confirm('Delete this conversation?')) return;
-                                    await fetch(`/sessions/${s.id}`, { method: 'DELETE', credentials: 'include' });
-                                    setSavedSessions(prev => prev.filter(x => x.id !== s.id));
-                                }} className={`opacity-0 group-hover:opacity-40 hover:!opacity-100 hover:text-red-500 transition-all ml-1 flex-shrink-0 ${isCollapsed ? 'md:hidden' : ''}`}>
-                                    <Icon name="Trash2" size={12} />
-                                </button>
+                                <div className={`flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all ml-1 flex-shrink-0 ${isCollapsed ? 'md:hidden' : ''}`}>
+                                    <button title="Star" onClick={async (e) => {
+                                        e.stopPropagation();
+                                        const newVal = !s.starred;
+                                        await fetch(`/sessions/${s.id}`, { method: 'PATCH', credentials: 'include', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({starred: newVal}) });
+                                        setSavedSessions(prev => prev.map(x => x.id === s.id ? {...x, starred: newVal} : x));
+                                    }} className={`hover:text-yellow-500 transition-colors ${s.starred ? 'text-yellow-500 opacity-80' : 'opacity-40'}`}>
+                                        <Icon name="Star" size={12} />
+                                    </button>
+                                    <button title="Rename" onClick={async (e) => {
+                                        e.stopPropagation();
+                                        const newTitle = prompt('Rename conversation:', s.title || '');
+                                        if (newTitle === null || newTitle === s.title) return;
+                                        await fetch(`/sessions/${s.id}`, { method: 'PATCH', credentials: 'include', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title: newTitle}) });
+                                        setSavedSessions(prev => prev.map(x => x.id === s.id ? {...x, title: newTitle} : x));
+                                    }} className="opacity-40 hover:opacity-100 transition-colors">
+                                        <Icon name="Pencil" size={12} />
+                                    </button>
+                                    <button title="Delete" onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (!confirm('Delete this conversation?')) return;
+                                        await fetch(`/sessions/${s.id}`, { method: 'DELETE', credentials: 'include' });
+                                        setSavedSessions(prev => prev.filter(x => x.id !== s.id));
+                                    }} className="opacity-40 hover:!opacity-100 hover:text-red-500 transition-colors">
+                                        <Icon name="Trash2" size={12} />
+                                    </button>
+                                </div>
                             </div>
                         )) : (
                             <div className={`px-4 py-2 text-xs opacity-30 italic ${isCollapsed ? 'md:hidden' : 'block'}`}>No conversations yet</div>
