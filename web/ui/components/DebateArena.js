@@ -10,9 +10,10 @@ const DebateArena = ({
     persistMessage,
     buildContextBlock,
     userAvatar,
-    user
+    user,
+    initialMessages = []
 }) => {
-    const [history, setHistory] = useState([]);
+    const [history, setHistory] = useState(initialMessages);
     const [options, setOptions] = useState([]);
     const [isDebating, setIsDebating] = useState(false);
     const [sessionId, setSessionId] = useState("");

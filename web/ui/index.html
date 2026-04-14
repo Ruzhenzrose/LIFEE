@@ -747,6 +747,7 @@
                         buildContextBlock={buildContextBlock}
                         userAvatar={userAvatar}
                         user={user}
+                        initialMessages={sessionMessages}
                     />
                 );
                 if (view === 'summary') return <div className="text-center py-32 md:py-48 px-4 animate-in space-y-8 md:space-y-10 max-w-2xl mx-auto"><div className="text-5xl md:text-7xl animate-bounce">🌱</div><h2 className="text-3xl md:text-5xl font-serif italic text-[#1A1A1A] tracking-tight">Pattern Observed</h2><button onClick={handleNewChat} className="px-12 md:px-16 py-5 md:py-6 bg-blue-brand text-white rounded-full font-black shadow-xl uppercase tracking-widest text-[9px] md:text-[10px] hover:shadow-2xl transition-all">Start New Chapter</button></div>;
