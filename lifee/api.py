@@ -572,11 +572,17 @@ async def list_sessions(request: Request, userId: str = ""):
         return {"sessions": []}
     import httpx
     async with httpx.AsyncClient() as c:
+        # 获取有消息的 session（通过 inner join chat_messages）
         r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&select=id,title,personas,updated_at&order=updated_at.desc&limit=20",
+            f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&select=id,title,personas,updated_at,chat_messages(id)&chat_messages=not.is.null&order=updated_at.desc&limit=20",
             headers=_SB_HEADERS,
         )
-        return {"sessions": r.json()}
+        sessions = r.json()
+        # 过滤掉没有消息的空 session
+        sessions = [s for s in sessions if isinstance(s, dict) and s.get("chat_messages")]
+        for s in sessions:
+            s.pop("chat_messages", None)
+        return {"sessions": sessions}
 
 
 @app.get("/sessions/{session_id}/messages")
