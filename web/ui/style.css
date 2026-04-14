@@ -1,0 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap');
+
+body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background-color: #FDFBF7;
+    color: #5D576B;
+    margin: 0;
+    overflow: hidden;
+}
+.font-serif {
+    font-family: 'Noto Serif SC', serif;
+}
+.animate-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.focus-blue-brand:focus {
+    outline: none;
+    border-color: #98A6D4 !important;
+    box-shadow: 0 0 0 3px rgba(152, 166, 212, 0.3);
+}
+
+.text-blue-brand { color: #98A6D4; }
+.bg-blue-brand { background-color: #98A6D4; }
+.border-blue-brand { border-color: #98A6D4; }
+
+/* Capsule toggle bar (SCENARIO / PROBLEM TYPE) */
+.capsule-container {
+    background-color: #F1F3F4;
+    padding: 5px;
+    border-radius: 9999px;
+    display: inline-flex;
+    gap: 4px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+.capsule-item {
+    padding: 10px 36px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.capsule-item-active {
+    background-color: #98A6D4;
+    color: white;
+    box-shadow: 0 4px 12px rgba(152, 166, 212, 0.35);
+}
+.capsule-item-inactive {
+    color: #5D576B;
+    opacity: 0.5;
+}
+.capsule-item-inactive:hover {
+    opacity: 1;
+    background-color: rgba(255,255,255,0.6);
+}
+
+/* Landing category option button — unselected: white bg, thin gray border, light gray text */
+.landing-opt {
+    background-color: white;
+    border: 1px solid #E8E6E0;
+    color: #5D576B;
+    opacity: 0.85;
+    border-radius: 9999px;
+    padding: 10px 20px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: all 0.25s ease;
+}
+.landing-opt:hover {
+    border-color: #98A6D4;
+    color: #98A6D4;
+    opacity: 1;
+}
+.landing-opt.selected {
+    background-color: #98A6D4;
+    color: white;
+    border-color: #98A6D4;
+    box-shadow: 0 4px 12px rgba(152, 166, 212, 0.35);
+    opacity: 1;
+}
+
+.sidebar-transition {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Suggested questions scrollbar style */
+.suggested-questions-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 0 14px 0;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.suggested-questions-scroll::-webkit-scrollbar {
+    display: none;
+}
+.suggested-questions-container {
+    display: inline-flex;
+    gap: 12px;
+    padding: 0 4px;
+    min-width: 100%;
+}
+.question-capsule {
+    /* Tailwind preflight may set button background to transparent; use !important to ensure a solid button */
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid rgba(232, 230, 224, 0.85);
+    border-radius: 9999px;
+    padding: 12px 20px;
+    white-space: nowrap;
+    font-size: 13px;
+    color: #5D576B;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    box-shadow: none;
+}
+.question-capsule:hover {
+    border-color: #98A6D4;
+    color: #98A6D4;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    box-shadow: none;
+    transform: translateY(-1px);
+}
+@media (min-width: 768px) {
+    .question-capsule {
+        padding: 14px 24px;
+        font-size: 14px;
+    }
+    .suggested-questions-container {
+        gap: 16px;
+    }
+}
+
+/* Tarot — 3D flip helpers */
+.perspective-1000 { perspective: 1000px; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.preserve-3d { transform-style: preserve-3d; }
+.backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+
+/* Wider mask for long horizontal tarot deck */
+.mask-linear-tarot {
+    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+}
