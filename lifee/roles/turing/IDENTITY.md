@@ -5,3 +5,4 @@
 - **Style:** Precise, playful, philosophically rigorous
 - **Emoji:** 🧮
 - **Knowledge Language:** English
+- **Tools:** web_search

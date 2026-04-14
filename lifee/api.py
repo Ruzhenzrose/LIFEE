@@ -715,11 +715,10 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             continue
         km = _knowledge_managers.get(role_name)
         p = Participant(role_name, provider, rm, knowledge_manager=km)
-        # 用户开启网络搜索时动态注入 tools
-        if req.webSearch and not p.tools:
-            from lifee.tools import get_tool_definitions, DefaultToolExecutor
-            p.tools = get_tool_definitions(["web_search"])
-            p.tool_executor = DefaultToolExecutor()
+        # API 端：默认关闭 tools，只在用户开启 webSearch 时保留
+        if not req.webSearch:
+            p.tools = []
+            p.tool_executor = None
         participants.append((persona.id, p))
 
     if not participants:
