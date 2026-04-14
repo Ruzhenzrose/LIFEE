@@ -27,6 +27,7 @@ const DebateArena = ({
     const verifyRef = useRef(null);
     const verifyWidgetRef = useRef(null);
     const [redeemCode, setRedeemCode] = useState('');
+    const [followUpMode, setFollowUpMode] = useState(false);
     const [language, setLanguage] = useState(() => localStorage.getItem('lifee_lang') || '');
     const detectLang = (text) => {
         const ch = (text || '').trim()[0] || '';
@@ -70,7 +71,8 @@ const DebateArena = ({
                 personas: debatePersonas.map(p => ({ id: p.id, name: p.name })),
                 sessionId: sessionId,
                 userId: user?.id || "",
-                language: language || detectLang(cleanInput)
+                language: language || detectLang(cleanInput),
+                moderator: followUpMode
             };
 
             if (!payload.personas.length) {
@@ -279,6 +281,9 @@ const DebateArena = ({
                     )}
                     <div className="flex items-center justify-center gap-4 mb-2">
                         {credits !== null && <span className="text-xs text-neutral-400">Credits: {credits}</span>}
+                        <button onClick={() => setFollowUpMode(!followUpMode)} className={`text-xs px-2 py-1 rounded border transition-all ${followUpMode ? 'bg-blue-brand text-white border-blue-brand' : 'text-neutral-400 border-neutral-200 hover:border-blue-brand'}`}>
+                            {followUpMode ? '追问 ON' : '追问'}
+                        </button>
                         <select value={language} onChange={(e) => { setLanguage(e.target.value); localStorage.setItem('lifee_lang', e.target.value); }} className="text-xs text-neutral-400 bg-transparent border border-neutral-200 rounded px-2 py-1">
                             <option value="">Auto</option>
                             <option value="Chinese">中文</option>
