@@ -33,7 +33,8 @@ _sessions: dict = {}
 _SESSION_TTL = 3600  # 1小时过期
 
 # ---- Credits 系统（Supabase 持久化） ----
-FREE_CREDITS = 7
+GUEST_CREDITS = 6
+USER_CREDITS = 11
 REDEEM_CREDITS = 100
 
 _SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip('"')
@@ -47,9 +48,10 @@ _SB_HEADERS = {
 
 
 async def _get_balance(uid: str) -> int:
-    """获取余额，新用户自动创建并给免费额度"""
+    """获取余额，新用户自动创建并给免费额度（注册用户11，游客6）"""
+    initial = USER_CREDITS if uid.startswith("user:") else GUEST_CREDITS
     if not _SUPABASE_URL:
-        return FREE_CREDITS  # fallback: 无 Supabase 时总是给免费额度
+        return initial
     import httpx
     async with httpx.AsyncClient() as c:
         r = await c.get(
@@ -63,9 +65,9 @@ async def _get_balance(uid: str) -> int:
         r2 = await c.post(
             f"{_SUPABASE_URL}/rest/v1/user_credits",
             headers=_SB_HEADERS,
-            json={"uid": uid, "balance": FREE_CREDITS},
+            json={"uid": uid, "balance": initial},
         )
-        return FREE_CREDITS
+        return initial
 
 
 async def _migrate_balance(from_uid: str, to_uid: str):
