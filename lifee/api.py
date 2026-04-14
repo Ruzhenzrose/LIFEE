@@ -504,14 +504,17 @@ async def _save_message(session_id: str, user_id: str, role: str, content: str, 
     """存一条消息到 Supabase（仅登录用户存完整记录）"""
     if not _SUPABASE_URL or not content.strip():
         return
-    import httpx
-    async with httpx.AsyncClient() as c:
-        await c.post(
-            f"{_SUPABASE_URL}/rest/v1/chat_messages",
-            headers=_SB_HEADERS,
-            json={"session_id": session_id, "user_id": user_id, "role": role,
-                  "content": content, "persona_id": persona_id, "seq": seq},
-        )
+    try:
+        import httpx
+        async with httpx.AsyncClient() as c:
+            await c.post(
+                f"{_SUPABASE_URL}/rest/v1/chat_messages",
+                headers=_SB_HEADERS,
+                json={"session_id": session_id, "user_id": user_id, "role": role,
+                      "content": content, "persona_id": persona_id, "seq": seq},
+            )
+    except Exception:
+        pass
 
 
 async def _log_conversation(uid: str, role: str, persona_id: str, content_preview: str):
@@ -520,39 +523,46 @@ async def _log_conversation(uid: str, role: str, persona_id: str, content_previe
         return
     import httpx
     preview = content_preview[:100].replace('\n', ' ')
-    async with httpx.AsyncClient() as c:
-        await c.post(
-            f"{_SUPABASE_URL}/rest/v1/credit_transactions",
-            headers=_SB_HEADERS,
-            json={"uid": uid, "amount": 0, "reason": f"msg:{role}:{persona_id}:{preview}"},
-        )
+    try:
+        # 确保 uid 存在于 user_credits（外键约束）
+        await _get_balance(uid)
+        async with httpx.AsyncClient() as c:
+            await c.post(
+                f"{_SUPABASE_URL}/rest/v1/credit_transactions",
+                headers=_SB_HEADERS,
+                json={"uid": uid, "amount": 0, "reason": f"msg:{role}:{persona_id}:{preview}"},
+            )
+    except Exception:
+        pass  # 日志失败不影响对话
 
 
 async def _ensure_chat_session(session_id: str, user_id: str, title: str = "New Chat", personas: list = None):
     """确保 chat_session 存在，不存在则创建"""
     if not _SUPABASE_URL:
         return
-    import httpx
-    async with httpx.AsyncClient() as c:
-        r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&select=id",
-            headers=_SB_HEADERS,
-        )
-        if not r.json():
-            await c.post(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions",
+    try:
+        import httpx
+        async with httpx.AsyncClient() as c:
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&select=id",
                 headers=_SB_HEADERS,
-                json={"id": session_id, "user_id": user_id, "title": title,
-                      "personas": personas or []},
             )
-        else:
-            # 更新 updated_at
-            from datetime import datetime, timezone
-            await c.patch(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
-                headers=_SB_HEADERS,
-                json={"updated_at": datetime.now(timezone.utc).isoformat()},
-            )
+            if not r.json():
+                await c.post(
+                    f"{_SUPABASE_URL}/rest/v1/chat_sessions",
+                    headers=_SB_HEADERS,
+                    json={"id": session_id, "user_id": user_id, "title": title,
+                          "personas": personas or []},
+                )
+            else:
+                from datetime import datetime, timezone
+                await c.patch(
+                    f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
+                    headers=_SB_HEADERS,
+                    json={"updated_at": datetime.now(timezone.utc).isoformat()},
+                )
+    except Exception:
+        pass
 
 
 @app.get("/sessions")
