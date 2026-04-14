@@ -321,6 +321,7 @@ class DecisionRequest(BaseModel):
     sessionId: str = ""  # 会话 ID，空则新建
     userId: str = ""     # Supabase user ID（登录用户）
     language: str = ""   # 偏好语言（Chinese/English/空=自动）
+    webSearch: bool = False  # 网络搜索开关
 
 
 def _get_provider():
@@ -714,6 +715,11 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             continue
         km = _knowledge_managers.get(role_name)
         p = Participant(role_name, provider, rm, knowledge_manager=km)
+        # 用户开启网络搜索时动态注入 tools
+        if req.webSearch and not p.tools:
+            from lifee.tools import get_tool_definitions, DefaultToolExecutor
+            p.tools = get_tool_definitions(["web_search"])
+            p.tool_executor = DefaultToolExecutor()
         participants.append((persona.id, p))
 
     if not participants:

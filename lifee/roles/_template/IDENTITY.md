@@ -9,4 +9,3 @@
 - **角色:**
 - **风格:**
 - **Emoji:**
-- **Tools:** web_search

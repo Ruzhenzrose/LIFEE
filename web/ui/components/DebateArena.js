@@ -28,6 +28,7 @@ const DebateArena = ({
     const verifyWidgetRef = useRef(null);
     const [redeemCode, setRedeemCode] = useState('');
     const [followUpMode, setFollowUpMode] = useState(false);
+    const [webSearchMode, setWebSearchMode] = useState(false);
     const [language, setLanguage] = useState(() => localStorage.getItem('lifee_lang') || '');
     const detectLang = (text) => {
         const ch = (text || '').trim()[0] || '';
@@ -72,7 +73,8 @@ const DebateArena = ({
                 sessionId: sessionId,
                 userId: user?.id || "",
                 language: language || detectLang(cleanInput),
-                moderator: followUpMode
+                moderator: followUpMode,
+                webSearch: webSearchMode
             };
 
             if (!payload.personas.length) {
@@ -283,6 +285,9 @@ const DebateArena = ({
                         {credits !== null && <span className="text-xs text-neutral-400">Credits: {credits}</span>}
                         <button onClick={() => setFollowUpMode(!followUpMode)} className={`text-xs px-2 py-1 rounded border transition-all ${followUpMode ? 'bg-blue-brand text-white border-blue-brand' : 'text-neutral-400 border-neutral-200 hover:border-blue-brand'}`}>
                             {followUpMode ? '追问 ON' : '追问'}
+                        </button>
+                        <button onClick={() => setWebSearchMode(!webSearchMode)} className={`text-xs px-2 py-1 rounded border transition-all ${webSearchMode ? 'bg-blue-brand text-white border-blue-brand' : 'text-neutral-400 border-neutral-200 hover:border-blue-brand'}`}>
+                            {webSearchMode ? '🔍 ON' : '🔍'}
                         </button>
                         <select value={language} onChange={(e) => { setLanguage(e.target.value); localStorage.setItem('lifee_lang', e.target.value); }} className="text-xs text-neutral-400 bg-transparent border border-neutral-200 rounded px-2 py-1">
                             <option value="">Auto</option>

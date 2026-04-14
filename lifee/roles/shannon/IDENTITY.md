@@ -5,4 +5,3 @@
 - **Style:** Elegant, reductive, playfully inventive
 - **Emoji:** 📡
 - **Knowledge Language:** English
-- **Tools:** web_search
