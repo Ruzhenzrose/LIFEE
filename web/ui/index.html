@@ -1195,7 +1195,7 @@
             );
         };
 
-        const AppLayout = ({ children, activeView, setView, user, isAdmin, onOpenAdmin, onLogin, onSignOut, onNewChat }) => {
+        const AppLayout = ({ children, activeView, setView, user, isAdmin, onOpenAdmin, onLogin, onSignOut, onNewChat, savedSessions = [], setSessionMessages, setSessionId }) => {
             const [isCollapsed, setIsCollapsed] = useState(false);
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
             const scrollContainerRef = useRef(null);
@@ -3050,6 +3050,9 @@
                             setAuthOpen(true);
                         }}
                         onNewChat={handleNewChat}
+                        savedSessions={savedSessions}
+                        setSessionMessages={setSessionMessages}
+                        setSessionId={setSessionId}
                     >
                         {(user || isGuest) ? renderContent() : (
                             <div className="min-h-screen flex items-center justify-center">
