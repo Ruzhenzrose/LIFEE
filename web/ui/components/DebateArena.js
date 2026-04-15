@@ -131,7 +131,7 @@ const DebateArena = ({
 
     useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [history]);
 
-    useEffect(() => { if (parentSessionId) setSessionId(parentSessionId); }, [parentSessionId]);
+    useEffect(() => { setSessionId(parentSessionId || ""); }, [parentSessionId]);
 
     useEffect(() => {
         const url = user?.id ? `/credits?userId=${user.id}` : '/credits';
