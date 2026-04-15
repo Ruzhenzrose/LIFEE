@@ -576,7 +576,7 @@ async def list_sessions(request: Request, userId: str = ""):
     async with httpx.AsyncClient() as c:
         # 获取有消息的 session（通过 inner join chat_messages）
         r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&select=id,title,personas,starred,updated_at,chat_messages(id)&chat_messages=not.is.null&order=updated_at.desc&limit=20",
+            f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&select=id,title,personas,starred,updated_at,chat_messages(id)&order=updated_at.desc&limit=20",
             headers=_SB_HEADERS,
         )
         sessions = r.json()
