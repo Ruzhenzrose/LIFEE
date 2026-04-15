@@ -24,8 +24,10 @@ load_dotenv()
 
 app = FastAPI(title="LIFEE API")
 
-# 知识库管理器缓存：role_name → MemoryManager
-_knowledge_managers: dict = {}
+# 知识库：懒加载，启动时只记录路径
+_knowledge_managers: dict = {}  # role_name → MemoryManager (lazy)
+_knowledge_paths: dict = {}     # role_name → (db_path, knowledge_lang)
+_knowledge_embedding = None     # shared embedding provider
 _km_initialized = False
 
 # 会话缓存：session_id → (Session, Moderator, participants, last_access_time)
@@ -201,29 +203,27 @@ def _download_db(role_name: str, dest: Path) -> bool:
 
 
 async def _init_knowledge():
-    """启动时从 GitHub Release 下载预构建的知识库"""
-    global _km_initialized
+    """启动时只下载知识库文件并记录路径，不打开连接（懒加载）"""
+    global _km_initialized, _knowledge_embedding
     if _km_initialized:
         return
     _km_initialized = True
 
     from lifee.roles import RoleManager
-    from lifee.memory import MemoryManager, create_embedding_provider
+    from lifee.memory import create_embedding_provider
 
     rm = RoleManager()
 
-    # 确定要加载哪些角色
     priority_roles = os.getenv("RAG_ROLES", ",".join(_RELEASE_DBS)).split(",")
     target_roles = [r.strip() for r in priority_roles if r.strip()]
 
-    # embedding provider（用于搜索时生成 query embedding）
     google_key = os.getenv("GOOGLE_API_KEY", "")
     if not google_key:
         print("[knowledge] No GOOGLE_API_KEY, skipping RAG")
         return
 
     try:
-        embedding = create_embedding_provider(google_api_key=google_key)
+        _knowledge_embedding = create_embedding_provider(google_api_key=google_key)
     except Exception as e:
         print(f"[knowledge] Failed to create embedding provider: {e}")
         return
@@ -232,7 +232,6 @@ async def _init_knowledge():
         try:
             db_path = rm.get_knowledge_db_path(role_name)
 
-            # db 不存在且在 Release 上有 → 下载
             if not db_path.exists() and role_name in _RELEASE_DBS:
                 db_path.parent.mkdir(parents=True, exist_ok=True)
                 if not _download_db(role_name, db_path):
@@ -241,16 +240,34 @@ async def _init_knowledge():
             if db_path.exists():
                 role_info = rm.get_role_info(role_name)
                 knowledge_lang = role_info.get("knowledge_lang", "English")
-                km = MemoryManager(db_path, embedding, knowledge_lang=knowledge_lang)
-                stats = km.get_stats()
-                count = stats.get("chunk_count", 0)
-                if count > 0:
-                    _knowledge_managers[role_name] = km
-                    print(f"[knowledge] {role_name}: {count} chunks")
+                _knowledge_paths[role_name] = (db_path, knowledge_lang)
+                print(f"[knowledge] {role_name}: ready (lazy)")
         except Exception as e:
             print(f"[knowledge] {role_name}: failed ({e})")
 
-    print(f"[knowledge] Loaded {len(_knowledge_managers)} roles with RAG")
+    print(f"[knowledge] {len(_knowledge_paths)} roles with RAG (lazy load)")
+
+
+def _get_knowledge_manager(role_name: str):
+    """懒加载：第一次访问时才打开 SQLite 连接"""
+    if role_name in _knowledge_managers:
+        return _knowledge_managers[role_name]
+    if role_name not in _knowledge_paths or not _knowledge_embedding:
+        return None
+
+    from lifee.memory import MemoryManager
+    db_path, knowledge_lang = _knowledge_paths[role_name]
+    try:
+        km = MemoryManager(db_path, _knowledge_embedding, knowledge_lang=knowledge_lang)
+        stats = km.get_stats()
+        count = stats.get("chunk_count", 0)
+        if count > 0:
+            _knowledge_managers[role_name] = km
+            print(f"[knowledge] {role_name}: loaded {count} chunks (on demand)")
+            return km
+    except Exception as e:
+        print(f"[knowledge] {role_name}: lazy load failed ({e})")
+    return None
 
 
 @app.on_event("startup")
@@ -786,7 +803,7 @@ async def _handle_decision(req: DecisionRequest, request: Request):
         role_name = _match_role(persona.id, persona.name)
         if not role_name:
             continue
-        km = _knowledge_managers.get(role_name)
+        km = _get_knowledge_manager(role_name)
         p = Participant(role_name, provider, rm, knowledge_manager=km)
         # API 端：默认关闭 tools，只在用户开启 webSearch 时保留
         if not req.webSearch:

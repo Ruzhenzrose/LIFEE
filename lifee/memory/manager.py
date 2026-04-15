@@ -55,8 +55,10 @@ class MemoryManager:
         # 确保目录存在
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 连接数据库
+        # 连接数据库（限制缓存减少内存占用）
         self.db = sqlite3.connect(str(self.db_path))
+        self.db.execute("PRAGMA cache_size = -1024")  # 1MB per connection
+        self.db.execute("PRAGMA mmap_size = 0")        # 禁用 mmap 避免内存映射
         self._init_schema()
 
     def _init_schema(self):
