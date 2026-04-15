@@ -47,6 +47,7 @@ const DebateArena = ({
     const [showSummaryPanel, setShowSummaryPanel] = useState(false);
     const [summaryData, setSummaryData] = useState({});
     const [summaryLoading, setSummaryLoading] = useState(false);
+    const summaryAtCountRef = useRef(0); // 上次 summary 时的消息数
     const [language, setLanguage] = useState(() => localStorage.getItem('lifee_lang') || '');
 
     // Canvas state
@@ -614,6 +615,11 @@ const DebateArena = ({
                     <button
                         disabled={history.length < 2 || summaryLoading}
                         onClick={() => {
+                            // 没有新消息 → 直接显示缓存
+                            if (summaryAtCountRef.current === history.length && Object.keys(summaryData).length > 0 && !summaryData._error) {
+                                setShowCanvas(true);
+                                return;
+                            }
                             const trimmed = history
                                 .filter(m => m.personaId !== 'user' && m.personaId !== 'system' && m.personaId !== 'lifee-followup')
                                 .slice(-6)
@@ -633,6 +639,7 @@ const DebateArena = ({
                                         setSummaryData({ _error: res.error });
                                     } else if (res?.summaries && Object.keys(res.summaries).length > 0) {
                                         setSummaryData(res.summaries);
+                                        summaryAtCountRef.current = history.length;
                                         setShowCanvas(true);
                                     } else {
                                         setSummaryData({ _error: 'No summary returned' });
