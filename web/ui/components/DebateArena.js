@@ -619,7 +619,13 @@ const DebateArena = ({
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     credentials: 'include',
-                                    body: JSON.stringify({ messages: history, language: language || 'Chinese' }),
+                                    body: JSON.stringify({
+                                        messages: history
+                                            .filter(m => m.personaId !== 'user' && m.personaId !== 'system')
+                                            .slice(-20)
+                                            .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 500) })),
+                                        language: language || 'Chinese',
+                                    }),
                                 });
                                 const res = await r.json();
                                 if (res?.error) {
