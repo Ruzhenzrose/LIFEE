@@ -754,7 +754,7 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             sid = sid or str(uuid4())
             _sessions[sid] = (session, moderator, participants, now)
             # 存档：创建 chat_session（用 Supabase user ID，不是 credits uid）
-            persona_names = [p.info.display_name for _, p in participants]
+            persona_names = [pid for pid, _ in participants]  # 存前端 persona id，不是 display name
             title = (req.userInput or req.situation or "New Chat")[:50]
             chat_user_id = req.userId or None  # Supabase UUID
             if chat_user_id:

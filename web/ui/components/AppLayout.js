@@ -68,10 +68,10 @@ const AppLayout = ({ children, activeView, setView, user, isAdmin, onOpenAdmin, 
                                     if (res?.messages) {
                                         setSessionMessages(res.messages.map(m => ({ personaId: m.persona_id || m.role, text: m.content })));
                                         setSessionId(s.id);
-                                        // 恢复角色选择
+                                        // 恢复角色选择（personas 存的是 id 或 display name）
                                         if (s.personas && s.personas.length && setSelectedIds) {
-                                            const ids = s.personas.map(name => {
-                                                const found = personas.find(p => p.name === name || p.id === name.toLowerCase().replace(/\s+/g, ''));
+                                            const ids = s.personas.map(pid => {
+                                                const found = personas.find(p => p.id === pid || p.id === pid.toLowerCase().replace(/\s+/g, '') || p.name === pid);
                                                 return found?.id;
                                             }).filter(Boolean);
                                             if (ids.length) setSelectedIds(ids);
