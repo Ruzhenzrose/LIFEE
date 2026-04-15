@@ -836,6 +836,8 @@
                         setSavedSessions={setSavedSessions}
                         setSessionMessages={setSessionMessages}
                         setSessionId={setSessionId}
+                        setSelectedIds={setSelectedIds}
+                        personas={displayPersonas}
                     >
                         {(user || isGuest) ? renderContent() : (
                             <div className="min-h-screen flex items-center justify-center">

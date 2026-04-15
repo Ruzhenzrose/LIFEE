@@ -1,7 +1,7 @@
 ﻿const { useState, useEffect, useRef } = React;
 const { Icon } = window;
 
-const AppLayout = ({ children, activeView, setView, user, isAdmin, onOpenAdmin, onLogin, onSignOut, onNewChat, savedSessions = [], setSavedSessions, setSessionMessages, setSessionId }) => {
+const AppLayout = ({ children, activeView, setView, user, isAdmin, onOpenAdmin, onLogin, onSignOut, onNewChat, savedSessions = [], setSavedSessions, setSessionMessages, setSessionId, setSelectedIds, personas = [] }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const scrollContainerRef = useRef(null);
@@ -68,6 +68,14 @@ const AppLayout = ({ children, activeView, setView, user, isAdmin, onOpenAdmin, 
                                     if (res?.messages) {
                                         setSessionMessages(res.messages.map(m => ({ personaId: m.persona_id || m.role, text: m.content })));
                                         setSessionId(s.id);
+                                        // 恢复角色选择
+                                        if (s.personas && s.personas.length && setSelectedIds) {
+                                            const ids = s.personas.map(name => {
+                                                const found = personas.find(p => p.name === name || p.id === name.toLowerCase().replace(/\s+/g, ''));
+                                                return found?.id;
+                                            }).filter(Boolean);
+                                            if (ids.length) setSelectedIds(ids);
+                                        }
                                         setView('debate');
                                     }
                                     setIsMobileMenuOpen(false);
