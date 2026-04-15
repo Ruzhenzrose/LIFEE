@@ -24,12 +24,13 @@ const DebateArena = ({
     buildContextBlock,
     userAvatar,
     user,
-    initialMessages = []
+    initialMessages = [],
+    parentSessionId = ""
 }) => {
     const [history, setHistory] = useState(initialMessages);
     const [options, setOptions] = useState([]);
     const [isDebating, setIsDebating] = useState(false);
-    const [sessionId, setSessionId] = useState("");
+    const [sessionId, setSessionId] = useState(parentSessionId || "");
     const [inputValue, setInputValue] = useState('');
     const [tarotDecision, setTarotDecision] = useState('');
     const [tarotModalOpen, setTarotModalOpen] = useState(false);
@@ -129,6 +130,8 @@ const DebateArena = ({
     }, [history]);
 
     useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [history]);
+
+    useEffect(() => { if (parentSessionId) setSessionId(parentSessionId); }, [parentSessionId]);
 
     useEffect(() => {
         const url = user?.id ? `/credits?userId=${user.id}` : '/credits';
