@@ -576,7 +576,7 @@ async def list_sessions(request: Request, userId: str = ""):
     async with httpx.AsyncClient() as c:
         # 获取有消息的 session（通过 inner join chat_messages）
         r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&select=id,title,personas,starred,updated_at,chat_messages(id)&order=updated_at.desc&limit=20",
+            f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&deleted=eq.false&select=id,title,personas,starred,updated_at,chat_messages(id)&order=updated_at.desc&limit=20",
             headers=_SB_HEADERS,
         )
         sessions = r.json()
@@ -632,14 +632,17 @@ async def update_session(session_id: str, req: SessionUpdateRequest):
 
 @app.delete("/sessions/{session_id}")
 async def delete_session(session_id: str):
-    """删除会话及其消息"""
+    """软删除会话（标记 deleted=true，数据保留）"""
     if not _SUPABASE_URL:
         return {"ok": False}
     try:
         import httpx
         async with httpx.AsyncClient() as c:
-            await c.delete(f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}", headers=_SB_HEADERS)
-            await c.delete(f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}", headers=_SB_HEADERS)
+            await c.patch(
+                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
+                headers=_SB_HEADERS,
+                json={"deleted": True},
+            )
         return {"ok": True}
     except Exception:
         return {"ok": False}
