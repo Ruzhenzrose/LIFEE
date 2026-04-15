@@ -887,11 +887,8 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             options = await _generate_options(provider, session)
             # 扣 credits + 存档
             seq = 0
-            question_text = req.userInput or req.situation or ""
             chat_user_id = req.userId or None
-            if question_text and chat_user_id:
-                seq += 1
-                await _save_message(sid, chat_user_id, "user", question_text, seq=seq)
+            # 用户消息由前端 persistMessage 存档，后端不重复存
             for msg in messages:
                 if msg.get("personaId") not in ("system", "moderator") and msg.get("text", "").strip():
                     await _deduct(uid)
