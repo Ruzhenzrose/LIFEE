@@ -747,7 +747,7 @@
                 );
                 if (view === 'summary') return <div className="text-center py-32 md:py-48 px-4 animate-in space-y-8 md:space-y-10 max-w-2xl mx-auto"><div className="text-5xl md:text-7xl animate-bounce">🌱</div><h2 className="text-3xl md:text-5xl font-serif italic text-[#1A1A1A] tracking-tight">Pattern Observed</h2><button onClick={handleNewChat} className="px-12 md:px-16 py-5 md:py-6 bg-blue-brand text-white rounded-full font-black shadow-xl uppercase tracking-widest text-[9px] md:text-[10px] hover:shadow-2xl transition-all">Start New Chapter</button></div>;
                 return (
-                    <section className="space-y-6 md:space-y-10 py-10 md:py-20 px-4 max-w-3xl mx-auto w-full animate-in flex flex-col items-center">
+                    <section className="space-y-6 md:space-y-10 py-10 md:py-20 px-4 max-w-5xl mx-auto w-full animate-in flex flex-col items-center">
                         <header className="mb-2 md:mb-4 text-center space-y-3"><h1 className="text-6xl md:text-8xl font-black tracking-tighter text-blue-brand uppercase italic leading-none">LIFEE</h1><p className="italic text-[8px] md:text-[10px] text-[#C1C1C1] uppercase tracking-[0.4em] md:tracking-[0.6em] font-black font-sans">YOUR LIFE & FRIEND COACH</p></header>
                         {(() => {
                             const suggestedQuestions = [
@@ -774,7 +774,7 @@
                                 </div>
                             );
                         })()}
-                        <div className="w-full bg-white p-8 md:p-16 rounded-[40px] md:rounded-[70px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden transition-all hover:shadow-xl"><div className="absolute top-0 right-0 p-8 md:p-12 opacity-5"><Icon name="Sparkles" size={64} /></div><h2 className="text-xl md:text-3xl font-serif italic mb-6 md:mb-10 text-[#1A1A1A] tracking-tight">“Let them argue, you decide.”</h2><textarea className="w-full h-40 md:h-52 p-6 md:p-8 bg-[#FDFBF7]/50 rounded-[30px] md:rounded-[40px] border-2 border-transparent focus-blue-brand transition-all duration-300 focus:outline-none text-base md:text-xl leading-relaxed placeholder:italic no-scrollbar" placeholder="Describe the current tension..." value={context.situation} onChange={(e) => setContext({...context, situation: e.target.value})} /></div>
+                        <div className="w-full bg-white p-8 md:p-16 rounded-[40px] md:rounded-[70px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden transition-all hover:shadow-xl"><h2 className="text-xl md:text-3xl font-serif italic mb-6 md:mb-10 text-[#1A1A1A] tracking-tight">“Let them argue, you decide.”</h2><textarea className="w-full h-40 md:h-52 p-6 md:p-8 bg-[#FDFBF7]/50 rounded-[30px] md:rounded-[40px] border-2 border-transparent focus-blue-brand transition-all duration-300 focus:outline-none text-base md:text-xl leading-relaxed placeholder:italic no-scrollbar" placeholder="Describe the current tension..." value={context.situation} onChange={(e) => setContext({...context, situation: e.target.value})} /></div>
                         <div className="space-y-6 md:space-y-8 px-4 text-center w-full">
                             <h3 className="text-xs md:text-sm font-black uppercase tracking-[0.3em] text-[#5D576B]/70">WHEN IS THIS LANDING?</h3>
                             <div className="capsule-container shadow-sm">
@@ -810,7 +810,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button disabled={!context.situation} onClick={() => setView('persona-selection')} className="w-full max-w-lg py-5 md:py-7 bg-blue-brand text-white rounded-full font-black shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all hover:translate-y-[-2px] uppercase tracking-[0.3em] text-[10px] md:text-xs disabled:opacity-20 active:scale-95">STEP FORWARD</button>
+                        <button disabled={!context.situation} onClick={() => setView('persona-selection')} className="w-full max-w-2xl py-5 md:py-7 bg-blue-brand text-white rounded-full font-black shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all hover:translate-y-[-2px] uppercase tracking-[0.3em] text-[10px] md:text-xs disabled:opacity-20 active:scale-95">STEP FORWARD</button>
                     </section>
                 );
             };
