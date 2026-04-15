@@ -216,12 +216,10 @@
 
                 const loadChatSessions = async () => {
                     setChatSessionsLoading(true);
-                    const { data } = await supabaseClient
-                        .from('chat_sessions')
-                        .select('id, title, updated_at, latest_message_at')
-                        .eq('user_id', user.id)
-                        .order('updated_at', { ascending: false });
-                    setChatSessions(data || []);
+                    try {
+                        const res = await fetch(`/sessions?userId=${user.id}`, { credentials: 'include' }).then(r => r.json());
+                        setChatSessions(res?.sessions || []);
+                    } catch { setChatSessions([]); }
                     setChatSessionsLoading(false);
                 };
                 loadChatSessions();
@@ -413,9 +411,7 @@
                 if (!sessionRow?.id) return;
                 if (!window.confirm('Delete this chat? This cannot be undone.')) return;
                 setChatStatus('');
-                await supabaseClient.from('chat_messages').delete().eq('session_id', sessionRow.id);
-                await supabaseClient.from('chat_summaries').delete().eq('session_id', sessionRow.id);
-                await supabaseClient.from('chat_sessions').delete().eq('id', sessionRow.id);
+                await fetch(`/sessions/${sessionRow.id}`, { method: 'DELETE', credentials: 'include' });
                 if (chatDetailSession?.id === sessionRow.id) {
                     setChatDetailSession(null);
                     setChatDetailMessages([]);
