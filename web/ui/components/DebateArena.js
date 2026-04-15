@@ -29,6 +29,7 @@ const DebateArena = ({
     const [redeemCode, setRedeemCode] = useState('');
     const [followUpMode, setFollowUpMode] = useState(false);
     const [webSearchMode, setWebSearchMode] = useState(false);
+    const [maxSpeakers, setMaxSpeakers] = useState(0);
     const [language, setLanguage] = useState(() => localStorage.getItem('lifee_lang') || '');
     const detectLang = (text) => {
         const ch = (text || '').trim()[0] || '';
@@ -74,7 +75,8 @@ const DebateArena = ({
                 userId: user?.id || "",
                 language: language || detectLang(cleanInput),
                 moderator: followUpMode,
-                webSearch: webSearchMode
+                webSearch: webSearchMode,
+                maxSpeakers: maxSpeakers
             };
 
             if (!payload.personas.length) {
@@ -289,6 +291,14 @@ const DebateArena = ({
                         <button onClick={() => setWebSearchMode(!webSearchMode)} className={`text-xs px-2 py-1 rounded border transition-all ${webSearchMode ? 'bg-blue-brand text-white border-blue-brand' : 'text-neutral-400 border-neutral-200 hover:border-blue-brand'}`}>
                             {webSearchMode ? '🔍 ON' : '🔍'}
                         </button>
+                        {debatePersonas.length > 1 && (
+                            <select value={maxSpeakers} onChange={(e) => setMaxSpeakers(Number(e.target.value))} className="text-xs text-neutral-400 bg-transparent border border-neutral-200 rounded px-2 py-1">
+                                <option value={0}>All speak</option>
+                                {Array.from({length: debatePersonas.length - 1}, (_, i) => (
+                                    <option key={i+1} value={i+1}>{i+1} speak</option>
+                                ))}
+                            </select>
+                        )}
                         <select value={language} onChange={(e) => { setLanguage(e.target.value); localStorage.setItem('lifee_lang', e.target.value); }} className="text-xs text-neutral-400 bg-transparent border border-neutral-200 rounded px-2 py-1">
                             <option value="">Auto</option>
                             <option value="Chinese">中文</option>

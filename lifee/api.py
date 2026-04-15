@@ -322,6 +322,7 @@ class DecisionRequest(BaseModel):
     userId: str = ""     # Supabase user ID（登录用户）
     language: str = ""   # 偏好语言（Chinese/English/空=自动）
     webSearch: bool = False  # 网络搜索开关
+    maxSpeakers: int = 0    # 每轮最多发言人数（0=全部）
 
 
 def _get_provider():
@@ -776,7 +777,7 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             current_text = ""
 
             chunk_count = 0
-            async for participant, chunk, is_skip in moderator.run(question, max_turns=len(all_participants)):
+            async for participant, chunk, is_skip in moderator.run(question, max_turns=min(req.maxSpeakers, len(all_participants)) if req.maxSpeakers > 0 else len(all_participants)):
                 chunk_count += 1
                 if is_skip:
                     print(f"[API] skip from {participant.info.display_name}")
@@ -857,7 +858,7 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
               seq += 1
               await _save_message(session_id, chat_user_id, "user", question, seq=seq)
 
-      async for participant, chunk, is_skip in moderator.run(question, max_turns=len(all_participants)):
+      async for participant, chunk, is_skip in moderator.run(question, max_turns=min(req.maxSpeakers, len(all_participants)) if req.maxSpeakers > 0 else len(all_participants)):
         if is_skip:
             continue
         pid = _find_persona_id(participant, participants)
