@@ -834,13 +834,33 @@ async def _handle_decision(req: DecisionRequest, request: Request):
         else:
             session = Session()
             all_participants = [p for _, p in participants]
+
+            # 恢复对话：从 Supabase 加载历史消息到 Session
+            if sid and _SUPABASE_URL and req.userId:
+                try:
+                    import httpx
+                    from lifee.providers.base import MessageRole
+                    async with httpx.AsyncClient() as _c:
+                        _r = await _c.get(
+                            f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{sid}&select=role,content,persona_id&order=seq.asc&limit=50",
+                            headers=_SB_HEADERS,
+                        )
+                        for m in _r.json() or []:
+                            role = MessageRole.USER if m["role"] == "user" else MessageRole.ASSISTANT
+                            name = m.get("persona_id") or None
+                            session.add_message(role, m["content"], name=name)
+                    if session.history:
+                        print(f"[session] Restored {len(session.history)} messages for {sid[:8]}")
+                except Exception as e:
+                    print(f"[session] Failed to restore history: {e}")
+
             moderator = Moderator(all_participants, session, enable_moderator_check=req.moderator, language=req.language)
             sid = sid or str(uuid4())
             _sessions[sid] = (session, moderator, participants, now)
             # 存档：创建 chat_session（用 Supabase user ID，不是 credits uid）
-            persona_names = [pid for pid, _ in participants]  # 存前端 persona id，不是 display name
+            persona_names = [pid for pid, _ in participants]
             title = (req.userInput or req.situation or "New Chat")[:50]
-            chat_user_id = req.userId or None  # Supabase UUID
+            chat_user_id = req.userId or None
             if chat_user_id:
                 await _ensure_chat_session(sid, chat_user_id, title, persona_names)
 
