@@ -233,10 +233,6 @@ const DebateArena = ({
             const handlers = {
                 onMessage: async (msg) => {
                     setHistory(prev => [...prev, msg]);
-                    if (msg.text) {
-                        const role = msg.personaId === 'system' ? 'system' : 'assistant';
-                        await persistMessage(role, msg.text);
-                    }
                 },
                 onMessageUpdate: async (msg) => {
                     setHistory(prev => {
@@ -316,7 +312,6 @@ const DebateArena = ({
         const spreadSummary = `[Tarot spread for "${focus}"] ${drawn}`;
         setIsDebating(true);
         setHistory(prev => [...prev, { personaId: 'user', text: spreadSummary }]);
-        await persistMessage('user', spreadSummary);
         try {
             const contextBlock = buildContextBlock();
             const situation = (context.situation || "").trim();
@@ -332,8 +327,6 @@ const DebateArena = ({
             const handlers = {
                 onMessage: async (msg) => {
                     setHistory(prev => [...prev, msg]);
-                    const role = msg.personaId === 'system' ? 'system' : 'assistant';
-                    await persistMessage(role, msg.text || '');
                 },
                 onOptions: () => {}
             };
