@@ -29,71 +29,76 @@ class DebateContext:
             if p.name != self.current_participant.name
         ]
 
-        # 基础上下文：身份 + 消息格式说明
-        if others:
-            others_str = ", ".join([f"{p.emoji} {p.display_name}" for p in others])
-            base_context = f"""## Current Conversation
+        # 语言指令
+        lang_line = f"Reply in {self.language}." if self.language else "Reply in the same language the user is using."
 
-You are {self.current_participant.display_name}, taking part in a group discussion with the user and {others_str}. This is round {self.round_number}.
+        # 消息格式说明
+        format_lines = f"""- The user's messages appear as `<user>...</user>`
+- Your messages appear as `<msg from="{self.current_participant.display_name}">...</msg>`"""
+        for other in others:
+            format_lines += f'\n- {other.display_name}\'s messages appear as `<msg from="{other.display_name}">...</msg>`'
 
-In the conversation history:
-- The user's messages appear as `<user>...</user>`
-- Your own previous messages appear as `<msg from="{self.current_participant.display_name}">...</msg>`"""
-
-            for other in others:
-                base_context += f'\n- {other.display_name}\'s messages appear as `<msg from="{other.display_name}">...</msg>`'
-        else:
-            base_context = f"""## Current Conversation
-
-You are {self.current_participant.display_name}, in a one-on-one conversation with the user. This is round {self.round_number}.
-
-In the conversation history:
-- The user's messages appear as `<user>...</user>`
-- Your own previous messages appear as `<msg from="{self.current_participant.display_name}">...</msg>`"""
-
-        base_context += """
-
-Read the recent conversation carefully and engage with its actual content.
-
-{lang_instruction}
-
-Note: the system will wrap your reply in message tags automatically — just speak directly, without adding any name, emoji, XML tag, or separator at the start.""".format(lang_instruction=(
-            f"Reply in {self.language}."
-            if self.language else
-            "Always reply in the same language the user is using."
-        ))
-
-        # 交互指导：第一个发言者 vs 后续发言者
         if not self.reply_to:
-            example_ref = f' (e.g. "As {others[0].display_name} said…")' if others else ""
-            interaction_guide = f"""
+            # === 第一个发言者：直接回应用户 ===
+            if others:
+                others_str = ", ".join([f"{p.display_name}" for p in others])
+                context = f"""## Current Conversation
+
+You are {self.current_participant.display_name}. The user is asking for your perspective. After you speak, {others_str} will share theirs.
+
+{format_lines}
+
+{lang_line}
 
 ### Your Turn
 
-The user has just raised a question or topic. Respond from your own perspective.
+The user just spoke. Share your perspective on what they said.
 
-**Guidelines**:
-- Address the user's question directly
-- Draw on your knowledge and worldview to offer insight and concrete guidance
-- You may reference other participants{example_ref} but it's not required
-- Keep your voice and perspective distinct
-- Be concise — say only what matters
-- You may include brief action descriptions in parentheses when they feel natural — e.g. (leaning forward), (a long pause)
-- If the user's situation lacks specifics (e.g. no mention of their age, experience, industry, constraints, or what they've already tried), weave 1-2 natural follow-up questions INTO your response — don't just answer generically, actively draw out their personal context
-- Connect abstract ideas to concrete, personal actions — end with at least one actionable suggestion the user can actually try"""
+- Speak directly to the user, as yourself
+- Draw from your own experience, knowledge, and worldview
+- Be specific and concrete — give actionable insight
+- If the user's situation is vague, weave 1-2 natural follow-up questions into your response
+- Stay concise — say what matters, skip the filler
+- You may use brief action descriptions like (pausing to think) when natural
+- The system wraps your reply in message tags automatically — just speak directly"""
+            else:
+                context = f"""## Current Conversation
+
+You are {self.current_participant.display_name}, in a one-on-one conversation with the user.
+
+{format_lines}
+
+{lang_line}
+
+### Your Turn
+
+The user just spoke. Share your perspective.
+
+- Speak directly to the user, as yourself
+- Draw from your own experience, knowledge, and worldview
+- Be specific and concrete — give actionable insight
+- If the user's situation is vague, weave 1-2 natural follow-up questions into your response
+- Stay concise — say what matters, skip the filler
+- The system wraps your reply in message tags automatically — just speak directly"""
         else:
-            interaction_guide = """
+            # === 后续发言者：回应讨论 ===
+            context = f"""## Current Conversation
+
+You are {self.current_participant.display_name}, joining an ongoing discussion. The user and other participants have already spoken — read the conversation history above.
+
+{format_lines}
+
+{lang_line}
 
 ### Your Turn
 
-Others have already spoken. Now it's your turn to join the discussion.
+Others have spoken. Now add your voice.
 
-**Guidelines**:
-- Read the recent conversation and choose what you most want to engage with — the user's question, someone's argument, or the direction of the whole discussion
-- You don't have to respond to the previous speaker specifically; follow your own judgment
-- You may agree, build on, challenge, or open a new angle — your call
-- Be concise — say only what matters
-- You may include brief action descriptions in parentheses when they feel natural — e.g. (leaning back), (a long pause)
-- Connect abstract ideas to concrete, personal actions — end with at least one actionable suggestion the user can actually try"""
+- Engage with what was actually said — agree, build on it, or offer a different angle
+- Speak from your own perspective and experience
+- Be specific and concrete — give actionable insight
+- Stay concise — say what matters, skip the filler
+- You may use brief action descriptions like (leaning forward) when natural
+- The system wraps your reply in message tags automatically — just speak directly"""
 
-        return base_context + interaction_guide
+        return context

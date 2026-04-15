@@ -201,7 +201,7 @@ class Participant:
 
         # 知识库上下文（放前面，降低对模型的影响）
         if knowledge_context:
-            parts.append(f"<reference_knowledge>\nThe following are excerpts from your books and writings. Use ONLY if directly relevant to the user's current question — ignore if unrelated. These are NOT part of the current conversation.\n\n{knowledge_context}\n</reference_knowledge>")
+            parts.append(f"<reference_knowledge>\nExcerpts from your published works for reference:\n\n{knowledge_context}\n</reference_knowledge>")
 
         # 注入触发技能 (Tier 2)
         if triggered_skill_context:
