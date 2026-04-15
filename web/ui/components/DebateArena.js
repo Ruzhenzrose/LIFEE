@@ -327,8 +327,8 @@ const DebateArena = ({
                             </button>
                         )}
                         <div className="relative flex-[3] group">
-                            <textarea ref={inputFieldRef} maxLength={500} rows={1} placeholder="..." disabled={isDebating} className="w-full min-h-[56px] max-h-[120px] bg-white rounded-3xl shadow-xl border-2 border-transparent focus:border-blue-brand transition-all duration-300 px-6 md:px-8 py-4 focus:outline-none text-sm resize-none overflow-y-auto" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && inputValue) { e.preventDefault(); runRound(); } }} onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }} />
-                            {inputValue.length > 0 && <div className="absolute bottom-1 right-6 text-[10px] text-neutral-300">{inputValue.length}/500</div>}
+                            <textarea ref={inputFieldRef} maxLength={1000} rows={2} placeholder="..." disabled={isDebating} style={{height: 'auto'}} className="w-full min-h-[56px] max-h-[150px] bg-white rounded-2xl shadow-xl border-2 border-transparent focus:border-blue-brand transition-all duration-300 px-6 md:px-8 py-3 focus:outline-none text-sm resize-none overflow-y-auto leading-relaxed" value={inputValue} onChange={(e) => { setInputValue(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px'; }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && inputValue) { e.preventDefault(); runRound(); } }} />
+                            {inputValue.length > 400 && <div className="absolute bottom-1 right-6 text-[10px] text-neutral-300">{inputValue.length}/1000</div>}
                         </div>
                     </div>
                     {hasTarotMaster && (
