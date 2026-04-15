@@ -939,7 +939,21 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
 
       has_content = False
       current_text = ""  # 收集当前角色的完整回复
+      # 从数据库获取当前最大 seq，避免多轮对话 seq 重复
       seq = 0
+      if chat_user_id and session_id and _SUPABASE_URL:
+          try:
+              import httpx
+              async with httpx.AsyncClient() as _c:
+                  _r = await _c.get(
+                      f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=seq&order=seq.desc&limit=1",
+                      headers=_SB_HEADERS,
+                  )
+                  _rows = _r.json()
+                  if _rows and isinstance(_rows, list) and len(_rows) > 0:
+                      seq = _rows[0].get("seq", 0)
+          except Exception:
+              pass
 
       # 存档用户消息（仅登录用户） + 日志（所有用户）
       if question:
