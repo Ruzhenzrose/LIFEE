@@ -317,7 +317,7 @@ class DecisionRequest(BaseModel):
     userInput: str = ""
     personas: list[PersonaInput] = []
     context: str = ""
-    moderator: bool = True  # 主持人预审开关，默认开启
+    moderator: bool = False  # 追问模式，默认关闭，用户开启
     sessionId: str = ""  # 会话 ID，空则新建
     userId: str = ""     # Supabase user ID（登录用户）
     language: str = ""   # 偏好语言（Chinese/English/空=自动）
@@ -358,9 +358,12 @@ def _match_role(persona_id: str, persona_name: str) -> Optional[str]:
     rm = RoleManager()
     available = rm.list_roles()
 
-    # 直接匹配 role 目录名
+    # 直接匹配 role 目录名（兼容连字符/空格差异）
+    pid = persona_id.lower().replace("-", "").replace(" ", "")
+    pname = persona_name.lower().replace("-", "").replace(" ", "")
     for role in available:
-        if persona_id.lower() == role.lower() or persona_name.lower() == role.lower():
+        role_clean = role.lower().replace("-", "").replace(" ", "")
+        if pid == role_clean or pname == role_clean or persona_id.lower() == role.lower():
             return role
 
     # 模糊匹配（display name）
@@ -750,11 +753,11 @@ async def _handle_decision(req: DecisionRequest, request: Request):
         else:
             session = Session()
             all_participants = [p for _, p in participants]
-            moderator = Moderator(all_participants, session, enable_moderator_check=False, language=req.language)
+            moderator = Moderator(all_participants, session, enable_moderator_check=req.moderator, language=req.language)
             sid = sid or str(uuid4())
             _sessions[sid] = (session, moderator, participants, now)
             # 存档：创建 chat_session（用 Supabase user ID，不是 credits uid）
-            persona_names = [p.info.display_name for _, p in participants]
+            persona_names = [pid for pid, _ in participants]  # 存前端 persona id，不是 display name
             title = (req.userInput or req.situation or "New Chat")[:50]
             chat_user_id = req.userId or None  # Supabase UUID
             if chat_user_id:

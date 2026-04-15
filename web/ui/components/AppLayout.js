@@ -62,16 +62,16 @@ const AppLayout = ({ children, activeView, setView, user, isAdmin, onOpenAdmin, 
                     <nav className="space-y-1">
                         <div className={`text-[10px] uppercase font-bold tracking-widest opacity-30 px-4 mb-2 ${isCollapsed ? 'md:hidden' : 'block'}`}>Archives</div>
                         {savedSessions.length > 0 ? savedSessions.slice(0, 10).map(s => (
-                            <div key={s.id} className={`group w-full text-left rounded-xl hover:bg-white/60 transition-colors flex items-center ${isCollapsed ? 'md:p-3 md:justify-center' : 'px-4 py-2.5 text-xs'}`}>
+                            <div key={s.id} className={`w-full text-left rounded-xl hover:bg-white/60 transition-colors flex items-center ${isCollapsed ? 'md:p-3 md:justify-center' : 'px-4 py-2.5 text-xs'}`} onMouseEnter={(e) => { const a = e.currentTarget.querySelector('.session-actions'); if (a) a.style.opacity = '1'; }} onMouseLeave={(e) => { const a = e.currentTarget.querySelector('.session-actions'); if (a) a.style.opacity = '0'; }}>
                                 <button onClick={async () => {
                                     const res = await fetch(`/sessions/${s.id}/messages`, { credentials: 'include' }).then(r => r.json());
                                     if (res?.messages) {
                                         setSessionMessages(res.messages.map(m => ({ personaId: m.persona_id || m.role, text: m.content })));
                                         setSessionId(s.id);
-                                        // 恢复角色选择
+                                        // 恢复角色选择（personas 存的是 id 或 display name）
                                         if (s.personas && s.personas.length && setSelectedIds) {
-                                            const ids = s.personas.map(name => {
-                                                const found = personas.find(p => p.name === name || p.id === name.toLowerCase().replace(/\s+/g, ''));
+                                            const ids = s.personas.map(pid => {
+                                                const found = personas.find(p => p.id === pid || p.id === pid.toLowerCase().replace(/\s+/g, '') || p.name === pid);
                                                 return found?.id;
                                             }).filter(Boolean);
                                             if (ids.length) setSelectedIds(ids);
@@ -83,7 +83,7 @@ const AppLayout = ({ children, activeView, setView, user, isAdmin, onOpenAdmin, 
                                     <Icon name={s.starred ? "Star" : "MessageSquare"} size={14} className={isCollapsed ? "md:text-blue-brand" : `mr-2 flex-shrink-0 ${s.starred ? 'text-yellow-500 opacity-80' : 'opacity-40'}`} />
                                     <span className={`${isCollapsed ? 'md:hidden' : 'block'} truncate opacity-60`}>{s.title || 'Untitled'}</span>
                                 </button>
-                                <div className={`flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all ml-1 flex-shrink-0 ${isCollapsed ? 'md:hidden' : ''}`}>
+                                <div className={`session-actions flex items-center gap-0.5 transition-all ml-1 flex-shrink-0 ${isCollapsed ? 'md:hidden' : ''}`} style={{opacity: 0}}>
                                     <button title="Star" onClick={async (e) => {
                                         e.stopPropagation();
                                         const newVal = !s.starred;

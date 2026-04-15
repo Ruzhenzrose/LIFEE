@@ -285,16 +285,8 @@
             };
 
             const ensureSession = async () => {
-                if (sessionId) return sessionId;
-                const { data, error } = await supabaseClient.from('chat_sessions').insert({
-                    user_id: user.id,
-                    title: 'New Chat'
-                }).select('id').single();
-                if (error) return null;
-                setSessionId(data.id);
-                setSessionMessages([]);
-                setSessionSummaries([]);
-                return data.id;
+                // session 由后端 _ensure_chat_session 在第一条消息时创建
+                return sessionId || null;
             };
 
             const persistMessage = async (role, text) => {
@@ -349,17 +341,12 @@
                     setView('home');
                     return;
                 }
-                const { data } = await supabaseClient.from('chat_sessions').insert({
-                    user_id: user.id,
-                    title: 'New Chat'
-                }).select('id').single();
-                setSessionId(data?.id || null);
+                setSessionId(null);
                 setSessionMessages([]);
                 setSessionSummaries([]);
                 setContext({ situation: '', landingPeriods: [] });
                 setSelectedIds([]);
                 setView('home');
-                await refreshChatSessions();
             };
 
             const toggleSelect = (e, p) => { e.stopPropagation(); setSelectedIds(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]); };
