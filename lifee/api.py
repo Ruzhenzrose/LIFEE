@@ -358,9 +358,12 @@ def _match_role(persona_id: str, persona_name: str) -> Optional[str]:
     rm = RoleManager()
     available = rm.list_roles()
 
-    # 直接匹配 role 目录名
+    # 直接匹配 role 目录名（兼容连字符/空格差异）
+    pid = persona_id.lower().replace("-", "").replace(" ", "")
+    pname = persona_name.lower().replace("-", "").replace(" ", "")
     for role in available:
-        if persona_id.lower() == role.lower() or persona_name.lower() == role.lower():
+        role_clean = role.lower().replace("-", "").replace(" ", "")
+        if pid == role_clean or pname == role_clean or persona_id.lower() == role.lower():
             return role
 
     # 模糊匹配（display name）
