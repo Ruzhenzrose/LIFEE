@@ -378,12 +378,12 @@
             const refreshChatSessions = async () => {
                 if (!user) return;
                 setChatSessionsLoading(true);
-                const { data } = await supabaseClient
-                    .from('chat_sessions')
-                    .select('id, title, updated_at, latest_message_at')
-                    .eq('user_id', user.id)
-                    .order('updated_at', { ascending: false });
-                setChatSessions(data || []);
+                try {
+                    const res = await fetch(`/sessions?userId=${user.id}`, { credentials: 'include' }).then(r => r.json());
+                    const sessions = res?.sessions || [];
+                    setChatSessions(sessions);
+                    setSavedSessions(sessions); // 同步侧栏
+                } catch { setChatSessions([]); }
                 setChatSessionsLoading(false);
             };
 
@@ -489,7 +489,7 @@
                         onBack: () => setView('home'),
                         refreshChatSessions,
                         chatSessionsLoading,
-                        chatSessions,
+                        chatSessions: savedSessions,
                         chatDetailSession,
                         loadSessionDetail,
                         deleteSession,
