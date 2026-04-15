@@ -220,13 +220,12 @@ If info is sufficient, just output: PASS"""
         # 1. 添加用户消息到会话
         self.session.add_user_message(user_input, media=media)
 
-        # 1.5 追问检查：信息不够时先追问，暂停角色发言
-        followup = await self.check_clarification(user_input)
-        if followup:
-            # 用第一个角色身份发出追问（更自然）
-            self.session.add_assistant_message(followup, name="moderator")
-            yield (self.participants[0], followup, False)
-            return  # 追问后不继续辩论，等用户回复
+        # 1.5 追问检查（暂未完成前端交互，先跳过）
+        # TODO: 新 UI 实现追问选项按钮后启用
+        # followup = await self.check_clarification(user_input)
+        # if followup:
+        #     yield (self.participants[0], followup, False)
+        #     return
 
         # 获取所有参与者信息（用于构建上下文）
         all_participants_info = [p.info for p in self.participants]
