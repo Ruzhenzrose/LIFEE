@@ -908,10 +908,10 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             # 扣 credits + 存档
             seq = 0
             chat_user_id = req.userId or None
-            question_text = req.userInput or req.situation or ""
-            if question_text and chat_user_id:
+            user_text = (req.userInput or "").strip()
+            if user_text and chat_user_id:
                 seq += 1
-                await _save_message(sid, chat_user_id, "user", question_text, seq=seq)
+                await _save_message(sid, chat_user_id, "user", user_text, seq=seq)
             for msg in messages:
                 if msg.get("personaId") not in ("system", "moderator") and msg.get("text", "").strip():
                     await _deduct(uid)
@@ -975,12 +975,13 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
           except Exception:
               pass
 
-      # 存用户消息 + 日志
-      if question:
-          await _log_conversation(uid, "user", "", question)
+      # 存用户消息 + 日志（仅用户实际输入，不存默认 situation）
+      user_text = (req.userInput or "").strip()
+      if user_text:
+          await _log_conversation(uid, "user", "", user_text)
           if chat_user_id:
               seq += 1
-              await _save_message(session_id, chat_user_id, "user", question, seq=seq)
+              await _save_message(session_id, chat_user_id, "user", user_text, seq=seq)
 
       _turns = max_turns or len(all_participants)
       async for participant, chunk, is_skip in moderator.run(question, max_turns=_turns):
