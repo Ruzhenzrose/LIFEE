@@ -349,17 +349,12 @@
                     setView('home');
                     return;
                 }
-                const { data } = await supabaseClient.from('chat_sessions').insert({
-                    user_id: user.id,
-                    title: 'New Chat'
-                }).select('id').single();
-                setSessionId(data?.id || null);
+                setSessionId(null);
                 setSessionMessages([]);
                 setSessionSummaries([]);
                 setContext({ situation: '', landingPeriods: [] });
                 setSelectedIds([]);
                 setView('home');
-                await refreshChatSessions();
             };
 
             const toggleSelect = (e, p) => { e.stopPropagation(); setSelectedIds(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]); };
