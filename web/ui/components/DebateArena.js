@@ -613,25 +613,19 @@ const DebateArena = ({
                         onClick={async () => {
                             setSummaryLoading(true);
                             setSummaryData({});
-                            setShowCanvas(true);
                             try {
                                 const r = await fetch('/summarize', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     credentials: 'include',
-                                    body: JSON.stringify({
-                                        messages: history
-                                            .filter(m => m.personaId !== 'user' && m.personaId !== 'system')
-                                            .slice(-20)
-                                            .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 500) })),
-                                        language: language || 'Chinese',
-                                    }),
+                                    body: JSON.stringify({ messages: history, language: language || 'Chinese' }),
                                 });
                                 const res = await r.json();
                                 if (res?.error) {
                                     setSummaryData({ _error: res.error });
                                 } else if (res?.summaries && Object.keys(res.summaries).length > 0) {
                                     setSummaryData(res.summaries);
+                                    setShowCanvas(true);
                                 } else {
                                     setSummaryData({ _error: 'No summary returned' });
                                 }
