@@ -694,10 +694,13 @@ Reply in JSON format: {{"persona_id": "1-2 sentence summary", ...}}"""
     try:
         provider = _get_provider()
         from lifee.providers.base import Message, MessageRole
-        response = await provider.chat(
-            messages=[Message(role=MessageRole.USER, content=prompt)],
-            max_tokens=500,
-            temperature=0.3,
+        response = await asyncio.wait_for(
+            provider.chat(
+                messages=[Message(role=MessageRole.USER, content=prompt)],
+                max_tokens=500,
+                temperature=0.3,
+            ),
+            timeout=30,
         )
         import json as _json
         text = response.content.strip()
@@ -706,7 +709,11 @@ Reply in JSON format: {{"persona_id": "1-2 sentence summary", ...}}"""
             text = text.split('```')[1].replace('json', '', 1).strip()
         summaries = _json.loads(text)
         return {"summaries": summaries}
+    except asyncio.TimeoutError:
+        return {"summaries": {}, "error": "Summary timed out"}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"summaries": {}, "error": str(e)}
 
 
