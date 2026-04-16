@@ -1012,7 +1012,7 @@ async def _handle_decision(req: DecisionRequest, request: Request):
 
         if stream:
             resp = StreamingResponse(
-                _stream_sse(moderator, participants, question, mod_module, original_delay, sid, provider, session, uid, req.userId, min(req.maxSpeakers, len(all_participants)) if req.maxSpeakers > 0 else 0),
+                _stream_sse(moderator, participants, question, mod_module, original_delay, sid, provider, session, uid, req.userId, min(req.maxSpeakers, len(all_participants)) if req.maxSpeakers > 0 else 0, user_input=req.userInput or ""),
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache",
@@ -1094,7 +1094,7 @@ def _find_persona_id(participant, participants_map):
     return "unknown"
 
 
-async def _stream_sse(moderator, participants, question, mod_module=None, original_delay=None, session_id="", provider=None, session=None, uid="anonymous", chat_user_id="", max_turns=0):
+async def _stream_sse(moderator, participants, question, mod_module=None, original_delay=None, session_id="", provider=None, session=None, uid="anonymous", chat_user_id="", max_turns=0, user_input=""):
     """生成 SSE 事件流（逐 chunk 实时推送）"""
     all_participants = [p for _, p in participants]
     current_pid = ""
@@ -1122,7 +1122,7 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
               pass
 
       # 存用户消息 + 日志（仅用户实际输入，不存默认 situation）
-      user_text = (req.userInput or "").strip()
+      user_text = (user_input or "").strip()
       if user_text:
           await _log_conversation(uid, "user", "", user_text)
           if chat_user_id:
