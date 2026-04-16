@@ -52,29 +52,13 @@ const DebateArena = ({
 
     // 用户档案自动提取
     const sessionIdRef = useRef(sessionId);
-    const historyRef = useRef(history);
-    const lastExtractAtRef = useRef(initialMessages.filter(m => m.personaId === 'user').length);
     useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
-    useEffect(() => { historyRef.current = history; }, [history]);
-
-    // 从 Supabase 加载上次提取时的用户消息数
-    useEffect(() => {
-        if (!parentSessionId || !user?.id) return;
-        supabaseClient.from('chat_sessions').select('last_extract_msg_count').eq('id', parentSessionId).maybeSingle()
-            .then(({ data }) => {
-                if (data?.last_extract_msg_count > 0) lastExtractAtRef.current = data.last_extract_msg_count;
-            }).catch(() => {});
-    }, [parentSessionId, user?.id]);
 
     const [extractStatus, setExtractStatus] = useState(''); // '' | 'extracting' | 'done'
     const extractTimerRef = useRef(null);
 
-    const fireExtractMemory = (sid, msgs) => {
+    const fireExtractMemory = (sid) => {
         if (!user?.id || !sid) return;
-        const userMsgCount = (msgs || historyRef.current).filter(m => m.personaId === 'user').length;
-        if (userMsgCount - lastExtractAtRef.current < 2) return;
-        lastExtractAtRef.current = userMsgCount;
-        setExtractStatus('extracting');
         supabaseClient.from('profiles').select('user_memory').eq('id', user.id).maybeSingle()
             .then(({ data }) => {
                 window.fetch('/extract-memory', {
@@ -83,13 +67,13 @@ const DebateArena = ({
                     credentials: 'include',
                     body: JSON.stringify({ sessionId: sid, userId: user.id, currentMemory: data?.user_memory || '' }),
                 }).then(r => r.json()).then(res => {
-                    setExtractStatus(res?.updated ? 'done' : '');
                     if (res?.updated) {
+                        setExtractStatus('done');
                         clearTimeout(extractTimerRef.current);
                         extractTimerRef.current = setTimeout(() => setExtractStatus(''), 3000);
                     }
-                }).catch(() => setExtractStatus(''));
-            }).catch(() => setExtractStatus(''));
+                }).catch(() => {});
+            }).catch(() => {});
     };
 
 
@@ -329,12 +313,8 @@ const DebateArena = ({
             setOptions([]);
         } finally {
             setIsDebating(false);
-            // 每 5 条用户消息自动提取档案（fire-and-forget）
-            const latestHistory = historyRef.current;
-            const userCount = latestHistory.filter(m => m.personaId === 'user').length;
-            if (userCount > 0 && userCount % 5 === 0 && userCount > lastExtractAtRef.current) {
-                fireExtractMemory(sessionIdRef.current, latestHistory);
-            }
+            // 每轮结束后尝试提取档案（后端判断是否够 5 条新用户消息）
+            fireExtractMemory(sessionIdRef.current);
         }
     };
 
@@ -826,12 +806,10 @@ const DebateArena = ({
                                     />
                                     {inputValue.length > 400 && <div className="absolute bottom-1 right-5 text-[10px] text-neutral-300">{inputValue.length}/1000</div>}
                                 </div>
-                                {extractStatus && (
+                                {extractStatus === 'done' && (
                                     <div className="flex items-center gap-1.5 px-2 py-1 text-[10px] opacity-50" style={{ transition: 'opacity 0.3s' }}>
-                                        <span className={extractStatus === 'extracting' ? 'animate-spin' : ''} style={{ display: 'inline-flex' }}>
-                                            <Icon name={extractStatus === 'done' ? 'Check' : 'BookUser'} size={12} />
-                                        </span>
-                                        {extractStatus === 'extracting' ? 'Updating profile...' : 'Profile updated'}
+                                        <Icon name="BookUser" size={12} />
+                                        Profile updated
                                     </div>
                                 )}
                             </div>

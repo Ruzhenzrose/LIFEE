@@ -762,14 +762,29 @@ async def extract_memory(req: ExtractMemoryRequest):
     if not req.userId:
         return {"updated": False, "error": "Not logged in"}
 
-    # 加载对话消息
-    msgs = []
+    # 查上次提取到的 seq
+    last_seq = 0
     if req.sessionId and _SUPABASE_URL:
         try:
             import httpx
             async with httpx.AsyncClient() as c:
                 r = await c.get(
-                    f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
+                    f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{req.sessionId}&select=last_extract_msg_count",
+                    headers=_SB_HEADERS,
+                )
+                rows = r.json() or []
+                if rows:
+                    last_seq = rows[0].get("last_extract_msg_count", 0) or 0
+        except Exception:
+            pass
+
+    # 只加载上次提取之后的新消息
+    msgs = []
+    if req.sessionId and _SUPABASE_URL:
+        try:
+            async with httpx.AsyncClient() as c:
+                r = await c.get(
+                    f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&seq=gt.{last_seq}&select=role,content,persona_id,seq&order=seq.asc",
                     headers=_SB_HEADERS,
                 )
                 msgs = r.json() or []
@@ -777,6 +792,11 @@ async def extract_memory(req: ExtractMemoryRequest):
             pass
 
     if not msgs:
+        return {"updated": False}
+
+    # 新用户消息不够 5 条，跳过
+    new_user_msgs = [m for m in msgs if m["role"] == "user"]
+    if len(new_user_msgs) < 5:
         return {"updated": False}
 
     # 构建对话文本（用户消息完整，AI 消息截断）
@@ -822,20 +842,15 @@ async def extract_memory(req: ExtractMemoryRequest):
             except Exception:
                 pass
 
-        # 更新 session 的提取计数
-        if req.sessionId and _SUPABASE_URL:
+        # 更新 session 的最后提取 seq
+        if req.sessionId and _SUPABASE_URL and msgs:
             try:
-                # 统计用户消息数
+                max_seq = max(m.get("seq", 0) for m in msgs)
                 async with httpx.AsyncClient() as c:
-                    r = await c.get(
-                        f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&role=eq.user&select=seq",
-                        headers=_SB_HEADERS,
-                    )
-                    user_msg_count = len(r.json() or [])
                     await c.patch(
                         f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{req.sessionId}",
                         headers=_SB_HEADERS,
-                        json={"last_extract_msg_count": user_msg_count},
+                        json={"last_extract_msg_count": max_seq},
                     )
             except Exception:
                 pass
