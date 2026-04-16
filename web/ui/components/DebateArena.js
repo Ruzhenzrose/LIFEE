@@ -246,7 +246,7 @@ const DebateArena = ({
                 personas: debatePersonas.map(p => ({ id: p.id, name: p.name })),
                 sessionId: sessionId,
                 userId: user?.id || "",
-                language: language || detectLang(cleanInput),
+                language: language || detectLang(cleanInput || situation),
                 moderator: followUpMode,
                 webSearch: webSearchMode,
                 maxSpeakers: maxSpeakers
