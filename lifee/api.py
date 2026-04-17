@@ -1180,6 +1180,10 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
 
 
 # 静态文件：服务前端页面
+_web_void_dir = Path(__file__).parent.parent / "web" / "void"
+if _web_void_dir.exists():
+    app.mount("/void", StaticFiles(directory=str(_web_void_dir), html=True), name="void-frontend")
+
 _web_ui_dir = Path(__file__).parent.parent / "web" / "ui"
 if _web_ui_dir.exists():
     app.mount("/", StaticFiles(directory=str(_web_ui_dir), html=True), name="frontend")
