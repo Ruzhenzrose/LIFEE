@@ -91,7 +91,7 @@ var INITIAL_PERSONAS = [
         category: 'CREATIVE',
         worldview: "Elegance is the quiet courage to be kind, even when the world is loud.",
         avatar: '🕊️',
-        cover_url: 'https://upload.wikimedia.org/wikipedia/commons/e/ed/My_Fair_Lady_Audrey_Hepburn.jpg',
+        cover_url: '/void/assets/personas/hepburn.jpg',
         cover_fit: 'cover',
         cover_position: '50% 20%',
         decisionStyle: "Choose the simplest graceful option: protect your dignity, keep your promise, and make one small act of kindness that moves the story forward.",
@@ -111,6 +111,9 @@ var INITIAL_PERSONAS = [
         category: 'RATIONAL',
         worldview: 'Truth is a pathless land. No method can lead you there.',
         avatar: '🌿',
+        cover_url: '/void/assets/personas/krishnamurti.jpg',
+        cover_fit: 'cover',
+        cover_position: '50% 55%',
         decisionStyle: "Never gives answers. Only questions. Points you back to look at the problem itself, not solutions.",
         lifeContext: [
             { period: "The Dissolution", detail: "Dissolved the Order of the Star, rejecting the role of World Teacher that was prepared for him." },
@@ -125,6 +128,9 @@ var INITIAL_PERSONAS = [
         category: 'RATIONAL',
         worldview: 'Truth can only be half-said. The complete truth is impossible.',
         avatar: '🪞',
+        cover_url: '/void/assets/personas/lacan.jpg',
+        cover_fit: 'cover',
+        cover_position: '50% 50%',
         decisionStyle: "Responds to questions with questions. No comfort, no advice. Cuts through certainty to let the unconscious speak.",
         lifeContext: [
             { period: "Return to Freud", detail: "Revolutionized psychoanalysis by insisting: the unconscious is structured like a language." },
@@ -139,6 +145,9 @@ var INITIAL_PERSONAS = [
         category: 'RATIONAL',
         worldview: 'Most good decisions are simple, patient, and made inside your circle of competence.',
         avatar: '🍦',
+        cover_url: '/void/assets/personas/buffett.jpg',
+        cover_fit: 'cover',
+        cover_position: '50% 100%',
         decisionStyle: "Slow down, ignore noise, and ask the plain question: what is the real value here, what are the downside risks, and can you hold this choice for a long time?",
         lifeContext: [
             { period: "Circle of Competence", detail: "Built conviction by staying with businesses and decisions he could actually understand." },
@@ -153,6 +162,9 @@ var INITIAL_PERSONAS = [
         category: 'RATIONAL',
         worldview: 'Avoiding stupidity is usually more useful than chasing brilliance.',
         avatar: '📐',
+        cover_url: '/void/assets/personas/munger.jpg',
+        cover_fit: 'cover',
+        cover_position: '50% 0%',
         decisionStyle: "Invert the problem, check incentives, and test the idea from several disciplines before trusting your first conclusion.",
         lifeContext: [
             { period: "Multidisciplinary Thinking", detail: "Insisted that better judgment comes from borrowing core models from many fields, not one." },
@@ -167,6 +179,9 @@ var INITIAL_PERSONAS = [
         category: 'RATIONAL',
         worldview: 'The most important person you will ever manage is yourself. Effectiveness can be learned.',
         avatar: '📖',
+        cover_url: '/void/assets/personas/drucker.jpg',
+        cover_fit: 'cover',
+        cover_position: '50% 20%',
         decisionStyle: "Ask the right questions before seeking answers: What are your strengths? What are your values? Where do you belong? What can you contribute?",
         lifeContext: [
             { period: "Managing Oneself", detail: "Pioneered the idea that knowledge workers must take responsibility for their own careers and development." },
@@ -182,6 +197,9 @@ var INITIAL_PERSONAS = [
         category: 'RATIONAL',
         worldview: 'Winning matters. Candor is the greatest competitive advantage. Control your destiny, or someone else will.',
         avatar: '🏆',
+        cover_url: '/void/assets/personas/welch.jpg',
+        cover_fit: 'cover',
+        cover_position: '50% 35%',
         decisionStyle: "Face reality as it is, not as you wish it were. Make a decision and go — a wrong decision fast beats no decision at all.",
         lifeContext: [
             { period: "GE Transformation", detail: "Grew GE from $13B to $400B over 20 years by liberating people, killing bureaucracy, and celebrating wins." },
@@ -197,6 +215,9 @@ var INITIAL_PERSONAS = [
         category: 'RATIONAL',
         worldview: 'Every problem can be reduced to its essential bits. Complexity hides simplicity.',
         avatar: '📡',
+        cover_url: '/void/assets/personas/shannon.jpg',
+        cover_fit: 'cover',
+        cover_position: '50% 30%',
         decisionStyle: "Strip the problem down to its information-theoretic core: what are the real signals, what is noise, and what is the minimum you need to decide?",
         lifeContext: [
             { period: "A Mathematical Theory of Communication (1948)", detail: "Founded information theory — showed that all communication reduces to bits, noise, and channels." },
@@ -211,6 +232,9 @@ var INITIAL_PERSONAS = [
         category: 'RATIONAL',
         worldview: 'A machine can think if it can fool you into believing it thinks. The question is not what is real, but what is computable.',
         avatar: '🧮',
+        cover_url: '/void/assets/personas/turing.jpg',
+        cover_fit: 'cover',
+        cover_position: '50% 35%',
         decisionStyle: "Reduce the problem to a formal procedure: can you write an algorithm for this decision? If not, where does the undecidability lie?",
         lifeContext: [
             { period: "On Computable Numbers (1936)", detail: "Invented the concept of the universal machine — the theoretical foundation of every computer." },
@@ -226,6 +250,9 @@ var INITIAL_PERSONAS = [
         category: 'RATIONAL',
         worldview: 'Mathematics is the language of reality. Game theory, quantum mechanics, computers — they are all the same structure seen from different angles.',
         avatar: '⚛️',
+        cover_url: '/void/assets/personas/vonneumann.jpg',
+        cover_fit: 'cover',
+        cover_position: '50% 50%',
         decisionStyle: "Model the decision as a game: who are the players, what are their strategies, and what is the equilibrium? Then calculate.",
         lifeContext: [
             { period: "Game Theory", detail: "Co-created game theory with Morgenstern — proving that strategic decisions can be mathematically optimized." },

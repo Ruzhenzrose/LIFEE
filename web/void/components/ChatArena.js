@@ -65,9 +65,23 @@
         const summaryAtCountRef = useRef(0);
         const autoStartedRef   = useRef(false);
         const moreMenuRef      = useRef(null);
+        const optionsCacheRef  = useRef({});  // sessionId → options[]
 
         useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
-        useEffect(() => { setSessionId(parentSessionId || ''); }, [parentSessionId]);
+
+        // Persist options per-session as they change
+        useEffect(() => {
+            if (sessionId) optionsCacheRef.current[sessionId] = options;
+        }, [options, sessionId]);
+
+        // Sync with parent state changes (New Session / restore / navigate away)
+        useEffect(() => {
+            setSessionId(parentSessionId || '');
+            setHistory(initialMessages || []);
+            setOptions(optionsCacheRef.current[parentSessionId] || []);
+            setSummaryData({});
+            autoStartedRef.current = false;  // allow auto-start again for new context
+        }, [parentSessionId]);
 
         // ── Close more menu on outside click ─────────────────────────────────
         useEffect(() => {
@@ -621,9 +635,10 @@
                 <!-- ── Messages scroll area ── -->
                 <div
                     ref=${scrollRef}
-                    class="flex-1 overflow-y-auto px-6 py-8 space-y-8 no-scrollbar"
+                    class="flex-1 overflow-y-auto no-scrollbar"
                     style=${{ scrollbarWidth: 'none' }}
                 >
+                  <div class="max-w-3xl mx-auto w-full px-6 py-8 space-y-8">
                     ${history.length === 0 && !isDebating ? html`
                         <div class="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-30 select-none">
                             <div class="text-4xl">✦</div>
@@ -646,11 +661,12 @@
                             </div>
                         </div>
                     ` : null}
+                  </div>
                 </div>
 
                 <!-- ── Footer input area ── -->
                 <footer class="p-6 bg-surface-dim/40 backdrop-blur-2xl border-t border-white/5 shrink-0">
-                    <div class="max-w-4xl mx-auto space-y-3">
+                    <div class="max-w-3xl mx-auto space-y-3">
 
                         <!-- Options pills -->
                         ${options.length > 0 && !isDebating ? html`

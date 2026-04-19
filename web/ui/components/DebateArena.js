@@ -159,7 +159,13 @@ const DebateArena = ({
 
     useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [history]);
 
-    useEffect(() => { setSessionId(parentSessionId || ""); }, [parentSessionId]);
+    useEffect(() => {
+        setSessionId(parentSessionId || "");
+        setHistory(initialMessages || []);
+        setOptions([]);
+        setSummaryData({});
+        autoStartedRef.current = false;
+    }, [parentSessionId]);
 
     useEffect(() => {
         const url = user?.id ? `/credits?userId=${user.id}` : '/credits';

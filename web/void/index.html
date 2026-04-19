@@ -167,18 +167,15 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* ── Shimmer glow text ── */
-        .shimmer-glow {
-            background: linear-gradient(90deg, #e8a84c 0%, #c47a6c 30%, #8a9a6c 60%, #c47a6c 80%, #e8a84c 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer 3s linear infinite;
+        /* ── Wordmark (solid, breathing opacity) ── */
+        .wordmark {
+            color: #e8a84c;
+            letter-spacing: -0.02em;
+            animation: wordmark-breath 4s ease-in-out infinite;
         }
-        @keyframes shimmer {
-            from { background-position: 200% center; }
-            to   { background-position: -200% center; }
+        @keyframes wordmark-breath {
+            0%, 100% { opacity: 0.92; }
+            50%      { opacity: 1; }
         }
 
         /* ── Gradient button ── */
@@ -338,18 +335,27 @@
         'use strict';
 
         const html = htm.bind(React.createElement);
-        const { useState, useEffect, useRef, useCallback } = React;
+        const { useState, useEffect, useLayoutEffect, useRef, useCallback } = React;
 
         // ── Icon helper (Lucide via CDN) ──
         function Icon({ name, size = 18, className = '', style }) {
+            // Span is React-owned; <i>→<svg> is managed manually and cleared in cleanup
+            // so Lucide's node replacement never leaves stale children for React to trip on.
             const ref = useRef(null);
-            useEffect(() => {
-                if (!ref.current) return;
+            useLayoutEffect(() => {
+                const el = ref.current;
+                if (!el) return undefined;
+                while (el.firstChild) el.removeChild(el.firstChild);
+                const inner = document.createElement('i');
                 const kebab = name.replace(/([A-Z])/g, (m, c, i) => (i > 0 ? '-' : '') + c.toLowerCase());
-                ref.current.setAttribute('data-lucide', kebab);
-                if (window.lucide?.createIcons) window.lucide.createIcons({ nodes: [ref.current] });
+                inner.setAttribute('data-lucide', kebab);
+                el.appendChild(inner);
+                try { window.lucide?.createIcons?.({ nodes: [inner] }); } catch (_) {}
+                return () => {
+                    try { while (el.firstChild) el.removeChild(el.firstChild); } catch (_) {}
+                };
             }, [name]);
-            return html`<i ref=${ref} class=${'inline-block ' + className} style=${{ width: size, height: size, ...(style || {}) }} />`;
+            return html`<span ref=${ref} class=${'inline-flex items-center justify-center shrink-0 ' + className} style=${{ width: size, height: size, lineHeight: 0, ...(style || {}) }} aria-hidden="true" />`;
         }
 
         // ── Material Symbol helper ──
@@ -547,10 +553,24 @@
         // ══════════════════════════════════════════════
         function Sidebar({
             view, setView, user, isGuest, onNewSession, chatSessions,
-            setChatSessions, setSessionMessages, setSessionId, setSelectedIds,
+            setChatSessions, setSessionMessages, sessionId, setSessionId, setSelectedIds,
             personas, onLogin, onSignOut, userAvatar,
+            sidebarOpen, setSidebarOpen,
         }) {
             const [userMenuOpen, setUserMenuOpen] = useState(false);
+            const userCardRef = useRef(null);
+
+            // Close user menu on outside click
+            useEffect(() => {
+                if (!userMenuOpen) return;
+                const handler = (e) => {
+                    if (userCardRef.current && !userCardRef.current.contains(e.target)) {
+                        setUserMenuOpen(false);
+                    }
+                };
+                document.addEventListener('mousedown', handler);
+                return () => document.removeEventListener('mousedown', handler);
+            }, [userMenuOpen]);
 
             const restoreSession = async (s) => {
                 try {
@@ -598,40 +618,110 @@
             const userEmail = user?.email || (isGuest ? 'guest@lifee.app' : 'user@example.com');
             const userCredits = '—';
 
+            // Collapsed rail (Claude-style): icons only
+            if (!sidebarOpen) {
+                return html`
+                    <aside class="hidden md:flex flex-col h-full py-5 bg-surface-container-low/60 backdrop-blur-2xl border-r border-white/5 w-14 shrink-0 items-center gap-2">
+                        <!-- Toggle (expand) -->
+                        <button
+                            onClick=${() => setSidebarOpen(true)}
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover:text-on-surface hover:bg-white/5 transition-colors"
+                            title="Open sidebar"
+                        ><${Icon} name="Sidebar" size=${16} /></button>
+
+                        <!-- New session -->
+                        <button
+                            onClick=${onNewSession}
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover:text-primary hover:bg-white/5 transition-colors mt-2"
+                            title="New session"
+                        ><${Icon} name="Plus" size=${18} /></button>
+
+                        <!-- Conversations (expands sidebar) -->
+                        <button
+                            onClick=${() => setSidebarOpen(true)}
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover:text-on-surface hover:bg-white/5 transition-colors"
+                            title="Conversations"
+                        ><${Icon} name="MessageSquare" size=${16} /></button>
+
+                        <!-- Settings (bottom) -->
+                        <button
+                            onClick=${() => setView('settings')}
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover:text-on-surface hover:bg-white/5 transition-colors mt-auto"
+                            title="Settings"
+                        ><${Icon} name="Settings" size=${16} /></button>
+
+                        <!-- User avatar -->
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-tertiary flex items-center justify-center text-on-primary font-bold text-sm overflow-hidden" title=${displayName}>
+                            ${userAvatar
+                                ? html`<img src=${userAvatar} class="w-full h-full object-cover" />`
+                                : userInitial
+                            }
+                        </div>
+                    </aside>
+                `;
+            }
+
             return html`
                 <aside
-                    class="hidden md:flex flex-col h-full py-10 px-8 bg-surface-container-low/60 backdrop-blur-2xl w-80 border-r border-white/5 overflow-y-auto"
+                    class="hidden md:flex flex-col h-full pt-10 px-8 pb-10 bg-surface-container-low/60 backdrop-blur-2xl border-r border-white/5 overflow-y-auto shrink-0 w-80"
                     id="void-sidebar"
                 >
-                    <!-- Logo -->
-                    <div class="mb-12">
-                        <h1 class="text-3xl font-headline font-bold tracking-tight text-white">LIFEE</h1>
+                    <!-- Masthead block -->
+                    <div class="pb-4 border-b border-on-surface/10 mb-8">
+                        <div class="flex items-start justify-between gap-3">
+                            <h1 class="text-3xl font-headline font-bold tracking-tight text-white leading-none">LIFEE</h1>
+                            <button
+                                onClick=${() => setSidebarOpen(false)}
+                                class="w-9 h-7 rounded flex items-center justify-center text-on-surface-variant/50 hover:text-on-surface hover:bg-white/5 transition-colors shrink-0 -mt-0.5"
+                                title="Collapse sidebar"
+                            ><${Icon} name="Sidebar" size=${16} style=${{ transform: 'scaleX(1.35)' }} /></button>
+                        </div>
                         <p class="text-[10px] font-label uppercase tracking-[0.3em] text-on-surface-variant/60 mt-2">Your Life Coach & Friend</p>
                     </div>
 
                     <!-- New Session button -->
                     <button
                         onClick=${onNewSession}
-                        class="mb-10 py-4 px-6 rounded-2xl btn-gradient flex items-center justify-center gap-3 transition-transform active:scale-[0.98] shadow-lg"
+                        class="mb-8 py-4 px-6 rounded-2xl btn-gradient flex items-center justify-center gap-3 transition-transform active:scale-[0.98] shadow-lg"
                     >
                         <span class="material-symbols-outlined text-xl">add_notes</span>
                         New Session
                     </button>
 
-                    <!-- Conversations nav -->
-                    <nav class="flex-1 space-y-4">
-                        <div class="text-white flex items-center gap-4 p-4 rounded-xl cursor-pointer bg-primary/8 border-t border-primary/30">
-                            <span class="material-symbols-outlined text-primary">chat_bubble</span>
-                            <span class="font-label font-semibold tracking-wide text-sm">Conversations</span>
+                    <!-- Nav -->
+                    <nav class="flex-1 space-y-6">
+                        <!-- Section: Navigate -->
+                        <div class="space-y-0.5">
+                            ${[
+                                { label: 'Home', view: 'home', icon: 'home' },
+                                { label: 'Community', view: 'community', icon: 'public' },
+                            ].map(item => html`
+                                <button
+                                    key=${item.view}
+                                    onClick=${() => setView(item.view)}
+                                    class=${`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left
+                                        ${view === item.view ? 'bg-primary/10 text-primary' : 'text-on-surface-variant/80 hover:text-white hover:bg-white/5'}`}
+                                >
+                                    <span class="material-symbols-outlined" style=${{ fontSize: '18px' }}>${item.icon}</span>
+                                    <span class="font-label font-medium text-sm tracking-wide">${item.label}</span>
+                                </button>
+                            `)}
                         </div>
 
-                        <!-- Session list -->
-                        <div class="ml-4 space-y-1">
-                            ${(chatSessions || []).length === 0 && html`
-                                <div class="px-3 py-2 text-xs text-on-surface-variant/40 italic">No conversations yet</div>
-                            `}
+                        <!-- Section: Conversations -->
+                        <div>
+                            <div class="flex items-center gap-3 px-3 py-1.5 text-on-surface-variant/40">
+                                <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>chat_bubble_outline</span>
+                                <span class="text-[10px] font-label uppercase tracking-[0.25em]">Conversations</span>
+                            </div>
+
+                            <!-- Session list -->
+                            <div class="space-y-0.5 mt-1">
+                                ${(chatSessions || []).length === 0 && html`
+                                    <div class="px-3 py-2 text-xs text-on-surface-variant/40 italic">No conversations yet</div>
+                                `}
                             ${(chatSessions || []).slice(0, 30).map((s, idx) => {
-                                const isActive = idx === 0;
+                                const isActive = s.id === sessionId;
                                 return html`
                                     <div
                                         key=${s.id}
@@ -664,11 +754,12 @@
                                     </div>
                                 `;
                             })}
+                            </div>
                         </div>
                     </nav>
 
                     <!-- Bottom user card -->
-                    <div class="mt-auto bg-surface-container rounded-lg border border-white/8 overflow-hidden">
+                    <div ref=${userCardRef} class=${`mt-auto rounded-lg overflow-hidden transition-colors ${userMenuOpen ? 'bg-surface-container' : 'hover:bg-surface-container/50'}`}>
                         <!-- Collapsible drawer -->
                         <div
                             id="void-user-menu"
@@ -785,27 +876,60 @@
             // Preview: hovered/tapped persona in the right panel
             const [previewId, setPreviewId] = useState(null);
 
-            // Domain carousel: single-step wheel navigation (manual, non-passive)
+            // Preload persona cover images in parallel so first click is instant
+            useEffect(() => {
+                personas.forEach(p => {
+                    if (!p.cover_url) return;
+                    const img = new Image();
+                    img.src = p.cover_url;
+                });
+            }, [personas.length]);
+
+            // Domain carousel
+            const activeDomains = DOMAIN_ORDER.filter(d => grouped[d].length > 0);
+            const SECTION_H = 200;  // each section px
             const carouselRef = useRef(null);
+            const scrollLockRef = useRef(false);  // true during programmatic scroll
+            const [activeDomainIdx, setActiveDomainIdx] = useState(0);
+
+            const goToDomain = (idx) => {
+                const el = carouselRef.current;
+                if (!el) return;
+                const clamped = Math.max(0, Math.min(activeDomains.length - 1, idx));
+                scrollLockRef.current = true;
+                el.scrollTo({ top: clamped * SECTION_H, behavior: 'smooth' });
+                setActiveDomainIdx(clamped);
+                setTimeout(() => { scrollLockRef.current = false; }, 500);
+            };
+
             useEffect(() => {
                 const el = carouselRef.current;
                 if (!el) return;
-                let lock = false;
-                const domainsCount = DOMAIN_ORDER.filter(d => grouped[d].length > 0).length;
-                const handler = (e) => {
+                let wheelLock = false;
+                const wheelHandler = (e) => {
                     e.preventDefault();
-                    if (lock) return;
-                    const sectionH = el.clientHeight;
+                    if (wheelLock) return;
                     const dir = e.deltaY > 0 ? 1 : -1;
-                    const currentIdx = Math.round(el.scrollTop / sectionH);
-                    const nextIdx = Math.max(0, Math.min(domainsCount - 1, currentIdx + dir));
+                    const currentIdx = Math.round(el.scrollTop / SECTION_H);
+                    const nextIdx = Math.max(0, Math.min(activeDomains.length - 1, currentIdx + dir));
                     if (nextIdx === currentIdx) return;
-                    lock = true;
-                    el.scrollTo({ top: nextIdx * sectionH, behavior: 'smooth' });
-                    setTimeout(() => { lock = false; }, 500);
+                    wheelLock = true;
+                    scrollLockRef.current = true;
+                    el.scrollTo({ top: nextIdx * SECTION_H, behavior: 'smooth' });
+                    setActiveDomainIdx(nextIdx);
+                    setTimeout(() => { wheelLock = false; scrollLockRef.current = false; }, 500);
                 };
-                el.addEventListener('wheel', handler, { passive: false });
-                return () => el.removeEventListener('wheel', handler);
+                const scrollHandler = () => {
+                    if (scrollLockRef.current) return;  // ignore during programmatic scroll
+                    const idx = Math.round(el.scrollTop / SECTION_H);
+                    setActiveDomainIdx(prev => prev === idx ? prev : idx);
+                };
+                el.addEventListener('wheel', wheelHandler, { passive: false });
+                el.addEventListener('scroll', scrollHandler);
+                return () => {
+                    el.removeEventListener('wheel', wheelHandler);
+                    el.removeEventListener('scroll', scrollHandler);
+                };
             }, [personas.length]);
 
             // Featured = preview > most recent selected > default (Audrey)
@@ -823,7 +947,7 @@
             return html`
                 <div class="animate-in flex flex-col w-full h-full overflow-y-auto no-scrollbar">
                     <!-- Masthead -->
-                    <div class="w-full max-w-6xl mx-auto px-8 pt-8 pb-4">
+                    <div class="w-full max-w-6xl mx-auto px-8 pt-10 pb-4">
                         <div class="flex items-baseline justify-between border-b border-on-surface/10 pb-3">
                             <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] font-bold">Vol. I</p>
                             <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em]">${dateStr}</p>
@@ -888,9 +1012,11 @@
                                                 ? 'ring-2 ring-primary'
                                                 : 'ring-1 ring-outline-variant/20 hover:ring-primary/40'}`}
                                         style=${featured.cover_url ? {
+                                            backgroundColor: '#141210',
                                             backgroundImage: `linear-gradient(to bottom, rgba(18,17,15,0.2), rgba(18,17,15,0.95)), url(${featured.cover_url})`,
-                                            backgroundSize: 'cover',
-                                            backgroundPosition: featured.cover_position || 'center',
+                                            backgroundSize: '100% 100%, contain',
+                                            backgroundRepeat: 'no-repeat, no-repeat',
+                                            backgroundPosition: 'center, ' + (featured.cover_position || 'center'),
                                         } : {}}
                                     >
                                         <div class=${featured.cover_url ? '' : 'bg-surface-container-high h-full'}>
@@ -920,12 +1046,12 @@
                             <p class="text-[10px] text-on-surface-variant/40">${personas.length} voices</p>
                         </div>
 
-                        <!-- Vertical carousel: one domain per snap, scroll down to switch -->
+                        <!-- Vertical carousel (peek removed; bottom tabs provide navigation) -->
                         <div ref=${carouselRef} class="relative h-[200px] overflow-y-auto no-scrollbar" style=${{ scrollbarWidth: 'none' }}>
-                            ${DOMAIN_ORDER.filter(d => grouped[d].length > 0).map((domain, dIdx, arr) => {
+                            ${activeDomains.map((domain, dIdx, arr) => {
                                 const items = grouped[domain];
                                 return html`
-                                    <div key=${domain} class="h-[200px] snap-start snap-always flex flex-col gap-5 pt-2">
+                                    <div key=${domain} class="h-[200px] flex flex-col gap-5 pt-2">
                                         <!-- Domain header -->
                                         <div class="flex items-baseline justify-between">
                                             <div class="flex items-baseline gap-4">
@@ -949,7 +1075,10 @@
                                                         return html`
                                                             <div
                                                                 key=${p.id}
-                                                                onClick=${() => setPreviewId(p.id)}
+                                                                onClick=${() => {
+                                                                    if (previewId === p.id) toggleSelect(p.id);
+                                                                    else setPreviewId(p.id);
+                                                                }}
                                                                 class=${`group shrink-0 snap-start cursor-pointer w-72 py-4 border-t transition-colors
                                                                     ${isSel ? 'border-primary/40' : isPreview ? 'border-primary/30' : 'border-on-surface/10 hover:border-on-surface/30'}`}
                                                             >
@@ -972,6 +1101,23 @@
                                             <div class="pointer-events-none absolute top-0 right-0 w-12 h-full bg-gradient-to-l from-surface to-transparent"></div>
                                         </div>
                                     </div>
+                                `;
+                            })}
+                        </div>
+
+                        <!-- Bottom domain tabs -->
+                        <div class="flex items-center justify-center gap-8 mt-6 pt-4 border-t border-on-surface/10">
+                            ${activeDomains.map((domain, dIdx) => {
+                                const isActive = dIdx === activeDomainIdx;
+                                return html`
+                                    <button
+                                        key=${domain}
+                                        onClick=${() => goToDomain(dIdx)}
+                                        class=${`text-[11px] font-bold uppercase tracking-widest transition-colors
+                                            ${isActive ? 'text-primary' : 'text-on-surface-variant/30 hover:text-on-surface-variant/60'}`}
+                                    >
+                                        <span class="opacity-50 mr-2">0${dIdx + 1}</span>${domain}
+                                    </button>
                                 `;
                             })}
                         </div>
@@ -1233,6 +1379,9 @@
                 try { return window.localStorage.getItem('lifee_user_avatar') || null; } catch (_) { return null; }
             });
             const [sessionId, setSessionId] = useState(null);
+            const [sidebarOpen, setSidebarOpen] = useState(true);
+            const [hasEnteredDebate, setHasEnteredDebate] = useState(false);
+            useEffect(() => { if (view === 'debate') setHasEnteredDebate(true); }, [view]);
             const [sessionMessages, setSessionMessages] = useState([]);
             const [sessionSummaries, setSessionSummaries] = useState([]);
             const [chatSessions, setChatSessions] = useState([]);
@@ -1334,31 +1483,8 @@
                     setChatSessionsLoading(false);
                 })();
 
-                // Load latest session
-                (async () => {
-                    const { data: sessions } = await supabaseClient
-                        .from('chat_sessions')
-                        .select('id, title, updated_at')
-                        .eq('user_id', user.id)
-                        .order('updated_at', { ascending: false })
-                        .limit(1);
-                    const latest = sessions?.[0];
-                    if (!latest) return;
-                    setSessionId(latest.id);
-                    const { data: msgs } = await supabaseClient
-                        .from('chat_messages')
-                        .select('id, role, content, seq, created_at')
-                        .eq('session_id', latest.id)
-                        .order('seq', { ascending: true })
-                        .limit(200);
-                    setSessionMessages((msgs || []).map(m => ({ role: m.role, text: m.content, seq: m.seq })));
-                    const { data: sums } = await supabaseClient
-                        .from('chat_summaries')
-                        .select('summary, start_seq, end_seq, created_at')
-                        .eq('session_id', latest.id)
-                        .order('created_at', { ascending: true });
-                    setSessionSummaries(sums || []);
-                })();
+                // (Removed: auto-load latest session caused race condition
+                //  where a new conversation would be overwritten mid-stream)
             }, [user]);
 
             // Load persona_catalog knowledge
@@ -1454,39 +1580,46 @@
 
             const isAdmin = user?.email === ADMIN_EMAIL;
 
-            // ── Render content for current view ──
+            // ── Persistent ChatArena: mounted once activated, hidden via CSS when view != debate ──
+            const renderChatArena = () => {
+                if (!window.VOID_VIEWS?.debate) return null;
+                return window.VOID_VIEWS.debate({
+                    context,
+                    selectedPersonas: displayPersonas.filter(p => selectedIds.includes(p.id)),
+                    setView,
+                    ensureSession,
+                    persistMessage,
+                    buildContextBlock,
+                    userAvatar,
+                    user,
+                    initialMessages: sessionMessages,
+                    parentSessionId: sessionId,
+                    onSessionCreated: (id) => {
+                        setSessionId(id);
+                        refreshChatSessions();
+                    },
+                });
+            };
+
+            // Back = return to debate if user has an active conversation, else home
+            const goBack = () => setView(hasEnteredDebate && (sessionId || sessionMessages.length > 0) ? 'debate' : 'home');
+
+            // ── Render content for current non-debate view ──
             const renderContent = () => {
-                // Delegate to external component files if available
                 if (view === 'debate') {
-                    if (window.VOID_VIEWS?.debate) {
-                        return window.VOID_VIEWS.debate({
-                            context,
-                            selectedPersonas: displayPersonas.filter(p => selectedIds.includes(p.id)),
-                            setView,
-                            ensureSession,
-                            persistMessage,
-                            buildContextBlock,
-                            userAvatar,
-                            user,
-                            initialMessages: sessionMessages,
-                            parentSessionId: sessionId,
-                            onSessionCreated: (id) => {
-                                setSessionId(id);
-                                refreshChatSessions();
-                            },
-                        });
-                    }
-                    return html`<${PlaceholderView} title="Chat Arena" icon="MessageSquare" onBack=${() => setView('home')} />`;
+                    // Handled by persistent ChatArena above
+                    if (window.VOID_VIEWS?.debate) return null;
+                    return html`<${PlaceholderView} title="Chat Arena" icon="MessageSquare" onBack=${goBack} />`;
                 }
 
                 if (view === 'settings') {
                     if (window.VOID_VIEWS?.settings) return window.VOID_VIEWS.settings({
-                        user, isAdmin, onBack: () => setView('home'),
+                        user, isAdmin, onBack: goBack,
                         onSignOut: handleSignOut, onLogin: () => setAuthOpen(true),
                         userAvatar, onUserAvatarChange: (a) => setUserAvatar(a),
                     });
                     return html`<${SettingsView}
-                        onBack=${() => setView('home')}
+                        onBack=${goBack}
                         user=${user}
                         onSignOut=${handleSignOut}
                         onLogin=${() => setAuthOpen(true)}
@@ -1497,11 +1630,11 @@
 
                 if (view === 'my-chats') {
                     if (window.VOID_VIEWS?.myChats) return window.VOID_VIEWS.myChats({
-                        onBack: () => setView('home'), chatSessions, chatSessionsLoading,
+                        onBack: goBack, chatSessions, chatSessionsLoading,
                         restoreSession, refreshChatSessions,
                     });
                     return html`<${MyChatsView}
-                        onBack=${() => setView('home')}
+                        onBack=${goBack}
                         chatSessions=${chatSessions}
                         chatSessionsLoading=${chatSessionsLoading}
                         restoreSession=${restoreSession}
@@ -1510,11 +1643,11 @@
 
                 if (view === 'my-personas') {
                     if (window.VOID_VIEWS?.myPersonas) return window.VOID_VIEWS.myPersonas({
-                        onBack: () => setView('home'), personas: displayPersonas,
+                        onBack: goBack, personas: displayPersonas,
                         favoritePersonas, toggleFavoritePersona,
                     });
                     return html`<${MyPersonasView}
-                        onBack=${() => setView('home')}
+                        onBack=${goBack}
                         personas=${displayPersonas}
                         favoritePersonas=${favoritePersonas}
                         toggleFavoritePersona=${toggleFavoritePersona}
@@ -1522,13 +1655,13 @@
                 }
 
                 if (view === 'help') {
-                    if (window.VOID_VIEWS?.help) return window.VOID_VIEWS.help({ onBack: () => setView('home') });
-                    return html`<${HelpView} onBack=${() => setView('home')} />`;
+                    if (window.VOID_VIEWS?.help) return window.VOID_VIEWS.help({ onBack: goBack });
+                    return html`<${HelpView} onBack=${goBack} />`;
                 }
 
                 if (view === 'community') {
-                    if (window.VOID_VIEWS?.community) return window.VOID_VIEWS.community({ onBack: () => setView('home') });
-                    return html`<${CommunityView} onBack=${() => setView('home')} />`;
+                    if (window.VOID_VIEWS?.community) return window.VOID_VIEWS.community({ onBack: goBack });
+                    return html`<${CommunityView} onBack=${goBack} />`;
                 }
 
                 if (view === 'persona-selection') {
@@ -1574,89 +1707,32 @@
                         chatSessions=${chatSessions}
                         setChatSessions=${setChatSessions}
                         setSessionMessages=${setSessionMessages}
+                        sessionId=${sessionId}
                         setSessionId=${setSessionId}
                         setSelectedIds=${setSelectedIds}
                         personas=${displayPersonas}
                         onLogin=${() => setAuthOpen(true)}
                         onSignOut=${handleSignOut}
                         userAvatar=${userAvatar}
+                        sidebarOpen=${sidebarOpen}
+                        setSidebarOpen=${setSidebarOpen}
                     />
 
-                    <!-- Main content area -->
+                    <!-- Main content area (no top header — editorial/masthead lives in each view) -->
                     <div class="flex-1 flex flex-col overflow-hidden relative z-10">
-                        <!-- Top header bar -->
-                        <header class="h-14 flex items-center justify-between px-5 border-b border-outline/10 flex-shrink-0"
-                            style=${{ background: 'rgba(18,17,15,0.7)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
-                            <div class="flex items-center gap-3">
-                                <!-- Mobile menu trigger (sidebar doesn't auto-open on mobile yet) -->
-                                <button
-                                    class="md:hidden w-8 h-8 rounded-lg btn-ghost flex items-center justify-center"
-                                    onClick=${() => {
-                                        const sb = document.getElementById('void-sidebar');
-                                        if (sb) sb.classList.toggle('-translate-x-full');
-                                    }}
-                                >
-                                    <${Icon} name="Menu" size=${18} />
-                                </button>
-                                <!-- Session title -->
-                                <div class="flex items-center gap-2">
-                                    <span class="font-headline text-sm font-semibold text-on-surface/70">
-                                        ${view === 'debate' ? 'Session' : 'LIFEE'}
-                                    </span>
-                                    ${view === 'debate' && selectedIds.length > 0 && html`
-                                        <div class="flex -space-x-1.5">
-                                            ${displayPersonas.filter(p => selectedIds.includes(p.id)).slice(0, 4).map(p => html`
-                                                <div key=${p.id} class="w-6 h-6 rounded-full bg-surface-container border border-outline/20 flex items-center justify-center text-xs">
-                                                    ${typeof p.avatar === 'string' && !p.avatar.startsWith('http') ? p.avatar : '?'}
-                                                </div>
-                                            `)}
-                                        </div>
-                                    `}
-                                </div>
+                        <!-- Main content -->
+                        <main class="flex-1 min-h-0 overflow-hidden flex flex-col">
+                            <!-- Persistent ChatArena (stays mounted once activated) -->
+                            <div class=${`flex-1 min-h-0 flex flex-col overflow-hidden ${view === 'debate' ? '' : 'hidden'}`}>
+                                ${(user || isGuest) && hasEnteredDebate ? renderChatArena() : null}
                             </div>
-
-                            <!-- Right: nav + auth -->
-                            <div class="flex items-center gap-4">
-                                <nav class="hidden md:flex items-center gap-1">
-                                    ${[
-                                        { label: 'Home', view: 'home' },
-                                        { label: 'Community', view: 'community' },
-                                    ].map(item => html`
-                                        <button
-                                            key=${item.view}
-                                            onClick=${() => setView(item.view)}
-                                            class=${`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
-                                                ${view === item.view ? 'text-primary bg-primary/10' : 'text-on-surface-variant/60 hover:text-primary'}`}
-                                        >${item.label}</button>
-                                    `)}
-                                </nav>
-
-                                ${user ? html`
-                                    <button
-                                        onClick=${() => setView('settings')}
-                                        class="w-8 h-8 rounded-full overflow-hidden border border-primary/30 flex-shrink-0"
-                                    >
-                                        <${AvatarDisplay}
-                                            avatar=${userAvatar || user?.user_metadata?.avatar_url || '✨'}
-                                            size=${32}
-                                        />
-                                    </button>
-                                ` : html`
-                                    <button
-                                        onClick=${() => setAuthOpen(true)}
-                                        class="btn-gradient px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider"
-                                    >Sign In</button>
-                                `}
-                            </div>
-                        </header>
-
-                        <!-- Main content (scroll only for non-debate views) -->
-                        <main class=${`flex-1 flex flex-col ${view === 'debate' ? 'overflow-hidden' : 'overflow-y-auto no-scrollbar'}`}>
-                            <div class=${`${view === 'debate' ? 'flex-1 flex flex-col overflow-hidden' : 'w-full max-w-[1400px] mx-auto'}`}>
+                            <!-- Non-debate views -->
+                            <div class=${`flex-1 min-h-0 overflow-y-auto no-scrollbar ${view !== 'debate' ? '' : 'hidden'}`}>
+                              <div class="w-full max-w-[1400px] mx-auto h-full">
                                 ${(user || isGuest) ? renderContent() : html`
                                     <div class="flex flex-col items-center justify-center min-h-[80vh] gap-8 animate-in px-4 text-center">
                                         <div>
-                                            <h1 class="font-headline text-5xl font-bold shimmer-glow mb-3">LIFEE</h1>
+                                            <h1 class="font-headline text-5xl font-bold wordmark mb-3">LIFEE</h1>
                                             <p class="text-sm text-on-surface-variant">Your life coach and friend.</p>
                                         </div>
                                         <div class="glass-card iridescent-border rounded-3xl p-8 max-w-sm w-full">
@@ -1674,6 +1750,7 @@
                                         </div>
                                     </div>
                                 `}
+                              </div>
                             </div>
                         </main>
                     </div>
