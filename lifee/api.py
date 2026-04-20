@@ -766,6 +766,25 @@ async def observe_stream(session_id: str):
     )
 
 
+@app.post("/sessions/{session_id}/cancel")
+async def cancel_generation(session_id: str):
+    """Cancel the detached generation task for this session if one is running.
+
+    Stops producing further tokens. Whatever has already been streamed / persisted
+    stays (stop-and-keep semantics). Returns 200 either way — idempotent.
+    """
+    state = _active_generations.get(session_id)
+    if state is None:
+        return {"ok": True, "cancelled": False}
+    try:
+        if state.task and not state.task.done():
+            state.task.cancel()
+        state.done.set()
+    except Exception:
+        pass
+    return {"ok": True, "cancelled": True}
+
+
 @app.get("/sessions/{session_id}/messages")
 async def get_session_messages(session_id: str):
     """获取会话消息 + 最新 follow-up options"""

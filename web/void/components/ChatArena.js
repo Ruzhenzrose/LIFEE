@@ -132,6 +132,66 @@
         // callbacks capture the value at start-of-round; if it changed, they drop
         // their updates (prevents old-session chunks polluting a new session's view).
         const roundIdRef       = useRef(0);
+        // Latched when user clicks Stop: Supabase Realtime updates for this session
+        // are ignored until the next round starts. (The in-flight SSE handlers are
+        // already invalidated via roundIdRef, but Realtime events bypass that gate.)
+        const stoppedRef       = useRef(false);
+
+        // ── Unified gate + commit ───────────────────────────────────────────────
+        // Three update sources funnel through here:
+        //   - 'sse': the active POST stream in runRound (also observer-stream), round-scoped
+        //   - 'realtime': Supabase postgres_changes fallback, no round concept
+        // canApply() is the one place that blocks after Stop / on superseded rounds.
+        // commitMessage() handles append-or-update with seq + last-item dedup + anti-regress.
+        const canApply = (origin, myRound) => {
+            if (stoppedRef.current) return false;
+            if (origin === 'sse' && myRound !== undefined && myRound !== roundIdRef.current) return false;
+            if (origin === 'realtime' && isDebatingRef.current) return false;
+            return true;
+        };
+        const commitMessage = (incoming, origin, myRound) => {
+            if (!canApply(origin, myRound)) return;
+            const msg = {
+                personaId: incoming.personaId || incoming.persona_id || incoming.role,
+                text: incoming.text || incoming.content || '',
+                seq: incoming.seq,
+            };
+            if (!msg.personaId) return;
+            setHistory(prev => {
+                // Locate existing row: by seq if provided, else by last-item matching personaId.
+                let idx = -1;
+                if (msg.seq != null) idx = prev.findIndex(m => m.seq === msg.seq);
+                if (idx < 0 && prev.length > 0 && prev[prev.length - 1].personaId === msg.personaId) {
+                    idx = prev.length - 1;
+                }
+                if (idx >= 0) {
+                    // Anti-regress: don't let a late, shorter update shrink what's shown.
+                    const existingLen = (prev[idx].text || '').length;
+                    if (msg.text.length < existingLen) return prev;
+                    const next = [...prev];
+                    next[idx] = { ...prev[idx], ...msg };
+                    return next;
+                }
+                const next = [...prev, msg];
+                if (msg.seq != null) next.sort((a, b) => (a.seq ?? 1e9) - (b.seq ?? 1e9));
+                return next;
+            });
+        };
+        const commitOptions = (opts, origin, myRound) => {
+            if (!canApply(origin, myRound)) return;
+            setOptions(Array.isArray(opts) ? opts : []);
+        };
+        const commitSession = (sid, origin, myRound) => {
+            if (!canApply(origin, myRound)) return;
+            setSessionId(sid);
+            try { onSessionCreated?.(sid); } catch (_) {}
+        };
+        const makeSseHandlers = (myRound) => ({
+            onSession:       (sid) => commitSession(sid, 'sse', myRound),
+            onMessage:       (msg) => commitMessage(msg, 'sse', myRound),
+            onMessageUpdate: (msg) => commitMessage(msg, 'sse', myRound),
+            onOptions:       (opts) => commitOptions(opts, 'sse', myRound),
+        });
 
         useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
 
@@ -179,45 +239,16 @@
             // If this tab is already the streamer, don't double-subscribe
             if (isDebating) return;
             const myRound = ++roundIdRef.current;
-            const isActive = () => roundIdRef.current === myRound;
+            stoppedRef.current = false;  // fresh attach — reopen the gate
             let cancelled = false;
             (async () => {
                 try {
                     setIsDebating(true);
-                    await fetchLifeeObserveStream(sessionId, {
-                        onMessage: async (msg) => {
-                            if (cancelled || !isActive()) return;
-                            setHistory(prev => {
-                                // Dedup: if last row is same persona (we already have partial
-                                // from DB restore), don't append — let chunks update it.
-                                if (prev.length > 0 && prev[prev.length - 1].personaId === msg.personaId) {
-                                    return prev;
-                                }
-                                return [...prev, msg];
-                            });
-                        },
-                        onMessageUpdate: async (msg) => {
-                            if (cancelled || !isActive()) return;
-                            setHistory(prev => {
-                                if (prev.length === 0) return prev;
-                                if (prev[prev.length - 1].personaId !== msg.personaId) return prev;
-                                const curLen = (prev[prev.length - 1].text || '').length;
-                                const incomingLen = (msg.text || '').length;
-                                if (incomingLen < curLen) return prev;  // don't regress
-                                const next = [...prev];
-                                next[next.length - 1] = { ...next[next.length - 1], ...msg };
-                                return next;
-                            });
-                        },
-                        onOptions: (opts) => {
-                            if (cancelled || !isActive()) return;
-                            setOptions(Array.isArray(opts) ? opts : []);
-                        },
-                    });
+                    await fetchLifeeObserveStream(sessionId, makeSseHandlers(myRound));
                 } catch (e) {
                     if (!e?.notActive) console.warn('[observe]', e);
                 } finally {
-                    if (!cancelled && isActive()) setIsDebating(false);
+                    if (!cancelled && roundIdRef.current === myRound) setIsDebating(false);
                 }
             })();
             return () => { cancelled = true; };
@@ -228,41 +259,9 @@
         // count, or same count with a longer last message). Prevents the race
         // where DB lags behind local SSE state and overwrites it.
         const isDebatingRef = useRef(false);
-        const historyRef = useRef(history);
         useEffect(() => { isDebatingRef.current = isDebating; }, [isDebating]);
-        useEffect(() => { historyRef.current = history; }, [history]);
         useEffect(() => {
             if (!sessionId || !window.supabaseClient) return;
-
-            // Merge a Supabase row directly into history (no HTTP round-trip).
-            // Matches by `seq` so UPDATEs patch the same item instead of duplicating.
-            const applyRow = (row) => {
-                if (!row) return;
-                if (isDebatingRef.current) return;  // local SSE owns the stream
-                const incoming = {
-                    personaId: row.persona_id || row.role,
-                    text: row.content || '',
-                    seq: row.seq,
-                };
-                setHistory(prev => {
-                    const byIdx = prev.findIndex(m => m.seq === row.seq);
-                    if (byIdx >= 0) {
-                        // Only overwrite if DB has at least as much content (prevents
-                        // an out-of-order UPDATE from shrinking the visible text).
-                        const existingLen = (prev[byIdx].text || '').length;
-                        const incomingLen = incoming.text.length;
-                        if (incomingLen < existingLen) return prev;
-                        const next = [...prev];
-                        next[byIdx] = { ...prev[byIdx], ...incoming };
-                        return next;
-                    }
-                    // INSERT of a row we haven't seen → append at the right position.
-                    const next = [...prev, incoming];
-                    next.sort((a, b) => (a.seq ?? 1e9) - (b.seq ?? 1e9));
-                    return next;
-                });
-            };
-
             const channel = window.supabaseClient
                 .channel(`session-${sessionId}`)
                 .on('postgres_changes', {
@@ -270,7 +269,7 @@
                     schema: 'public',
                     table: 'chat_messages',
                     filter: `session_id=eq.${sessionId}`,
-                }, (payload) => applyRow(payload.new))
+                }, (payload) => commitMessage(payload.new || {}, 'realtime'))
                 .subscribe();
             return () => {
                 try { window.supabaseClient.removeChannel(channel); } catch (_) {}
@@ -365,9 +364,26 @@
                 .catch(() => {});
         };
 
+        // ── Stop the in-flight generation (stop-and-keep: whatever is already
+        // streamed stays visible + persisted; backend cancels the detached task). ─
+        const handleStop = async () => {
+            roundIdRef.current += 1;  // invalidate any handlers still in flight
+            stoppedRef.current = true; // block late Realtime updates too
+            setIsDebating(false);
+            const sid = sessionIdRef.current || window.__lifeeSessionId;
+            if (!sid) return;
+            try {
+                await fetch(`/sessions/${encodeURIComponent(sid)}/cancel`, {
+                    method: 'POST',
+                    credentials: 'include',
+                });
+            } catch (_) {}
+        };
+
         // ── Core round runner ─────────────────────────────────────────────────
         const runRound = async (userInput = null) => {
             const myRound = ++roundIdRef.current;  // claim this round
+            stoppedRef.current = false;            // reopen Realtime gate for the new round
             const isActive = () => roundIdRef.current === myRound;
             setIsDebating(true);
             const cleanInput = (userInput ?? inputValue ?? '').toString().trim();
@@ -416,34 +432,7 @@
                     return;
                 }
 
-                const handlers = {
-                    onSession: async (sid) => {
-                        if (!isActive()) return;
-                        setSessionId(sid);
-                        try { await onSessionCreated?.(sid); } catch (_) {}
-                    },
-                    onMessage: async (msg) => {
-                        if (!isActive()) return;
-                        setHistory(prev => [...prev, msg]);
-                    },
-                    onMessageUpdate: async (msg) => {
-                        if (!isActive()) return;
-                        setHistory(prev => {
-                            const updated = [...prev];
-                            if (
-                                updated.length > 0 &&
-                                updated[updated.length - 1].personaId === msg.personaId
-                            ) {
-                                updated[updated.length - 1] = { ...msg };
-                            }
-                            return updated;
-                        });
-                    },
-                    onOptions: (opts) => {
-                        if (!isActive()) return;
-                        setOptions(Array.isArray(opts) ? opts : []);
-                    },
-                };
+                const handlers = makeSseHandlers(myRound);
 
                 if (credits !== null && credits <= 0) {
                     setShowPaywall(true);
@@ -610,7 +599,7 @@
                             }
                         </div>
                         <!-- Bubble -->
-                        <div class="space-y-1.5 items-end flex flex-col">
+                        <div class="space-y-1.5 items-end flex flex-col flex-1 min-w-0">
                             <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 mr-1">You</p>
                             <div class="bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-xl rounded-tr-sm text-on-surface shadow-sm leading-relaxed border-r-2 border-on-surface-variant/20 text-sm">
                                 <${ShinyLines} text=${m.text || ''} />
@@ -651,7 +640,7 @@
                         }
                     </div>
                     <!-- Bubble -->
-                    <div class="space-y-1.5">
+                    <div class="space-y-1.5 flex-1 min-w-0">
                         <p class=${'text-[10px] font-bold uppercase tracking-widest ml-1 ' + color.text}>
                             ${persona.name}
                         </p>
@@ -869,13 +858,6 @@
                                 onClick=${handleSummary}
                             >${summaryLoading ? 'hourglass_empty' : 'summarize'}</span>
 
-                            <!-- Stop & Decide -->
-                            <span
-                                class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors"
-                                title="Stop & Decide"
-                                onClick=${() => setView('summary')}
-                            >stop_circle</span>
-
                             <!-- More menu -->
                             <div class="relative">
                                 <span
@@ -955,20 +937,21 @@
                 <footer class="p-6 bg-surface-dim/40 backdrop-blur-2xl border-t border-white/5 shrink-0">
                     <div class="max-w-5xl mx-auto space-y-3">
 
-                        <!-- Options pills: collapsed label by default, expands on hover so they
-                             don't block the answer above. -->
+                        <!-- Options pills: collapsed label by default; on hover the pills rise up
+                             and float above the input as opaque chips (absolute so they don't push
+                             layout; opaque bg so chat text behind doesn't bleed through). -->
                         ${options.length > 0 && !isDebating ? html`
-                            <div class="group cursor-default animate-in">
-                                <div class="flex items-center justify-center gap-1 text-[10px] uppercase tracking-[0.25em] text-primary/50 py-2 group-hover:hidden">
+                            <div class="group relative cursor-default animate-in">
+                                <div class="flex items-center justify-center gap-1 text-[10px] uppercase tracking-[0.25em] text-primary/50 py-2 transition-opacity duration-200 group-hover:opacity-0">
                                     <span>${options.length} suggested follow-ups</span>
                                     <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>expand_more</span>
                                 </div>
-                                <div class="hidden group-hover:flex flex-col gap-1.5">
+                                <div class="absolute left-0 right-0 bottom-0 flex flex-col items-center gap-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
                                     ${options.map((opt, i) => html`
                                         <button
                                             key=${i}
                                             onClick=${() => runRound(opt)}
-                                            class="no-shine w-full text-left px-4 py-2 text-xs font-semibold rounded-full border border-primary/15 text-primary/40 bg-transparent hover:border-primary/40 transition-colors"
+                                            class="no-shine text-left px-5 py-2.5 text-xs font-semibold rounded-full bg-surface-container border border-primary/25 text-primary/75 hover:text-primary hover:border-primary/50 hover:bg-surface-container-high shadow-xl shadow-black/50 transition-colors"
                                         ><span>${opt}</span></button>
                                     `)}
                                 </div>
@@ -1023,13 +1006,14 @@
                             ` : null}
 
                             <div class="flex items-center gap-2 pr-2 shrink-0">
-                                <!-- Send button -->
+                                <!-- Send / Stop button: switches to stop while streaming -->
                                 <button
-                                    disabled=${isDebating || !inputValue.trim()}
-                                    onClick=${() => runRound()}
+                                    disabled=${!isDebating && !inputValue.trim()}
+                                    onClick=${isDebating ? handleStop : () => runRound()}
+                                    title=${isDebating ? 'Stop' : 'Send'}
                                     class="w-12 h-12 flex items-center justify-center rounded-xl btn-gradient shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-transform disabled:opacity-30 disabled:pointer-events-none"
                                 >
-                                    <span class="material-symbols-outlined" style=${{ fontVariationSettings: "'FILL' 1" }}>send</span>
+                                    <span class="material-symbols-outlined" style=${{ fontVariationSettings: "'FILL' 1" }}>${isDebating ? 'stop' : 'send'}</span>
                                 </button>
                             </div>
                         </div>
