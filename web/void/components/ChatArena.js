@@ -537,7 +537,7 @@
             }
 
             if (isUser) {
-                const ava = userAvatar || '🙂';
+                const ava = userAvatar || user?.user_metadata?.avatar_url || '🙂';
                 return html`
                     <div key=${idx} class="flex items-start gap-4 max-w-[85%] md:max-w-[70%] ml-auto flex-row-reverse animate-in">
                         <!-- Avatar -->
@@ -580,7 +580,7 @@
             const ava = persona.avatar || '☁️';
 
             return html`
-                <div key=${idx} class="flex items-start gap-4 max-w-[85%] md:max-w-[70%] animate-in">
+                <div key=${idx} class="flex items-start gap-4 w-full pr-14 animate-in">
                     <!-- Avatar -->
                     <div class=${'w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg shrink-0 overflow-hidden ' + color.ring + ' ' + color.bg}>
                         ${!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
@@ -593,7 +593,7 @@
                         <p class=${'text-[10px] font-bold uppercase tracking-widest ml-1 ' + color.text}>
                             ${persona.name}
                         </p>
-                        <div class=${'bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-xl rounded-tl-sm text-on-surface shadow-sm leading-relaxed border-t-2 text-sm whitespace-pre-wrap break-words ' + color.border}>
+                        <div class=${'bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-tl-none rounded-tr-xl rounded-br-xl rounded-bl-[2.5rem] text-on-surface shadow-sm leading-relaxed border-l-2 text-sm whitespace-pre-wrap break-words ' + color.border}>
                             ${m.text}
                         </div>
                         <div class="flex gap-3 px-1">
@@ -761,8 +761,8 @@
                 <header class="flex justify-between items-center w-full px-8 h-20 bg-surface-dim/30 backdrop-blur-lg border-b border-white/5 z-10 shrink-0">
                     <div class="flex items-center gap-6">
                         <div>
-                            <h2 class="text-xl md:text-2xl font-headline font-bold tracking-tight text-on-surface">Void Chat</h2>
-                            <p class="text-[10px] uppercase tracking-[0.2em] text-primary/80 leading-none mt-0.5">Internal Debate Ecosystem</p>
+                            <h2 class="text-xl md:text-2xl font-headline font-bold tracking-tight text-on-surface">Your Council</h2>
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-primary/80 leading-none mt-0.5">${(selectedPersonas || []).length} ${(selectedPersonas || []).length === 1 ? 'voice' : 'voices'} in session</p>
                         </div>
                         <!-- Member Avatars cluster — max 4 shown, then +N -->
                         <div class="hidden lg:flex -space-x-3 ml-4">
@@ -833,7 +833,7 @@
                     class="flex-1 overflow-y-auto no-scrollbar"
                     style=${{ scrollbarWidth: 'none' }}
                 >
-                  <div class="max-w-3xl mx-auto w-full px-6 py-8 space-y-8">
+                  <div class="max-w-5xl mx-auto w-full px-6 py-8 space-y-8">
                     ${history.length === 0 && !isDebating ? html`
                         <div class="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-30 select-none">
                             <div class="text-4xl">✦</div>
@@ -891,18 +891,25 @@
 
                 <!-- ── Footer input area ── -->
                 <footer class="p-6 bg-surface-dim/40 backdrop-blur-2xl border-t border-white/5 shrink-0">
-                    <div class="max-w-3xl mx-auto space-y-3">
+                    <div class="max-w-5xl mx-auto space-y-3">
 
-                        <!-- Options pills -->
+                        <!-- Options pills: collapsed label by default, expands on hover so they
+                             don't block the answer above. -->
                         ${options.length > 0 && !isDebating ? html`
-                            <div class="flex flex-wrap gap-2 animate-in justify-center">
-                                ${options.map((opt, i) => html`
-                                    <button
-                                        key=${i}
-                                        onClick=${() => runRound(opt)}
-                                        class="px-4 py-2 text-xs font-semibold rounded-full border border-primary/30 text-primary/80 bg-primary/10 hover:bg-primary/20 hover:border-primary/50 transition-all"
-                                    >${opt}</button>
-                                `)}
+                            <div class="group cursor-default animate-in">
+                                <div class="flex items-center justify-center gap-1 text-[10px] uppercase tracking-[0.25em] text-primary/50 py-2 group-hover:hidden">
+                                    <span>${options.length} suggested follow-ups</span>
+                                    <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>expand_more</span>
+                                </div>
+                                <div class="hidden group-hover:flex flex-col gap-1.5">
+                                    ${options.map((opt, i) => html`
+                                        <button
+                                            key=${i}
+                                            onClick=${() => runRound(opt)}
+                                            class="no-shine w-full text-left px-4 py-2 text-xs font-semibold rounded-full border border-primary/15 text-primary/40 bg-transparent hover:border-primary/40 transition-colors"
+                                        ><span>${opt}</span></button>
+                                    `)}
+                                </div>
                             </div>
                         ` : null}
 

@@ -209,13 +209,13 @@
             background-image: linear-gradient(
                 110deg,
                 transparent 0%,
-                transparent 42%,
-                rgba(196, 122, 108, 0.4) 44%,
-                rgba(232, 168, 76, 1) 47%,
+                transparent 35%,
+                rgba(196, 122, 108, 0.35) 37%,
+                rgba(232, 168, 76, 1) 42%,
                 rgba(252, 227, 168, 1) 50%,
-                rgba(232, 168, 76, 1) 53%,
-                rgba(196, 122, 108, 0.4) 56%,
-                transparent 58%,
+                rgba(232, 168, 76, 1) 58%,
+                rgba(196, 122, 108, 0.35) 63%,
+                transparent 65%,
                 transparent 100%
             );
             background-color: currentColor;
@@ -659,40 +659,47 @@
             const userEmail = user?.email || (isGuest ? 'guest@lifee.app' : 'user@example.com');
             const userCredits = '—';
 
-            // Collapsed rail (Claude-style): icons only
+            // Collapsed rail (Claude-style): icons only — structure mirrors expanded sidebar so
+            // every icon stays on the same horizontal line as its expanded counterpart
             if (!sidebarOpen) {
                 return html`
-                    <aside class="hidden md:flex flex-col h-full py-5 bg-surface-container-low/60 backdrop-blur-2xl border-r border-white/5 w-14 shrink-0 items-center gap-2">
-                        <!-- Toggle (expand) -->
-                        <button
-                            onClick=${() => setSidebarOpen(true)}
-                            class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover-warm-icon"
-                            title="Open sidebar"
-                        ><${Icon} name="Sidebar" size=${16} /></button>
+                    <aside class="hidden md:flex flex-col h-full pt-10 pb-10 bg-surface-container-low/60 backdrop-blur-2xl border-r border-white/5 w-14 shrink-0 items-center">
+                        <!-- Masthead mirror: Toggle replaces the LIFEE wordmark; subtitle-height spacer keeps nav aligned -->
+                        <div class="w-full pb-4 mb-8 border-b border-on-surface/10 flex flex-col items-center">
+                            <button
+                                onClick=${() => setSidebarOpen(true)}
+                                class="w-9 h-7 rounded flex items-center justify-center text-on-surface-variant/50 hover-warm-icon -mt-0.5"
+                                title="Open sidebar"
+                            ><${Icon} name="Sidebar" size=${16} style=${{ transform: 'scaleX(1.35)' }} /></button>
+                            <!-- Spacer matches subtitle height (mt-2 + text-[10px] line-box ~23px) -->
+                            <div class="mt-2 h-[15px]"></div>
+                        </div>
 
-                        <!-- Home -->
-                        <button
-                            onClick=${() => setView('home')}
-                            class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover-warm-icon mt-2"
-                            title="Home"
-                        ><${Icon} name="Home" size=${18} /></button>
+                        <!-- Nav section mirror: starts at the same Y as expanded nav -->
+                        <nav class="flex-1 w-full flex flex-col items-center gap-2 mt-2">
+                            <!-- Home -->
+                            <button
+                                onClick=${() => setView('home')}
+                                class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover-warm-icon"
+                                title="Home"
+                            ><${Icon} name="Home" size=${18} /></button>
 
-                        <!-- Conversations (expands sidebar) -->
-                        <button
-                            onClick=${() => setSidebarOpen(true)}
-                            class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover-warm-icon"
-                            title="Conversations"
-                        ><${Icon} name="MessageSquare" size=${16} /></button>
+                            <!-- Conversations (expands sidebar) -->
+                            <button
+                                onClick=${() => setSidebarOpen(true)}
+                                class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover-warm-icon"
+                                title="Conversations"
+                            ><${Icon} name="MessageSquare" size=${16} /></button>
+                        </nav>
 
-                        <!-- Settings (bottom) -->
+                        <!-- Settings + avatar at bottom -->
                         <button
                             onClick=${() => setView('settings')}
-                            class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover-warm-icon mt-auto"
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant/60 hover-warm-icon"
                             title="Settings"
                         ><${Icon} name="Settings" size=${16} /></button>
 
-                        <!-- User avatar -->
-                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-tertiary flex items-center justify-center text-on-primary font-bold text-sm overflow-hidden" title=${displayName}>
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-tertiary flex items-center justify-center text-on-primary font-bold text-sm overflow-hidden mt-2" title=${displayName}>
                             ${userAvatar
                                 ? html`<img src=${userAvatar} class="w-full h-full object-cover" />`
                                 : userInitial
