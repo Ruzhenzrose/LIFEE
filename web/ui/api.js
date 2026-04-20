@@ -64,56 +64,19 @@ async function fetchText(url) {
     return res.text();
 }
 
-async function fetchLifeeDecisionStream(payload, { onMessage, onMessageUpdate, onOptions } = {}) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), LIFEE_STREAM_TIMEOUT_MS);
-    let res;
-
-    try {
-        res = await fetch(`${LIFEE_API}?stream=1`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify(payload),
-            signal: controller.signal
-        });
-    } catch (err) {
-        if (err?.name === 'AbortError') {
-            throw new Error(`LIFEE API stream timed out after ${Math.round(LIFEE_STREAM_TIMEOUT_MS / 1000)}s`);
-        }
-        throw err;
-    }
-
-    if (!res.ok) {
-        clearTimeout(timer);
-        const text = await res.text();
-        throw new Error("LIFEE API stream failed: " + text);
-    }
-
-    // 后端返回 JSON（非 SSE）：可能是余额不足或需要验证
-    const ct = res.headers.get('content-type') || '';
-    if (ct.includes('application/json')) {
-        clearTimeout(timer);
-        const data = await res.json();
-        if (data?.needsVerification) {
-            window.__lifeeNeedsVerification = true;
-        }
-        if (data?.needsPayment) {
-            window.__lifeeNeedsPayment = true;
-            window.__lifeeBalance = data.balance || 0;
-        }
-        return;
-    }
-
-    if (!res.body) {
-        clearTimeout(timer);
-        throw new Error("Streaming not supported in this browser.");
-    }
-
+// Internal: drain an SSE response body into handler callbacks.
+// Shared by the active POST stream (debate) and the observer GET stream (resume).
+// Accumulators are LOCAL to each invocation so concurrent streams (original +
+// observer) can't interfere via shared global state.
+async function _drainLifeeSSE(res, handlers, resetIdle) {
+    const { onMessage, onMessageUpdate, onOptions, onSession } = handlers || {};
+    if (!res.body) throw new Error("Streaming not supported in this browser.");
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buf = "";
     let done = false;
+    let streamPid = null;       // local: current persona id within THIS stream
+    let streamText = "";        // local: accumulated text within THIS stream
 
     const flushEventBlock = async (block) => {
         if (!block || block.startsWith(":")) return;
@@ -126,25 +89,27 @@ async function fetchLifeeDecisionStream(payload, { onMessage, onMessageUpdate, o
         }
         const dataStr = dataLines.join("\n");
         if (!dataStr) return;
-
         let data = dataStr;
         try { data = JSON.parse(dataStr); } catch (_) {}
 
         if (eventName === "session") {
-            if (data?.sessionId) window.__lifeeSessionId = data.sessionId;
+            if (data?.sessionId) {
+                window.__lifeeSessionId = data.sessionId;
+                try { await onSession?.(data.sessionId); } catch (_) {}
+            }
         } else if (eventName === "messageStart") {
             if (data?.personaId) {
-                window.__currentStreamPid = data.personaId;
-                window.__currentStreamText = "";
+                streamPid = data.personaId;
+                streamText = "";
                 await onMessage?.({ personaId: data.personaId, text: "" });
             }
         } else if (eventName === "messageChunk") {
-            if (data?.chunk && window.__currentStreamPid) {
-                window.__currentStreamText = (window.__currentStreamText || "") + data.chunk;
-                await onMessageUpdate?.({ personaId: window.__currentStreamPid, text: window.__currentStreamText });
+            if (data?.chunk && streamPid) {
+                streamText += data.chunk;
+                await onMessageUpdate?.({ personaId: streamPid, text: streamText });
             }
         } else if (eventName === "messageEnd") {
-            window.__currentStreamPid = null;
+            streamPid = null;
         } else if (eventName === "message") {
             if (data && typeof data === "object") await onMessage?.(data);
         } else if (eventName === "options") {
@@ -159,26 +124,67 @@ async function fetchLifeeDecisionStream(payload, { onMessage, onMessageUpdate, o
         }
     };
 
-    try {
-        while (!done) {
-            const { value, done: streamDone } = await reader.read();
-            if (streamDone) break;
-            buf += decoder.decode(value, { stream: true });
-            let idx;
-            while ((idx = buf.indexOf("\n\n")) !== -1) {
-                const block = buf.slice(0, idx).trimEnd();
-                buf = buf.slice(idx + 2);
-                await flushEventBlock(block);
-            }
+    while (!done) {
+        const { value, done: streamDone } = await reader.read();
+        if (streamDone) break;
+        resetIdle && resetIdle();
+        buf += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf("\n\n")) !== -1) {
+            const block = buf.slice(0, idx).trimEnd();
+            buf = buf.slice(idx + 2);
+            await flushEventBlock(block);
         }
-    } catch (err) {
-        if (err?.name === 'AbortError') {
-            throw new Error(`LIFEE API stream timed out after ${Math.round(LIFEE_STREAM_TIMEOUT_MS / 1000)}s`);
-        }
-        throw err;
-    } finally {
-        clearTimeout(timer);
     }
+}
+
+// Attach to an in-flight generation for a session (resume after coming back
+// from another view/tab/device). Uses the same SSE parser as the active stream
+// so the observer gets smooth token-level updates + loading UX.
+// Returns a promise; rejects with an informative Error if no active stream.
+async function fetchLifeeObserveStream(sessionId, handlers = {}) {
+    const res = await fetch(`/sessions/${encodeURIComponent(sessionId)}/observe-stream`, {
+        method: "GET",
+        credentials: "include",
+    });
+    if (res.status === 404) {
+        const err = new Error("no active generation");
+        err.notActive = true;
+        throw err;
+    }
+    if (!res.ok) throw new Error(`observe-stream ${res.status}`);
+    await _drainLifeeSSE(res, handlers);
+}
+
+async function fetchLifeeDecisionStream(payload, handlers = {}) {
+    // No client-side timeout: backend task is detached, so a long stream can
+    // run as long as the server says it's running; observer reconnects cover
+    // the "tab was idle" case.
+    const res = await fetch(`${LIFEE_API}?stream=1`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error("LIFEE API stream failed: " + text);
+    }
+
+    // Backend may return JSON (not SSE) for quota/verification responses
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+        const data = await res.json();
+        if (data?.needsVerification) window.__lifeeNeedsVerification = true;
+        if (data?.needsPayment) {
+            window.__lifeeNeedsPayment = true;
+            window.__lifeeBalance = data.balance || 0;
+        }
+        return;
+    }
+
+    await _drainLifeeSSE(res, handlers);
 }
 
 async function fetchLifeeDecisionProgressive(payload, { onMessage, onOptions } = {}) {

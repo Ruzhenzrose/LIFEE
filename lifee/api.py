@@ -34,6 +34,106 @@ _km_initialized = False
 _sessions: dict = {}
 _SESSION_TTL = 3600  # 1小时过期
 
+
+# ═══════════════════════════════════════════════════════════════════════
+#  Detached generation (truly async streams — survive client disconnect)
+# ═══════════════════════════════════════════════════════════════════════
+# When a user hits /debate-stream, the generator work is spawned as an
+# asyncio.Task tied to `_active_generations[session_id]` (NOT the HTTP
+# request). Any SSE connection — first or later — subscribes to the same
+# in-memory event log. Close the tab: the task keeps running, DB keeps
+# getting PATCHed. Reopen: subscribe, see everything already generated +
+# the rest as it arrives.
+import asyncio as _asyncio
+
+class _GenState:
+    __slots__ = ("events", "subscribers", "done", "task", "finished_at")
+
+    def __init__(self):
+        self.events: list[str] = []              # full SSE event log (for replay)
+        self.subscribers: list[_asyncio.Queue] = []
+        self.done = _asyncio.Event()
+        self.task: "_asyncio.Task | None" = None
+        self.finished_at: "float | None" = None
+
+    def publish(self, event: str) -> None:
+        self.events.append(event)
+        for q in list(self.subscribers):
+            try:
+                q.put_nowait(event)
+            except Exception:
+                pass
+
+    def subscribe(self) -> "_asyncio.Queue[str | None]":
+        q: _asyncio.Queue = _asyncio.Queue()
+        for e in self.events:                    # replay history
+            q.put_nowait(e)
+        if self.done.is_set():
+            q.put_nowait(None)                   # end-of-stream sentinel
+        self.subscribers.append(q)
+        return q
+
+    def unsubscribe(self, q: "_asyncio.Queue") -> None:
+        try:
+            self.subscribers.remove(q)
+        except ValueError:
+            pass
+
+    def finish(self) -> None:
+        import time as _t
+        self.done.set()
+        self.finished_at = _t.time()
+        for q in list(self.subscribers):
+            try:
+                q.put_nowait(None)
+            except Exception:
+                pass
+
+
+_active_generations: dict[str, _GenState] = {}
+
+
+def _is_active_generation(sid: str) -> bool:
+    state = _active_generations.get(sid)
+    return bool(state and not state.done.is_set())
+
+
+async def _run_generation_task(sid: str, state: _GenState, stream_iter):
+    """Background task: drain the SSE generator into the broadcast queue."""
+    try:
+        async for event in stream_iter:
+            state.publish(event)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        state.publish(f"event: error\ndata: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n")
+    finally:
+        state.finish()
+        # GC: drop state 60s after done (frees memory; late clients already
+        # have fallback via Supabase DB refetch)
+        try:
+            await _asyncio.sleep(60)
+            cur = _active_generations.get(sid)
+            if cur is state and cur.done.is_set() and not cur.subscribers:
+                _active_generations.pop(sid, None)
+        except _asyncio.CancelledError:
+            pass
+
+
+async def _observer_stream(sid: str):
+    """Per-client SSE generator that reads from the detached task's broadcast."""
+    state = _active_generations.get(sid)
+    if not state:
+        return
+    q = state.subscribe()
+    try:
+        while True:
+            event = await q.get()
+            if event is None:
+                break
+            yield event
+    finally:
+        state.unsubscribe(q)
+
 # ---- Credits 系统（Supabase 持久化） ----
 GUEST_CREDITS = 6
 REGISTER_BONUS = 7   # 注册奖励（叠加在 Guest 剩余余额上）
@@ -543,6 +643,44 @@ async def _save_message(session_id: str, user_id: str, role: str, content: str, 
         pass
 
 
+async def _insert_message_stub(session_id: str, user_id: str, role: str, persona_id: str, seq: int):
+    """Insert an empty assistant message row at the start of a persona's turn.
+
+    Subsequent chunks PATCH this row's content. Enables Supabase Realtime clients
+    (and DB refetch on reconnect) to see progressive output even if the generator
+    session outlives the original SSE connection.
+    """
+    if not _SUPABASE_URL:
+        return
+    try:
+        import httpx
+        async with httpx.AsyncClient() as c:
+            await c.post(
+                f"{_SUPABASE_URL}/rest/v1/chat_messages",
+                headers=_SB_HEADERS,
+                json={"session_id": session_id, "user_id": user_id, "role": role,
+                      "content": "", "persona_id": persona_id, "seq": seq},
+            )
+    except Exception:
+        pass
+
+
+async def _patch_message_content(session_id: str, seq: int, content: str):
+    """Update the content of an in-flight message row keyed by (session_id, seq)."""
+    if not _SUPABASE_URL:
+        return
+    try:
+        import httpx
+        async with httpx.AsyncClient() as c:
+            await c.patch(
+                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&seq=eq.{seq}",
+                headers={**_SB_HEADERS, "Prefer": "return=minimal"},
+                json={"content": content},
+            )
+    except Exception:
+        pass
+
+
 async def _log_conversation(uid: str, role: str, persona_id: str, content_preview: str):
     """简易对话日志（所有用户包括 Guest，存到 credit_transactions）"""
     if not _SUPABASE_URL:
@@ -611,18 +749,48 @@ async def list_sessions(request: Request, userId: str = ""):
         return {"sessions": sessions}
 
 
+@app.get("/sessions/{session_id}/observe-stream")
+async def observe_stream(session_id: str):
+    """Attach an SSE observer to an in-flight generation for this session.
+
+    Returns 404 if no detached task is running (client falls back to DB state).
+    Works across tabs/devices: each call creates a fresh subscriber queue that
+    replays the task's full event log + tails future events until it finishes.
+    """
+    if not _is_active_generation(session_id):
+        return JSONResponse({"error": "no active generation"}, status_code=404)
+    return StreamingResponse(
+        _observer_stream(session_id),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @app.get("/sessions/{session_id}/messages")
 async def get_session_messages(session_id: str):
-    """获取会话消息"""
+    """获取会话消息 + 最新 follow-up options"""
     if not _SUPABASE_URL:
-        return {"messages": []}
+        return {"messages": [], "options": []}
     import httpx
     async with httpx.AsyncClient() as c:
-        r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=role,content,persona_id,seq,created_at&order=seq.asc",
-            headers=_SB_HEADERS,
+        m, s = await _asyncio.gather(
+            c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=role,content,persona_id,seq,created_at&order=seq.asc",
+                headers=_SB_HEADERS,
+            ),
+            c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&select=last_options",
+                headers=_SB_HEADERS,
+            ),
         )
-        return {"messages": r.json()}
+        options = []
+        try:
+            rows = s.json() or []
+            if rows and isinstance(rows[0].get("last_options"), list):
+                options = rows[0]["last_options"]
+        except Exception:
+            pass
+        return {"messages": m.json(), "options": options}
 
 
 class SessionUpdateRequest(BaseModel):
@@ -1011,8 +1179,28 @@ async def _handle_decision(req: DecisionRequest, request: Request):
                 await _ensure_chat_session(sid, chat_user_id, title, persona_names)
 
         if stream:
+            # Evict stale completed generation with same sid (new user turn → new run)
+            existing = _active_generations.get(sid)
+            if existing and existing.done.is_set():
+                _active_generations.pop(sid, None)
+                existing = None
+
+            if not existing:
+                # Spawn a detached task that outlives this HTTP request
+                state = _GenState()
+                _active_generations[sid] = state
+                gen_iter = _stream_sse(
+                    moderator, participants, question, mod_module, original_delay,
+                    sid, provider, session, uid, req.userId,
+                    min(req.maxSpeakers, len(all_participants)) if req.maxSpeakers > 0 else 0,
+                    user_input=req.userInput or "",
+                )
+                state.task = _asyncio.create_task(_run_generation_task(sid, state, gen_iter))
+
+            # SSE response only observes the task's broadcast — client disconnect
+            # won't cancel the task.
             resp = StreamingResponse(
-                _stream_sse(moderator, participants, question, mod_module, original_delay, sid, provider, session, uid, req.userId, min(req.maxSpeakers, len(all_participants)) if req.maxSpeakers > 0 else 0, user_input=req.userInput or ""),
+                _observer_stream(sid),
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache",
@@ -1129,36 +1317,58 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
               seq += 1
               await _save_message(session_id, chat_user_id, "user", user_text, seq=seq)
 
+      import time as _time
       _turns = max_turns or len(all_participants)
+      current_seq = 0               # seq of the in-flight persona row
+      last_db_write = 0.0           # monotonic timestamp of last PATCH
+      DB_THROTTLE_SEC = 0.3         # fire a PATCH at most every 300ms
+      # Fire-and-forget DB writes: never block the token stream on HTTP to Supabase.
+      def _bg(coro):
+          t = _asyncio.create_task(coro)
+          # avoid "Task was destroyed but pending" warnings
+          t.add_done_callback(lambda _t: _t.exception() if not _t.cancelled() else None)
+
+      async def _finalize_current():
+          nonlocal has_content, current_text
+          if not current_pid:
+              return
+          if has_content:
+              _bg(_deduct(uid))
+              _bg(_log_conversation(uid, "assistant", current_pid, current_text.strip()))
+              if chat_user_id and current_seq:
+                  _bg(_patch_message_content(session_id, current_seq, current_text.strip()))
+
       async for participant, chunk, is_skip in moderator.run(question, max_turns=_turns):
         if is_skip:
             continue
         pid = _find_persona_id(participant, participants)
         if pid != current_pid:
             if current_pid:
-                if has_content:
-                    await _deduct(uid)
-                    await _log_conversation(uid, "assistant", current_pid, current_text.strip())
-                    if chat_user_id:
-                        seq += 1
-                        await _save_message(session_id, chat_user_id, "assistant", current_text.strip(), persona_id=current_pid, seq=seq)
+                await _finalize_current()
                 yield f"event: messageEnd\ndata: {json.dumps({'personaId': current_pid})}\n\n"
             current_pid = pid
             has_content = False
             current_text = ""
+            last_db_write = 0.0
+            if chat_user_id:
+                seq += 1
+                current_seq = seq
+                _bg(_insert_message_stub(session_id, chat_user_id, "assistant", pid, current_seq))
+            else:
+                current_seq = 0
             yield f"event: messageStart\ndata: {json.dumps({'personaId': pid})}\n\n"
         if chunk and chunk.strip():
             has_content = True
         current_text += chunk
         yield f"event: messageChunk\ndata: {json.dumps({'personaId': pid, 'chunk': chunk}, ensure_ascii=False)}\n\n"
+        if chat_user_id and current_seq and has_content:
+            now = _time.monotonic()
+            if now - last_db_write >= DB_THROTTLE_SEC:
+                last_db_write = now
+                _bg(_patch_message_content(session_id, current_seq, current_text))
 
       if current_pid:
-          if has_content:
-              await _deduct(uid)
-              await _log_conversation(uid, "assistant", current_pid, current_text.strip())
-              if chat_user_id:
-                  seq += 1
-                  await _save_message(session_id, chat_user_id, "assistant", current_text.strip(), persona_id=current_pid, seq=seq)
+          await _finalize_current()
           yield f"event: messageEnd\ndata: {json.dumps({'personaId': current_pid})}\n\n"
 
       # 生成后续选项（追问模式时从文本解析选项，否则用 LLM 生成）
@@ -1171,6 +1381,21 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
               options = [o.strip() for o in parsed if o.strip()]
       if not options and provider and session:
           options = await _generate_options(provider, session)
+
+      # Persist options on the session so restoring it later shows the same pills
+      if chat_user_id and _SUPABASE_URL:
+          async def _save_options():
+              try:
+                  import httpx as _hx
+                  async with _hx.AsyncClient() as _c:
+                      await _c.patch(
+                          f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
+                          headers={**_SB_HEADERS, "Prefer": "return=minimal"},
+                          json={"last_options": options},
+                      )
+              except Exception:
+                  pass
+          _bg(_save_options())
 
       yield f"event: options\ndata: {json.dumps({'options': options}, ensure_ascii=False)}\n\n"
       yield f"event: done\ndata: {json.dumps({'balance': await _get_balance(uid)})}\n\n"

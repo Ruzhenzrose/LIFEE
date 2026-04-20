@@ -32,11 +32,13 @@
         userAvatar,
         user,
         initialMessages = [],
+        initialOptions = [],
         parentSessionId = "",
+        onSessionCreated,
     }) => {
         // ── State ─────────────────────────────────────────────────────────────
         const [history, setHistory]             = useState(initialMessages);
-        const [options, setOptions]             = useState([]);
+        const [options, setOptions]             = useState(initialOptions || []);
         const [isDebating, setIsDebating]       = useState(false);
         const [sessionId, setSessionId]         = useState(parentSessionId || '');
         const [inputValue, setInputValue]       = useState('');
@@ -54,6 +56,7 @@
         const [summaryLoading, setSummaryLoading] = useState(false);
         const [showSummaryPanel, setShowSummaryPanel] = useState(false);
         const [showMoreMenu, setShowMoreMenu]   = useState(false);
+        const [showToolsMenu, setShowToolsMenu] = useState(false);
 
         // ── Refs ──────────────────────────────────────────────────────────────
         const scrollRef        = useRef(null);
@@ -65,7 +68,12 @@
         const summaryAtCountRef = useRef(0);
         const autoStartedRef   = useRef(false);
         const moreMenuRef      = useRef(null);
+        const toolsMenuRef     = useRef(null);
         const optionsCacheRef  = useRef({});  // sessionId → options[]
+        // Round guard: increments on every runRound and on session-switch. Stream
+        // callbacks capture the value at start-of-round; if it changed, they drop
+        // their updates (prevents old-session chunks polluting a new session's view).
+        const roundIdRef       = useRef(0);
 
         useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
 
@@ -76,11 +84,20 @@
 
         // Sync with parent state changes (New Session / restore / navigate away)
         useEffect(() => {
+            // Only reset when the SWITCH is external (user picked another session /
+            // hit New Session). If the parent is just catching up with the id we
+            // already set locally (via onSessionCreated during our own stream),
+            // leave state alone — otherwise we'd kill our own in-flight round.
+            if ((parentSessionId || '') === (sessionIdRef.current || '')) return;
+
+            roundIdRef.current += 1;
             setSessionId(parentSessionId || '');
             setHistory(initialMessages || []);
-            setOptions(optionsCacheRef.current[parentSessionId] || []);
+            const cached = optionsCacheRef.current[parentSessionId];
+            setOptions((cached && cached.length) ? cached : (initialOptions || []));
             setSummaryData({});
-            autoStartedRef.current = false;  // allow auto-start again for new context
+            setIsDebating(false);
+            autoStartedRef.current = false;
         }, [parentSessionId]);
 
         // ── Close more menu on outside click ─────────────────────────────────
@@ -95,6 +112,125 @@
             return () => document.removeEventListener('mousedown', handler);
         }, [showMoreMenu]);
 
+        // ── Observer SSE: resume an in-flight generation after returning ─────
+        // When ChatArena shows a session with backend generation still running
+        // (detached task), attach to it with a fresh SSE. Feels identical to
+        // the original stream: token-by-token, loading indicator, same handlers.
+        useEffect(() => {
+            if (!sessionId) return;
+            // If this tab is already the streamer, don't double-subscribe
+            if (isDebating) return;
+            const myRound = ++roundIdRef.current;
+            const isActive = () => roundIdRef.current === myRound;
+            let cancelled = false;
+            (async () => {
+                try {
+                    setIsDebating(true);
+                    await fetchLifeeObserveStream(sessionId, {
+                        onMessage: async (msg) => {
+                            if (cancelled || !isActive()) return;
+                            setHistory(prev => {
+                                // Dedup: if last row is same persona (we already have partial
+                                // from DB restore), don't append — let chunks update it.
+                                if (prev.length > 0 && prev[prev.length - 1].personaId === msg.personaId) {
+                                    return prev;
+                                }
+                                return [...prev, msg];
+                            });
+                        },
+                        onMessageUpdate: async (msg) => {
+                            if (cancelled || !isActive()) return;
+                            setHistory(prev => {
+                                if (prev.length === 0) return prev;
+                                if (prev[prev.length - 1].personaId !== msg.personaId) return prev;
+                                const curLen = (prev[prev.length - 1].text || '').length;
+                                const incomingLen = (msg.text || '').length;
+                                if (incomingLen < curLen) return prev;  // don't regress
+                                const next = [...prev];
+                                next[next.length - 1] = { ...next[next.length - 1], ...msg };
+                                return next;
+                            });
+                        },
+                        onOptions: (opts) => {
+                            if (cancelled || !isActive()) return;
+                            setOptions(Array.isArray(opts) ? opts : []);
+                        },
+                    });
+                } catch (e) {
+                    if (!e?.notActive) console.warn('[observe]', e);
+                } finally {
+                    if (!cancelled && isActive()) setIsDebating(false);
+                }
+            })();
+            return () => { cancelled = true; };
+        }, [sessionId]);
+
+        // ── Supabase Realtime: live-sync DB changes into history ─────────────
+        // Only replaces local history when DB strictly has MORE content (by row
+        // count, or same count with a longer last message). Prevents the race
+        // where DB lags behind local SSE state and overwrites it.
+        const isDebatingRef = useRef(false);
+        const historyRef = useRef(history);
+        useEffect(() => { isDebatingRef.current = isDebating; }, [isDebating]);
+        useEffect(() => { historyRef.current = history; }, [history]);
+        useEffect(() => {
+            if (!sessionId || !window.supabaseClient) return;
+
+            // Merge a Supabase row directly into history (no HTTP round-trip).
+            // Matches by `seq` so UPDATEs patch the same item instead of duplicating.
+            const applyRow = (row) => {
+                if (!row) return;
+                if (isDebatingRef.current) return;  // local SSE owns the stream
+                const incoming = {
+                    personaId: row.persona_id || row.role,
+                    text: row.content || '',
+                    seq: row.seq,
+                };
+                setHistory(prev => {
+                    const byIdx = prev.findIndex(m => m.seq === row.seq);
+                    if (byIdx >= 0) {
+                        // Only overwrite if DB has at least as much content (prevents
+                        // an out-of-order UPDATE from shrinking the visible text).
+                        const existingLen = (prev[byIdx].text || '').length;
+                        const incomingLen = incoming.text.length;
+                        if (incomingLen < existingLen) return prev;
+                        const next = [...prev];
+                        next[byIdx] = { ...prev[byIdx], ...incoming };
+                        return next;
+                    }
+                    // INSERT of a row we haven't seen → append at the right position.
+                    const next = [...prev, incoming];
+                    next.sort((a, b) => (a.seq ?? 1e9) - (b.seq ?? 1e9));
+                    return next;
+                });
+            };
+
+            const channel = window.supabaseClient
+                .channel(`session-${sessionId}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'chat_messages',
+                    filter: `session_id=eq.${sessionId}`,
+                }, (payload) => applyRow(payload.new))
+                .subscribe();
+            return () => {
+                try { window.supabaseClient.removeChannel(channel); } catch (_) {}
+            };
+        }, [sessionId]);
+
+        // ── Close tools menu on outside click ────────────────────────────────
+        useEffect(() => {
+            if (!showToolsMenu) return;
+            const handler = (e) => {
+                if (toolsMenuRef.current && !toolsMenuRef.current.contains(e.target)) {
+                    setShowToolsMenu(false);
+                }
+            };
+            document.addEventListener('mousedown', handler);
+            return () => document.removeEventListener('mousedown', handler);
+        }, [showToolsMenu]);
+
         // ── Persona color mapping (stable by first-seen order) ────────────────
         const personaColorMap = useMemo(() => {
             const map = {};
@@ -107,10 +243,23 @@
         const getColor = (personaId) =>
             personaColorMap[personaId] || PERSONA_COLORS[0];
 
-        // ── Auto-scroll ───────────────────────────────────────────────────────
+        // ── Auto-scroll (respects manual scroll-up during streaming) ──────────
+        const stickyBottomRef = useRef(true);  // whether we should follow new content
         useEffect(() => {
-            if (scrollRef.current) {
-                scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            const el = scrollRef.current;
+            if (!el) return;
+            const onScroll = () => {
+                const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+                stickyBottomRef.current = nearBottom;
+            };
+            el.addEventListener('scroll', onScroll, { passive: true });
+            return () => el.removeEventListener('scroll', onScroll);
+        }, []);
+        useEffect(() => {
+            const el = scrollRef.current;
+            if (!el) return;
+            if (stickyBottomRef.current) {
+                el.scrollTop = el.scrollHeight;
             }
         }, [history]);
 
@@ -160,6 +309,8 @@
 
         // ── Core round runner ─────────────────────────────────────────────────
         const runRound = async (userInput = null) => {
+            const myRound = ++roundIdRef.current;  // claim this round
+            const isActive = () => roundIdRef.current === myRound;
             setIsDebating(true);
             const cleanInput = (userInput ?? inputValue ?? '').toString().trim();
 
@@ -208,10 +359,17 @@
                 }
 
                 const handlers = {
+                    onSession: async (sid) => {
+                        if (!isActive()) return;
+                        setSessionId(sid);
+                        try { await onSessionCreated?.(sid); } catch (_) {}
+                    },
                     onMessage: async (msg) => {
+                        if (!isActive()) return;
                         setHistory(prev => [...prev, msg]);
                     },
                     onMessageUpdate: async (msg) => {
+                        if (!isActive()) return;
                         setHistory(prev => {
                             const updated = [...prev];
                             if (
@@ -224,6 +382,7 @@
                         });
                     },
                     onOptions: (opts) => {
+                        if (!isActive()) return;
                         setOptions(Array.isArray(opts) ? opts : []);
                     },
                 };
@@ -248,10 +407,18 @@
                         setShowPaywall(true);
                         return;
                     }
-                    if (window.__lifeeSessionId) setSessionId(window.__lifeeSessionId);
+                    if (isActive() && window.__lifeeSessionId) setSessionId(window.__lifeeSessionId);
                     if (typeof window.__lifeeBalance === 'number') setCredits(window.__lifeeBalance);
                 } catch (streamErr) {
-                    console.warn('[ChatArena] stream failed; fallback', streamErr);
+                    console.warn('[ChatArena] stream failed', streamErr);
+                    // If the backend already accepted this request and assigned a sessionId,
+                    // the generation is running detached (server-side task). Do NOT re-POST
+                    // via the non-stream fallback — that would spawn a duplicate session.
+                    // The Realtime subscription will catch up when DB updates land.
+                    if (window.__lifeeSessionId) {
+                        setSessionId(window.__lifeeSessionId);
+                        return;
+                    }
                     const data = await fetchLifeeDecision(payload);
                     if (data?.needsVerification) { setVerifyError(''); setShowVerify(true); return; }
                     if (data?.needsPayment) { setCredits(data.balance || 0); setShowPaywall(true); return; }
@@ -264,13 +431,15 @@
                 }
             } catch (e) {
                 console.error('[ChatArena]', e);
-                setHistory(prev => [
-                    ...prev,
-                    { personaId: 'system', text: `(${e?.message || 'Request failed'})` },
-                ]);
-                setOptions([]);
+                if (isActive()) {
+                    setHistory(prev => [
+                        ...prev,
+                        { personaId: 'system', text: `(${e?.message || 'Request failed'})` },
+                    ]);
+                    setOptions([]);
+                }
             } finally {
-                setIsDebating(false);
+                if (isActive()) setIsDebating(false);
                 fireExtractMemory(sessionIdRef.current);
             }
         };
@@ -373,7 +542,7 @@
                     <div key=${idx} class="flex items-start gap-4 max-w-[85%] md:max-w-[70%] ml-auto flex-row-reverse animate-in">
                         <!-- Avatar -->
                         <div class="w-10 h-10 rounded-full border-2 border-on-surface-variant/30 bg-surface-container-high flex items-center justify-center text-on-surface font-bold text-sm shrink-0 overflow-hidden">
-                            ${typeof ava === 'string' && ava.length <= 2
+                            ${!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
                                 ? html`<span class="text-lg">${ava}</span>`
                                 : html`<img src=${ava} class="w-full h-full object-cover" />`
                             }
@@ -387,7 +556,7 @@
                             <div class="flex gap-3 px-1 flex-row-reverse">
                                 <button
                                     onClick=${() => copyText(m.text)}
-                                    class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-on-surface-variant transition-colors uppercase tracking-widest"
+                                    class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-widest"
                                 >Copy</button>
                             </div>
                         </div>
@@ -414,7 +583,7 @@
                 <div key=${idx} class="flex items-start gap-4 max-w-[85%] md:max-w-[70%] animate-in">
                     <!-- Avatar -->
                     <div class=${'w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg shrink-0 overflow-hidden ' + color.ring + ' ' + color.bg}>
-                        ${typeof ava === 'string' && ava.length <= 2
+                        ${!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
                             ? html`<span>${ava}</span>`
                             : html`<img src=${ava} class="w-full h-full object-cover" />`
                         }
@@ -430,11 +599,11 @@
                         <div class="flex gap-3 px-1">
                             <button
                                 onClick=${() => copyText(m.text)}
-                                class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-on-surface-variant transition-colors uppercase tracking-widest"
+                                class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-widest"
                             >Copy</button>
                             <button
                                 onClick=${() => quoteText(m.text, persona.name)}
-                                class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-on-surface-variant transition-colors uppercase tracking-widest"
+                                class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-widest"
                             >Quote</button>
                         </div>
                     </div>
@@ -452,7 +621,7 @@
                             <span class="text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant">Summary</span>
                             <button
                                 onClick=${() => setShowSummaryPanel(false)}
-                                class="text-on-surface-variant/50 hover:text-on-surface transition-colors text-lg leading-none"
+                                class="text-on-surface-variant/50 hover:text-primary transition-colors text-lg leading-none"
                             >✕</button>
                         </div>
                         <div class="p-6 space-y-5">
@@ -487,26 +656,6 @@
                     ref=${moreMenuRef}
                     class="absolute right-0 top-full mt-2 w-64 bg-surface-container/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
                 >
-                    <!-- Follow-up toggle -->
-                    <div class="px-4 py-3 border-b border-white/5 flex items-center justify-between">
-                        <span class="text-xs text-on-surface font-semibold">Follow-up Questions</span>
-                        <button
-                            onClick=${() => setFollowUpMode(v => !v)}
-                            class=${'relative w-10 h-5 rounded-full transition-all duration-200 ' + (followUpMode ? 'bg-primary' : 'bg-surface-container-highest')}
-                        >
-                            <span class=${'absolute top-0.5 w-4 h-4 rounded-full bg-on-primary shadow transition-all duration-200 ' + (followUpMode ? 'left-5' : 'left-0.5')}></span>
-                        </button>
-                    </div>
-                    <!-- Web search toggle -->
-                    <div class="px-4 py-3 border-b border-white/5 flex items-center justify-between">
-                        <span class="text-xs text-on-surface font-semibold">Web Search</span>
-                        <button
-                            onClick=${() => setWebSearchMode(v => !v)}
-                            class=${'relative w-10 h-5 rounded-full transition-all duration-200 ' + (webSearchMode ? 'bg-secondary' : 'bg-surface-container-highest')}
-                        >
-                            <span class=${'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ' + (webSearchMode ? 'left-5' : 'left-0.5')}></span>
-                        </button>
-                    </div>
                     <!-- Max speakers select -->
                     ${(selectedPersonas || []).length > 1 ? html`
                         <div class="px-4 py-3 border-b border-white/5 flex items-center justify-between gap-3">
@@ -558,6 +707,52 @@
             `;
         };
 
+        // ── Tools menu (popover above + button in input row) ──────────────────
+        const ToolsMenu = () => {
+            if (!showToolsMenu) return null;
+            const Row = ({ label, desc, icon, active, color, onToggle }) => html`
+                <button
+                    onClick=${onToggle}
+                    class=${'w-full flex items-start gap-3 px-4 py-3 transition-colors text-left ' + (active ? 'bg-white/[0.04]' : 'hover:bg-white/[0.03]')}
+                >
+                    <span class=${'material-symbols-outlined shrink-0 mt-0.5 ' + (active ? color : 'text-on-surface-variant/50')}>${icon}</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class=${'text-xs font-semibold ' + (active ? 'text-on-surface' : 'text-on-surface/80')}>${label}</span>
+                            <span class=${'w-8 h-4 rounded-full relative transition-colors ' + (active ? color.replace('text-', 'bg-') : 'bg-surface-container-highest')}>
+                                <span class=${'absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ' + (active ? 'left-[18px]' : 'left-0.5')}></span>
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-on-surface-variant/50 mt-0.5 leading-snug">${desc}</p>
+                    </div>
+                </button>
+            `;
+            return html`
+                <div
+                    ref=${toolsMenuRef}
+                    class="absolute left-0 bottom-full mb-2 w-72 bg-surface-container/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
+                >
+                    <${Row}
+                        label="Web Search"
+                        desc="Ground answers in live web results (via Gemini)"
+                        icon="travel_explore"
+                        active=${webSearchMode}
+                        color="text-secondary"
+                        onToggle=${() => setWebSearchMode(v => !v)}
+                    />
+                    <div class="h-px bg-white/5"></div>
+                    <${Row}
+                        label="Follow-up Questions"
+                        desc="After each reply, suggest tap-to-ask options"
+                        icon="quick_reference_all"
+                        active=${followUpMode}
+                        color="text-primary"
+                        onToggle=${() => setFollowUpMode(v => !v)}
+                    />
+                </div>
+            `;
+        };
+
         // ── Main render ───────────────────────────────────────────────────────
         return html`
             <div class="h-full flex flex-col overflow-hidden bg-surface text-on-surface">
@@ -580,7 +775,7 @@
                                         class=${'w-8 h-8 rounded-full border-2 overflow-hidden shadow-sm flex items-center justify-center text-sm ' + color.ring + ' ' + color.bg}
                                         title=${p.name}
                                     >
-                                        ${typeof ava === 'string' && ava.length <= 2
+                                        ${!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
                                             ? html`<span>${ava}</span>`
                                             : html`<img src=${ava} class="w-full h-full object-cover" />`
                                         }
@@ -650,17 +845,47 @@
 
                     ${history.map((m, idx) => renderMessage(m, idx))}
 
-                    <!-- Typing indicator — smooth ease-out dots instead of bounce -->
-                    ${isDebating ? html`
-                        <div class="flex items-start gap-4">
-                            <div class="w-10 h-10 rounded-full bg-surface-container border border-white/10 shrink-0"></div>
-                            <div class="flex items-center gap-1.5 bg-surface-container/80 px-5 py-4 rounded-xl rounded-tl-sm border-t-2 border-on-surface-variant/20 h-[54px]">
-                                <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '0ms' }}></span>
-                                <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '200ms' }}></span>
-                                <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '400ms' }}></span>
+                    <!-- Typing indicator: only while the NEXT persona is warming up
+                         (empty history OR last message is an empty stub from a just-
+                         started persona). Hidden once their tokens start flowing, and
+                         hidden during the post-stream options-generation phase. -->
+                    ${(() => {
+                        if (!isDebating) return null;
+                        const last = history[history.length - 1];
+                        const hasText = last && (last.text || '').trim().length > 0;
+                        if (hasText) return null;  // persona is already speaking or options-gen phase
+                        // If last exists and it's an empty assistant stub, show THAT persona.
+                        // Otherwise fall back to a generic pulse (gap before first persona).
+                        const pid = (last && last.personaId && last.personaId !== 'user') ? last.personaId : null;
+                        const persona = pid
+                            ? ((selectedPersonas || []).find(p => p.id === pid) || { name: pid, avatar: '☁️' })
+                            : null;
+                        const ava = persona?.avatar || '☁️';
+                        const color = pid ? getColor(pid) : { border: 'border-on-surface-variant/20', text: 'text-on-surface-variant/60', bg: 'bg-surface-container', ring: 'border-white/10' };
+                        return html`
+                            <div class="flex items-start gap-4 animate-in">
+                                <div class=${'w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg shrink-0 overflow-hidden ' + color.ring + ' ' + color.bg}>
+                                    ${persona
+                                        ? (!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
+                                            ? html`<span>${ava}</span>`
+                                            : html`<img src=${ava} class="w-full h-full object-cover" />`)
+                                        : null}
+                                </div>
+                                <div class="space-y-1.5">
+                                    ${persona ? html`
+                                        <p class=${'text-[10px] font-bold uppercase tracking-widest ml-1 ' + color.text}>
+                                            ${persona.name}
+                                        </p>
+                                    ` : null}
+                                    <div class=${'flex items-center gap-1.5 bg-surface-container/80 px-5 py-4 rounded-xl rounded-tl-sm border-t-2 h-[54px] ' + color.border}>
+                                        <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '0ms' }}></span>
+                                        <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '200ms' }}></span>
+                                        <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '400ms' }}></span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    ` : null}
+                        `;
+                    })()}
                   </div>
                 </div>
 
@@ -683,11 +908,23 @@
 
                         <!-- Main input row -->
                         <div class="input-warm-focus flex items-center bg-surface-container-lowest border border-white/5 rounded-2xl p-2 transition-all duration-300">
-                            <!-- Add attachment -->
-                            <button class="p-2 text-on-surface-variant/40 hover:text-primary transition-colors shrink-0">
-                                <span class="material-symbols-outlined">add_circle</span>
-                            </button>
-
+                            <!-- Tools (web search / follow-up) -->
+                            <div class="relative shrink-0">
+                                <button
+                                    onClick=${() => setShowToolsMenu(v => !v)}
+                                    title="Tools"
+                                    class=${'w-9 h-9 rounded-lg flex items-center justify-center transition-colors ' +
+                                        (showToolsMenu || webSearchMode || followUpMode
+                                            ? 'bg-primary/15 text-primary'
+                                            : 'text-on-surface-variant/50 hover:text-primary hover:bg-white/5')}
+                                >
+                                    <span class="material-symbols-outlined" style=${{ fontSize: '20px' }}>add</span>
+                                </button>
+                                <${ToolsMenu} />
+                                ${(webSearchMode || followUpMode) ? html`
+                                    <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary border border-surface-container-lowest"></span>
+                                ` : null}
+                            </div>
                             <!-- Textarea -->
                             <textarea
                                 ref=${inputFieldRef}
@@ -717,11 +954,6 @@
                             ` : null}
 
                             <div class="flex items-center gap-2 pr-2 shrink-0">
-                                <!-- Emoji -->
-                                <button class="p-2 text-on-surface-variant/40 hover:text-secondary transition-colors">
-                                    <span class="material-symbols-outlined">sentiment_satisfied</span>
-                                </button>
-
                                 <!-- Send button -->
                                 <button
                                     disabled=${isDebating || !inputValue.trim()}
@@ -738,7 +970,7 @@
                             <button
                                 disabled=${isDebating}
                                 onClick=${() => runRound(null)}
-                                class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/30 hover:text-on-surface-variant/60 transition-colors disabled:opacity-30"
+                                class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/30 hover:text-primary transition-colors disabled:opacity-30"
                             >Stay Silent</button>
 
                             ${extractStatus === 'done' ? html`
@@ -797,7 +1029,7 @@
                             ` : null}
                             <button
                                 onClick=${() => setShowVerify(false)}
-                                class="text-sm text-on-surface-variant/50 hover:text-on-surface-variant transition-colors"
+                                class="text-sm text-on-surface-variant/50 hover:text-primary transition-colors"
                             >Cancel</button>
                         </div>
                     </div>
@@ -837,7 +1069,7 @@
                             >Redeem</button>
                             <button
                                 onClick=${() => setShowPaywall(false)}
-                                class="mt-3 text-sm text-on-surface-variant/50 hover:text-on-surface-variant transition-colors"
+                                class="mt-3 text-sm text-on-surface-variant/50 hover:text-primary transition-colors"
                             >Cancel</button>
                         </div>
                     </div>
