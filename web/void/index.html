@@ -575,6 +575,7 @@
             'profile.saving':    { en: 'Saving…',        zh: '保存中…' },
             'profile.reset':     { en: 'Reset',          zh: '重置' },
             'profile.confirmReset': { en: 'Reset your profile to default? This cannot be undone.', zh: '重置档案为默认？此操作无法撤销。' },
+            'profile.name':      { en: 'Name',           zh: '名字' },
 
             // Share modal
             'share.title':       { en: 'Share chat history', zh: '分享对话' },
@@ -634,7 +635,7 @@
             'help.q.custom':     { en: 'Can I create custom personas?', zh: '可以自建角色吗？' },
             'help.a.custom':     { en: 'Settings → My Personas → New persona. Fill in name, role, worldview, and a voice sample. Custom personas appear in the CUSTOM category and can be added to any Council.', zh: '设置 → 我的角色 → 新建角色。填入姓名、身份、世界观、语气样例。保存后会出现在"自定义"分类里，可以加入任何议会。' },
             'help.q.export':     { en: 'How do I export a chat?', zh: '如何导出对话？' },
-            'help.a.export':     { en: 'Settings → Share chat history. Copy to clipboard or download as a .txt file — preserves persona names and the full message flow.', zh: '设置 → 分享对话。复制到剪贴板或下载为 .txt 文件——会保留角色名和完整的对话顺序。' },
+            'help.a.export':     { en: 'In the chat header, open the More (⋮) menu → Share chat history. Copy to clipboard or download as a .txt file — preserves persona names and the full message flow.', zh: '在对话页的标题栏，打开右上角的 ⋮ 菜单 → 分享对话。可复制到剪贴板或下载为 .txt 文件——会保留角色名和完整的对话顺序。' },
 
             // Account & Credits
             'help.q.credits':    { en: 'What are credits?', zh: '额度（Credits）是什么？' },
@@ -672,6 +673,7 @@
             'personas.worldviewPh':  { en: 'Worldview statement — one sentence this persona believes deeply…', zh: '世界观——这个角色坚信的一句话…' },
             'personas.voicePh':      { en: 'Voice sample — how this persona would actually speak…', zh: '语言风格——这个角色会怎么说话…' },
             'personas.confirmDelete':{ en: 'Delete "%s"?', zh: '删除"%s"？' },
+            'personas.confirmDeleteDesc': { en: 'This custom persona will be removed from your library. Existing conversations that referenced it will keep the transcripts but can no longer invite them again.', zh: '这个自建角色会从你的角色库里移除。已经用过它的历史对话仍会保留原文，但之后无法再召集它。' },
             'personas.save':         { en: 'Save',        zh: '保存' },
 
             // Persona names / roles / worldviews (translations of data in
@@ -2580,15 +2582,30 @@
             const [displayName, setDisplayName] = useState('');
             const [loading, setLoading] = useState(false);
             const [status, setStatus] = useState('');
+            // `saved` flips the Save button label to Saved after a successful
+            // save. Editing the input resets it back to Save.
+            const [saved, setSaved] = useState(false);
 
             useEffect(() => {
                 let mounted = true;
                 (async () => {
                     if (!isOpen || !user) return;
-                    setStatus('');
-                    const { data } = await supabaseClient.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+                    setStatus(''); setSaved(false);
+                    // Prefer auth user_metadata (authoritative, survives RLS issues);
+                    // fall back to the profiles mirror and then email-local-part.
+                    let fromProfiles = '';
+                    try {
+                        const { data } = await supabaseClient
+                            .from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+                        fromProfiles = data?.display_name || '';
+                    } catch (_) { /* table missing / RLS — ignore */ }
                     if (!mounted) return;
-                    setDisplayName(data?.display_name || user.user_metadata?.name || '');
+                    setDisplayName(
+                        user.user_metadata?.name
+                        || fromProfiles
+                        || user.email?.split('@')[0]
+                        || ''
+                    );
                 })();
                 return () => { mounted = false; };
             }, [isOpen, user?.id]);
@@ -2600,11 +2617,26 @@
                 setLoading(true); setStatus('');
                 try {
                     const next = (displayName || '').trim() || null;
-                    const { error } = await supabaseClient.from('profiles')
-                        .upsert({ id: user.id, email: user.email, display_name: next }, { onConflict: 'id' });
-                    if (error) throw error;
-                    setStatus(t('account.saved'));
-                } catch (e) { setStatus(e?.message || 'Save failed'); }
+                    // Primary: auth user metadata. Not affected by RLS, synced via
+                    // session so every component reading user.user_metadata.name
+                    // (sidebar card, etc.) updates on the next auth state change.
+                    const { data: updated, error: authErr } =
+                        await supabaseClient.auth.updateUser({ data: { name: next } });
+                    if (authErr) throw authErr;
+                    // Best-effort mirror into profiles table (may fail on RLS /
+                    // missing table — that's fine, the auth metadata is the source
+                    // of truth for display name now).
+                    try {
+                        await supabaseClient.from('profiles')
+                            .upsert({ id: user.id, email: user.email, display_name: next }, { onConflict: 'id' });
+                    } catch (_) {}
+                    // Broadcast so App's setUser picks up the fresh metadata
+                    // without waiting for a full auth state change round-trip.
+                    if (updated?.user) {
+                        window.dispatchEvent(new CustomEvent('lifee:user-updated', { detail: updated.user }));
+                    }
+                    setSaved(true);
+                } catch (e) { setStatus(e?.message || 'Save failed'); setSaved(false); }
                 finally { setLoading(false); }
             };
 
@@ -2686,12 +2718,12 @@
                                 <input
                                     class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
                                     value=${displayName}
-                                    onInput=${(e) => setDisplayName(e.target.value)}
+                                    onInput=${(e) => { setDisplayName(e.target.value); if (saved) setSaved(false); }}
                                     placeholder=${t('account.namePlaceholder')}
                                 />
-                                <button onClick=${saveProfile} disabled=${loading}
-                                    class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
-                                >${loading ? t('account.working') : t('account.save')}</button>
+                                <button onClick=${saveProfile} disabled=${loading || saved}
+                                    class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-60"
+                                >${loading ? t('account.working') : (saved ? t('account.saved') : t('account.save'))}</button>
                             </div>
 
                             <!-- Password + Sign out -->
@@ -2721,12 +2753,19 @@
             const [loading, setLoading] = useState(false);
             const [status, setStatus] = useState('');
             const [editing, setEditing] = useState(false);
+            // Name mirrors user.user_metadata.name. Hidden entirely for users
+            // who haven't set a name yet (fresh signups) — they fill it in the
+            // Account modal first. Once a name exists, either modal can edit it.
+            const initialName = user?.user_metadata?.name || '';
+            const [nameDraft, setNameDraft] = useState(initialName);
+            const showNameField = Boolean(initialName);
 
             useEffect(() => {
                 let mounted = true;
                 (async () => {
                     if (!isOpen || !user) return;
                     setStatus(''); setEditing(false);
+                    setNameDraft(user.user_metadata?.name || '');
                     const { data } = await supabaseClient.from('profiles').select('user_memory').eq('id', user.id).maybeSingle();
                     if (!mounted) return;
                     setContent(data?.user_memory || DEFAULT_USER_MEMORY_TEMPLATE);
@@ -2740,6 +2779,17 @@
                 if (!user) return;
                 setLoading(true); setStatus('');
                 try {
+                    // If the name changed, push it to auth metadata first so
+                    // sidebar / AccountModal see it on the next render.
+                    const nextName = (nameDraft || '').trim();
+                    if (showNameField && nextName !== initialName) {
+                        const { data: updated, error: authErr } =
+                            await supabaseClient.auth.updateUser({ data: { name: nextName || null } });
+                        if (authErr) throw authErr;
+                        if (updated?.user) {
+                            window.dispatchEvent(new CustomEvent('lifee:user-updated', { detail: updated.user }));
+                        }
+                    }
                     const { error } = await supabaseClient.from('profiles')
                         .upsert({ id: user.id, user_memory: content }, { onConflict: 'id' });
                     if (error) throw error;
@@ -2768,6 +2818,17 @@
                         <p class="text-xs text-on-surface-variant/70 mb-4 leading-relaxed">
                             ${t('profile.desc')}
                         </p>
+                        ${showNameField ? html`
+                            <div class="mb-4">
+                                <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 mb-1.5">${t('profile.name')}</p>
+                                <input
+                                    class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 void-textarea"
+                                    value=${nameDraft}
+                                    onInput=${(e) => { setNameDraft(e.target.value); setEditing(true); }}
+                                    placeholder=${t('account.namePlaceholder')}
+                                />
+                            </div>
+                        ` : null}
                         <textarea
                             class="flex-1 min-h-[320px] w-full p-4 bg-surface-container border border-outline/30 text-on-surface rounded-2xl text-xs md:text-sm leading-relaxed focus:outline-none focus:border-primary/50 void-textarea font-mono"
                             value=${content}
@@ -2844,16 +2905,16 @@
         // ══════════════════════════════════════════════
         //  SETTINGS VIEW
         // ══════════════════════════════════════════════
-        function SettingsView({ onBack, user, setView, onSignOut, onLogin, userAvatar, onUserAvatarChange, shareText }) {
+        function SettingsView({ onBack, user, setView, onSignOut, onLogin, userAvatar, onUserAvatarChange }) {
             const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Guest';
             const [accountOpen, setAccountOpen] = useState(false);
             const [profileOpen, setProfileOpen] = useState(false);
-            const [shareOpen, setShareOpen] = useState(false);
 
+            // Share moved to the per-conversation More (⋮) menu in the chat
+            // header — it's a conversation-scoped action, not a global one.
             const navItems = [
                 { key: 'account', label: t('settings.manageAccount'), icon: 'UserCog', desc: t('settings.manageAccountDesc'), onClick: () => setAccountOpen(true), disabled: !user },
                 { key: 'profile', label: t('settings.myProfile'), icon: 'BookUser', desc: t('settings.myProfileDesc'), onClick: () => setProfileOpen(true), disabled: !user },
-                { key: 'share', label: t('settings.share'), icon: 'Share2', desc: t('settings.shareDesc'), onClick: () => setShareOpen(true), disabled: !(shareText && shareText.trim()) },
                 { key: 'personas', label: t('settings.myPersonas'), icon: 'Users', desc: t('settings.myPersonasDesc'), onClick: () => setView?.('my-personas') },
                 { key: 'community', label: t('settings.community'), icon: 'Globe', desc: t('settings.communityDesc'), onClick: () => setView?.('community') },
                 { key: 'help', label: t('settings.helpFaq'), icon: 'HelpCircle', desc: t('settings.helpFaqDesc'), onClick: () => setView?.('help') },
@@ -2925,11 +2986,6 @@
                         isOpen=${profileOpen}
                         onClose=${() => setProfileOpen(false)}
                         user=${user}
-                    />
-                    <${ShareChatModal}
-                        isOpen=${shareOpen}
-                        onClose=${() => setShareOpen(false)}
-                        shareText=${shareText}
                     />
                 </div>
             `;
@@ -3019,7 +3075,7 @@
             `;
         }
 
-        function MyPersonasView({ onBack, personas, favoritePersonas, toggleFavoritePersona, onSaveCustom, onDeleteCustom }) {
+        function MyPersonasView({ onBack, personas, favoritePersonas, toggleFavoritePersona, onSaveCustom, onDeleteCustom, openConfirm }) {
             const [category, setCategory] = useState('ALL');
             const [editOpen, setEditOpen] = useState(false);
             const [editTarget, setEditTarget] = useState(null);
@@ -3032,8 +3088,20 @@
             const openCreate = () => { setEditTarget(null); setEditOpen(true); };
             const openEdit = (p) => { setEditTarget(p); setEditOpen(true); };
             const handleDelete = (p) => {
-                if (!confirm(t('personas.confirmDelete').replace('%s', p.name))) return;
-                onDeleteCustom?.(p.id);
+                const doDelete = () => onDeleteCustom?.(p.id);
+                if (openConfirm) {
+                    openConfirm({
+                        title: t('personas.confirmDelete').replace('%s', p.name),
+                        message: t('personas.confirmDeleteDesc'),
+                        confirmLabel: t('common.delete'),
+                        cancelLabel: t('common.cancel'),
+                        destructive: true,
+                        onConfirm: doDelete,
+                    });
+                } else {
+                    if (!confirm(t('personas.confirmDelete').replace('%s', p.name))) return;
+                    doDelete();
+                }
             };
 
             return html`
@@ -3087,7 +3155,7 @@
                                     <p class="text-[10px] text-on-surface-variant/50 italic line-clamp-2">"${p.worldview}"</p>
                                     ${isCustom ? html`
                                         <div class="absolute top-2 right-10 text-[8px] font-bold uppercase tracking-[0.2em] text-primary/50">${t('personas.customTag')}</div>
-                                        <div class="flex gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div class="flex gap-2 mt-1">
                                             <button
                                                 onClick=${() => openEdit(p)}
                                                 class="flex-1 btn-ghost rounded-lg py-1.5 text-[10px] uppercase tracking-wider"
@@ -3257,6 +3325,13 @@
             const [authOpen, setAuthOpen] = useState(false);
             const [redeemOpen, setRedeemOpen] = useState(false);
             const [feedbackOpen, setFeedbackOpen] = useState(false);
+            const [shareOpen, setShareOpen] = useState(false);
+            const [shareText, setShareText] = useState('');
+            const openShare = useCallback(({ messages, personas: personasForShare } = {}) => {
+                const text = buildShareText(messages || [], personasForShare || []);
+                setShareText(text);
+                setShareOpen(true);
+            }, []);
             const [confirmState, setConfirmState] = useState({ isOpen: false });
             const openConfirm = useCallback((opts) => {
                 setConfirmState({ isOpen: true, ...opts });
@@ -3360,7 +3435,18 @@
                     setUser(session?.user || null);
                     if (session?.user) setIsGuest(false);
                 });
-                return () => { mounted = false; sub?.subscription?.unsubscribe?.(); };
+                // In-app fast path: AccountModal fires this after auth.updateUser
+                // so the sidebar reflects the new display name without waiting
+                // for onAuthStateChange to fire.
+                const onUserUpdated = (e) => {
+                    if (e?.detail) setUser(e.detail);
+                };
+                window.addEventListener('lifee:user-updated', onUserUpdated);
+                return () => {
+                    mounted = false;
+                    sub?.subscription?.unsubscribe?.();
+                    window.removeEventListener('lifee:user-updated', onUserUpdated);
+                };
             }, []);
 
             // Load favorite personas
@@ -3586,6 +3672,7 @@
                         setSessionId(id);
                         refreshChatSessions();
                     },
+                    onOpenShare: openShare,
                 });
             };
 
@@ -3614,7 +3701,6 @@
                         onLogin=${() => setAuthOpen(true)}
                         userAvatar=${userAvatar}
                         onUserAvatarChange=${(a) => setUserAvatar(a)}
-                        shareText=${buildShareText(sessionMessages, personas)}
                     />`;
                 }
 
@@ -3643,6 +3729,7 @@
                         toggleFavoritePersona=${toggleFavoritePersona}
                         onSaveCustom=${upsertCustomPersona}
                         onDeleteCustom=${deleteCustomPersona}
+                        openConfirm=${openConfirm}
                     />`;
                 }
 
@@ -3773,6 +3860,13 @@
                         isOpen=${feedbackOpen}
                         onClose=${() => setFeedbackOpen(false)}
                         user=${user}
+                    />
+
+                    <!-- Share-chat modal — opened from the chat More (⋮) menu -->
+                    <${ShareChatModal}
+                        isOpen=${shareOpen}
+                        onClose=${() => setShareOpen(false)}
+                        shareText=${shareText}
                     />
 
                     <!-- Themed confirm modal (replaces window.confirm) -->

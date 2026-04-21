@@ -154,6 +154,7 @@
         initialOptions = [],
         parentSessionId = "",
         onSessionCreated,
+        onOpenShare,
     }) => {
         // ── State ─────────────────────────────────────────────────────────────
         const [history, setHistory]             = useState(initialMessages);
@@ -928,7 +929,7 @@
             };
             const saved = loadSaved();
             const [pan, setPan] = useState(() => saved.pan && typeof saved.pan.x === 'number' ? saved.pan : { x: 0, y: 0 });
-            const [scale, setScale] = useState(() => typeof saved.scale === 'number' ? saved.scale : 0.85);
+            const [scale, setScale] = useState(() => typeof saved.scale === 'number' ? saved.scale : 1.0);
             const [cardPos, setCardPos] = useState(() => {
                 const out = { ...(saved.cardPos || {}) };
                 voices.forEach((v, i) => {
@@ -1000,7 +1001,7 @@
             };
             const reset = () => {
                 setPan({ x: 0, y: 0 });
-                setScale(0.85);
+                setScale(1.0);
                 // Also reset every card back to its slot position so user can
                 // recover from a messy drag session.
                 const fresh = {};
@@ -1392,6 +1393,13 @@
                                 onClick=${handleSummary}
                             >${summaryLoading ? 'hourglass_empty' : 'summarize'}</span>
 
+                            <!-- Share conversation -->
+                            <span
+                                class=${'material-symbols-outlined cursor-pointer transition-colors ' + (!(history && history.length) ? 'opacity-30 pointer-events-none' : 'hover:text-primary')}
+                                title=${t('share.title')}
+                                onClick=${() => onOpenShare?.({ messages: history, personas: selectedPersonas })}
+                            >ios_share</span>
+
                             <!-- More menu -->
                             <div class="relative">
                                 <span
@@ -1481,8 +1489,8 @@
                              and float above the input as opaque chips (absolute so they don't push
                              layout; opaque bg so chat text behind doesn't bleed through). -->
                         ${options.length > 0 && !isDebating ? html`
-                            <div class="group relative cursor-default animate-in">
-                                <div class="flex items-center justify-center gap-1 text-[10px] uppercase tracking-[0.25em] text-primary/50 py-2 transition-opacity duration-200 group-hover:opacity-0">
+                            <div class="group relative cursor-default animate-in -my-1">
+                                <div class="flex items-center justify-center gap-1 text-[10px] uppercase tracking-[0.25em] text-primary/50 py-0.5 transition-opacity duration-200 group-hover:opacity-0">
                                     <span>${options.length} ${t('chat.suggested')}</span>
                                     <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>expand_more</span>
                                 </div>
