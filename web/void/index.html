@@ -214,6 +214,10 @@
             initial-value: 130%;
         }
         .warm-shine-active {
+            /* !important so class-level `background:` shorthands declared later
+               in the stylesheet (e.g. .btn-ghost, .btn-gradient variants) can't
+               strip our currentColor fallback and make text invisible outside
+               the gradient band. */
             background-image: linear-gradient(
                 110deg,
                 transparent 0%,
@@ -225,13 +229,13 @@
                 rgba(196, 122, 108, 0.35) 63%,
                 transparent 65%,
                 transparent 100%
-            );
-            background-color: currentColor;
-            background-size: 220% 100%;
-            background-position: var(--shine-pos) 50%;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            ) !important;
+            background-color: currentColor !important;
+            background-size: 220% 100% !important;
+            background-position: var(--shine-pos) 50% !important;
+            -webkit-background-clip: text !important;
+            background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
             transition: --shine-pos 1.1s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .hover-warm { transition: color 0.25s ease; }
@@ -1646,21 +1650,290 @@
         }
 
         // ══════════════════════════════════════════════
-        //  SETTINGS VIEW
+        //  ACCOUNT MODAL — display name, avatar, password reset, sign out
         // ══════════════════════════════════════════════
-        function SettingsView({ onBack, user, onSignOut, onLogin, userAvatar, onUserAvatarChange }) {
-            const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Guest';
-            const fileRef = useRef(null);
+        function AccountModal({ isOpen, onClose, user, onSignOut, userAvatar, onUserAvatarChange }) {
+            const [displayName, setDisplayName] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [status, setStatus] = useState('');
 
-            const handleAvatarChange = async (e) => {
+            useEffect(() => {
+                let mounted = true;
+                (async () => {
+                    if (!isOpen || !user) return;
+                    setStatus('');
+                    const { data } = await supabaseClient.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+                    if (!mounted) return;
+                    setDisplayName(data?.display_name || user.user_metadata?.name || '');
+                })();
+                return () => { mounted = false; };
+            }, [isOpen, user?.id]);
+
+            if (!isOpen) return null;
+
+            const saveProfile = async () => {
+                if (!user) return;
+                setLoading(true); setStatus('');
+                try {
+                    const next = (displayName || '').trim() || null;
+                    const { error } = await supabaseClient.from('profiles')
+                        .upsert({ id: user.id, email: user.email, display_name: next }, { onConflict: 'id' });
+                    if (error) throw error;
+                    setStatus('Saved');
+                } catch (e) { setStatus(e?.message || 'Save failed'); }
+                finally { setLoading(false); }
+            };
+
+            const resetPassword = async () => {
+                if (!user?.email) return;
+                setLoading(true); setStatus('');
+                try {
+                    const { error } = await supabaseClient.auth.resetPasswordForEmail(
+                        user.email, { redirectTo: window.location.href }
+                    );
+                    if (error) throw error;
+                    setStatus('Password reset email sent');
+                } catch (e) { setStatus(e?.message || 'Send failed'); }
+                finally { setLoading(false); }
+            };
+
+            const handleAvatarUpload = async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
+                setStatus('');
                 try {
                     const url = await fileToDataURL(file);
-                    onUserAvatarChange(url);
-                } catch (err) { console.error(err); }
+                    window.saveUserAvatar?.(url);
+                    onUserAvatarChange?.(url);
+                    setStatus('Avatar updated');
+                } catch (err) { setStatus(err?.message || 'Upload failed'); }
                 finally { e.target.value = ''; }
             };
+
+            const useRandomAvatar = () => {
+                setStatus('');
+                window.saveUserAvatar?.(null);
+                const next = window.rotateUserDefaultAvatar?.() || '✨';
+                onUserAvatarChange?.(next);
+                setStatus('Switched to a random default icon');
+            };
+
+            return html`
+                <div class="fixed inset-0 z-50 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
+                    <div class="relative w-full max-w-md mx-4 glass-card rounded-3xl p-8 animate-in iridescent-border">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="font-headline text-lg font-bold text-on-surface">Manage account</h2>
+                            <button onClick=${onClose} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
+                                <${Icon} name="X" size=${14} />
+                            </button>
+                        </div>
+
+                        <div class="space-y-5">
+                            <!-- Avatar row -->
+                            <div class="p-4 rounded-2xl bg-surface-container border border-outline/20">
+                                <div class="flex items-center gap-4">
+                                    <${AvatarDisplay} avatar=${userAvatar || '👤'} size=${52} />
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 mb-1">Avatar</p>
+                                        <p class="text-xs text-on-surface-variant/80 leading-snug">Upload an image or use a random default icon.</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3 grid grid-cols-2 gap-2">
+                                    <label class="cursor-pointer btn-ghost rounded-xl py-2 text-[11px] text-center">
+                                        <span>Upload</span>
+                                        <input type="file" accept="image/*" class="hidden" disabled=${loading} onChange=${handleAvatarUpload} />
+                                    </label>
+                                    <button type="button" disabled=${loading} onClick=${useRandomAvatar}
+                                        class="btn-ghost rounded-xl py-2 text-[11px] disabled:opacity-40"
+                                    >Random default</button>
+                                </div>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="p-4 rounded-2xl bg-surface-container border border-outline/20">
+                                <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 mb-1">Email</p>
+                                <p class="text-sm text-on-surface break-all">${user?.email || '—'}</p>
+                            </div>
+
+                            <!-- Display name -->
+                            <div class="space-y-2">
+                                <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60">Display name</p>
+                                <input
+                                    class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
+                                    value=${displayName}
+                                    onInput=${(e) => setDisplayName(e.target.value)}
+                                    placeholder="Your name…"
+                                />
+                                <button onClick=${saveProfile} disabled=${loading}
+                                    class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
+                                >${loading ? 'Working…' : 'Save'}</button>
+                            </div>
+
+                            <!-- Password + Sign out -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onClick=${resetPassword} disabled=${loading || !user}
+                                    class="btn-ghost rounded-xl py-3 text-xs disabled:opacity-40"
+                                >Reset password</button>
+                                <button onClick=${() => { onSignOut?.(); onClose?.(); }}
+                                    class="btn-ghost rounded-xl py-3 text-xs text-tertiary/80 hover:text-tertiary"
+                                >Sign out</button>
+                            </div>
+
+                            ${status ? html`<p class="text-xs text-primary/80">${status}</p>` : null}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ══════════════════════════════════════════════
+        //  PROFILE MODAL — user_memory editor
+        // ══════════════════════════════════════════════
+        const DEFAULT_USER_MEMORY_TEMPLATE = `# USER.md - About You\n\n## Facts\n*Stable info: age, job, city, family, education*\n\n## Events\n*Current or recent: job change, decisions, recent experiences*\n\n## Insights\n*Self-realizations: "I realized I'm afraid of failure"*\n\n## Preferences\n*Communication style, response depth, topics to avoid*\n\n## Advice\n*Advice given by personas that you accepted or rejected*\n\n---\n*This file records information you share in conversations, helping personas understand you better.*\n`;
+
+        function ProfileModal({ isOpen, onClose, user }) {
+            const [content, setContent] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [status, setStatus] = useState('');
+            const [editing, setEditing] = useState(false);
+
+            useEffect(() => {
+                let mounted = true;
+                (async () => {
+                    if (!isOpen || !user) return;
+                    setStatus(''); setEditing(false);
+                    const { data } = await supabaseClient.from('profiles').select('user_memory').eq('id', user.id).maybeSingle();
+                    if (!mounted) return;
+                    setContent(data?.user_memory || DEFAULT_USER_MEMORY_TEMPLATE);
+                })();
+                return () => { mounted = false; };
+            }, [isOpen, user?.id]);
+
+            if (!isOpen) return null;
+
+            const saveMemory = async () => {
+                if (!user) return;
+                setLoading(true); setStatus('');
+                try {
+                    const { error } = await supabaseClient.from('profiles')
+                        .upsert({ id: user.id, user_memory: content }, { onConflict: 'id' });
+                    if (error) throw error;
+                    setStatus('Saved');
+                    setEditing(false);
+                } catch (e) { setStatus(e?.message || 'Save failed'); }
+                finally { setLoading(false); }
+            };
+
+            const resetMemory = () => {
+                if (!confirm('Reset your profile to default? This cannot be undone.')) return;
+                setContent(DEFAULT_USER_MEMORY_TEMPLATE);
+                setEditing(true);
+            };
+
+            return html`
+                <div class="fixed inset-0 z-50 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
+                    <div class="relative w-full max-w-2xl mx-4 glass-card rounded-3xl p-8 animate-in iridescent-border" style=${{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="font-headline text-lg font-bold text-on-surface">My profile</h2>
+                            <button onClick=${onClose} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
+                                <${Icon} name="X" size=${14} />
+                            </button>
+                        </div>
+                        <p class="text-xs text-on-surface-variant/70 mb-4 leading-relaxed">
+                            This is what personas know about you. It updates automatically after conversations, or you can edit it manually.
+                        </p>
+                        <textarea
+                            class="flex-1 min-h-[320px] w-full p-4 bg-surface-container border border-outline/30 text-on-surface rounded-2xl text-xs md:text-sm leading-relaxed focus:outline-none focus:border-primary/50 void-textarea font-mono"
+                            value=${content}
+                            onInput=${(e) => { setContent(e.target.value); setEditing(true); }}
+                            placeholder="Your profile will appear here after your first conversation…"
+                        ></textarea>
+                        <div class="flex gap-3 mt-4">
+                            <button onClick=${saveMemory} disabled=${loading || !editing || !user}
+                                class="flex-1 btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
+                            >${loading ? 'Saving…' : 'Save'}</button>
+                            <button onClick=${resetMemory} disabled=${loading}
+                                class="btn-ghost rounded-xl py-3 px-6 text-sm disabled:opacity-40"
+                            >Reset</button>
+                        </div>
+                        ${status ? html`<p class="text-xs text-primary/80 mt-2">${status}</p>` : null}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ══════════════════════════════════════════════
+        //  SHARE CHAT MODAL — copy or download current chat
+        // ══════════════════════════════════════════════
+        function ShareChatModal({ isOpen, onClose, shareText }) {
+            const [status, setStatus] = useState('');
+            if (!isOpen) return null;
+
+            const doCopy = async () => {
+                setStatus('');
+                const ok = await (window.copyToClipboard ? window.copyToClipboard(shareText || '') : Promise.resolve(false));
+                setStatus(ok ? 'Copied to clipboard' : 'Copy failed (please copy manually)');
+            };
+
+            const doDownload = () => {
+                try {
+                    const blob = new Blob([shareText || ''], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `lifee-chat-${Date.now()}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                    setStatus('Downloaded');
+                } catch (e) { setStatus(e?.message || 'Download failed'); }
+            };
+
+            return html`
+                <div class="fixed inset-0 z-50 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
+                    <div class="relative w-full max-w-2xl mx-4 glass-card rounded-3xl p-8 animate-in iridescent-border">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="font-headline text-lg font-bold text-on-surface">Share chat history</h2>
+                            <button onClick=${onClose} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
+                                <${Icon} name="X" size=${14} />
+                            </button>
+                        </div>
+                        <textarea
+                            readOnly
+                            class="w-full h-72 p-4 bg-surface-container border border-outline/30 text-on-surface-variant rounded-2xl text-xs leading-relaxed focus:outline-none void-textarea font-mono"
+                            value=${shareText || '(no messages yet)'}
+                        ></textarea>
+                        <div class="flex gap-3 mt-4">
+                            <button onClick=${doCopy} class="flex-1 btn-gradient rounded-xl py-3 text-sm">Copy</button>
+                            <button onClick=${doDownload} class="flex-1 btn-ghost rounded-xl py-3 text-sm">Download</button>
+                        </div>
+                        ${status ? html`<p class="text-xs text-primary/80 mt-2">${status}</p>` : null}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ══════════════════════════════════════════════
+        //  SETTINGS VIEW
+        // ══════════════════════════════════════════════
+        function SettingsView({ onBack, user, setView, onSignOut, onLogin, userAvatar, onUserAvatarChange, shareText }) {
+            const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Guest';
+            const [accountOpen, setAccountOpen] = useState(false);
+            const [profileOpen, setProfileOpen] = useState(false);
+            const [shareOpen, setShareOpen] = useState(false);
+
+            const navItems = [
+                { key: 'account', label: 'Manage account', icon: 'UserCog', desc: 'Display name, password, sign out', onClick: () => setAccountOpen(true), disabled: !user },
+                { key: 'profile', label: 'My profile', icon: 'BookUser', desc: 'What personas know about you', onClick: () => setProfileOpen(true), disabled: !user },
+                { key: 'share', label: 'Share chat history', icon: 'Share2', desc: 'Copy or download the current conversation', onClick: () => setShareOpen(true), disabled: !(shareText && shareText.trim()) },
+                { key: 'personas', label: 'My Personas', icon: 'Users', desc: 'Manage your persona library', onClick: () => setView?.('my-personas') },
+                { key: 'community', label: 'Community', icon: 'Globe', desc: 'Browse shared debates', onClick: () => setView?.('community') },
+                { key: 'help', label: 'Help & FAQ', icon: 'HelpCircle', desc: 'How LIFEE works', onClick: () => setView?.('help') },
+            ];
 
             return html`
                 <div class="max-w-lg mx-auto px-4 py-8 animate-in">
@@ -1671,19 +1944,10 @@
                         <h1 class="font-headline text-xl font-bold text-on-surface">Settings</h1>
                     </div>
 
-                    <!-- Profile card -->
+                    <!-- Identity card -->
                     <div class="glass-card rounded-2xl p-6 mb-4">
                         <div class="flex items-center gap-4">
-                            <div class="relative">
-                                <${AvatarDisplay} avatar=${userAvatar || user?.user_metadata?.avatar_url || '✨'} size=${52} />
-                                <button
-                                    onClick=${() => fileRef.current?.click()}
-                                    class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full btn-gradient flex items-center justify-center"
-                                >
-                                    <${Icon} name="Camera" size=${11} />
-                                </button>
-                                <input ref=${fileRef} type="file" accept="image/*" class="hidden" onChange=${handleAvatarChange} />
-                            </div>
+                            <${AvatarDisplay} avatar=${userAvatar || user?.user_metadata?.avatar_url || '✨'} size=${52} />
                             <div class="flex-1 min-w-0">
                                 <p class="font-semibold text-on-surface truncate">${displayName}</p>
                                 <p class="text-xs text-on-surface-variant/60 truncate">${user?.email || 'Guest user'}</p>
@@ -1692,12 +1956,14 @@
                     </div>
 
                     <!-- Nav items -->
-                    ${[
-                        { label: 'My Personas', icon: 'Users', desc: 'Manage your persona library' },
-                        { label: 'Community', icon: 'Globe', desc: 'Browse shared debates' },
-                        { label: 'Help & FAQ', icon: 'HelpCircle', desc: 'How LIFEE works' },
-                    ].map(item => html`
-                        <div key=${item.label} class="glass-card rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer hover:border-primary/20 transition-colors">
+                    ${navItems.map(item => html`
+                        <button
+                            key=${item.key}
+                            onClick=${item.onClick}
+                            disabled=${item.disabled}
+                            class=${`w-full glass-card rounded-2xl p-4 mb-3 flex items-center gap-3 text-left transition-colors
+                                ${item.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:border-primary/20 cursor-pointer'}`}
+                        >
                             <div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center">
                                 <${Icon} name=${item.icon} size=${16} className="text-primary/70" />
                             </div>
@@ -1706,7 +1972,7 @@
                                 <p class="text-[10px] text-on-surface-variant/50">${item.desc}</p>
                             </div>
                             <${Icon} name="ChevronRight" size=${14} className="text-on-surface-variant/30" />
-                        </div>
+                        </button>
                     `)}
 
                     <div class="mt-6">
@@ -1722,6 +1988,25 @@
                             >Sign In</button>
                         `}
                     </div>
+
+                    <${AccountModal}
+                        isOpen=${accountOpen}
+                        onClose=${() => setAccountOpen(false)}
+                        user=${user}
+                        onSignOut=${onSignOut}
+                        userAvatar=${userAvatar}
+                        onUserAvatarChange=${onUserAvatarChange}
+                    />
+                    <${ProfileModal}
+                        isOpen=${profileOpen}
+                        onClose=${() => setProfileOpen(false)}
+                        user=${user}
+                    />
+                    <${ShareChatModal}
+                        isOpen=${shareOpen}
+                        onClose=${() => setShareOpen(false)}
+                        shareText=${shareText}
+                    />
                 </div>
             `;
         }
@@ -1729,17 +2014,119 @@
         // ══════════════════════════════════════════════
         //  MY PERSONAS VIEW
         // ══════════════════════════════════════════════
-        function MyPersonasView({ onBack, personas, favoritePersonas, toggleFavoritePersona }) {
+        // PersonaEditModal — create / edit a custom persona
+        const PERSONA_EMOJIS = ['👤','🎭','🛡️','🌱','🦉','💎','🌩️','🌊','🔥','🎀','🧸','☁️','🌸','🔮','⚡','🦋','🌙','🪐','🍀','🕯️'];
+        function PersonaEditModal({ isOpen, persona, onClose, onSave }) {
+            const [draft, setDraft] = useState(null);
+            useEffect(() => {
+                if (!isOpen) return;
+                setDraft(persona ? {
+                    id: persona.id,
+                    name: persona.name || '',
+                    role: persona.role || '',
+                    worldview: persona.worldview || '',
+                    voice: persona.voice || '',
+                    avatar: persona.avatar || '👤',
+                } : {
+                    id: 'custom-' + Math.random().toString(36).slice(2, 10),
+                    name: '', role: '', worldview: '', voice: '', avatar: '👤',
+                });
+            }, [isOpen, persona?.id]);
+
+            if (!isOpen || !draft) return null;
+            const canSave = (draft.name || '').trim() && (draft.role || '').trim();
+
+            return html`
+                <div class="fixed inset-0 z-50 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
+                    <div class="relative w-full max-w-lg mx-4 glass-card rounded-3xl p-8 animate-in iridescent-border" style=${{ maxHeight: '85vh', overflowY: 'auto' }}>
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="font-headline text-lg font-bold text-on-surface">${persona ? 'Edit persona' : 'New persona'}</h2>
+                            <button onClick=${onClose} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
+                                <${Icon} name="X" size=${14} />
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <input
+                                placeholder="Name (e.g. Sage)"
+                                class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
+                                value=${draft.name}
+                                onInput=${(e) => setDraft({ ...draft, name: e.target.value })}
+                            />
+                            <input
+                                placeholder="Role / identity (e.g. Ancient Philosopher)"
+                                class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
+                                value=${draft.role}
+                                onInput=${(e) => setDraft({ ...draft, role: e.target.value })}
+                            />
+                            <div>
+                                <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 mb-2">Avatar</p>
+                                <div class="flex flex-wrap gap-2">
+                                    ${PERSONA_EMOJIS.map(e => html`
+                                        <button
+                                            key=${e}
+                                            onClick=${() => setDraft({ ...draft, avatar: e })}
+                                            class=${`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all border
+                                                ${draft.avatar === e ? 'border-primary bg-primary/10' : 'border-outline/20 bg-surface-container hover:border-primary/30'}`}
+                                        >${e}</button>
+                                    `)}
+                                </div>
+                            </div>
+                            <textarea
+                                placeholder="Worldview statement — one sentence this persona believes deeply…"
+                                class="w-full h-24 bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
+                                value=${draft.worldview}
+                                onInput=${(e) => setDraft({ ...draft, worldview: e.target.value })}
+                            ></textarea>
+                            <textarea
+                                placeholder="Voice sample — how this persona would actually speak…"
+                                class="w-full h-20 bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
+                                value=${draft.voice}
+                                onInput=${(e) => setDraft({ ...draft, voice: e.target.value })}
+                            ></textarea>
+                            <button
+                                onClick=${() => { onSave(draft); onClose(); }}
+                                disabled=${!canSave}
+                                class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
+                            >Save</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function MyPersonasView({ onBack, personas, favoritePersonas, toggleFavoritePersona, onSaveCustom, onDeleteCustom }) {
             const [category, setCategory] = useState('ALL');
-            const filtered = category === 'ALL' ? personas : personas.filter(p => p.category === category);
+            const [editOpen, setEditOpen] = useState(false);
+            const [editTarget, setEditTarget] = useState(null);
+            const filtered = category === 'ALL'
+                ? personas
+                : category === 'CUSTOM'
+                    ? personas.filter(p => p.isCustom)
+                    : personas.filter(p => p.category === category);
+
+            const openCreate = () => { setEditTarget(null); setEditOpen(true); };
+            const openEdit = (p) => { setEditTarget(p); setEditOpen(true); };
+            const handleDelete = (p) => {
+                if (!confirm(`Delete "${p.name}"?`)) return;
+                onDeleteCustom?.(p.id);
+            };
 
             return html`
                 <div class="max-w-4xl mx-auto px-4 py-8 animate-in">
-                    <div class="flex items-center gap-3 mb-6">
-                        <button onClick=${onBack} class="btn-ghost w-8 h-8 rounded-lg flex items-center justify-center">
-                            <${Icon} name="ArrowLeft" size=${16} />
+                    <div class="flex items-center justify-between gap-3 mb-6">
+                        <div class="flex items-center gap-3">
+                            <button onClick=${onBack} class="btn-ghost w-8 h-8 rounded-lg flex items-center justify-center">
+                                <${Icon} name="ArrowLeft" size=${16} />
+                            </button>
+                            <h1 class="font-headline text-xl font-bold text-on-surface">My Personas</h1>
+                        </div>
+                        <button
+                            onClick=${openCreate}
+                            class="btn-gradient rounded-full px-4 py-2 text-[11px] font-semibold flex items-center gap-1.5"
+                        >
+                            <${Icon} name="Plus" size=${12} /> New persona
                         </button>
-                        <h1 class="font-headline text-xl font-bold text-on-surface">My Personas</h1>
                     </div>
                     <div class="flex gap-1.5 mb-6 flex-wrap">
                         ${['ALL', 'CREATIVE', 'RATIONAL', 'SUPPORT', 'CUSTOM'].map(cat => html`
@@ -1754,8 +2141,9 @@
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                         ${filtered.map(p => {
                             const isFav = (favoritePersonas || []).some(fp => fp.id === p.id);
+                            const isCustom = !!p.isCustom;
                             return html`
-                                <div key=${p.id} class="persona-card glass-card rounded-2xl p-4 flex flex-col gap-2">
+                                <div key=${p.id} class="persona-card group glass-card rounded-2xl p-4 flex flex-col gap-2 relative">
                                     <div class="flex items-start justify-between">
                                         <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-xl">
                                             <${AvatarDisplay} avatar=${p.avatar} size=${40} />
@@ -1773,10 +2161,35 @@
                                         <p class="text-[9px] text-primary/60 uppercase tracking-wide">${p.role}</p>
                                     </div>
                                     <p class="text-[10px] text-on-surface-variant/50 italic line-clamp-2">"${p.worldview}"</p>
+                                    ${isCustom ? html`
+                                        <div class="absolute top-2 right-10 text-[8px] font-bold uppercase tracking-[0.2em] text-primary/50">Custom</div>
+                                        <div class="flex gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick=${() => openEdit(p)}
+                                                class="flex-1 btn-ghost rounded-lg py-1.5 text-[10px] uppercase tracking-wider"
+                                            >Edit</button>
+                                            <button
+                                                onClick=${() => handleDelete(p)}
+                                                class="flex-1 btn-ghost rounded-lg py-1.5 text-[10px] uppercase tracking-wider text-tertiary/80 hover:text-tertiary"
+                                            >Delete</button>
+                                        </div>
+                                    ` : null}
                                 </div>
                             `;
                         })}
+                        ${filtered.length === 0 ? html`
+                            <div class="col-span-full text-center py-12 text-sm text-on-surface-variant/50 italic">
+                                No personas in this category yet.
+                            </div>
+                        ` : null}
                     </div>
+
+                    <${PersonaEditModal}
+                        isOpen=${editOpen}
+                        persona=${editTarget}
+                        onClose=${() => setEditOpen(false)}
+                        onSave=${(p) => onSaveCustom?.(p)}
+                    />
                 </div>
             `;
         }
@@ -1821,6 +2234,31 @@
         }
 
         // ══════════════════════════════════════════════
+        //  buildShareText — format sessionMessages for export
+        // ══════════════════════════════════════════════
+        function buildShareText(messages, personas) {
+            const personaMap = {};
+            (personas || []).forEach(p => { personaMap[p.id] = p; });
+            const roleLabel = (pid) => {
+                if (pid === 'user') return 'YOU';
+                if (pid === 'system') return 'SYSTEM';
+                if (pid === 'lifee-followup') return 'FOLLOW-UP';
+                const p = personaMap[pid];
+                return (p?.name || pid || 'UNKNOWN').toUpperCase();
+            };
+            const body = (messages || [])
+                .filter(m => m && m.text && m.personaId !== 'lifee-followup')
+                .map(m => `${roleLabel(m.personaId)}: ${m.text}`)
+                .join('\n\n');
+            return [
+                'LIFEE Chat Export',
+                `Date: ${new Date().toISOString()}`,
+                '',
+                body || '(no messages yet)',
+            ].join('\n');
+        }
+
+        // ══════════════════════════════════════════════
         //  MAIN APP
         // ══════════════════════════════════════════════
         function App() {
@@ -1853,6 +2291,27 @@
                 try { return JSON.parse(window.localStorage.getItem('lifee_persona_cover_overrides') || '{}'); } catch (_) { return {}; }
             });
             const [personaCatalogKnowledge, setPersonaCatalogKnowledge] = useState({});
+            const [customPersonas, setCustomPersonas] = useState(() => {
+                try { return JSON.parse(window.localStorage.getItem('lifee_custom_personas') || '[]'); } catch (_) { return []; }
+            });
+            useEffect(() => {
+                try { window.localStorage.setItem('lifee_custom_personas', JSON.stringify(customPersonas || [])); } catch (_) {}
+            }, [customPersonas]);
+            const upsertCustomPersona = useCallback((p) => {
+                if (!p?.id) return;
+                setCustomPersonas(prev => {
+                    const idx = prev.findIndex(x => x.id === p.id);
+                    if (idx >= 0) {
+                        const next = [...prev]; next[idx] = { ...prev[idx], ...p }; return next;
+                    }
+                    return [...prev, p];
+                });
+            }, []);
+            const deleteCustomPersona = useCallback((id) => {
+                setCustomPersonas(prev => prev.filter(p => p.id !== id));
+                setSelectedIds(prev => prev.filter(x => x !== id));
+                setFavoritePersonas(prev => prev.filter(p => p.id !== id));
+            }, []);
             const [summaryEvery] = useState(SUMMARY_EVERY_DEFAULT);
             const [contextWindow] = useState(CONTEXT_WINDOW_DEFAULT);
 
@@ -1968,17 +2427,20 @@
             }, [user]);
 
             // Display personas (merge assets + overrides + catalog knowledge)
-            const displayPersonas = personas.map(p => {
-                const asset = personaAssets[p.id];
-                const avatarOverride = personaAvatarOverrides?.[p.id];
-                const coverOverride = personaCoverOverrides?.[p.id];
-                return {
-                    ...p,
-                    avatar: avatarOverride || asset?.avatar_url || p.avatar,
-                    cover_url: coverOverride || asset?.cover_url || p.cover_url || null,
-                    knowledge: (p.knowledge || '').trim() || (personaCatalogKnowledge[p.id] || '').trim(),
-                };
-            });
+            const displayPersonas = [
+                ...personas.map(p => {
+                    const asset = personaAssets[p.id];
+                    const avatarOverride = personaAvatarOverrides?.[p.id];
+                    const coverOverride = personaCoverOverrides?.[p.id];
+                    return {
+                        ...p,
+                        avatar: avatarOverride || asset?.avatar_url || p.avatar,
+                        cover_url: coverOverride || asset?.cover_url || p.cover_url || null,
+                        knowledge: (p.knowledge || '').trim() || (personaCatalogKnowledge[p.id] || '').trim(),
+                    };
+                }),
+                ...(customPersonas || []).map(p => ({ ...p, isCustom: true, category: p.category || 'CUSTOM' })),
+            ];
 
             const buildContextBlock = useCallback(() => {
                 const summaryBlock = sessionSummaries.length
@@ -2057,6 +2519,8 @@
                 return window.VOID_VIEWS.debate({
                     context,
                     selectedPersonas: displayPersonas.filter(p => selectedIds.includes(p.id)),
+                    allPersonas: displayPersonas,
+                    setSelectedIds,
                     setView,
                     ensureSession,
                     persistMessage,
@@ -2093,10 +2557,12 @@
                     return html`<${SettingsView}
                         onBack=${goBack}
                         user=${user}
+                        setView=${setView}
                         onSignOut=${handleSignOut}
                         onLogin=${() => setAuthOpen(true)}
                         userAvatar=${userAvatar}
                         onUserAvatarChange=${(a) => setUserAvatar(a)}
+                        shareText=${buildShareText(sessionMessages, personas)}
                     />`;
                 }
 
@@ -2123,6 +2589,8 @@
                         personas=${displayPersonas}
                         favoritePersonas=${favoritePersonas}
                         toggleFavoritePersona=${toggleFavoritePersona}
+                        onSaveCustom=${upsertCustomPersona}
+                        onDeleteCustom=${deleteCustomPersona}
                     />`;
                 }
 

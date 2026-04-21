@@ -4,13 +4,25 @@
 
     // ── ShinyLines: split text into per-visual-line spans using Pretext (loaded via ES
     // module in index.html and exposed on window.Pretext). Each line renders as its own
-    // <span> so the warm-shine hover band aligns with the line the cursor is actually on. —
+    // <span> so the warm-shine band aligns with the line the cursor is actually on.
+    //
+    // Props:
+    //   fontStr       — CSS font shorthand passed to Pretext for measurement.
+    //                   Must match the rendered font. Defaults to chat bubble text.
+    //   lineHeightPx  — px value matching CSS line-height of the rendered text.
+    //   maxLines      — if set, only render the first N lines (replaces CSS line-clamp).
+    //
+    // Width: we use node.offsetWidth (unscaled) rather than getBoundingClientRect
+    // (which returns transform-scaled width). This keeps line breaks correct when the
+    // ShinyLines sits inside a CSS transform scale (e.g. the voice-map canvas).
     const PRETEXT_FONT = '14px "Manrope", sans-serif';
     const PRETEXT_LINE_HEIGHT = 22; // text-sm × leading-relaxed ≈ 14 × 1.625 ≈ 22
 
-    const ShinyLines = ({ text }) => {
+    const ShinyLines = ({ text, fontStr, lineHeightPx, maxLines }) => {
         const ref = useRef(null);
         const [lines, setLines] = useState(null);
+        const font = fontStr || PRETEXT_FONT;
+        const lh = lineHeightPx || PRETEXT_LINE_HEIGHT;
 
         useLayoutEffect(() => {
             const node = ref.current;
@@ -21,11 +33,11 @@
                 if (cancelled) return;
                 const P = window.Pretext;
                 if (!P || !P.prepareWithSegments) return false;
-                const width = node.getBoundingClientRect().width;
+                const width = node.offsetWidth || node.getBoundingClientRect().width;
                 if (!width || width < 10) return false;
                 try {
-                    const prepared = P.prepareWithSegments(text, PRETEXT_FONT, { whiteSpace: 'pre-wrap' });
-                    const out = P.layoutWithLines(prepared, width, PRETEXT_LINE_HEIGHT);
+                    const prepared = P.prepareWithSegments(text, font, { whiteSpace: 'pre-wrap' });
+                    const out = P.layoutWithLines(prepared, width, lh);
                     setLines((out.lines || []).map(l => l.text));
                     return true;
                 } catch (e) {
@@ -36,7 +48,6 @@
 
             const run = () => {
                 if (!layout()) {
-                    // Pretext not ready yet — retry once the module finishes loading
                     const onReady = () => { window.removeEventListener('pretext-ready', onReady); layout(); };
                     window.addEventListener('pretext-ready', onReady);
                 }
@@ -46,32 +57,74 @@
             const obs = new ResizeObserver(() => layout());
             obs.observe(node);
             return () => { cancelled = true; obs.disconnect(); };
-        }, [text]);
+        }, [text, font, lh]);
+
+        const shown = lines === null
+            ? null
+            : (typeof maxLines === 'number' && maxLines > 0 ? lines.slice(0, maxLines) : lines);
+        const wasClamped = lines && shown && shown.length < lines.length;
 
         return html`
             <div ref=${ref} class="w-full">
-                ${lines === null
+                ${shown === null
                     ? html`<span class="whitespace-pre-wrap break-words">${text}</span>`
-                    : lines.flatMap((line, i) => i === 0
-                        ? [html`<span key=${'s' + i}>${line}</span>`]
-                        : [html`<br key=${'br' + i} />`, html`<span key=${'s' + i}>${line}</span>`])
+                    : shown.flatMap((line, i) => {
+                        const isLast = i === shown.length - 1;
+                        const suffix = (isLast && wasClamped) ? '…' : '';
+                        return i === 0
+                            ? [html`<span key=${'s' + i}>${line}${suffix}</span>`]
+                            : [html`<br key=${'br' + i} />`, html`<span key=${'s' + i}>${line}${suffix}</span>`];
+                    })
                 }
             </div>
         `;
     };
 
-    // ── Persona accent color palette ──────────────────────────────────────────
-    // Warm, distinctive colors — amber, terracotta, sage, dusty rose, warm blue, bronze, olive, mauve
-    const PERSONA_COLORS = [
-        { border: 'border-amber-400',   text: 'text-amber-400',   bg: 'bg-amber-900/40',   ring: 'border-amber-400'   },
-        { border: 'border-red-400',     text: 'text-red-400',     bg: 'bg-red-900/40',     ring: 'border-red-400'     },
-        { border: 'border-lime-600',    text: 'text-lime-600',    bg: 'bg-lime-900/40',    ring: 'border-lime-600'    },
-        { border: 'border-rose-300',    text: 'text-rose-300',    bg: 'bg-rose-900/40',    ring: 'border-rose-300'    },
-        { border: 'border-sky-400',     text: 'text-sky-400',     bg: 'bg-sky-900/40',     ring: 'border-sky-400'     },
-        { border: 'border-yellow-600',  text: 'text-yellow-600',  bg: 'bg-yellow-900/40',  ring: 'border-yellow-600'  },
-        { border: 'border-green-600',   text: 'text-green-600',   bg: 'bg-green-900/40',   ring: 'border-green-600'   },
-        { border: 'border-fuchsia-300', text: 'text-fuchsia-300', bg: 'bg-fuchsia-900/40', ring: 'border-fuchsia-300' },
+    // ── Persona accent color generator ────────────────────────────────────────
+    // 12 base hues on the colour wheel, ordered to jump across hue space so
+    // neighbouring indexes always look different. Past index 11 we wrap and
+    // shift lightness / saturation in tandem with a small hue rotation so
+    // every further index produces a colour that is visually distinct from
+    // the ones before it — effectively unlimited uniqueness.
+    //
+    // Shape mirrors the prior PERSONA_COLORS entries so every call site keeps
+    // { border, text, bg, ring } — but the values are CSS colour strings now,
+    // consumed via inline `style` instead of Tailwind classes.
+    const BASE_HUES = [35, 200, 340, 160, 270, 20, 185, 300, 80, 245, 5, 175];
+    // Per-wrap lightness/saturation variants. Each row is a different "tier"
+    // so the palette never repeats exactly — lightness pulls the colour toward
+    // pastel or deep, saturation varies the mood.
+    const TIER_VARIANTS = [
+        { dL:   0, dS:   0, dH:  0 },   // base
+        { dL:  12, dS:  -8, dH:  8 },   // pastel-shifted
+        { dL: -12, dS:   0, dH: -6 },   // deeper-shifted
+        { dL:   6, dS: -20, dH: 14 },   // muted-bright
+        { dL: -18, dS:  10, dH:  4 },   // rich-deep
+        { dL:  16, dS:  -4, dH: -10 },  // pale-cool
     ];
+    const getPersonaColorByIndex = (index) => {
+        const i = ((index | 0) % 1000 + 1000) % 1000; // normalise to non-negative
+        const hue = BASE_HUES[i % BASE_HUES.length];
+        const tier = TIER_VARIANTS[Math.floor(i / BASE_HUES.length) % TIER_VARIANTS.length];
+        const h = (hue + tier.dH + 360) % 360;
+        const s = Math.max(42, Math.min(92, 72 + tier.dS));
+        const l = Math.max(45, Math.min(82, 65 + tier.dL));
+        const text   = `hsl(${h} ${s}% ${l}%)`;
+        const border = text;
+        const bg     = `hsla(${h} ${Math.max(35, s - 15)}% 22% / 0.4)`;
+        return { border, text, bg, ring: border };
+    };
+
+    // Back-compat: some existing code reads PERSONA_COLORS[idx % length]. We keep
+    // it as a thin proxy so those sites keep working without change.
+    const PERSONA_COLORS = new Proxy([], {
+        get(_, key) {
+            if (key === 'length') return 1000;
+            const n = Number(key);
+            if (Number.isFinite(n)) return getPersonaColorByIndex(n);
+            return undefined;
+        },
+    });
 
     // ── Language detection ────────────────────────────────────────────────────
     const detectLang = (text) => {
@@ -86,6 +139,8 @@
     const ChatArena = ({
         context,
         selectedPersonas,
+        allPersonas = [],
+        setSelectedIds,
         setView,
         userAvatar,
         user,
@@ -111,10 +166,45 @@
         const [language, setLanguage]           = useState(() => localStorage.getItem('lifee_lang') || '');
         const [extractStatus, setExtractStatus] = useState(''); // '' | 'extracting' | 'done'
         const [summaryData, setSummaryData]     = useState({});
+        // Persist summaries per session so they survive refresh. Shape:
+        //   { [sessionId]: { summaries: {personaId: text}, atCount: number } }
+        const loadSummaryStore = () => {
+            try { return JSON.parse(window.localStorage.getItem('lifee_summary_store') || '{}') || {}; }
+            catch (_) { return {}; }
+        };
+        const saveSummaryEntry = (sid, summaries, atCount) => {
+            if (!sid) return;
+            try {
+                const store = loadSummaryStore();
+                store[sid] = { summaries, atCount };
+                window.localStorage.setItem('lifee_summary_store', JSON.stringify(store));
+            } catch (_) {}
+        };
         const [summaryLoading, setSummaryLoading] = useState(false);
-        const [showSummaryPanel, setShowSummaryPanel] = useState(false);
         const [showMoreMenu, setShowMoreMenu]   = useState(false);
         const [showToolsMenu, setShowToolsMenu] = useState(false);
+        const [showVoiceMap, setShowVoiceMap]   = useState(false);
+        const [showMembersPanel, setShowMembersPanel] = useState(false);
+        // Keep ~120px of chat visible so the user can always see there's a chat
+        // on the left (and grab the resize handle to pull the map back).
+        const mapMaxWidth = () => Math.max(320, (typeof window !== 'undefined' ? window.innerWidth : 1280) - 120);
+        const [mapWidth, setMapWidth]           = useState(() => {
+            try {
+                const n = Number(window.localStorage.getItem('lifee_voice_map_width'));
+                const max = mapMaxWidth();
+                if (Number.isFinite(n) && n >= 320) return Math.min(n, max);
+                return Math.min(560, max);
+            } catch (_) { return 560; }
+        });
+        useEffect(() => {
+            try { window.localStorage.setItem('lifee_voice_map_width', String(mapWidth)); } catch (_) {}
+        }, [mapWidth]);
+        // Re-clamp on window resize so buttons never get pushed off-screen.
+        useEffect(() => {
+            const onResize = () => setMapWidth(w => Math.min(w, mapMaxWidth()));
+            window.addEventListener('resize', onResize);
+            return () => window.removeEventListener('resize', onResize);
+        }, []);
 
         // ── Refs ──────────────────────────────────────────────────────────────
         const scrollRef        = useRef(null);
@@ -193,7 +283,27 @@
             onOptions:       (opts) => commitOptions(opts, 'sse', myRound),
         });
 
-        useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
+        useEffect(() => {
+            sessionIdRef.current = sessionId;
+            // Rehydrate persisted summary for this session (survives refresh).
+            if (sessionId) {
+                try {
+                    const store = loadSummaryStore();
+                    const entry = store[sessionId];
+                    if (entry?.summaries && Object.keys(entry.summaries).length > 0) {
+                        setSummaryData(entry.summaries);
+                        summaryAtCountRef.current = entry.atCount || 0;
+                    } else {
+                        setSummaryData({});
+                        summaryAtCountRef.current = 0;
+                    }
+                } catch (_) {}
+            } else {
+                // New/empty session — clear any stale summary.
+                setSummaryData({});
+                summaryAtCountRef.current = 0;
+            }
+        }, [sessionId]);
 
         // Persist options per-session as they change
         useEffect(() => {
@@ -515,7 +625,7 @@
                 Object.keys(summaryData).length > 0 &&
                 !summaryData._error
             ) {
-                setShowSummaryPanel(true);
+                setShowVoiceMap(true);
                 return;
             }
 
@@ -551,7 +661,8 @@
                 } else if (res?.summaries && Object.keys(res.summaries).length > 0) {
                     setSummaryData(res.summaries);
                     summaryAtCountRef.current = history.length;
-                    setShowSummaryPanel(true);
+                    saveSummaryEntry(sessionIdRef.current || sessionId, res.summaries, history.length);
+                    setShowVoiceMap(true);
                 } else {
                     setSummaryData({ _error: 'No summary returned' });
                 }
@@ -625,7 +736,7 @@
                 );
 
             const color = isFollowUp
-                ? { border: 'border-on-surface-variant/30', text: 'text-on-surface-variant/60', bg: 'bg-surface-container/50', ring: 'border-on-surface-variant/30' }
+                ? { border: 'rgba(175,171,159,0.35)', text: 'rgba(175,171,159,0.7)', bg: 'rgba(175,171,159,0.1)', ring: 'rgba(175,171,159,0.35)' }
                 : getColor(m.personaId);
 
             const ava = persona.avatar || '☁️';
@@ -633,7 +744,10 @@
             return html`
                 <div key=${idx} class="flex items-start gap-4 w-full pr-14 animate-in">
                     <!-- Avatar -->
-                    <div class=${'w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg shrink-0 overflow-hidden ' + color.ring + ' ' + color.bg}>
+                    <div
+                        class="w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg shrink-0 overflow-hidden"
+                        style=${{ borderColor: color.ring, backgroundColor: color.bg }}
+                    >
                         ${!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
                             ? html`<span>${ava}</span>`
                             : html`<img src=${ava} class="w-full h-full object-cover" />`
@@ -641,10 +755,13 @@
                     </div>
                     <!-- Bubble -->
                     <div class="space-y-1.5 flex-1 min-w-0">
-                        <p class=${'text-[10px] font-bold uppercase tracking-widest ml-1 ' + color.text}>
+                        <p class="text-[10px] font-bold uppercase tracking-widest ml-1" style=${{ color: color.text }}>
                             ${persona.name}
                         </p>
-                        <div class=${'bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-tl-none rounded-tr-xl rounded-br-xl rounded-bl-[2.5rem] text-on-surface shadow-sm leading-relaxed border-l-2 text-sm ' + color.border}>
+                        <div
+                            class="bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-tl-none rounded-tr-xl rounded-br-xl rounded-bl-[2.5rem] text-on-surface shadow-sm leading-relaxed border-l-2 text-sm"
+                            style=${{ borderLeftColor: color.border }}
+                        >
                             <${ShinyLines} text=${m.text || ''} />
                         </div>
                         <div class="flex gap-3 px-1">
@@ -662,41 +779,435 @@
             `;
         };
 
-        // ── Summary panel modal ───────────────────────────────────────────────
-        const SummaryPanel = () => {
-            if (!showSummaryPanel) return null;
-            return html`
-                <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-                    <div class="bg-surface-container border border-white/10 rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl">
-                        <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-                            <span class="text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant">Summary</span>
-                            <button
-                                onClick=${() => setShowSummaryPanel(false)}
-                                class="text-on-surface-variant/50 hover:text-primary transition-colors text-lg leading-none"
-                            >✕</button>
-                        </div>
-                        <div class="p-6 space-y-5">
-                            ${Object.entries(summaryData)
-                                .filter(([k]) => k !== '_error')
-                                .map(([personaId, text]) => {
-                                    const persona =
-                                        (selectedPersonas || []).find(x => x.id === personaId) ||
-                                        { name: personaId, avatar: '☁️' };
-                                    const color = getColor(personaId);
-                                    return html`
-                                        <div key=${personaId} class=${'border-l-2 pl-4 py-1 ' + color.border}>
-                                            <p class=${'text-[10px] font-bold uppercase tracking-widest mb-2 ' + color.text}>
-                                                ${persona.name}
-                                            </p>
-                                            <p class="text-sm text-on-surface/80 leading-relaxed">${text}</p>
-                                        </div>
-                                    `;
-                                })
+        // ── Members panel modal ──────────────────────────────────────────────
+        const MembersPanel = () => {
+            if (!showMembersPanel) return null;
+
+            const selectedIdSet = new Set((selectedPersonas || []).map(p => p.id));
+            const members = (selectedPersonas || []);
+            const available = (allPersonas || []).filter(p => !selectedIdSet.has(p.id));
+
+            const removeMember = (id) => {
+                if (!setSelectedIds) return;
+                if (members.length <= 1) {
+                    if (!confirm('This is the last voice — remove anyway?')) return;
+                }
+                setSelectedIds(prev => prev.filter(x => x !== id));
+            };
+            const addMember = (id) => {
+                if (!setSelectedIds) return;
+                setSelectedIds(prev => prev.includes(id) ? prev : [...prev, id]);
+            };
+
+            // Give every persona a distinct color based on their index in the
+            // FULL persona list — this way we use unique slots first (no two
+            // rows share a color until we exceed the palette size). Same
+            // assignment regardless of in-council / available.
+            const colorIndex = {};
+            (allPersonas || []).forEach((p, i) => { colorIndex[p.id] = i % PERSONA_COLORS.length; });
+            const colorFor = (p) => PERSONA_COLORS[colorIndex[p.id] ?? 0];
+
+            const renderPersonaRow = (p, inCouncil) => {
+                const color = colorFor(p);
+                const ava = p.avatar || '☁️';
+                return html`
+                    <div key=${p.id} class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-container/60 transition-colors">
+                        <div
+                            class="w-9 h-9 rounded-full border flex items-center justify-center text-base shrink-0 overflow-hidden"
+                            style=${{ borderColor: color.ring, backgroundColor: color.bg }}
+                        >
+                            ${!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
+                                ? html`<span>${ava}</span>`
+                                : html`<img src=${ava} class="w-full h-full object-cover" />`
                             }
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-bold uppercase tracking-wider truncate" style=${{ color: color.text }}>${p.name}</p>
+                            <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-wide truncate">${p.role || ''}</p>
+                        </div>
+                        ${inCouncil ? html`
+                            <button
+                                onClick=${() => removeMember(p.id)}
+                                class="no-shine w-7 h-7 rounded-full btn-ghost flex items-center justify-center shrink-0"
+                                title="Remove"
+                            ><span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>remove</span></button>
+                        ` : html`
+                            <button
+                                onClick=${() => addMember(p.id)}
+                                class="no-shine w-7 h-7 rounded-full btn-ghost flex items-center justify-center shrink-0 text-primary"
+                                title="Add to council"
+                            ><span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>add</span></button>
+                        `}
+                    </div>
+                `;
+            };
+
+            return html`
+                <div class="fixed inset-0 z-50 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${() => setShowMembersPanel(false)}></div>
+                    <div class="relative w-full max-w-md mx-4 glass-card rounded-3xl animate-in iridescent-border flex flex-col" style=${{ maxHeight: '80vh' }}>
+                        <!-- Header -->
+                        <div class="flex items-center justify-between px-6 py-4 border-b border-white/5 shrink-0">
+                            <div>
+                                <h2 class="font-headline text-lg font-bold text-on-surface">Council members</h2>
+                                <p class="text-[10px] text-on-surface-variant/60 uppercase tracking-[0.2em] mt-0.5">${members.length} in session · ${available.length} available</p>
+                            </div>
+                            <button onClick=${() => setShowMembersPanel(false)} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
+                                <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>close</span>
+                            </button>
+                        </div>
+
+                        <!-- Scrollable body -->
+                        <div class="overflow-y-auto px-3 py-3 space-y-5 flex-1">
+                            <div>
+                                <p class="text-[10px] font-black uppercase tracking-[0.25em] text-primary/70 px-3 mb-1">In Council</p>
+                                ${members.length === 0
+                                    ? html`<p class="text-xs text-on-surface-variant/40 italic px-3 py-2">No members yet — pick some below.</p>`
+                                    : members.map(p => renderPersonaRow(p, true))
+                                }
+                            </div>
+                            ${available.length > 0 ? html`
+                                <div>
+                                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-on-surface-variant/50 px-3 mb-1">Available</p>
+                                    ${available.map(p => renderPersonaRow(p, false))}
+                                </div>
+                            ` : null}
                         </div>
                     </div>
                 </div>
             `;
+        };
+
+        // ── Voice Map sidebar ─────────────────────────────────────────────────
+        // Pre-laid positions (2-column grid). Row gap tuned for void cards
+        // (taller than old UI because messages wrap more). Subtle ±1° tilt.
+        const CANVAS_CARD_POSITIONS = [
+            { x: 18,  y: 28,  rotate: -1   },  // A1
+            { x: 288, y: 18,  rotate: 0.8  },  // B1
+            { x: 18,  y: 318, rotate: 0.7  },  // A2
+            { x: 288, y: 308, rotate: -0.9 },  // B2
+            { x: 18,  y: 608, rotate: -0.8 },  // A3
+            { x: 288, y: 598, rotate: 1    },  // B3
+            { x: 18,  y: 898, rotate: 0.6  },  // A4
+            { x: 288, y: 888, rotate: -0.7 },  // B4
+        ];
+
+        const VoiceMapSidebar = () => {
+            if (!showVoiceMap) return null;
+
+            // Per-persona: collect all messages + count
+            const perPersona = {};
+            (history || []).forEach(m => {
+                if (!m || !m.personaId || m.personaId === 'user' || m.personaId === 'system' || m.personaId === 'lifee-followup') return;
+                if (!perPersona[m.personaId]) perPersona[m.personaId] = { count: 0, messages: [] };
+                perPersona[m.personaId].count += 1;
+                if (m.text) perPersona[m.personaId].messages.push(m.text);
+            });
+
+            const voices = (selectedPersonas || []).map(p => ({
+                ...p,
+                count: perPersona[p.id]?.count || 0,
+                messages: perPersona[p.id]?.messages || [],
+            }));
+
+            const userMessages = (history || []).filter(m => m?.personaId === 'user').map(m => m.text).filter(Boolean);
+            const userCount = userMessages.length;
+            const userLast = userMessages[userMessages.length - 1] || '';
+
+            // Load persisted view (pan/scale/cardPos) — merge defaults for any
+            // personas that don't have saved positions yet.
+            const loadSaved = () => {
+                try { return JSON.parse(window.localStorage.getItem('lifee_voice_map_view') || '{}') || {}; }
+                catch (_) { return {}; }
+            };
+            const saved = loadSaved();
+            const [pan, setPan] = useState(() => saved.pan && typeof saved.pan.x === 'number' ? saved.pan : { x: 0, y: 0 });
+            const [scale, setScale] = useState(() => typeof saved.scale === 'number' ? saved.scale : 0.85);
+            const [cardPos, setCardPos] = useState(() => {
+                const out = { ...(saved.cardPos || {}) };
+                voices.forEach((v, i) => {
+                    if (!out[v.id]) {
+                        const s = CANVAS_CARD_POSITIONS[i % CANVAS_CARD_POSITIONS.length];
+                        out[v.id] = { x: s.x, y: s.y, rotate: s.rotate };
+                    }
+                });
+                if (!out['__user']) {
+                    const userSlot = CANVAS_CARD_POSITIONS[voices.length % CANVAS_CARD_POSITIONS.length];
+                    out['__user'] = { x: userSlot.x, y: userSlot.y, rotate: userSlot.rotate };
+                }
+                return out;
+            });
+            // Persist view changes (debounced naturally by React batching)
+            useEffect(() => {
+                try {
+                    window.localStorage.setItem('lifee_voice_map_view', JSON.stringify({ pan, scale, cardPos }));
+                } catch (_) {}
+            }, [pan, scale, cardPos]);
+
+            const canvasRef = useRef(null);
+            const panRef = useRef({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
+            const cardRef = useRef({ id: null, startX: 0, startY: 0, origX: 0, origY: 0 });
+
+            const onCanvasMouseDown = (e) => {
+                if (cardRef.current.id) return;
+                panRef.current = { dragging: true, startX: e.clientX, startY: e.clientY, origX: pan.x, origY: pan.y };
+            };
+            const onMouseMove = (e) => {
+                if (cardRef.current.id) {
+                    const dx = (e.clientX - cardRef.current.startX) / scale;
+                    const dy = (e.clientY - cardRef.current.startY) / scale;
+                    setCardPos(prev => ({
+                        ...prev,
+                        [cardRef.current.id]: { x: cardRef.current.origX + dx, y: cardRef.current.origY + dy },
+                    }));
+                } else if (panRef.current.dragging) {
+                    setPan({
+                        x: panRef.current.origX + (e.clientX - panRef.current.startX),
+                        y: panRef.current.origY + (e.clientY - panRef.current.startY),
+                    });
+                }
+            };
+            const onMouseUp = () => {
+                panRef.current.dragging = false;
+                cardRef.current.id = null;
+            };
+            const startCardDrag = (e, id) => {
+                e.stopPropagation();
+                const pos = cardPos[id] || { x: 0, y: 0 };
+                cardRef.current = { id, startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
+            };
+            const onWheel = (e) => {
+                e.preventDefault();
+                const delta = -e.deltaY * 0.001;
+                const newScale = Math.min(2, Math.max(0.3, scale + delta));
+                if (newScale === scale) return;
+                const rect = canvasRef.current?.getBoundingClientRect();
+                if (!rect) { setScale(newScale); return; }
+                const cx = e.clientX - rect.left;
+                const cy = e.clientY - rect.top;
+                const ratio = newScale / scale;
+                setPan({
+                    x: cx - 40 - (cx - pan.x - 40) * ratio,
+                    y: cy - 40 - (cy - pan.y - 40) * ratio,
+                });
+                setScale(newScale);
+            };
+            const reset = () => {
+                setPan({ x: 0, y: 0 });
+                setScale(0.85);
+                // Also reset every card back to its slot position so user can
+                // recover from a messy drag session.
+                const fresh = {};
+                voices.forEach((v, i) => {
+                    const s = CANVAS_CARD_POSITIONS[i % CANVAS_CARD_POSITIONS.length];
+                    fresh[v.id] = { x: s.x, y: s.y, rotate: s.rotate };
+                });
+                const userSlot = CANVAS_CARD_POSITIONS[voices.length % CANVAS_CARD_POSITIONS.length];
+                fresh['__user'] = { x: userSlot.x, y: userSlot.y, rotate: userSlot.rotate };
+                setCardPos(fresh);
+            };
+
+            return html`
+                <aside class="h-full flex flex-col border-l border-white/5 bg-surface-dim/40 shrink-0" style=${{ width: Math.min(mapWidth, mapMaxWidth()) + 'px' }}>
+                    <!-- Archive header -->
+                    <div class="flex items-center justify-between px-6 h-14 border-b border-white/5 shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary/60" style=${{ fontSize: '16px' }}>menu_book</span>
+                            <span class="text-[10px] font-black uppercase tracking-[0.35em] text-on-surface-variant/70">Voice Archive</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button
+                                onClick=${handleSummary}
+                                disabled=${history.length < 2 || summaryLoading}
+                                class="no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider flex items-center gap-1 disabled:opacity-30"
+                                title="Summarize each voice"
+                            >
+                                ${summaryLoading
+                                    ? html`<span class="material-symbols-outlined animate-spin" style=${{ fontSize: '12px' }}>progress_activity</span>`
+                                    : html`<span class="material-symbols-outlined" style=${{ fontSize: '12px' }}>summarize</span>`
+                                }
+                                <span>Summary</span>
+                            </button>
+                            <button onClick=${reset}
+                                class="no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider"
+                                title="Reset view"
+                            ><span>Reset</span></button>
+                            <span class="text-[9px] font-bold text-on-surface-variant/40 w-9 text-center">${Math.round(scale * 100)}%</span>
+                            <button onClick=${() => setShowVoiceMap(false)}
+                                class="w-7 h-7 rounded-md btn-ghost flex items-center justify-center"
+                                title="Close"
+                            ><span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>close</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Canvas -->
+                    <div
+                        ref=${canvasRef}
+                        class="flex-1 relative overflow-hidden cursor-grab"
+                        style=${{
+                            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)',
+                            backgroundSize: '18px 18px',
+                        }}
+                        onMouseDown=${onCanvasMouseDown}
+                        onMouseMove=${onMouseMove}
+                        onMouseUp=${onMouseUp}
+                        onMouseLeave=${onMouseUp}
+                        onWheel=${onWheel}
+                    >
+                        <div
+                            class="absolute top-0 left-0 origin-top-left"
+                            style=${{ transform: `translate(${pan.x + 40}px, ${pan.y + 40}px) scale(${scale})` }}
+                        >
+                            ${voices.map((v, idx) => {
+                                const color = getColor(v.id);
+                                const pos = cardPos[v.id] || { x: 0, y: 0, rotate: 0 };
+                                const ava = v.avatar || '☁️';
+                                const recent = v.messages.slice(-3);
+                                return html`
+                                    <div
+                                        key=${v.id}
+                                        class="absolute w-[255px] cursor-move select-none"
+                                        style=${{ left: pos.x + 'px', top: pos.y + 'px', transform: `rotate(${pos.rotate}deg)`, transformOrigin: 'center center' }}
+                                        onMouseDown=${(e) => startCardDrag(e, v.id)}
+                                    >
+                                        <div class="rounded-[20px] bg-surface-container border border-outline/15 shadow-xl shadow-black/40 overflow-hidden">
+                                            <!-- Header -->
+                                            <div class="flex items-center gap-2.5 px-4 pt-3 pb-2.5 border-b border-outline/10">
+                                                <div
+                                                    class="w-8 h-8 rounded-full border flex items-center justify-center text-base shrink-0 overflow-hidden"
+                                                    style=${{ borderColor: color.ring, backgroundColor: color.bg }}
+                                                >
+                                                    ${!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
+                                                        ? html`<span>${ava}</span>`
+                                                        : html`<img src=${ava} class="w-full h-full object-cover" />`
+                                                    }
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface truncate">${v.name}</p>
+                                                    <p class="text-[8px] font-bold uppercase tracking-[0.15em] truncate" style=${{ color: color.text }}>${v.role || ''}</p>
+                                                </div>
+                                                <span class="text-[10px] font-black text-on-surface/20 shrink-0">${v.count || '—'}</span>
+                                            </div>
+
+                                            <!-- Body: summary (if available) → recent messages → empty -->
+                                            <div class="px-4 py-3 min-h-[72px] flex flex-col gap-2">
+                                                ${summaryLoading ? html`
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="material-symbols-outlined text-on-surface-variant/40 animate-spin" style=${{ fontSize: '12px' }}>progress_activity</span>
+                                                        <span class="text-[10px] text-on-surface-variant/35">Summarizing…</span>
+                                                    </div>
+                                                ` : summaryData[v.id] ? html`
+                                                    <div
+                                                        class="rounded-md pl-2.5 pr-2 py-2 border-l-2 bg-surface-container-high/40"
+                                                        style=${{ borderLeftColor: color.border }}
+                                                    >
+                                                        <div class="text-[10px] leading-relaxed text-on-surface/80">
+                                                            <${ShinyLines}
+                                                                text=${summaryData[v.id]}
+                                                                fontStr='10px "Manrope", sans-serif'
+                                                                lineHeightPx=${16}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ` : recent.length === 0 ? html`
+                                                    <p class="text-[10px] italic text-on-surface-variant/25">Waiting to speak…</p>
+                                                ` : recent.map((msg, i) => {
+                                                    const isLatest = i === recent.length - 1;
+                                                    return html`
+                                                        <div
+                                                            key=${i}
+                                                            class=${'text-[10px] italic leading-snug pl-2 border-l-2 ' +
+                                                                (isLatest ? 'text-on-surface/75' : 'text-on-surface-variant/30')}
+                                                            style=${{ borderLeftColor: isLatest ? color.border : 'rgba(255,255,255,0.06)' }}
+                                                        >
+                                                            <${ShinyLines}
+                                                                text=${msg || ''}
+                                                                fontStr='italic 10px "Manrope", sans-serif'
+                                                                lineHeightPx=${13}
+                                                                maxLines=${2}
+                                                            />
+                                                        </div>
+                                                    `;
+                                                })}
+                                            </div>
+
+                                            <!-- Footer: worldview quote -->
+                                            <div class="px-4 py-2 border-t border-outline/10 bg-surface-container-high/40">
+                                                <p class="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface/25 truncate">
+                                                    ${v.worldview ? `"${v.worldview.slice(0, 45)}"` : (v.category || '')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            })}
+
+                            <!-- User node -->
+                            <div
+                                class="absolute w-[255px] cursor-move select-none"
+                                style=${{
+                                    left: (cardPos['__user']?.x || 0) + 'px',
+                                    top: (cardPos['__user']?.y || 0) + 'px',
+                                    transform: `rotate(${cardPos['__user']?.rotate || 0}deg)`,
+                                }}
+                                onMouseDown=${(e) => startCardDrag(e, '__user')}
+                            >
+                                <div class="rounded-[20px] bg-primary/10 border border-primary/25 shadow-xl shadow-black/40 overflow-hidden">
+                                    <div class="flex items-center gap-2.5 px-4 pt-3 pb-2.5 border-b border-primary/20">
+                                        <div class="w-8 h-8 rounded-full border border-primary/40 bg-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
+                                            ${userAvatar && /^(https?:|\/|data:)/.test(userAvatar)
+                                                ? html`<img src=${userAvatar} class="w-full h-full object-cover" />`
+                                                : html`<span class="text-sm">${userAvatar || '🙂'}</span>`
+                                            }
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">You</p>
+                                            <p class="text-[8px] font-bold uppercase tracking-[0.15em] text-primary/60">${userCount} message${userCount === 1 ? '' : 's'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3 min-h-[72px]">
+                                        ${userLast ? html`
+                                            <div class="text-[10px] text-on-surface/75 italic leading-snug pl-2 border-l-2 border-primary/40">
+                                                <${ShinyLines}
+                                                    text=${userLast}
+                                                    fontStr='italic 10px "Manrope", sans-serif'
+                                                    lineHeightPx=${13}
+                                                    maxLines=${4}
+                                                />
+                                            </div>
+                                        ` : html`
+                                            <p class="text-[10px] italic text-on-surface-variant/25">You haven't spoken yet.</p>
+                                        `}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            `;
+        };
+
+        // Drag handle to resize the voice-map sidebar
+        const mapResizeRef = useRef({ startX: 0, startW: 0, dragging: false });
+        const startMapResize = (e) => {
+            e.preventDefault();
+            mapResizeRef.current = { startX: e.clientX, startW: mapWidth, dragging: true };
+            const onMove = (ev) => {
+                if (!mapResizeRef.current.dragging) return;
+                const dx = mapResizeRef.current.startX - ev.clientX;
+                // Clamp to [320, window - 120] — leave a chat strip wide enough
+                // that the user can see it, so the handle is always grabbable.
+                const maxW = mapMaxWidth();
+                const next = Math.max(320, Math.min(maxW, mapResizeRef.current.startW + dx));
+                setMapWidth(next);
+            };
+            const onUp = () => {
+                mapResizeRef.current.dragging = false;
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+            };
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
         };
 
         // ── More menu dropdown ────────────────────────────────────────────────
@@ -806,7 +1317,8 @@
 
         // ── Main render ───────────────────────────────────────────────────────
         return html`
-            <div class="h-full flex flex-col overflow-hidden bg-surface text-on-surface">
+            <div class="h-full flex flex-row overflow-hidden bg-surface text-on-surface">
+              <div class="h-full flex flex-col flex-1 min-w-0 overflow-hidden">
 
                 <!-- ── Header ── -->
                 <header class="flex justify-between items-center w-full px-8 h-20 bg-surface-dim/30 backdrop-blur-lg border-b border-white/5 z-10 shrink-0">
@@ -815,15 +1327,20 @@
                             <h2 class="text-xl md:text-2xl font-headline font-bold tracking-tight text-on-surface">Your Council</h2>
                             <p class="text-[10px] uppercase tracking-[0.2em] text-primary/80 leading-none mt-0.5">${(selectedPersonas || []).length} ${(selectedPersonas || []).length === 1 ? 'voice' : 'voices'} in session</p>
                         </div>
-                        <!-- Member Avatars cluster — max 4 shown, then +N -->
-                        <div class="hidden lg:flex -space-x-3 ml-4">
+                        <!-- Member Avatars cluster — click to edit members -->
+                        <button
+                            onClick=${() => setShowMembersPanel(true)}
+                            class="no-shine hidden lg:flex -space-x-3 ml-4 cursor-pointer hover:opacity-80 transition-opacity"
+                            title="Edit members"
+                        >
                             ${(selectedPersonas || []).slice(0, 4).map((p, idx) => {
-                                const color = PERSONA_COLORS[idx % PERSONA_COLORS.length];
+                                const color = getColor(p.id);
                                 const ava = p.avatar || '☁️';
                                 return html`
                                     <div
                                         key=${p.id}
-                                        class=${'w-8 h-8 rounded-full border-2 overflow-hidden shadow-sm flex items-center justify-center text-sm ' + color.ring + ' ' + color.bg}
+                                        class="w-8 h-8 rounded-full border-2 overflow-hidden shadow-sm flex items-center justify-center text-sm"
+                                        style=${{ borderColor: color.ring, backgroundColor: color.bg }}
                                         title=${p.name}
                                     >
                                         ${!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
@@ -838,7 +1355,11 @@
                                     +${(selectedPersonas || []).length - 4}
                                 </div>
                             ` : null}
-                        </div>
+                            <!-- Edit indicator on hover -->
+                            <div class="w-8 h-8 rounded-full bg-surface-container border-2 border-dashed border-on-surface-variant/30 flex items-center justify-center text-on-surface-variant/60">
+                                <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>add</span>
+                            </div>
+                        </button>
                     </div>
 
                     <!-- Right action buttons -->
@@ -851,6 +1372,13 @@
                         ` : null}
 
                         <div class="flex items-center gap-4 text-on-surface-variant/60">
+                            <!-- Voice Map -->
+                            <span
+                                class=${'material-symbols-outlined cursor-pointer transition-colors ' + ((selectedPersonas || []).length === 0 ? 'opacity-30 pointer-events-none' : 'hover:text-primary') + (showVoiceMap ? ' text-primary' : '')}
+                                title="Voice map"
+                                onClick=${() => setShowVoiceMap(v => !v)}
+                            >map</span>
+
                             <!-- Summary -->
                             <span
                                 class=${'material-symbols-outlined cursor-pointer transition-colors ' + (history.length < 2 || summaryLoading ? 'opacity-30 pointer-events-none' : 'hover:text-primary')}
@@ -905,10 +1433,13 @@
                             ? ((selectedPersonas || []).find(p => p.id === pid) || { name: pid, avatar: '☁️' })
                             : null;
                         const ava = persona?.avatar || '☁️';
-                        const color = pid ? getColor(pid) : { border: 'border-on-surface-variant/20', text: 'text-on-surface-variant/60', bg: 'bg-surface-container', ring: 'border-white/10' };
+                        const color = pid ? getColor(pid) : { border: 'rgba(175,171,159,0.25)', text: 'rgba(175,171,159,0.6)', bg: 'rgba(28,26,22,0.8)', ring: 'rgba(255,255,255,0.1)' };
                         return html`
                             <div class="flex items-start gap-4 animate-in">
-                                <div class=${'w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg shrink-0 overflow-hidden ' + color.ring + ' ' + color.bg}>
+                                <div
+                                    class="w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg shrink-0 overflow-hidden"
+                                    style=${{ borderColor: color.ring, backgroundColor: color.bg }}
+                                >
                                     ${persona
                                         ? (!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
                                             ? html`<span>${ava}</span>`
@@ -917,11 +1448,14 @@
                                 </div>
                                 <div class="space-y-1.5">
                                     ${persona ? html`
-                                        <p class=${'text-[10px] font-bold uppercase tracking-widest ml-1 ' + color.text}>
+                                        <p class="text-[10px] font-bold uppercase tracking-widest ml-1" style=${{ color: color.text }}>
                                             ${persona.name}
                                         </p>
                                     ` : null}
-                                    <div class=${'flex items-center gap-1.5 bg-surface-container/80 px-5 py-4 rounded-xl rounded-tl-sm border-t-2 h-[54px] ' + color.border}>
+                                    <div
+                                        class="flex items-center gap-1.5 bg-surface-container/80 px-5 py-4 rounded-xl rounded-tl-sm border-t-2 h-[54px]"
+                                        style=${{ borderTopColor: color.border }}
+                                    >
                                         <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '0ms' }}></span>
                                         <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '200ms' }}></span>
                                         <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '400ms' }}></span>
@@ -1036,8 +1570,23 @@
                     </div>
                 </footer>
 
-                <!-- ── Summary panel modal ── -->
-                <${SummaryPanel} />
+              </div>
+
+              <!-- ── Voice Map resize handle ── -->
+              ${showVoiceMap ? html`
+                <div
+                    onMouseDown=${startMapResize}
+                    class="w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/30 transition-colors shrink-0"
+                    title="Drag to resize"
+                ></div>
+              ` : null}
+
+              <!-- ── Voice Map sidebar ── -->
+              <${VoiceMapSidebar} />
+
+              <!-- ── Members panel ── -->
+              <${MembersPanel} />
+
 
                 <!-- ── Summary error toast ── -->
                 ${summaryData._error ? html`
