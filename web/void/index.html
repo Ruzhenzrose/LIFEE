@@ -83,6 +83,66 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
 
+    <!-- Preload critical API data in parallel with React / Supabase scripts.
+         Fires as soon as the parser hits this tag — before React evaluates, before
+         auth resolves. Promises are parked on window.__lifeePreload for useEffects
+         to await instead of issuing fresh fetches. -->
+    <script>
+        (function () {
+            window.__lifeePreload = {};
+            // /personas/hot has no user dependency — fire immediately.
+            try {
+                window.__lifeePreload.hot = fetch('/personas/hot?days=7&limit=3', { credentials: 'include' })
+                    .then(r => r.ok ? r.json() : { hot: [] })
+                    .catch(() => ({ hot: [] }));
+            } catch (_) {}
+
+            // /sessions needs userId. Supabase stores the auth token in localStorage
+            // under sb-<project-ref>-auth-token — peek at it without waiting for the
+            // Supabase lib to load. We also lift the full user object so App can
+            // hydrate its useState synchronously (skipping the null → user flash).
+            try {
+                let userId = null;
+                let user = null;
+                for (const k of Object.keys(localStorage)) {
+                    if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+                        try {
+                            const token = JSON.parse(localStorage.getItem(k));
+                            user = token?.user || token?.currentSession?.user || null;
+                            userId = user?.id || null;
+                            if (userId) break;
+                        } catch (_) {}
+                    }
+                }
+                if (user) window.__lifeePreload.user = user;
+                if (userId) {
+                    window.__lifeePreload.userId = userId;
+                    window.__lifeePreload.sessions = fetch(`/sessions?userId=${encodeURIComponent(userId)}`, { credentials: 'include' })
+                        .then(r => r.ok ? r.json() : { sessions: [] })
+                        .catch(() => ({ sessions: [] }));
+                }
+                // /credits — pass userId if available so backend returns the
+                // account balance (not the IP/cookie anonymous bucket).
+                const creditsUrl = userId
+                    ? `/credits?userId=${encodeURIComponent(userId)}`
+                    : '/credits';
+                window.__lifeePreload.credits = fetch(creditsUrl, { credentials: 'include' })
+                    .then(r => r.ok ? r.json() : null)
+                    .catch(() => null);
+                // Hydrate the in-memory balance early from localStorage so the
+                // sidebar card shows a number instantly on first paint. Cache is
+                // keyed by userId so a sign-out / different-user flow doesn't
+                // flash the previous account's balance.
+                try {
+                    const key = `lifee_balance_cache_${userId || 'anon'}`;
+                    const cached = window.localStorage.getItem(key);
+                    const n = cached == null ? NaN : parseInt(cached, 10);
+                    if (Number.isFinite(n)) window.__lifeeBalance = n;
+                } catch (_) {}
+            } catch (_) {}
+        })();
+    </script>
+
     <!-- React 18 + htm -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -388,6 +448,470 @@
         const html = htm.bind(React.createElement);
         const { useState, useEffect, useLayoutEffect, useRef, useCallback } = React;
 
+        // ══════════════════════════════════════════════
+        //  i18n — minimal key-value runtime, en + zh
+        // ══════════════════════════════════════════════
+        // Each entry is { en, zh }. t(key) looks up the current locale.
+        // App keeps a single `locale` state and re-renders the whole tree on
+        // change, so deep components pick up fresh strings automatically.
+        const I18N = {
+            // Sidebar nav / user menu
+            'nav.home':          { en: 'Home',          zh: '主页' },
+            'nav.community':     { en: 'Community',     zh: '社区' },
+            'nav.conversations': { en: 'Conversations', zh: '对话历史' },
+            'nav.starred':       { en: 'Starred',       zh: '星标' },
+            'nav.recents':       { en: 'Recents',       zh: '最近' },
+            'nav.noConversations': { en: 'No conversations yet', zh: '暂无对话' },
+            'nav.settings':      { en: 'Settings',      zh: '设置' },
+            'nav.language':      { en: 'Language',      zh: '语言' },
+            'nav.redeemCode':    { en: 'Redeem Code',   zh: '兑换码' },
+            'nav.help':          { en: 'Help',          zh: '帮助' },
+            'nav.signIn':        { en: 'Sign In',       zh: '登录' },
+            'nav.signOut':       { en: 'Log out',       zh: '登出' },
+            'nav.credits':       { en: 'Credits',       zh: '额度' },
+            'nav.guest':         { en: 'Guest',         zh: '访客' },
+            'nav.notSignedIn':   { en: 'Not signed in', zh: '未登录' },
+            'nav.subtitle':      { en: 'Your Life Coach & Friend', zh: '人生导师与挚友' },
+
+            // Home view
+            'home.begin':        { en: 'Begin',         zh: '开始' },
+            'home.pickVoice':    { en: 'Pick at least one voice from the Council below.', zh: '请从下方角色列表里至少选择一位。' },
+            'home.describe':     { en: 'What\'s on your mind?', zh: '你在想什么？' },
+            'home.placeholder':  { en: 'Describe your situation...', zh: '描述一下你的处境……' },
+            'home.featured':     { en: 'Featured',      zh: '今日推荐' },
+            'home.inConversation': { en: 'In conversation', zh: '已加入对话' },
+            'home.preview':      { en: 'Preview',       zh: '预览' },
+            'home.readDossier':  { en: 'Read full dossier', zh: '查看完整档案' },
+            'home.vol':          { en: 'Vol. I',         zh: '第一卷' },
+            'home.theCouncil':   { en: 'The Council',    zh: '议会' },
+            'home.todaysQuestion':{ en: 'Today\'s question', zh: '今日议题' },
+            'home.onYourMind':   { en: 'What\'s on<br/>your mind?', zh: '你在想什么？' },
+            'home.selectVoices': { en: '→ Select voices below to begin.', zh: '→ 从下方选角色开始。' },
+            'home.voices':       { en: 'voices',         zh: '位成员' },
+            'home.worldview':    { en: 'Worldview',      zh: '世界观' },
+
+            // Domain names
+            'domain.hot':        { en: 'Hot',           zh: '热门' },
+            'domain.philosophy': { en: 'Philosophy',    zh: '哲学' },
+            'domain.business':   { en: 'Business',      zh: '商业' },
+            'domain.science':    { en: 'Science',       zh: '科学' },
+            'domain.arts':       { en: 'Arts',          zh: '艺术' },
+
+            // Chat arena
+            'chat.council':      { en: 'Your Council',  zh: '你的议会' },
+            'chat.voice':        { en: 'voice',         zh: '位成员' },
+            'chat.voices':       { en: 'voices',        zh: '位成员' },
+            'chat.inSession':    { en: 'in session',    zh: '在场' },
+            'chat.send':         { en: 'Send',          zh: '发送' },
+            'chat.stop':         { en: 'Stop',          zh: '停止' },
+            'chat.staySilent':   { en: 'Stay Silent',   zh: '保持沉默' },
+            'chat.profileUpdated': { en: 'Profile updated', zh: '档案已更新' },
+            'chat.copy':         { en: 'Copy',          zh: '复制' },
+            'chat.quote':        { en: 'Quote',         zh: '引用' },
+            'chat.suggested':    { en: 'suggested follow-ups', zh: '建议提问' },
+            'chat.summary':      { en: 'Summary',       zh: '摘要' },
+            'chat.summarizing':  { en: 'Summarizing…',  zh: '正在摘要…' },
+            'chat.voiceMap':     { en: 'Voice Archive', zh: '声音档案' },
+            'chat.reset':        { en: 'Reset',         zh: '重置' },
+            'chat.close':        { en: 'Close',         zh: '关闭' },
+            'chat.webSearch':    { en: 'Web Search',    zh: '联网搜索' },
+            'chat.webSearchDesc': { en: 'Ground answers in live web results (via Gemini)', zh: '基于实时网络搜索结果（Gemini 驱动）' },
+            'chat.followUp':     { en: 'Follow-up Questions', zh: '追问' },
+            'chat.followUpDesc': { en: 'After each reply, suggest tap-to-ask options', zh: '每次回复后给出可一键提问的选项' },
+            'chat.maxSpeakers':  { en: 'Max Speakers',  zh: '最多发言人数' },
+            'chat.all':          { en: 'All',           zh: '全部' },
+            'chat.waiting':      { en: 'Waiting to speak…', zh: '等待发言…' },
+            'chat.silent':       { en: 'You haven\'t spoken yet.', zh: '你还没发言。' },
+            'chat.you':          { en: 'You',           zh: '你' },
+
+            // Members panel
+            'members.title':     { en: 'Council members', zh: '议会成员' },
+            'members.inSession': { en: 'in session',    zh: '在场' },
+            'members.available': { en: 'available',     zh: '可选' },
+            'members.inCouncil': { en: 'In Council',    zh: '已加入' },
+            'members.availSection': { en: 'Available',  zh: '候选' },
+            'members.noMembers': { en: 'No members yet — pick some below.', zh: '还没有成员，从下方选一些加入。' },
+            'members.remove':    { en: 'Remove',        zh: '移除' },
+            'members.addToCouncil': { en: 'Add to council', zh: '加入议会' },
+            'members.confirmLast': { en: 'This is the last voice — remove anyway?', zh: '这是最后一位成员，仍要移除吗？' },
+
+            // Settings
+            'settings.title':        { en: 'Settings',       zh: '设置' },
+            'settings.manageAccount':{ en: 'Manage account', zh: '账户管理' },
+            'settings.manageAccountDesc': { en: 'Display name, password, sign out', zh: '显示名、密码、登出' },
+            'settings.myProfile':    { en: 'My profile',     zh: '我的档案' },
+            'settings.myProfileDesc':{ en: 'What personas know about you', zh: '角色们了解到的你' },
+            'settings.share':        { en: 'Share chat history', zh: '分享对话' },
+            'settings.shareDesc':    { en: 'Copy or download the current conversation', zh: '复制或下载当前对话' },
+            'settings.myPersonas':   { en: 'My Personas',    zh: '我的角色' },
+            'settings.myPersonasDesc': { en: 'Manage your persona library', zh: '管理你的角色库' },
+            'settings.community':    { en: 'Community',      zh: '社区' },
+            'settings.communityDesc':{ en: 'Browse shared debates', zh: '浏览分享的对话' },
+            'settings.helpFaq':      { en: 'Help & FAQ',     zh: '帮助与常见问题' },
+            'settings.helpFaqDesc':  { en: 'How LIFEE works', zh: 'LIFEE 使用说明' },
+            'settings.guestUser':    { en: 'Guest user',     zh: '访客用户' },
+
+            // Account modal
+            'account.title':     { en: 'Manage account', zh: '账户管理' },
+            'account.avatar':    { en: 'Avatar',         zh: '头像' },
+            'account.avatarDesc':{ en: 'Upload an image or use a random default icon.', zh: '上传图片或随机选一个默认头像。' },
+            'account.upload':    { en: 'Upload',         zh: '上传' },
+            'account.randomDefault': { en: 'Random default', zh: '随机默认' },
+            'account.email':     { en: 'Email',          zh: '邮箱' },
+            'account.displayName':{ en: 'Display name',  zh: '显示名' },
+            'account.namePlaceholder': { en: 'Your name…', zh: '你的名字…' },
+            'account.save':      { en: 'Save',           zh: '保存' },
+            'account.working':   { en: 'Working…',       zh: '处理中…' },
+            'account.resetPassword': { en: 'Reset password', zh: '重置密码' },
+            'account.signOut':   { en: 'Sign out',       zh: '登出' },
+            'account.saved':     { en: 'Saved',          zh: '已保存' },
+            'account.passwordEmailSent': { en: 'Password reset email sent', zh: '重置邮件已发送' },
+
+            // Profile modal
+            'profile.title':     { en: 'My profile',     zh: '我的档案' },
+            'profile.desc':      { en: 'This is what personas know about you. It updates automatically after conversations, or you can edit it manually.', zh: '这是角色们了解到的你。每次对话后自动更新，你也可以手动编辑。' },
+            'profile.placeholder': { en: 'Your profile will appear here after your first conversation…', zh: '第一次对话后，你的档案会出现在这里…' },
+            'profile.save':      { en: 'Save',           zh: '保存' },
+            'profile.saving':    { en: 'Saving…',        zh: '保存中…' },
+            'profile.reset':     { en: 'Reset',          zh: '重置' },
+            'profile.confirmReset': { en: 'Reset your profile to default? This cannot be undone.', zh: '重置档案为默认？此操作无法撤销。' },
+
+            // Share modal
+            'share.title':       { en: 'Share chat history', zh: '分享对话' },
+            'share.copy':        { en: 'Copy',           zh: '复制' },
+            'share.download':    { en: 'Download',       zh: '下载' },
+            'share.copied':      { en: 'Copied to clipboard', zh: '已复制到剪贴板' },
+            'share.downloaded':  { en: 'Downloaded',     zh: '已下载' },
+
+            // Redeem modal
+            'redeem.title':      { en: 'Redeem Code',    zh: '兑换码' },
+            'redeem.desc':       { en: 'Enter a redemption code to add credits to your account.', zh: '输入兑换码，增加账户额度。' },
+            'redeem.placeholder':{ en: 'Enter code',     zh: '输入兑换码' },
+            'redeem.action':     { en: 'Redeem',         zh: '兑换' },
+            'redeem.redeeming':  { en: 'Redeeming…',     zh: '兑换中…' },
+
+            // Auth modal
+            'auth.welcomeBack':  { en: 'Welcome back',   zh: '欢迎回来' },
+            'auth.createAccount':{ en: 'Create account', zh: '创建账户' },
+            'auth.verifyHuman':  { en: 'Please verify you\'re human', zh: '请完成人机验证' },
+            'auth.emailPh':      { en: 'Email address',  zh: '邮箱' },
+            'auth.passwordPh':   { en: 'Password',       zh: '密码' },
+            'auth.signInBtn':    { en: 'Sign In',        zh: '登录' },
+            'auth.sendCode':     { en: 'Send Verification Code', zh: '发送验证码' },
+            'auth.otpPh':        { en: '6-digit code',   zh: '6 位验证码' },
+            'auth.verifyBtn':    { en: 'Verify & Sign Up', zh: '验证并注册' },
+            'auth.verifying':    { en: 'Verifying…',     zh: '验证中…' },
+            'auth.pleaseWait':   { en: 'Please wait…',   zh: '请稍候…' },
+            'auth.or':           { en: 'or',             zh: '或' },
+            'auth.guest':        { en: 'Continue as Guest', zh: '以访客身份继续' },
+            'auth.noAccount':    { en: 'No account?',    zh: '没有账户？' },
+            'auth.signUp':       { en: 'Sign up',        zh: '注册' },
+            'auth.haveAccount':  { en: 'Already have one?', zh: '已有账户？' },
+
+            // Help FAQ
+            'help.title':        { en: 'Help & FAQ',     zh: '帮助中心' },
+            'help.intro':        { en: 'Everything you need to know about LIFEE. Still stuck? Write to us.', zh: '使用 LIFEE 你需要知道的一切。如仍有疑问，欢迎联系我们。' },
+
+            // Sections
+            'help.sec.start':    { en: 'Getting Started', zh: '入门' },
+            'help.sec.features': { en: 'Features',        zh: '功能' },
+            'help.sec.account':  { en: 'Account & Credits', zh: '账户与额度' },
+            'help.sec.privacy':  { en: 'Privacy & Data',  zh: '隐私与数据' },
+
+            // Getting Started
+            'help.q.what':       { en: 'What is LIFEE?',  zh: 'LIFEE 是什么？' },
+            'help.a.what':       { en: 'LIFEE is a multi-persona dialogue tool. You describe a situation and several AI personas argue from different perspectives — giving you angles, advice, and pushback to help you think a problem through.', zh: 'LIFEE 是一个多角色对话工具。你描述一个处境，几位 AI 角色从不同立场发声——给你视角、建议与质疑，帮你把一件事想透。' },
+            'help.q.start':      { en: 'How do I start a session?', zh: '如何开始一次对话？' },
+            'help.a.start':      { en: 'On the home page, describe what\'s going on, pick one or more personas for your Council, then send. They\'ll speak in turn and sometimes respond to each other.', zh: '在首页描述你遇到的事，为议会选一位或几位角色，然后发送。他们会依次发言，也会互相回应。' },
+            'help.q.multi':      { en: 'Why multiple personas at once?', zh: '为什么要多个角色同时在场？' },
+            'help.a.multi':      { en: 'A single voice is easy to get trapped in. Multiple personas challenge, extend, and contradict each other — you see the problem more clearly than thinking alone.', zh: '单一视角容易让人陷进去。多个角色之间会质疑、补充、反驳——比一个人反复想更能看清问题。' },
+
+            // Features
+            'help.q.voiceMap':   { en: 'What is the Voice Archive?', zh: '声音档案（Voice Archive）是什么？' },
+            'help.a.voiceMap':   { en: 'The map icon in the chat header opens a sidebar that lays each persona\'s recent messages as draggable cards. Click "Summary" to have the model summarise each voice — useful for catching the shape of a long debate.', zh: '聊天页顶部的地图图标会打开一个侧栏，把每个角色最近的发言排成可拖动的卡片。点 "Summary" 让模型为每个角色生成摘要——适合抓住长对话的脉络。' },
+            'help.q.members':    { en: 'How do I add or remove members mid-conversation?', zh: '聊天途中如何增减成员？' },
+            'help.a.members':    { en: 'Click the avatar cluster at the top of the chat to open the Members panel. Add from the available list or remove anyone already in the Council.', zh: '点聊天顶部的头像簇，会打开 Members 面板。从候选列表里加入新成员，或移除议会里已有的成员。' },
+            'help.q.custom':     { en: 'Can I create custom personas?', zh: '可以自建角色吗？' },
+            'help.a.custom':     { en: 'Settings → My Personas → New persona. Fill in name, role, worldview, and a voice sample. Custom personas appear in the CUSTOM category and can be added to any Council.', zh: '设置 → 我的角色 → 新建角色。填入姓名、身份、世界观、语气样例。保存后会出现在"自定义"分类里，可以加入任何议会。' },
+            'help.q.export':     { en: 'How do I export a chat?', zh: '如何导出对话？' },
+            'help.a.export':     { en: 'Settings → Share chat history. Copy to clipboard or download as a .txt file — preserves persona names and the full message flow.', zh: '设置 → 分享对话。复制到剪贴板或下载为 .txt 文件——会保留角色名和完整的对话顺序。' },
+
+            // Account & Credits
+            'help.q.credits':    { en: 'What are credits?', zh: '额度（Credits）是什么？' },
+            'help.a.credits':    { en: 'Every persona response uses credits, since each one is a fresh model call. New accounts receive a starter balance. Your balance is shown in the sidebar under your profile.', zh: '角色每次发言都要消耗额度，因为每次都是一次独立的模型调用。新账户会获得初始额度。余额显示在侧栏用户卡片里。' },
+            'help.q.redeem':     { en: 'How do I redeem a code?', zh: '如何使用兑换码？' },
+            'help.a.redeem':     { en: 'Click your profile card at the bottom of the sidebar, choose Redeem Code, then enter the code. Credits are added instantly on success.', zh: '点侧栏底部的用户卡片，选 Redeem Code，输入码即可。兑换成功后额度会立即更新。' },
+            'help.q.guest':      { en: 'What does guest mode do?', zh: '访客模式能做什么？' },
+            'help.a.guest':      { en: 'Guest mode lets you try LIFEE without signing in. Conversations are not saved across page reloads and you cannot redeem codes or build a personal profile. Useful for a quick look.', zh: '访客模式让你不登录也能试用 LIFEE。对话不会跨刷新保留，也不能用兑换码或建立个人画像。适合快速体验。' },
+
+            // Privacy & Data
+            'help.q.data':       { en: 'What data is stored?', zh: '保存了哪些数据？' },
+            'help.a.data':       { en: 'When signed in: conversation history, an auto-extracted user profile (facts you\'ve shared about yourself), custom personas, and favourites. Guest mode stays entirely in your browser.', zh: '登录后会保存：对话历史、自动提炼的用户画像（你主动分享的事实）、自定义角色、收藏。访客模式所有数据都只存在你的浏览器本地。' },
+            'help.q.delete':     { en: 'How do I delete a conversation?', zh: '如何删除一次对话？' },
+            'help.a.delete':     { en: 'In the sidebar, hover any conversation to reveal the star and delete buttons. Deletion is permanent — exports are the only way to recover the content later.', zh: '在侧栏，把鼠标移到任一对话上会出现星标和删除按钮。删除无法恢复——如果想保留，请先用分享对话功能导出。' },
+            'help.q.profile':    { en: 'What is "My profile"?', zh: '"我的档案"是什么？' },
+            'help.a.profile':    { en: 'A short markdown document personas can read — things like your age, job, preferences, recent decisions. It updates automatically after conversations and can be edited manually from Settings → My profile.', zh: '一份角色们可以读到的小型 markdown 文档——记录你的年龄、职业、偏好、近期决定等。每次对话后会自动更新，也可以在 设置 → 我的档案 里手动编辑。' },
+
+            // My Personas
+            'personas.title':    { en: 'My Personas',    zh: '我的角色' },
+            'personas.new':      { en: 'New persona',    zh: '新建角色' },
+            'personas.empty':    { en: 'No personas in this category yet.', zh: '该分类还没有角色。' },
+            'personas.customTag':{ en: 'Custom',         zh: '自定义' },
+            'personas.edit':     { en: 'Edit',           zh: '编辑' },
+            'personas.delete':   { en: 'Delete',         zh: '删除' },
+            'personas.category.all':      { en: 'ALL',        zh: '全部' },
+            'personas.category.creative': { en: 'CREATIVE',   zh: '创意' },
+            'personas.category.rational': { en: 'RATIONAL',   zh: '理性' },
+            'personas.category.support':  { en: 'SUPPORT',    zh: '支持' },
+            'personas.category.custom':   { en: 'CUSTOM',     zh: '自定义' },
+            'personas.editTitle':    { en: 'Edit persona', zh: '编辑角色' },
+            'personas.newTitle':     { en: 'New persona',  zh: '新建角色' },
+            'personas.namePh':       { en: 'Name (e.g. Sage)', zh: '姓名（如：智者）' },
+            'personas.rolePh':       { en: 'Role / identity (e.g. Ancient Philosopher)', zh: '身份（如：古代哲人）' },
+            'personas.avatarLabel':  { en: 'Avatar',     zh: '头像' },
+            'personas.worldviewPh':  { en: 'Worldview statement — one sentence this persona believes deeply…', zh: '世界观——这个角色坚信的一句话…' },
+            'personas.voicePh':      { en: 'Voice sample — how this persona would actually speak…', zh: '语言风格——这个角色会怎么说话…' },
+            'personas.confirmDelete':{ en: 'Delete "%s"?', zh: '删除"%s"？' },
+            'personas.save':         { en: 'Save',        zh: '保存' },
+
+            // Persona names / roles / worldviews (translations of data in
+            // INITIAL_PERSONAS; applied via localizePersona helper in App)
+            'persona.audrey-hepburn.name':       { en: 'Audrey Hepburn',    zh: '奥黛丽·赫本' },
+            'persona.audrey-hepburn.role':       { en: 'ELEGANT MUSE',      zh: '优雅缪斯' },
+            'persona.audrey-hepburn.worldview':  { en: "Elegance is the quiet courage to be kind, even when the world is loud.", zh: '优雅是世界喧嚣时仍选择善良的安静勇气。' },
+            'persona.krishnamurti.name':         { en: 'Krishnamurti',      zh: '克里希那穆提' },
+            'persona.krishnamurti.role':         { en: 'THE QUESTIONER',    zh: '发问者' },
+            'persona.krishnamurti.worldview':    { en: 'Truth is a pathless land. No method can lead you there.', zh: '真理是无路之国。没有任何方法能带你抵达。' },
+            'persona.lacan.name':                { en: 'Lacan',             zh: '拉康' },
+            'persona.lacan.role':                { en: 'THE ANALYST',       zh: '精神分析师' },
+            'persona.lacan.worldview':           { en: 'Truth can only be half-said. The complete truth is impossible.', zh: '真相只能被半说出。完整的真相是不可能的。' },
+            'persona.buffett.name':              { en: 'Warren Buffett',    zh: '沃伦·巴菲特' },
+            'persona.buffett.role':              { en: 'VALUE INVESTOR',    zh: '价值投资者' },
+            'persona.buffett.worldview':         { en: 'Most good decisions are simple, patient, and made inside your circle of competence.', zh: '好的决策通常简单、耐心，且落在你的能力圈内。' },
+            'persona.munger.name':               { en: 'Charlie Munger',    zh: '查理·芒格' },
+            'persona.munger.role':               { en: 'MENTAL MODELS STRATEGIST', zh: '思维模型战略家' },
+            'persona.munger.worldview':          { en: 'Avoiding stupidity is usually more useful than chasing brilliance.', zh: '避免愚蠢通常比追求卓越更有用。' },
+            'persona.drucker.name':              { en: 'Peter Drucker',     zh: '彼得·德鲁克' },
+            'persona.drucker.role':              { en: 'MANAGEMENT THINKER', zh: '管理思想家' },
+            'persona.drucker.worldview':         { en: 'The most important person you will ever manage is yourself. Effectiveness can be learned.', zh: '你管理的最重要的人是你自己。有效性是可以学会的。' },
+            'persona.welch.name':                { en: 'Jack Welch',        zh: '杰克·韦尔奇' },
+            'persona.welch.role':                { en: 'CEO / PRACTITIONER', zh: 'CEO / 实干者' },
+            'persona.welch.worldview':           { en: 'Winning matters. Candor is the greatest competitive advantage. Control your destiny, or someone else will.', zh: '胜利重要。坦诚是最大的竞争优势。掌握自己的命运，否则别人会替你掌握。' },
+            'persona.shannon.name':              { en: 'Claude Shannon',    zh: '克劳德·香农' },
+            'persona.shannon.role':              { en: 'INFORMATION THEORIST', zh: '信息论之父' },
+            'persona.shannon.worldview':         { en: 'Every problem can be reduced to its essential bits. Complexity hides simplicity.', zh: '任何问题都能被拆解为本质的比特。复杂之下隐藏着简洁。' },
+            'persona.turing.name':               { en: 'Alan Turing',       zh: '艾伦·图灵' },
+            'persona.turing.role':               { en: 'FATHER OF COMPUTER SCIENCE', zh: '计算机科学之父' },
+            'persona.turing.worldview':          { en: 'A machine can think if it can fool you into believing it thinks. The question is not what is real, but what is computable.', zh: '机器若能骗你相信它在思考，它就在思考。问题不是什么是真实的，而是什么是可计算的。' },
+            'persona.vonneumann.name':           { en: 'John von Neumann',  zh: '冯·诺依曼' },
+            'persona.vonneumann.role':           { en: 'POLYMATH',          zh: '通才' },
+            'persona.vonneumann.worldview':      { en: 'Mathematics is the language of reality. Game theory, quantum mechanics, computers — they are all the same structure seen from different angles.', zh: '数学是现实的语言。博弈论、量子力学、计算机——都是同一结构从不同角度的映射。' },
+
+            // Persona detail UI chrome
+            'detail.dossier':        { en: 'Dossier',            zh: '档案' },
+            'detail.decisionStyle':  { en: 'Decision Style',     zh: '决策风格' },
+            'detail.voice':          { en: 'In Their Voice',     zh: '原声' },
+            'detail.lifeContext':    { en: 'Life Context',       zh: '人生轨迹' },
+            'detail.inCouncil':      { en: 'Currently in your Council', zh: '已加入你的议会' },
+            'detail.notAdded':       { en: 'Not yet added',      zh: '尚未加入' },
+            'detail.close':          { en: 'Close',              zh: '关闭' },
+            'detail.remove':         { en: 'Remove from Council', zh: '移出议会' },
+            'detail.add':            { en: 'Add to Council',     zh: '加入议会' },
+
+            // Persona dossier — decisionStyle
+            'persona.audrey-hepburn.decisionStyle': { en: "Choose the simplest graceful option: protect your dignity, keep your promise, and make one small act of kindness that moves the story forward.", zh: "选最简单也最优雅的选项：守住尊严、兑现承诺、做一件小小的善意之事，让故事往前推进一步。" },
+            'persona.krishnamurti.decisionStyle':   { en: "Never gives answers. Only questions. Points you back to look at the problem itself, not solutions.", zh: "从不给答案，只给问题。把你引回到问题本身，而不是解决方案上。" },
+            'persona.lacan.decisionStyle':          { en: "Responds to questions with questions. No comfort, no advice. Cuts through certainty to let the unconscious speak.", zh: "以问题回应问题。不给安慰，不给建议。切开你的确信，让无意识开口。" },
+            'persona.buffett.decisionStyle':        { en: "Slow down, ignore noise, and ask the plain question: what is the real value here, what are the downside risks, and can you hold this choice for a long time?", zh: "慢下来，忽略噪音，问最朴素的问题：真正的价值在哪，下行风险是什么，这个选择你能长期持有吗？" },
+            'persona.munger.decisionStyle':         { en: "Invert the problem, check incentives, and test the idea from several disciplines before trusting your first conclusion.", zh: "把问题反过来看，检查激励机制，用多个学科的视角交叉检验，再去相信你的第一个结论。" },
+            'persona.drucker.decisionStyle':        { en: "Ask the right questions before seeking answers: What are your strengths? What are your values? Where do you belong? What can you contribute?", zh: "找答案之前先问对问题：你的长处是什么？你的价值观是什么？你属于哪里？你能贡献什么？" },
+            'persona.welch.decisionStyle':          { en: "Face reality as it is, not as you wish it were. Make a decision and go — a wrong decision fast beats no decision at all.", zh: "看清真实的现实，而不是你希望的现实。做了决策就走——一个快的错决策也好过没决策。" },
+            'persona.shannon.decisionStyle':        { en: "Strip the problem down to its information-theoretic core: what are the real signals, what is noise, and what is the minimum you need to decide?", zh: "把问题剥到信息论的骨架：什么是真信号、什么是噪音、做决策的最少信息量是多少？" },
+            'persona.turing.decisionStyle':         { en: "Reduce the problem to a formal procedure: can you write an algorithm for this decision? If not, where does the undecidability lie?", zh: "把问题化为形式化过程：这个决策你能写成算法吗？写不了的话，不可判定性在哪？" },
+            'persona.vonneumann.decisionStyle':     { en: "Model the decision as a game: who are the players, what are their strategies, and what is the equilibrium? Then calculate.", zh: "把决策建模成一局博弈：玩家是谁、策略是什么、均衡点在哪？然后去算。" },
+
+            // Persona dossier — voice (first-person utterance)
+            'persona.audrey-hepburn.voice':  { en: "Darling, breathe. Ask: what would look simple and honest tomorrow morning? We'll choose the small step that keeps your heart gentle — and your posture upright.", zh: "亲爱的，先呼吸。问自己：明天早上回头看，哪个选择最朴素也最真诚？我们选那个能让你心柔软、身体挺直的小小一步。" },
+            'persona.krishnamurti.voice':    { en: "Are you really asking, or seeking confirmation? Don't accept what I say — look for yourself.", zh: "你是在真的发问，还是在寻求确认？不要接受我说的——自己去看。" },
+            'persona.lacan.voice':           { en: "The unconscious is structured like a language. What slips out when you speak?", zh: "无意识的结构如同一门语言。你说话时，有什么悄悄溜了出来？" },
+            'persona.buffett.voice':         { en: "You do not need a brilliant move here. You need a sensible one with a margin of safety that still looks wise ten years from now.", zh: "你不需要一个绝妙的招。你需要一个带足够安全边际、十年后回头看仍然明智的选择。" },
+            'persona.munger.voice':          { en: "Try this in reverse: what choice would reliably make your life worse? Eliminate that first. Then the intelligent path becomes less mysterious.", zh: "反过来想：哪个选择会可靠地让你生活更糟？先排除它。然后明智的路径就没那么神秘了。" },
+            'persona.drucker.voice':         { en: "The question 'What do I want?' is the wrong question. The right question is 'What needs to be done?' — and where can I contribute something that makes a real difference?", zh: "'我想要什么'是错的问题。对的问题是'什么需要被做'，以及我在哪里能贡献出真正的不同？" },
+            'persona.welch.voice':           { en: "Look, you can sit here and agonize for six months, or you can make a decision and go. Give me somebody who knows what they're great at and let me put them there. That's the whole game.", zh: "听着，你可以在这里纠结六个月，也可以做个决定走人。给我一个知道自己擅长什么的人，让我把他放在那个位置。游戏就这么回事。" },
+            'persona.shannon.voice':         { en: "Before you decide, ask: how many bits of information do you actually have? And how many are you missing? Most anxiety comes from confusing noise with signal.", zh: "决定之前，先问：你手里到底有多少比特信息？缺了多少？大多数焦虑来自把噪音当作了信号。" },
+            'persona.turing.voice':          { en: "Can you state the problem precisely enough that a machine could solve it? If not, perhaps the problem is not yet understood.", zh: "你能把问题精确到机器都能解的程度吗？如果不能，也许你还没真正理解问题。" },
+            'persona.vonneumann.voice':      { en: "If people do not believe that mathematics is simple, it is only because they do not realize how complicated life is. Let me show you the structure underneath.", zh: "人们若不相信数学是简单的，是因为他们没意识到生活有多复杂。让我给你看底层的结构。" },
+
+            // Persona dossier — lifeContext entries (stored as JSON strings;
+            // localizePersona parses and substitutes the matching array)
+            'persona.audrey-hepburn.lifeContext': {
+                en: JSON.stringify([
+                    { period: "Carrying grace through hard years", detail: "Raised in Europe during WWII, she learned restraint, gratitude, and the art of standing tall without becoming hard." },
+                    { period: "Roman Holiday (1953)", detail: "An unexpected breakthrough — and an Academy Award for Best Actress. Sincerity over performance, softness as strength." },
+                    { period: "Breakfast at Tiffany's (1961)", detail: "A cultural icon of style and solitude: lightness on the surface, longing underneath." },
+                    { period: "UNICEF Goodwill Ambassador (1988–1993)", detail: "Later in life she traveled relentlessly for children, turning fame into a tool for service rather than self." },
+                    { period: "Presidential Medal of Freedom (1992)", detail: "Honored for humanitarian work — proof that gentleness can also be public courage." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "在艰难岁月里承住优雅", detail: "二战期间在欧洲长大，她学到克制、感恩，以及不变硬却始终挺立的姿态。" },
+                    { period: "罗马假日 (1953)", detail: "一次意外的突破——拿下奥斯卡影后。真诚大于表演，柔软就是力量。" },
+                    { period: "蒂凡尼的早餐 (1961)", detail: "风格与孤独的文化符号：表面的轻盈，底下的渴望。" },
+                    { period: "联合国儿童基金会亲善大使 (1988–1993)", detail: "晚年她不知疲倦地为孩子奔走，把名声变成服务他人的工具。" },
+                    { period: "总统自由勋章 (1992)", detail: "因人道工作受勋——温柔也能是公共层面的勇气。" }
+                ])
+            },
+            'persona.krishnamurti.lifeContext': {
+                en: JSON.stringify([
+                    { period: "The Dissolution", detail: "Dissolved the Order of the Star, rejecting the role of World Teacher that was prepared for him." },
+                    { period: "Pathless Journey", detail: "Spent 60 years in dialogue, refusing to become an authority while speaking to millions." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "解散世界之星社", detail: "拒绝被安排好的'世界导师'身份，主动解散为他准备的组织。" },
+                    { period: "无路之旅", detail: "六十年持续对话，面对数百万听众，却始终拒绝成为权威。" }
+                ])
+            },
+            'persona.lacan.lifeContext': {
+                en: JSON.stringify([
+                    { period: "Return to Freud", detail: "Revolutionized psychoanalysis by insisting: the unconscious is structured like a language." },
+                    { period: "The Seminar", detail: "27 years of legendary seminars in Paris, notoriously difficult, deliberately so." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "回到弗洛伊德", detail: "以'无意识的结构如同一门语言'这一主张，颠覆了精神分析。" },
+                    { period: "研讨班", detail: "在巴黎连续开班 27 年，以艰涩著称——且是刻意为之。" }
+                ])
+            },
+            'persona.buffett.lifeContext': {
+                en: JSON.stringify([
+                    { period: "Circle of Competence", detail: "Built conviction by staying with businesses and decisions he could actually understand." },
+                    { period: "Long-Term Compounding", detail: "Proved that patience, discipline, and avoiding unforced errors beat constant activity." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "能力圈", detail: "只待在他真正理解的生意和决策里，由此建立起信念。" },
+                    { period: "长期复利", detail: "证明耐心、纪律与不犯主动失误，胜过持续的动作。" }
+                ])
+            },
+            'persona.munger.lifeContext': {
+                en: JSON.stringify([
+                    { period: "Multidisciplinary Thinking", detail: "Insisted that better judgment comes from borrowing core models from many fields, not one." },
+                    { period: "Inversion and Misjudgment", detail: "Focused on avoiding predictable errors, bias traps, and bad incentives before seeking upside." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "跨学科思维", detail: "坚信更好的判断来自从多个领域借用核心模型，而非单一学科。" },
+                    { period: "反转与误判", detail: "先聚焦于避免可预测的错误、偏见陷阱与糟糕激励，再追求上行空间。" }
+                ])
+            },
+            'persona.drucker.lifeContext': {
+                en: JSON.stringify([
+                    { period: "Managing Oneself", detail: "Pioneered the idea that knowledge workers must take responsibility for their own careers and development." },
+                    { period: "The Effective Executive", detail: "Showed that effectiveness is a habit — a set of practices that can be learned by anyone." },
+                    { period: "The Knowledge Worker", detail: "Predicted the shift from manual labor to knowledge work as the defining transformation of the 20th century." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "管理自己", detail: "率先提出：知识工作者必须为自己的职业与成长负责。" },
+                    { period: "卓有成效的管理者", detail: "有效性是一种习惯——一组任何人都能学会的实践。" },
+                    { period: "知识工作者", detail: "预言从体力劳动到知识工作的转变，将是 20 世纪最具定义性的变革。" }
+                ])
+            },
+            'persona.welch.lifeContext': {
+                en: JSON.stringify([
+                    { period: "GE Transformation", detail: "Grew GE from $13B to $400B over 20 years by liberating people, killing bureaucracy, and celebrating wins." },
+                    { period: "Differentiation", detail: "The top 20% rewarded lavishly, the middle 70% coached, the bottom 10% told honestly to move on." },
+                    { period: "Candor", detail: "Discovered after leaving GE that most organizations are suffocated by lack of candor — people sugarcoat instead of saying what they think." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "改造 GE", detail: "20 年里让 GE 从 130 亿美元长到 4000 亿——解放员工、铲除官僚、庆祝胜利。" },
+                    { period: "差异化", detail: "前 20% 重赏，中间 70% 辅导，末位 10% 坦率告知：该走了。" },
+                    { period: "坦诚", detail: "离开 GE 后才发现，大多数组织因缺乏坦诚而窒息——人们在粉饰，而不是说出真实想法。" }
+                ])
+            },
+            'persona.shannon.lifeContext': {
+                en: JSON.stringify([
+                    { period: "A Mathematical Theory of Communication (1948)", detail: "Founded information theory — showed that all communication reduces to bits, noise, and channels." },
+                    { period: "The Playful Inventor", detail: "Built juggling machines, chess programs, and flame-throwing trumpets — proving that play and rigor are the same thing." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "通信的数学理论 (1948)", detail: "开创信息论——证明所有通信都可以归为比特、噪音与信道。" },
+                    { period: "玩心的发明家", detail: "做过杂耍机、下棋程序、喷火小号——证明玩与严谨是同一件事。" }
+                ])
+            },
+            'persona.turing.lifeContext': {
+                en: JSON.stringify([
+                    { period: "On Computable Numbers (1936)", detail: "Invented the concept of the universal machine — the theoretical foundation of every computer." },
+                    { period: "Enigma and Bletchley Park", detail: "Broke the Nazi Enigma code, shortened WWII, and proved that abstract thinking saves lives." },
+                    { period: "Computing Machinery and Intelligence (1950)", detail: "Asked 'Can machines think?' — and changed the question forever with the Turing Test." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "论可计算数 (1936)", detail: "提出通用机概念——为所有计算机奠定理论基石。" },
+                    { period: "Enigma 与布莱切利庄园", detail: "破解纳粹 Enigma 密码，缩短二战，也证明抽象思维能救人命。" },
+                    { period: "计算机器与智能 (1950)", detail: "问出'机器能思考吗'——并用图灵测试永远改写了这个问题。" }
+                ])
+            },
+            'persona.vonneumann.lifeContext': {
+                en: JSON.stringify([
+                    { period: "Game Theory", detail: "Co-created game theory with Morgenstern — proving that strategic decisions can be mathematically optimized." },
+                    { period: "The Von Neumann Architecture", detail: "Designed the stored-program computer architecture that every modern computer still uses." },
+                    { period: "Manhattan Project", detail: "Applied mathematics to the atomic bomb — understood that knowledge is power, for better or worse." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "博弈论", detail: "与摩根斯坦恩共创博弈论——证明战略决策可以被数学优化。" },
+                    { period: "冯·诺依曼架构", detail: "设计了存储程序计算机架构——至今每台现代计算机仍在使用。" },
+                    { period: "曼哈顿计划", detail: "把数学应用于原子弹——懂得知识即力量，无论好坏。" }
+                ])
+            },
+
+            // Feedback
+            'nav.feedback':          { en: 'Send feedback',    zh: '发送反馈' },
+            'feedback.title':        { en: 'Send feedback',    zh: '发送反馈' },
+            'feedback.desc':         { en: 'Bug, idea, or frustration — everything helps. We read all of it.', zh: 'Bug、想法、吐槽——都欢迎。我们每一条都会看。' },
+            'feedback.placeholder':  { en: "What's on your mind?", zh: '你想告诉我们什么？' },
+            'feedback.emailPh':      { en: 'Email (optional, for reply)', zh: '邮箱（选填，方便回复）' },
+            'feedback.submit':       { en: 'Send',             zh: '发送' },
+            'feedback.sending':      { en: 'Sending…',         zh: '发送中…' },
+            'feedback.sent':         { en: 'Thanks — we got it.', zh: '收到啦，谢谢反馈。' },
+            'feedback.failed':       { en: 'Send failed. Try again.', zh: '发送失败，请重试。' },
+            'help.feedbackCta':      { en: 'Still stuck? Send us feedback.', zh: '还有疑问？给我们发反馈。' },
+
+            // Confirm messages
+            'common.deleteChat':         { en: 'Delete this conversation?', zh: '删除这个对话？' },
+            'confirm.deleteChat.title':  { en: 'Delete conversation',       zh: '删除对话' },
+            'confirm.deleteChat.desc':   { en: 'This will permanently remove the conversation and its messages. This cannot be undone.', zh: '这将永久删除该对话及其消息，无法恢复。' },
+
+            // Generic
+            'common.back':       { en: 'Back',           zh: '返回' },
+            'common.cancel':     { en: 'Cancel',         zh: '取消' },
+            'common.delete':     { en: 'Delete',         zh: '删除' },
+        };
+
+        // Module-level locale + subscription event. App keeps the "source of
+        // truth" via useState → setLocale; components read via t(key).
+        window.__lifeeLocale = (() => {
+            try {
+                const saved = window.localStorage.getItem('lifee_locale');
+                if (saved === 'zh' || saved === 'en') return saved;
+            } catch (_) {}
+            // Default: Chinese if browser lang starts with zh, else English.
+            return (navigator.language || 'en').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+        })();
+        const t = (key) => (I18N[key] && I18N[key][window.__lifeeLocale]) || I18N[key]?.en || key;
+        const setLocale = (loc) => {
+            if (loc !== 'en' && loc !== 'zh') return;
+            window.__lifeeLocale = loc;
+            try { window.localStorage.setItem('lifee_locale', loc); } catch (_) {}
+            window.dispatchEvent(new CustomEvent('lifee:locale', { detail: loc }));
+        };
+        const useLocale = () => {
+            const [loc, setLoc] = useState(window.__lifeeLocale);
+            useEffect(() => {
+                const h = (e) => setLoc(e.detail);
+                window.addEventListener('lifee:locale', h);
+                return () => window.removeEventListener('lifee:locale', h);
+            }, []);
+            return loc;
+        };
+        window.t = t;
+        window.setLocale = setLocale;
+        window.useLocale = useLocale;
+
         // ── Icon helper (Lucide via CDN) ──
         function Icon({ name, size = 18, className = '', style }) {
             // Span is React-owned; <i>→<svg> is managed manually and cleared in cleanup
@@ -524,7 +1048,7 @@
                         <div class="flex items-center justify-between mb-7">
                             <div>
                                 <h2 class="font-headline text-lg font-bold text-on-surface">
-                                    ${mode === 'login' ? 'Welcome back' : 'Create account'}
+                                    ${mode === 'login' ? t('auth.welcomeBack') : t('auth.createAccount')}
                                 </h2>
                                 <p class="text-xs text-on-surface-variant mt-0.5">LIFEE</p>
                             </div>
@@ -535,7 +1059,7 @@
 
                         ${!humanVerified ? html`
                             <div class="flex flex-col items-center gap-4 py-4">
-                                <p class="text-sm text-on-surface-variant">Please verify you're human</p>
+                                <p class="text-sm text-on-surface-variant">${t('auth.verifyHuman')}</p>
                                 <div ref=${turnstileRef}></div>
                                 ${message && html`<p class="text-xs text-tertiary/80 text-center">${message}</p>`}
                             </div>
@@ -544,7 +1068,7 @@
                                 <p class="text-sm text-on-surface-variant">${message || 'Enter the verification code sent to your email.'}</p>
                                 <input
                                     type="text"
-                                    placeholder="6-digit code"
+                                    placeholder=${t('auth.otpPh')}
                                     value=${otpCode}
                                     onInput=${e => setOtpCode(e.target.value)}
                                     class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
@@ -553,20 +1077,20 @@
                                     onClick=${handleAuth}
                                     disabled=${loading || !otpCode}
                                     class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
-                                >${loading ? 'Verifying…' : 'Verify & Sign Up'}</button>
+                                >${loading ? t('auth.verifying') : t('auth.verifyBtn')}</button>
                             </div>
                         ` : html`
                             <div class="space-y-3">
                                 <input
                                     type="email"
-                                    placeholder="Email address"
+                                    placeholder=${t('auth.emailPh')}
                                     value=${email}
                                     onInput=${e => setEmail(e.target.value)}
                                     class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
                                 />
                                 <input
                                     type="password"
-                                    placeholder="Password"
+                                    placeholder=${t('auth.passwordPh')}
                                     value=${password}
                                     onInput=${e => setPassword(e.target.value)}
                                     onKeyDown=${e => { if (e.key === 'Enter') handleAuth(); }}
@@ -577,7 +1101,7 @@
                                     onClick=${handleAuth}
                                     disabled=${loading || !email || !password}
                                     class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
-                                >${loading ? 'Please wait…' : mode === 'login' ? 'Sign In' : 'Send Verification Code'}</button>
+                                >${loading ? t('auth.pleaseWait') : mode === 'login' ? t('auth.signInBtn') : t('auth.sendCode')}</button>
                                 <div class="flex items-center gap-2 pt-1">
                                     <div class="flex-1 h-px bg-outline/20"></div>
                                     <span class="text-xs text-on-surface-variant">or</span>
@@ -586,11 +1110,11 @@
                                 <button
                                     onClick=${() => { onGuest(); }}
                                     class="w-full btn-ghost rounded-xl py-3 text-sm"
-                                >Continue as Guest</button>
+                                >${t('auth.guest')}</button>
                                 <p class="text-center text-xs text-on-surface-variant pt-1">
                                     ${mode === 'login'
-                                        ? html`No account? <button onClick=${() => { setMode('signup'); setMessage(''); }} class="text-primary hover:underline">Sign up</button>`
-                                        : html`Already have one? <button onClick=${() => { setMode('login'); setMessage(''); setOtpSent(false); }} class="text-primary hover:underline">Sign in</button>`}
+                                        ? html`${t('auth.noAccount')} <button onClick=${() => { setMode('signup'); setMessage(''); }} class="text-primary hover:underline">${t('auth.signUp')}</button>`
+                                        : html`${t('auth.haveAccount')} <button onClick=${() => { setMode('login'); setMessage(''); setOtpSent(false); }} class="text-primary hover:underline">${t('auth.signInBtn')}</button>`}
                                 </p>
                             </div>
                         `}
@@ -608,6 +1132,8 @@
             sessionId, setSessionId, setSelectedIds,
             personas, onLogin, onSignOut, userAvatar,
             sidebarOpen, setSidebarOpen,
+            onOpenRedeem, onOpenFeedback,
+            openConfirm,
         }) {
             const [userMenuOpen, setUserMenuOpen] = useState(false);
             const userCardRef = useRef(null);
@@ -645,36 +1171,77 @@
                 } catch (e) { console.error('restore session failed', e); }
             };
 
-            const starSession = async (s, e) => {
+            const starSession = (s, e) => {
                 e.stopPropagation();
                 const newVal = !s.starred;
-                await fetch(`/sessions/${s.id}`, {
+                // Optimistic: flip UI immediately, reconcile on response.
+                setChatSessions(prev => prev.map(x => x.id === s.id ? { ...x, starred: newVal } : x));
+                fetch(`/sessions/${s.id}`, {
                     method: 'PATCH', credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ starred: newVal })
+                }).then(r => {
+                    if (!r.ok) throw new Error('patch failed');
+                }).catch(() => {
+                    // Revert on failure.
+                    setChatSessions(prev => prev.map(x => x.id === s.id ? { ...x, starred: !newVal } : x));
                 });
-                setChatSessions(prev => prev.map(x => x.id === s.id ? { ...x, starred: newVal } : x));
             };
 
-            const deleteSession = async (s, e) => {
+            const deleteSession = (s, e) => {
                 e.stopPropagation();
-                if (!confirm('Delete this conversation?')) return;
-                await fetch(`/sessions/${s.id}`, { method: 'DELETE', credentials: 'include' });
-                setChatSessions(prev => prev.filter(x => x.id !== s.id));
-                setSessionId(null);
-                setSessionMessages([]);
-                setView('home');
+                const doDelete = async () => {
+                    await fetch(`/sessions/${s.id}`, { method: 'DELETE', credentials: 'include' });
+                    setChatSessions(prev => prev.filter(x => x.id !== s.id));
+                    if (sessionId === s.id) {
+                        setSessionId(null);
+                        setSessionMessages([]);
+                        setView('home');
+                    }
+                };
+                if (openConfirm) {
+                    openConfirm({
+                        title: t('confirm.deleteChat.title'),
+                        message: t('confirm.deleteChat.desc'),
+                        confirmLabel: t('common.delete'),
+                        cancelLabel: t('common.cancel'),
+                        destructive: true,
+                        onConfirm: doDelete,
+                    });
+                } else {
+                    // Fallback — should not happen once openConfirm is wired.
+                    if (!confirm(t('common.deleteChat'))) return;
+                    doDelete();
+                }
             };
 
             const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || (isGuest ? 'Guest' : 'User');
             const userInitial = (displayName || 'U')[0].toUpperCase();
             const userEmail = user?.email || (isGuest ? 'guest@lifee.app' : 'user@example.com');
-            const [userCredits, setUserCredits] = useState(
-                typeof window.__lifeeBalance === 'number' ? window.__lifeeBalance : '—'
-            );
+            // Credits — stale-while-revalidate. Boot from in-memory / localStorage
+            // so the card shows a number on first paint; revalidate in background.
+            const balanceCacheKey = (uid) => `lifee_balance_cache_${uid || 'anon'}`;
+            const [userCredits, setUserCredits] = useState(() => {
+                if (typeof window.__lifeeBalance === 'number') return window.__lifeeBalance;
+                try {
+                    const uid = user?.id || window.__lifeePreload?.userId || '';
+                    const cached = window.localStorage.getItem(balanceCacheKey(uid));
+                    const n = cached == null ? NaN : parseInt(cached, 10);
+                    if (Number.isFinite(n)) return n;
+                } catch (_) {}
+                return '—';
+            });
 
-            // Fetch credits when the account changes, and listen for in-app balance updates
-            // (ChatArena dispatches 'lifee:balance' after each SSE/error response).
+            const applyBalance = useCallback((n) => {
+                if (typeof n !== 'number' || !Number.isFinite(n)) return;
+                setUserCredits(n);
+                window.__lifeeBalance = n;
+                try {
+                    const uid = user?.id || window.__lifeePreload?.userId || '';
+                    window.localStorage.setItem(balanceCacheKey(uid), String(n));
+                } catch (_) {}
+            }, [user?.id]);
+
             useEffect(() => {
                 if (!user && !isGuest) {
                     setUserCredits('—');
@@ -683,24 +1250,33 @@
                 let cancelled = false;
                 (async () => {
                     try {
-                        const res = await fetch('/credits', { credentials: 'include' });
-                        if (!res.ok) return;
-                        const data = await res.json();
-                        if (!cancelled && typeof data?.balance === 'number') {
-                            setUserCredits(data.balance);
-                            window.__lifeeBalance = data.balance;
+                        // Prefer the pre-fired fetch from <head> on first load.
+                        const pre = window.__lifeePreload?.credits;
+                        let data = null;
+                        if (pre) {
+                            window.__lifeePreload.credits = null;
+                            data = await pre;
                         }
-                    } catch (_) {}
+                        if (!data) {
+                            const url = user?.id
+                                ? `/credits?userId=${encodeURIComponent(user.id)}`
+                                : '/credits';
+                            const res = await fetch(url, { credentials: 'include' });
+                            if (!res.ok) return;   // keep cached value
+                            data = await res.json();
+                        }
+                        if (!cancelled && typeof data?.balance === 'number') applyBalance(data.balance);
+                    } catch (_) { /* keep cached value */ }
                 })();
                 const onBalance = (e) => {
-                    if (typeof e?.detail === 'number') setUserCredits(e.detail);
+                    if (typeof e?.detail === 'number') applyBalance(e.detail);
                 };
                 window.addEventListener('lifee:balance', onBalance);
                 return () => {
                     cancelled = true;
                     window.removeEventListener('lifee:balance', onBalance);
                 };
-            }, [user?.id, isGuest]);
+            }, [user?.id, isGuest, applyBalance]);
 
             // Collapsed rail (Claude-style): icons only — structure mirrors expanded sidebar so
             // every icon stays on the same horizontal line as its expanded counterpart
@@ -754,7 +1330,7 @@
 
             return html`
                 <aside
-                    class="hidden md:flex flex-col h-full pt-10 px-8 pb-10 bg-surface-container-low/60 backdrop-blur-2xl border-r border-white/5 overflow-y-auto shrink-0 w-80"
+                    class="hidden md:flex flex-col h-full pt-10 px-6 pb-10 bg-surface-container-low/60 backdrop-blur-2xl border-r border-white/5 overflow-y-auto shrink-0 w-72"
                     id="void-sidebar"
                 >
                     <!-- Masthead block -->
@@ -767,7 +1343,7 @@
                                 title="Collapse sidebar"
                             ><${Icon} name="Sidebar" size=${16} style=${{ transform: 'scaleX(1.35)' }} /></button>
                         </div>
-                        <p class="text-[10px] font-label uppercase tracking-[0.3em] text-on-surface-variant/60 mt-2">Your Life Coach & Friend</p>
+                        <p class="text-[10px] font-label uppercase tracking-[0.3em] text-on-surface-variant/60 mt-2">${t('nav.subtitle')}</p>
                     </div>
 
                     <!-- Nav -->
@@ -775,8 +1351,8 @@
                         <!-- Section: Navigate -->
                         <div class="space-y-0.5">
                             ${[
-                                { label: 'Home', view: 'home', icon: 'home' },
-                                { label: 'Community', view: 'community', icon: 'public' },
+                                { label: t('nav.home'), view: 'home', icon: 'home' },
+                                { label: t('nav.community'), view: 'community', icon: 'public' },
                             ].map(item => html`
                                 <button
                                     key=${item.view}
@@ -790,19 +1366,18 @@
                             `)}
                         </div>
 
-                        <!-- Section: Conversations -->
-                        <div>
-                            <div class="flex items-center gap-3 px-3 py-1.5 text-on-surface-variant/40">
-                                <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>chat_bubble_outline</span>
-                                <span class="text-[10px] font-label uppercase tracking-[0.25em]">Conversations</span>
-                            </div>
+                        <!-- Section: Conversations (split into Starred + Recents) -->
+                        ${(() => {
+                            const all = [...(chatSessions || [])];
+                            const byRecent = (a, b) => {
+                                const aT = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+                                const bT = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+                                return bT - aT;
+                            };
+                            const starred = all.filter(s => s.starred).sort(byRecent);
+                            const recents = all.filter(s => !s.starred).sort(byRecent).slice(0, 30);
 
-                            <!-- Session list -->
-                            <div class="space-y-0.5 mt-1">
-                                ${(chatSessions || []).length === 0 && html`
-                                    <div class="px-3 py-2 text-xs text-on-surface-variant/40 italic">No conversations yet</div>
-                                `}
-                            ${(chatSessions || []).slice(0, 30).map((s, idx) => {
+                            const renderRow = (s) => {
                                 const isActive = s.id === sessionId;
                                 return html`
                                     <div
@@ -817,24 +1392,62 @@
                                                 ${s.personas?.join(' · ') || ''}${s.personas?.length && s.updated_at ? '  ·  ' : ''}${relativeTime(s.updated_at)}
                                             </p>
                                         </div>
-                                        <div class="session-actions flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div class="session-actions flex items-center gap-0.5 flex-shrink-0">
                                             <button
                                                 title="Star"
                                                 onClick=${e => starSession(s, e)}
-                                                class=${`w-6 h-6 rounded flex items-center justify-center transition-colors
-                                                    ${s.starred ? 'text-yellow-400/80 opacity-100' : 'text-on-surface-variant/40 hover:text-yellow-400'}`}
+                                                class=${`w-6 h-6 rounded flex items-center justify-center transition-opacity transition-colors
+                                                    ${s.starred
+                                                        ? 'text-yellow-400/80 opacity-100'
+                                                        : 'text-on-surface-variant/40 hover:text-yellow-400 opacity-0 group-hover:opacity-100'}`}
                                             ><span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>${s.starred ? 'star' : 'star_border'}</span></button>
                                             <button
                                                 title="Delete"
                                                 onClick=${e => deleteSession(s, e)}
-                                                class="w-6 h-6 rounded flex items-center justify-center text-on-surface-variant/40 hover:text-tertiary transition-colors"
+                                                class="w-6 h-6 rounded flex items-center justify-center text-on-surface-variant/40 hover:text-tertiary transition-opacity transition-colors opacity-0 group-hover:opacity-100"
                                             ><span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>delete_outline</span></button>
                                         </div>
                                     </div>
                                 `;
-                            })}
-                            </div>
-                        </div>
+                            };
+
+                            const groupLabel = (icon, label) => html`
+                                <div class="flex items-center gap-2 px-3 pt-1 pb-1.5 text-on-surface-variant/40">
+                                    <span class="material-symbols-outlined" style=${{ fontSize: '13px' }}>${icon}</span>
+                                    <span class="text-[10px] font-label uppercase tracking-[0.25em]">${label}</span>
+                                </div>
+                            `;
+
+                            if (all.length === 0) {
+                                return html`
+                                    <div>
+                                        ${groupLabel('chat_bubble_outline', t('nav.conversations'))}
+                                        <div class="px-3 py-2 text-xs text-on-surface-variant/40 italic">${t('nav.noConversations')}</div>
+                                    </div>
+                                `;
+                            }
+
+                            return html`
+                                <div class="space-y-2">
+                                    ${starred.length > 0 && html`
+                                        <div>
+                                            ${groupLabel('star', t('nav.starred'))}
+                                            <div class="space-y-0.5">
+                                                ${starred.map(renderRow)}
+                                            </div>
+                                        </div>
+                                    `}
+                                    ${recents.length > 0 && html`
+                                        <div>
+                                            ${groupLabel('schedule', t('nav.recents'))}
+                                            <div class="space-y-0.5">
+                                                ${recents.map(renderRow)}
+                                            </div>
+                                        </div>
+                                    `}
+                                </div>
+                            `;
+                        })()}
                     </nav>
 
                     <!-- Bottom user card -->
@@ -854,23 +1467,37 @@
                                     class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover-warm cursor-pointer text-on-surface-variant transition-colors"
                                 >
                                     <span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>settings</span>
-                                    <span class="text-sm">Settings</span>
+                                    <span class="text-sm">${t('nav.settings')}</span>
                                 </button>
-                                <div class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover-warm cursor-pointer text-on-surface-variant transition-colors">
+                                <button
+                                    onClick=${() => setLocale(window.__lifeeLocale === 'zh' ? 'en' : 'zh')}
+                                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover-warm cursor-pointer text-on-surface-variant transition-colors"
+                                >
                                     <span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>translate</span>
-                                    <span class="text-sm">Language</span>
-                                    <span class="ml-auto text-[10px] text-on-surface-variant/50">Auto</span>
-                                </div>
-                                <div class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover-warm cursor-pointer text-on-surface-variant transition-colors">
+                                    <span class="text-sm">${t('nav.language')}</span>
+                                    <span class="ml-auto text-[10px] text-on-surface-variant/50">${window.__lifeeLocale === 'zh' ? '中文' : 'EN'}</span>
+                                </button>
+                                <button
+                                    onClick=${() => { onOpenRedeem?.(); setUserMenuOpen(false); }}
+                                    disabled=${!user}
+                                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover-warm cursor-pointer text-on-surface-variant transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
                                     <span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>redeem</span>
-                                    <span class="text-sm">Redeem Code</span>
-                                </div>
+                                    <span class="text-sm">${t('nav.redeemCode')}</span>
+                                </button>
                                 <button
                                     onClick=${() => { setView('help'); setUserMenuOpen(false); }}
                                     class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover-warm cursor-pointer text-on-surface-variant transition-colors"
                                 >
                                     <span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>help_outline</span>
-                                    <span class="text-sm">Help</span>
+                                    <span class="text-sm">${t('nav.help')}</span>
+                                </button>
+                                <button
+                                    onClick=${() => { onOpenFeedback?.(); setUserMenuOpen(false); }}
+                                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover-warm cursor-pointer text-on-surface-variant transition-colors"
+                                >
+                                    <span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>feedback</span>
+                                    <span class="text-sm">${t('nav.feedback')}</span>
                                 </button>
                                 ${user ? html`
                                     <button
@@ -878,7 +1505,7 @@
                                         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 cursor-pointer text-red-400/70 hover:text-red-400 transition-colors"
                                     >
                                         <span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>logout</span>
-                                        <span class="text-sm">Log out</span>
+                                        <span class="text-sm">${t('nav.signOut')}</span>
                                     </button>
                                 ` : html`
                                     <button
@@ -886,7 +1513,7 @@
                                         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 cursor-pointer text-primary/70 hover:text-primary transition-colors"
                                     >
                                         <span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>login</span>
-                                        <span class="text-sm">Sign In</span>
+                                        <span class="text-sm">${t('nav.signIn')}</span>
                                     </button>
                                 `}
                             </div>
@@ -909,7 +1536,7 @@
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-bold text-white truncate">${displayName}</p>
                                 <p class="text-[10px] uppercase tracking-wider text-on-surface-variant/70">
-                                    ${isGuest ? 'Guest' : (user ? 'Credits: ' + userCredits : 'Not signed in')}
+                                    ${isGuest ? t('nav.guest') : (user ? t('nav.credits') + ': ' + userCredits : t('nav.notSignedIn'))}
                                 </p>
                             </div>
                             <span
@@ -923,9 +1550,245 @@
         }
 
         // ══════════════════════════════════════════════
+        //  REDEEM MODAL — redeem a credit code
+        // ══════════════════════════════════════════════
+        function RedeemModal({ isOpen, onClose, user }) {
+            const [code, setCode]       = useState('');
+            const [loading, setLoading] = useState(false);
+            const [status, setStatus]   = useState('');
+            const [statusKind, setStatusKind] = useState(''); // 'ok' | 'err'
+
+            useEffect(() => {
+                if (!isOpen) { setCode(''); setStatus(''); setStatusKind(''); }
+            }, [isOpen]);
+
+            if (!isOpen) return null;
+
+            const submit = async () => {
+                const trimmed = (code || '').trim();
+                if (!trimmed || !user) return;
+                setLoading(true);
+                setStatus(''); setStatusKind('');
+                try {
+                    const r = await fetch('/credits/redeem', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ userId: user.id, code: trimmed }),
+                    });
+                    const data = await r.json();
+                    if (data?.ok) {
+                        setStatus(data.message || 'Redeemed successfully');
+                        setStatusKind('ok');
+                        // Broadcast the new balance so sidebar credit badge updates immediately.
+                        if (typeof data.balance === 'number') {
+                            window.__lifeeBalance = data.balance;
+                            window.dispatchEvent(new CustomEvent('lifee:balance', { detail: data.balance }));
+                        }
+                        setCode('');
+                    } else {
+                        setStatus(data?.message || 'Invalid code');
+                        setStatusKind('err');
+                    }
+                } catch (e) {
+                    setStatus(e?.message || 'Network error');
+                    setStatusKind('err');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return html`
+                <div class="fixed inset-0 z-50 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
+                    <div class="relative w-full max-w-md mx-4 glass-card rounded-3xl p-10 animate-in iridescent-border">
+                        <div class="flex items-center justify-between mb-7">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-primary" style=${{ fontSize: '22px' }}>redeem</span>
+                                <h2 class="font-headline text-xl font-bold text-on-surface">${t('redeem.title')}</h2>
+                            </div>
+                            <button onClick=${onClose} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
+                                <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>close</span>
+                            </button>
+                        </div>
+
+                        <p class="text-sm text-on-surface-variant/70 mb-6 leading-relaxed">
+                            ${t('redeem.desc')}
+                        </p>
+
+                        <input
+                            type="text"
+                            placeholder=${t('redeem.placeholder')}
+                            value=${code}
+                            onInput=${(e) => setCode(e.target.value.toUpperCase())}
+                            onKeyDown=${(e) => { if (e.key === 'Enter') submit(); }}
+                            class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-4 text-base uppercase tracking-[0.25em] text-center font-mono focus:outline-none focus:border-primary/50 void-textarea mb-4"
+                            autoFocus
+                        />
+
+                        ${status ? html`
+                            <p class=${'text-xs mb-3 ' + (statusKind === 'ok' ? 'text-primary/80' : 'text-tertiary/80')}>
+                                ${status}
+                            </p>
+                        ` : null}
+
+                        <button
+                            onClick=${submit}
+                            disabled=${loading || !code.trim() || !user}
+                            class="w-full btn-gradient rounded-xl py-4 text-base font-semibold disabled:opacity-40"
+                        >${loading ? t('redeem.redeeming') : t('redeem.action')}</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ══════════════════════════════════════════════
+        //  FEEDBACK MODAL — user sends a note to the team
+        // ══════════════════════════════════════════════
+        function FeedbackModal({ isOpen, onClose, user }) {
+            const [content, setContent] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [status, setStatus]   = useState('');
+            const [statusKind, setStatusKind] = useState(''); // 'ok' | 'err'
+
+            useEffect(() => {
+                if (!isOpen) { setStatus(''); setStatusKind(''); }
+            }, [isOpen]);
+
+            if (!isOpen) return null;
+
+            const submit = async () => {
+                const trimmed = (content || '').trim();
+                if (!trimmed) return;
+                setLoading(true);
+                setStatus(''); setStatusKind('');
+                try {
+                    const r = await fetch('/feedback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            content: trimmed,
+                            userId: user?.id || '',
+                            email: user?.email || '',
+                            url: window.location.href,
+                        }),
+                    });
+                    const data = await r.json();
+                    if (data?.ok) {
+                        setStatus(t('feedback.sent'));
+                        setStatusKind('ok');
+                        setContent('');
+                        // Auto-close after a beat so user sees the confirmation.
+                        setTimeout(() => onClose?.(), 1200);
+                    } else {
+                        setStatus(data?.message || t('feedback.failed'));
+                        setStatusKind('err');
+                    }
+                } catch (e) {
+                    setStatus(e?.message || t('feedback.failed'));
+                    setStatusKind('err');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return html`
+                <div class="fixed inset-0 z-50 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
+                    <div class="relative w-full max-w-md mx-4 glass-card rounded-3xl p-10 animate-in iridescent-border">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-primary" style=${{ fontSize: '22px' }}>feedback</span>
+                                <h2 class="font-headline text-xl font-bold text-on-surface">${t('feedback.title')}</h2>
+                            </div>
+                            <button onClick=${onClose} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
+                                <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>close</span>
+                            </button>
+                        </div>
+
+                        <p class="text-sm text-on-surface-variant/70 mb-5 leading-relaxed">${t('feedback.desc')}</p>
+
+                        <textarea
+                            value=${content}
+                            onInput=${(e) => setContent(e.target.value)}
+                            placeholder=${t('feedback.placeholder')}
+                            rows=${6}
+                            class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm leading-relaxed focus:outline-none focus:border-primary/50 void-textarea resize-none mb-4"
+                            autoFocus
+                        ></textarea>
+
+                        ${status ? html`
+                            <p class=${'text-xs mb-3 ' + (statusKind === 'ok' ? 'text-primary/80' : 'text-tertiary/80')}>
+                                ${status}
+                            </p>
+                        ` : null}
+
+                        <button
+                            onClick=${submit}
+                            disabled=${loading || !content.trim()}
+                            class="w-full btn-gradient rounded-xl py-4 text-base font-semibold disabled:opacity-40"
+                        >${loading ? t('feedback.sending') : t('feedback.submit')}</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ══════════════════════════════════════════════
+        //  CONFIRM MODAL — themed replacement for window.confirm()
+        // ══════════════════════════════════════════════
+        function ConfirmModal({ state, onClose }) {
+            const { isOpen, title, message, confirmLabel, cancelLabel, destructive, onConfirm } = state || {};
+
+            useEffect(() => {
+                if (!isOpen) return;
+                const onKey = (e) => {
+                    if (e.key === 'Escape') onClose?.();
+                    else if (e.key === 'Enter') { onConfirm?.(); onClose?.(); }
+                };
+                window.addEventListener('keydown', onKey);
+                return () => window.removeEventListener('keydown', onKey);
+            }, [isOpen, onConfirm, onClose]);
+
+            if (!isOpen) return null;
+
+            const confirmClass = destructive
+                ? 'w-full sm:w-auto px-5 py-2.5 rounded-xl bg-tertiary/90 hover:bg-tertiary text-on-tertiary text-sm font-semibold transition-colors'
+                : 'w-full sm:w-auto px-5 py-2.5 rounded-xl btn-gradient text-sm font-semibold';
+            const iconName = destructive ? 'warning' : 'help';
+            const iconColor = destructive ? 'text-tertiary' : 'text-primary';
+
+            return html`
+                <div class="fixed inset-0 z-[60] flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
+                    <div class="relative w-full max-w-sm mx-4 glass-card rounded-3xl p-8 animate-in iridescent-border">
+                        <div class="flex items-start gap-3 mb-5">
+                            <span class=${'material-symbols-outlined ' + iconColor} style=${{ fontSize: '22px' }}>${iconName}</span>
+                            <h2 class="font-headline text-lg font-bold text-on-surface leading-tight pt-0.5">${title || t('common.deleteChat')}</h2>
+                        </div>
+                        ${message ? html`
+                            <p class="text-sm text-on-surface-variant/75 leading-relaxed mb-7">${message}</p>
+                        ` : null}
+                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                            <button
+                                onClick=${onClose}
+                                class="w-full sm:w-auto px-5 py-2.5 rounded-xl btn-ghost text-sm font-medium"
+                            ><span>${cancelLabel || t('common.cancel')}</span></button>
+                            <button
+                                onClick=${() => { onConfirm?.(); onClose?.(); }}
+                                class=${confirmClass}
+                                autoFocus
+                            ><span>${confirmLabel || t('common.delete')}</span></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ══════════════════════════════════════════════
         //  HOME VIEW
         // ══════════════════════════════════════════════
-        function HomeView({ context, setContext, setView, personas, selectedIds, setSelectedIds, startFreshDebate }) {
+        function HomeView({ context, setContext, setView, personas, selectedIds, setSelectedIds, startFreshDebate, chatSessions }) {
             // Domain classification by persona id
             const DOMAIN_MAP = {
                 'krishnamurti': 'Philosophy', 'lacan': 'Philosophy', 'Simone de Beauvoir': 'Philosophy',
@@ -934,14 +1797,65 @@
                 'audrey-hepburn': 'Arts',
             };
             const getDomain = (p) => DOMAIN_MAP[p.id] || p.category || 'Other';
-            const DOMAIN_ORDER = ['Philosophy', 'Business', 'Science', 'Arts'];
 
-            // Group personas by domain
+            // Hot domain — site-wide top personas over the last 7 days.
+            // Fetched from /personas/hot which aggregates chat_sessions across
+            // all users (sliding window). Fall back to an empty list on error
+            // so the Hot tab simply disappears.
+            // Stale-while-revalidate: hydrate from localStorage cache and the
+            // pre-fired fetch (window.__lifeePreload.hot kicked off in <head>
+            // before React loaded). Repeat visits show the big featured card
+            // instantly from cache; first visits still benefit from the preload
+            // running in parallel with React / Supabase scripts.
+            const [hotRanking, setHotRanking] = useState(() => {
+                try {
+                    const raw = window.localStorage.getItem('lifee_hot_ranking_cache');
+                    return raw ? (JSON.parse(raw) || []) : [];
+                } catch (_) { return []; }
+            });
+            const [hotLoaded, setHotLoaded]   = useState(() => {
+                try {
+                    const raw = window.localStorage.getItem('lifee_hot_ranking_cache');
+                    return !!(raw && JSON.parse(raw)?.length);
+                } catch (_) { return false; }
+            });
+            useEffect(() => {
+                let cancelled = false;
+                (async () => {
+                    try {
+                        const preloaded = window.__lifeePreload?.hot;
+                        const data = preloaded
+                            ? await preloaded
+                            : await fetch('/personas/hot?days=7&limit=3', { credentials: 'include' }).then(r => r.ok ? r.json() : { hot: [] });
+                        if (!cancelled && Array.isArray(data?.hot)) {
+                            setHotRanking(data.hot);
+                            try { window.localStorage.setItem('lifee_hot_ranking_cache', JSON.stringify(data.hot)); } catch (_) {}
+                        }
+                    } catch (_) {}
+                    finally { if (!cancelled) setHotLoaded(true); }
+                })();
+                return () => { cancelled = true; };
+            }, []);
+            const hotPersonas = hotRanking
+                .map(({ id }) => personas.find(p =>
+                    p.id === id ||
+                    p.name === id ||
+                    p.id === String(id).toLowerCase().replace(/\s+/g, '')
+                ))
+                .filter(Boolean);
+
+            const DOMAIN_ORDER_BASE = ['Philosophy', 'Business', 'Science', 'Arts'];
+            const DOMAIN_ORDER = hotPersonas.length > 0
+                ? ['Hot', ...DOMAIN_ORDER_BASE]
+                : DOMAIN_ORDER_BASE;
+
+            // Group personas by domain (Hot is a special computed domain)
             const grouped = {};
             DOMAIN_ORDER.forEach(d => grouped[d] = []);
+            if (hotPersonas.length > 0) grouped['Hot'] = hotPersonas;
             personas.forEach(p => {
                 const d = getDomain(p);
-                if (grouped[d]) grouped[d].push(p);
+                if (grouped[d] && d !== 'Hot') grouped[d].push(p);
             });
 
             const toggleSelect = (id) => {
@@ -969,7 +1883,7 @@
             const trySubmit = () => {
                 if (!context.situation?.trim()) return;
                 if (selectedIds.length === 0) {
-                    setToastMsg('Pick at least one voice from the Council below.');
+                    setToastMsg(t('home.pickVoice'));
                     return;
                 }
                 // Home → always a new session (the sidebar keeps past ones)
@@ -1049,9 +1963,14 @@
                     if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
                     e.preventDefault();
                     if (wheelLock) return;
+                    const n = activeDomains.length;
+                    if (n <= 1) return;
                     const dir = e.deltaY > 0 ? 1 : -1;
                     const currentIdx = idxAtScroll(el.scrollTop);
-                    const nextIdx = Math.max(0, Math.min(activeDomains.length - 1, currentIdx + dir));
+                    // Wrap around: past the last domain loops back to the first,
+                    // before the first loops to the last. Makes the carousel feel
+                    // like a continuous loop rather than dead-ending at boundaries.
+                    const nextIdx = (currentIdx + dir + n) % n;
                     if (nextIdx === currentIdx) return;
                     wheelLock = true;
                     scrollLockRef.current = true;
@@ -1243,28 +2162,35 @@
                     cancelVMomentum();
                     cleanups.forEach(fn => fn());
                 };
-            }, [personas.length]);
+            // Re-register when the active domain count changes so the wheel
+            // handler's closure over activeDomains stays accurate (Hot loads
+            // asynchronously, which grows the list from 4 → 5).
+            }, [personas.length, activeDomains.length]);
 
-            // Featured = preview > most recent selected > default (Audrey)
+            // Featured = preview > most recent selected > top Hot persona. Wait
+            // until Hot has resolved before falling back, so we don't flash
+            // Audrey then swap to Hot #1 mid-load.
             const lastSelected = selectedPersonas[selectedPersonas.length - 1];
             const featured =
                 (previewId && personas.find(p => p.id === previewId)) ||
                 lastSelected ||
-                personas.find(p => p.id === 'audrey-hepburn') ||
-                personas[0];
+                (hotLoaded
+                    ? (hotPersonas[0] || personas.find(p => p.id === 'audrey-hepburn') || personas[0])
+                    : null);
 
-            // Masthead date
+            // Masthead date — locale-aware
             const today = new Date();
-            const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
+            const dateLocale = window.__lifeeLocale === 'zh' ? 'zh-CN' : 'en-US';
+            const dateStr = today.toLocaleDateString(dateLocale, { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
 
             return html`
                 <div class="animate-in flex flex-col w-full h-full overflow-y-auto no-scrollbar">
                     <!-- Masthead -->
                     <div class="w-full max-w-6xl mx-auto px-8 pt-10 pb-4">
                         <div class="flex items-baseline justify-between border-b border-on-surface/10 pb-3">
-                            <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] font-bold">Vol. I</p>
+                            <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] font-bold">${t('home.vol')}</p>
                             <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em]">${dateStr}</p>
-                            <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em]">The Council</p>
+                            <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em]">${t('home.theCouncil')}</p>
                         </div>
                     </div>
 
@@ -1272,16 +2198,14 @@
                     <section class="w-full max-w-6xl mx-auto px-8 pt-8 pb-16 grid grid-cols-1 md:grid-cols-5 gap-10">
                         <!-- Left: input area -->
                         <div class="md:col-span-3 flex flex-col justify-center gap-5">
-                            <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em]">Today's question</p>
-                            <h1 class="font-headline text-4xl md:text-5xl font-bold leading-[1.1] text-on-surface">
-                                What's on<br/>your mind?
-                            </h1>
+                            <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em]">${t('home.todaysQuestion')}</p>
+                            <h1 class="font-headline text-4xl md:text-5xl font-bold leading-[1.1] text-on-surface" dangerouslySetInnerHTML=${{ __html: t('home.onYourMind') }}></h1>
                             <div class="flex items-end gap-3 mt-4">
                                 <div class="flex-1 flex items-center bg-surface-container border border-outline-variant/20 rounded-2xl px-5 py-4 focus-within:border-primary/30 transition-colors">
                                     <textarea
                                         rows="1"
                                         class="flex-1 bg-transparent text-on-surface placeholder-on-surface-variant/30 text-sm focus:outline-none resize-none leading-relaxed overflow-y-auto"
-                                        placeholder="Describe your situation..."
+                                        placeholder=${t('home.placeholder')}
                                         style=${{ maxHeight: '180px' }}
                                         value=${context.situation}
                                         onInput=${e => {
@@ -1302,7 +2226,7 @@
                                     disabled=${!context.situation?.trim()}
                                     onClick=${trySubmit}
                                     class="btn-gradient w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 disabled:opacity-20 disabled:cursor-not-allowed"
-                                    title="Send"
+                                    title=${t('chat.send')}
                                 >
                                     <span class="material-symbols-outlined" style=${{ fontSize: '22px' }}>arrow_forward</span>
                                 </button>
@@ -1319,21 +2243,21 @@
                                         <span key=${p.id}
                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/8 border border-primary/15 text-xs text-primary/80">
                                             <span class="text-sm">${p.avatar || '☁️'}</span>
-                                            ${p.name}
+                                            <span>${p.name}</span>
                                             <button onClick=${() => toggleSelect(p.id)}
                                                 class="ml-0.5 text-primary/40 hover:text-primary text-base leading-none">×</button>
                                         </span>
                                     `)}
                                 </div>
                             ` : html`
-                                <p class="text-xs text-on-surface-variant/40 italic">→ Select voices below to begin.</p>
+                                <p class="text-xs text-on-surface-variant/40 italic">${t('home.selectVoices')}</p>
                             `}
                         </div>
 
                         <!-- Right: featured persona card (click to add to conversation) -->
                         ${featured ? (() => {
                             const isSel = selectedIds.includes(featured.id);
-                            const label = previewId ? 'Preview' : (isSel ? 'In conversation' : 'Featured');
+                            const label = previewId ? t('home.preview') : (isSel ? t('home.inConversation') : t('home.featured'));
                             return html`
                                 <div class="md:col-span-2">
                                     <div
@@ -1362,7 +2286,7 @@
                                                         onClick=${(e) => { e.stopPropagation(); setDetailPersonaId(featured.id); }}
                                                         class="inline-flex items-center gap-1.5 text-[10px] font-label uppercase tracking-[0.25em] text-white/60 hover:text-primary transition-colors"
                                                     >
-                                                        <span>Read full dossier</span>
+                                                        <span>${t('home.readDossier')}</span>
                                                         <span class="material-symbols-outlined" style=${{ fontSize: '12px' }}>arrow_outward</span>
                                                     </button>
                                                 </div>
@@ -1377,9 +2301,9 @@
                     <!-- Domain sections (editorial list style) -->
                     <section class="w-full max-w-6xl mx-auto px-8 pb-20">
                         <div class="flex items-baseline gap-4 mb-10 border-t border-on-surface/10 pt-6">
-                            <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] font-bold">The Council</p>
+                            <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] font-bold">${t('home.theCouncil')}</p>
                             <div class="flex-1 h-px bg-on-surface/8"></div>
-                            <p class="text-[10px] text-on-surface-variant/40">${personas.length} voices</p>
+                            <p class="text-[10px] text-on-surface-variant/40">${personas.length} ${t('home.voices')}</p>
                         </div>
 
                         <!-- Vertical carousel (one domain at a time, dynamic height: 1 or 2 rows)
@@ -1399,10 +2323,10 @@
                                         <div class="flex items-baseline justify-between">
                                             <div class="flex items-baseline gap-4">
                                                 <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em] font-bold">N° 0${dIdx + 1}</p>
-                                                <h2 class="font-headline text-2xl font-bold text-on-surface">${domain}</h2>
+                                                <h2 class="font-headline text-2xl font-bold text-on-surface">${t('domain.' + domain.toLowerCase()) || domain}</h2>
                                             </div>
                                             <div class="flex items-center gap-3 text-[11px] text-on-surface-variant/40">
-                                                <span class="italic">${items.length} ${items.length === 1 ? 'voice' : 'voices'}</span>
+                                                <span class="italic">${items.length} ${items.length === 1 ? t('chat.voice') : t('home.voices')}</span>
                                                 <span class="opacity-60">·</span>
                                                 <span class="uppercase tracking-widest">${dIdx + 1}/${arr.length}</span>
                                             </div>
@@ -1454,7 +2378,7 @@
                                         class=${`text-[11px] font-bold uppercase tracking-widest transition-colors
                                             ${isActive ? 'text-primary' : 'text-on-surface-variant/30 hover:text-primary'}`}
                                     >
-                                        <span class="opacity-50 mr-2">0${dIdx + 1}</span>${domain}
+                                        <span class="opacity-50 mr-2">0${dIdx + 1}</span><span>${t('domain.' + domain.toLowerCase()) || domain}</span>
                                     </button>
                                 `;
                             })}
@@ -1488,8 +2412,8 @@
             }, []);
 
             const sections = [];
-            if (persona.decisionStyle) sections.push({ label: 'Decision Style', body: persona.decisionStyle });
-            if (persona.voice) sections.push({ label: 'In Their Voice', body: `"${persona.voice}"`, italic: true });
+            if (persona.decisionStyle) sections.push({ label: t('detail.decisionStyle'), body: persona.decisionStyle });
+            if (persona.voice) sections.push({ label: t('detail.voice'), body: `"${persona.voice}"`, italic: true });
 
             return html`
                 <div class="fixed inset-0 z-50 flex items-center justify-center animate-in">
@@ -1514,7 +2438,7 @@
                             </button>
 
                             <div class="absolute left-8 bottom-6 right-8">
-                                <p class="text-[10px] text-primary uppercase tracking-[0.3em] font-bold mb-2">${persona.role || 'Dossier'}</p>
+                                <p class="text-[10px] text-primary uppercase tracking-[0.3em] font-bold mb-2">${persona.role || t('detail.dossier')}</p>
                                 <h2 class="font-headline text-4xl md:text-5xl font-bold text-white leading-[1.05]">${persona.name}</h2>
                             </div>
                         </div>
@@ -1524,7 +2448,7 @@
                             <!-- Worldview (pull quote) -->
                             ${persona.worldview ? html`
                                 <div class="relative">
-                                    <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] font-bold mb-3">Worldview</p>
+                                    <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] font-bold mb-3">${t('home.worldview')}</p>
                                     <span class="absolute -left-2 -top-2 font-headline text-[72px] text-primary/20 leading-none select-none pointer-events-none">"</span>
                                     <p class="font-headline text-xl italic text-on-surface leading-snug relative pl-6">${persona.worldview}</p>
                                 </div>
@@ -1547,7 +2471,7 @@
                                 <div>
                                     <div class="flex items-baseline gap-4 mb-5">
                                         <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em] font-bold">N° 0${sections.length + 1}</p>
-                                        <h3 class="font-headline text-sm font-bold text-on-surface/90 uppercase tracking-widest">Life Context</h3>
+                                        <h3 class="font-headline text-sm font-bold text-on-surface/90 uppercase tracking-widest">${t('detail.lifeContext')}</h3>
                                         <div class="flex-1 h-px bg-on-surface/8"></div>
                                     </div>
                                     <div class="space-y-5">
@@ -1565,20 +2489,20 @@
                         <!-- Footer: add/remove CTA -->
                         <div class="px-8 py-5 border-t border-white/8 bg-surface-container-low/60 shrink-0 flex items-center justify-between gap-4">
                             <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em] hidden md:block">
-                                ${isSel ? 'Currently in your Council' : 'Not yet added'}
+                                ${isSel ? t('detail.inCouncil') : t('detail.notAdded')}
                             </p>
                             <div class="flex items-center gap-3 ml-auto">
                                 <button
                                     onClick=${onClose}
                                     class="text-[10px] text-on-surface-variant/60 hover:text-on-surface uppercase tracking-[0.25em] px-4 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
-                                >Close</button>
+                                >${t('detail.close')}</button>
                                 <button
                                     onClick=${() => { onToggle(); onClose(); }}
                                     class=${isSel
                                         ? 'no-shine text-[10px] uppercase tracking-[0.25em] font-bold px-5 py-2.5 rounded-lg bg-white/5 text-on-surface hover:bg-white/10 transition-colors'
                                         : 'no-shine text-[10px] uppercase tracking-[0.25em] font-bold px-5 py-2.5 rounded-lg btn-gradient'}
                                 >
-                                    ${isSel ? 'Remove from Council' : 'Add to Council'}
+                                    ${isSel ? t('detail.remove') : t('detail.add')}
                                 </button>
                             </div>
                         </div>
@@ -1679,7 +2603,7 @@
                     const { error } = await supabaseClient.from('profiles')
                         .upsert({ id: user.id, email: user.email, display_name: next }, { onConflict: 'id' });
                     if (error) throw error;
-                    setStatus('Saved');
+                    setStatus(t('account.saved'));
                 } catch (e) { setStatus(e?.message || 'Save failed'); }
                 finally { setLoading(false); }
             };
@@ -1692,7 +2616,7 @@
                         user.email, { redirectTo: window.location.href }
                     );
                     if (error) throw error;
-                    setStatus('Password reset email sent');
+                    setStatus(t('account.passwordEmailSent'));
                 } catch (e) { setStatus(e?.message || 'Send failed'); }
                 finally { setLoading(false); }
             };
@@ -1723,7 +2647,7 @@
                     <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
                     <div class="relative w-full max-w-md mx-4 glass-card rounded-3xl p-8 animate-in iridescent-border">
                         <div class="flex items-center justify-between mb-6">
-                            <h2 class="font-headline text-lg font-bold text-on-surface">Manage account</h2>
+                            <h2 class="font-headline text-lg font-bold text-on-surface">${t('account.title')}</h2>
                             <button onClick=${onClose} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
                                 <${Icon} name="X" size=${14} />
                             </button>
@@ -1735,49 +2659,49 @@
                                 <div class="flex items-center gap-4">
                                     <${AvatarDisplay} avatar=${userAvatar || '👤'} size=${52} />
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 mb-1">Avatar</p>
-                                        <p class="text-xs text-on-surface-variant/80 leading-snug">Upload an image or use a random default icon.</p>
+                                        <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 mb-1">${t('account.avatar')}</p>
+                                        <p class="text-xs text-on-surface-variant/80 leading-snug">${t('account.avatarDesc')}</p>
                                     </div>
                                 </div>
                                 <div class="mt-3 grid grid-cols-2 gap-2">
                                     <label class="cursor-pointer btn-ghost rounded-xl py-2 text-[11px] text-center">
-                                        <span>Upload</span>
+                                        <span>${t('account.upload')}</span>
                                         <input type="file" accept="image/*" class="hidden" disabled=${loading} onChange=${handleAvatarUpload} />
                                     </label>
                                     <button type="button" disabled=${loading} onClick=${useRandomAvatar}
                                         class="btn-ghost rounded-xl py-2 text-[11px] disabled:opacity-40"
-                                    >Random default</button>
+                                    >${t('account.randomDefault')}</button>
                                 </div>
                             </div>
 
                             <!-- Email -->
                             <div class="p-4 rounded-2xl bg-surface-container border border-outline/20">
-                                <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 mb-1">Email</p>
+                                <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 mb-1">${t('account.email')}</p>
                                 <p class="text-sm text-on-surface break-all">${user?.email || '—'}</p>
                             </div>
 
                             <!-- Display name -->
                             <div class="space-y-2">
-                                <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60">Display name</p>
+                                <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60">${t('account.displayName')}</p>
                                 <input
                                     class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
                                     value=${displayName}
                                     onInput=${(e) => setDisplayName(e.target.value)}
-                                    placeholder="Your name…"
+                                    placeholder=${t('account.namePlaceholder')}
                                 />
                                 <button onClick=${saveProfile} disabled=${loading}
                                     class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
-                                >${loading ? 'Working…' : 'Save'}</button>
+                                >${loading ? t('account.working') : t('account.save')}</button>
                             </div>
 
                             <!-- Password + Sign out -->
                             <div class="grid grid-cols-2 gap-3">
                                 <button onClick=${resetPassword} disabled=${loading || !user}
                                     class="btn-ghost rounded-xl py-3 text-xs disabled:opacity-40"
-                                >Reset password</button>
+                                >${t('account.resetPassword')}</button>
                                 <button onClick=${() => { onSignOut?.(); onClose?.(); }}
                                     class="btn-ghost rounded-xl py-3 text-xs text-tertiary/80 hover:text-tertiary"
-                                >Sign out</button>
+                                >${t('account.signOut')}</button>
                             </div>
 
                             ${status ? html`<p class="text-xs text-primary/80">${status}</p>` : null}
@@ -1819,14 +2743,14 @@
                     const { error } = await supabaseClient.from('profiles')
                         .upsert({ id: user.id, user_memory: content }, { onConflict: 'id' });
                     if (error) throw error;
-                    setStatus('Saved');
+                    setStatus(t('account.saved'));
                     setEditing(false);
                 } catch (e) { setStatus(e?.message || 'Save failed'); }
                 finally { setLoading(false); }
             };
 
             const resetMemory = () => {
-                if (!confirm('Reset your profile to default? This cannot be undone.')) return;
+                if (!confirm(t('profile.confirmReset'))) return;
                 setContent(DEFAULT_USER_MEMORY_TEMPLATE);
                 setEditing(true);
             };
@@ -1836,27 +2760,27 @@
                     <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
                     <div class="relative w-full max-w-2xl mx-4 glass-card rounded-3xl p-8 animate-in iridescent-border" style=${{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
                         <div class="flex items-center justify-between mb-4">
-                            <h2 class="font-headline text-lg font-bold text-on-surface">My profile</h2>
+                            <h2 class="font-headline text-lg font-bold text-on-surface">${t('profile.title')}</h2>
                             <button onClick=${onClose} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
                                 <${Icon} name="X" size=${14} />
                             </button>
                         </div>
                         <p class="text-xs text-on-surface-variant/70 mb-4 leading-relaxed">
-                            This is what personas know about you. It updates automatically after conversations, or you can edit it manually.
+                            ${t('profile.desc')}
                         </p>
                         <textarea
                             class="flex-1 min-h-[320px] w-full p-4 bg-surface-container border border-outline/30 text-on-surface rounded-2xl text-xs md:text-sm leading-relaxed focus:outline-none focus:border-primary/50 void-textarea font-mono"
                             value=${content}
                             onInput=${(e) => { setContent(e.target.value); setEditing(true); }}
-                            placeholder="Your profile will appear here after your first conversation…"
+                            placeholder=${t('profile.placeholder')}
                         ></textarea>
                         <div class="flex gap-3 mt-4">
                             <button onClick=${saveMemory} disabled=${loading || !editing || !user}
                                 class="flex-1 btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
-                            >${loading ? 'Saving…' : 'Save'}</button>
+                            >${loading ? t('profile.saving') : t('profile.save')}</button>
                             <button onClick=${resetMemory} disabled=${loading}
                                 class="btn-ghost rounded-xl py-3 px-6 text-sm disabled:opacity-40"
-                            >Reset</button>
+                            >${t('profile.reset')}</button>
                         </div>
                         ${status ? html`<p class="text-xs text-primary/80 mt-2">${status}</p>` : null}
                     </div>
@@ -1874,7 +2798,7 @@
             const doCopy = async () => {
                 setStatus('');
                 const ok = await (window.copyToClipboard ? window.copyToClipboard(shareText || '') : Promise.resolve(false));
-                setStatus(ok ? 'Copied to clipboard' : 'Copy failed (please copy manually)');
+                setStatus(ok ? t('share.copied') : 'Copy failed (please copy manually)');
             };
 
             const doDownload = () => {
@@ -1888,7 +2812,7 @@
                     a.click();
                     a.remove();
                     URL.revokeObjectURL(url);
-                    setStatus('Downloaded');
+                    setStatus(t('share.downloaded'));
                 } catch (e) { setStatus(e?.message || 'Download failed'); }
             };
 
@@ -1897,7 +2821,7 @@
                     <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
                     <div class="relative w-full max-w-2xl mx-4 glass-card rounded-3xl p-8 animate-in iridescent-border">
                         <div class="flex items-center justify-between mb-4">
-                            <h2 class="font-headline text-lg font-bold text-on-surface">Share chat history</h2>
+                            <h2 class="font-headline text-lg font-bold text-on-surface">${t('share.title')}</h2>
                             <button onClick=${onClose} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
                                 <${Icon} name="X" size=${14} />
                             </button>
@@ -1908,8 +2832,8 @@
                             value=${shareText || '(no messages yet)'}
                         ></textarea>
                         <div class="flex gap-3 mt-4">
-                            <button onClick=${doCopy} class="flex-1 btn-gradient rounded-xl py-3 text-sm">Copy</button>
-                            <button onClick=${doDownload} class="flex-1 btn-ghost rounded-xl py-3 text-sm">Download</button>
+                            <button onClick=${doCopy} class="flex-1 btn-gradient rounded-xl py-3 text-sm">${t('share.copy')}</button>
+                            <button onClick=${doDownload} class="flex-1 btn-ghost rounded-xl py-3 text-sm">${t('share.download')}</button>
                         </div>
                         ${status ? html`<p class="text-xs text-primary/80 mt-2">${status}</p>` : null}
                     </div>
@@ -1927,12 +2851,12 @@
             const [shareOpen, setShareOpen] = useState(false);
 
             const navItems = [
-                { key: 'account', label: 'Manage account', icon: 'UserCog', desc: 'Display name, password, sign out', onClick: () => setAccountOpen(true), disabled: !user },
-                { key: 'profile', label: 'My profile', icon: 'BookUser', desc: 'What personas know about you', onClick: () => setProfileOpen(true), disabled: !user },
-                { key: 'share', label: 'Share chat history', icon: 'Share2', desc: 'Copy or download the current conversation', onClick: () => setShareOpen(true), disabled: !(shareText && shareText.trim()) },
-                { key: 'personas', label: 'My Personas', icon: 'Users', desc: 'Manage your persona library', onClick: () => setView?.('my-personas') },
-                { key: 'community', label: 'Community', icon: 'Globe', desc: 'Browse shared debates', onClick: () => setView?.('community') },
-                { key: 'help', label: 'Help & FAQ', icon: 'HelpCircle', desc: 'How LIFEE works', onClick: () => setView?.('help') },
+                { key: 'account', label: t('settings.manageAccount'), icon: 'UserCog', desc: t('settings.manageAccountDesc'), onClick: () => setAccountOpen(true), disabled: !user },
+                { key: 'profile', label: t('settings.myProfile'), icon: 'BookUser', desc: t('settings.myProfileDesc'), onClick: () => setProfileOpen(true), disabled: !user },
+                { key: 'share', label: t('settings.share'), icon: 'Share2', desc: t('settings.shareDesc'), onClick: () => setShareOpen(true), disabled: !(shareText && shareText.trim()) },
+                { key: 'personas', label: t('settings.myPersonas'), icon: 'Users', desc: t('settings.myPersonasDesc'), onClick: () => setView?.('my-personas') },
+                { key: 'community', label: t('settings.community'), icon: 'Globe', desc: t('settings.communityDesc'), onClick: () => setView?.('community') },
+                { key: 'help', label: t('settings.helpFaq'), icon: 'HelpCircle', desc: t('settings.helpFaqDesc'), onClick: () => setView?.('help') },
             ];
 
             return html`
@@ -1941,7 +2865,7 @@
                         <button onClick=${onBack} class="btn-ghost w-8 h-8 rounded-lg flex items-center justify-center">
                             <${Icon} name="ArrowLeft" size=${16} />
                         </button>
-                        <h1 class="font-headline text-xl font-bold text-on-surface">Settings</h1>
+                        <h1 class="font-headline text-xl font-bold text-on-surface">${t('settings.title')}</h1>
                     </div>
 
                     <!-- Identity card -->
@@ -1950,7 +2874,7 @@
                             <${AvatarDisplay} avatar=${userAvatar || user?.user_metadata?.avatar_url || '✨'} size=${52} />
                             <div class="flex-1 min-w-0">
                                 <p class="font-semibold text-on-surface truncate">${displayName}</p>
-                                <p class="text-xs text-on-surface-variant/60 truncate">${user?.email || 'Guest user'}</p>
+                                <p class="text-xs text-on-surface-variant/60 truncate">${user?.email || t('settings.guestUser')}</p>
                             </div>
                         </div>
                     </div>
@@ -1980,12 +2904,12 @@
                             <button
                                 onClick=${onSignOut}
                                 class="w-full btn-ghost rounded-xl py-3 text-sm text-tertiary/70 hover:text-tertiary border-tertiary/20 hover:border-tertiary/40"
-                            >Sign Out</button>
+                            >${t('account.signOut')}</button>
                         ` : html`
                             <button
                                 onClick=${onLogin}
                                 class="w-full btn-gradient rounded-xl py-3 text-sm"
-                            >Sign In</button>
+                            >${t('nav.signIn')}</button>
                         `}
                     </div>
 
@@ -2041,26 +2965,26 @@
                     <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
                     <div class="relative w-full max-w-lg mx-4 glass-card rounded-3xl p-8 animate-in iridescent-border" style=${{ maxHeight: '85vh', overflowY: 'auto' }}>
                         <div class="flex items-center justify-between mb-6">
-                            <h2 class="font-headline text-lg font-bold text-on-surface">${persona ? 'Edit persona' : 'New persona'}</h2>
+                            <h2 class="font-headline text-lg font-bold text-on-surface">${persona ? t('personas.editTitle') : t('personas.newTitle')}</h2>
                             <button onClick=${onClose} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
                                 <${Icon} name="X" size=${14} />
                             </button>
                         </div>
                         <div class="space-y-4">
                             <input
-                                placeholder="Name (e.g. Sage)"
+                                placeholder=${t('personas.namePh')}
                                 class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
                                 value=${draft.name}
                                 onInput=${(e) => setDraft({ ...draft, name: e.target.value })}
                             />
                             <input
-                                placeholder="Role / identity (e.g. Ancient Philosopher)"
+                                placeholder=${t('personas.rolePh')}
                                 class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
                                 value=${draft.role}
                                 onInput=${(e) => setDraft({ ...draft, role: e.target.value })}
                             />
                             <div>
-                                <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 mb-2">Avatar</p>
+                                <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 mb-2">${t('personas.avatarLabel')}</p>
                                 <div class="flex flex-wrap gap-2">
                                     ${PERSONA_EMOJIS.map(e => html`
                                         <button
@@ -2073,13 +2997,13 @@
                                 </div>
                             </div>
                             <textarea
-                                placeholder="Worldview statement — one sentence this persona believes deeply…"
+                                placeholder=${t('personas.worldviewPh')}
                                 class="w-full h-24 bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
                                 value=${draft.worldview}
                                 onInput=${(e) => setDraft({ ...draft, worldview: e.target.value })}
                             ></textarea>
                             <textarea
-                                placeholder="Voice sample — how this persona would actually speak…"
+                                placeholder=${t('personas.voicePh')}
                                 class="w-full h-20 bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
                                 value=${draft.voice}
                                 onInput=${(e) => setDraft({ ...draft, voice: e.target.value })}
@@ -2088,7 +3012,7 @@
                                 onClick=${() => { onSave(draft); onClose(); }}
                                 disabled=${!canSave}
                                 class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
-                            >Save</button>
+                            >${t('personas.save')}</button>
                         </div>
                     </div>
                 </div>
@@ -2108,7 +3032,7 @@
             const openCreate = () => { setEditTarget(null); setEditOpen(true); };
             const openEdit = (p) => { setEditTarget(p); setEditOpen(true); };
             const handleDelete = (p) => {
-                if (!confirm(`Delete "${p.name}"?`)) return;
+                if (!confirm(t('personas.confirmDelete').replace('%s', p.name))) return;
                 onDeleteCustom?.(p.id);
             };
 
@@ -2119,13 +3043,13 @@
                             <button onClick=${onBack} class="btn-ghost w-8 h-8 rounded-lg flex items-center justify-center">
                                 <${Icon} name="ArrowLeft" size=${16} />
                             </button>
-                            <h1 class="font-headline text-xl font-bold text-on-surface">My Personas</h1>
+                            <h1 class="font-headline text-xl font-bold text-on-surface">${t('personas.title')}</h1>
                         </div>
                         <button
                             onClick=${openCreate}
                             class="btn-gradient rounded-full px-4 py-2 text-[11px] font-semibold flex items-center gap-1.5"
                         >
-                            <${Icon} name="Plus" size=${12} /> New persona
+                            <${Icon} name="Plus" size=${12} /> <span>${t('personas.new')}</span>
                         </button>
                     </div>
                     <div class="flex gap-1.5 mb-6 flex-wrap">
@@ -2135,7 +3059,7 @@
                                 onClick=${() => setCategory(cat)}
                                 class=${`px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider transition-all
                                     ${category === cat ? 'bg-primary/20 text-primary border border-primary/30' : 'text-on-surface-variant/50 hover:text-primary'}`}
-                            >${cat}</button>
+                            >${t('personas.category.' + cat.toLowerCase())}</button>
                         `)}
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -2162,16 +3086,16 @@
                                     </div>
                                     <p class="text-[10px] text-on-surface-variant/50 italic line-clamp-2">"${p.worldview}"</p>
                                     ${isCustom ? html`
-                                        <div class="absolute top-2 right-10 text-[8px] font-bold uppercase tracking-[0.2em] text-primary/50">Custom</div>
+                                        <div class="absolute top-2 right-10 text-[8px] font-bold uppercase tracking-[0.2em] text-primary/50">${t('personas.customTag')}</div>
                                         <div class="flex gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick=${() => openEdit(p)}
                                                 class="flex-1 btn-ghost rounded-lg py-1.5 text-[10px] uppercase tracking-wider"
-                                            >Edit</button>
+                                            >${t('personas.edit')}</button>
                                             <button
                                                 onClick=${() => handleDelete(p)}
                                                 class="flex-1 btn-ghost rounded-lg py-1.5 text-[10px] uppercase tracking-wider text-tertiary/80 hover:text-tertiary"
-                                            >Delete</button>
+                                            >${t('personas.delete')}</button>
                                         </div>
                                     ` : null}
                                 </div>
@@ -2179,7 +3103,7 @@
                         })}
                         ${filtered.length === 0 ? html`
                             <div class="col-span-full text-center py-12 text-sm text-on-surface-variant/50 italic">
-                                No personas in this category yet.
+                                ${t('personas.empty')}
                             </div>
                         ` : null}
                     </div>
@@ -2197,30 +3121,85 @@
         // ══════════════════════════════════════════════
         //  HELP VIEW
         // ══════════════════════════════════════════════
-        function HelpView({ onBack }) {
-            const faqs = [
-                { q: 'What is LIFEE?', a: 'LIFEE is a multi-persona life coaching tool. You describe a situation and multiple AI personas argue perspectives to help you think clearly.' },
-                { q: 'What is the Void theme?', a: 'Void is the dark "Iridescent Void" design variant of LIFEE — same functionality, different aesthetic experience.' },
-                { q: 'How do I start a session?', a: 'Describe your situation in the text area, select tags for context, pick one or more personas from the grid, then click "Begin".' },
-                { q: 'Can I save sessions?', a: 'Yes. Sessions are automatically saved to your account. Access them from "My Chats" in the sidebar.' },
-                { q: 'What is guest mode?', a: 'Guest mode lets you use LIFEE without signing in. Sessions are not persisted across page reloads.' },
+        function HelpView({ onBack, onOpenFeedback }) {
+            const sections = [
+                {
+                    label: t('help.sec.start'),
+                    faqs: [
+                        { q: t('help.q.what'),  a: t('help.a.what')  },
+                        { q: t('help.q.start'), a: t('help.a.start') },
+                        { q: t('help.q.multi'), a: t('help.a.multi') },
+                    ],
+                },
+                {
+                    label: t('help.sec.features'),
+                    faqs: [
+                        { q: t('help.q.voiceMap'), a: t('help.a.voiceMap') },
+                        { q: t('help.q.members'),  a: t('help.a.members')  },
+                        { q: t('help.q.custom'),   a: t('help.a.custom')   },
+                        { q: t('help.q.export'),   a: t('help.a.export')   },
+                    ],
+                },
+                {
+                    label: t('help.sec.account'),
+                    faqs: [
+                        { q: t('help.q.credits'), a: t('help.a.credits') },
+                        { q: t('help.q.redeem'),  a: t('help.a.redeem')  },
+                        { q: t('help.q.guest'),   a: t('help.a.guest')   },
+                    ],
+                },
+                {
+                    label: t('help.sec.privacy'),
+                    faqs: [
+                        { q: t('help.q.data'),    a: t('help.a.data')    },
+                        { q: t('help.q.delete'),  a: t('help.a.delete')  },
+                        { q: t('help.q.profile'), a: t('help.a.profile') },
+                    ],
+                },
             ];
 
             return html`
                 <div class="max-w-2xl mx-auto px-4 py-8 animate-in">
-                    <div class="flex items-center gap-3 mb-8">
+                    <!-- Header -->
+                    <div class="flex items-center gap-3 mb-3">
                         <button onClick=${onBack} class="btn-ghost w-8 h-8 rounded-lg flex items-center justify-center">
                             <${Icon} name="ArrowLeft" size=${16} />
                         </button>
-                        <h1 class="font-headline text-xl font-bold text-on-surface">Help & FAQ</h1>
+                        <h1 class="font-headline text-2xl font-bold text-on-surface">${t('help.title')}</h1>
                     </div>
-                    <div class="space-y-3">
-                        ${faqs.map((faq, i) => html`
-                            <div key=${i} class="glass-card rounded-2xl p-5">
-                                <p class="text-sm font-semibold text-on-surface mb-2">${faq.q}</p>
-                                <p class="text-sm text-on-surface-variant/70 leading-relaxed">${faq.a}</p>
+                    <p class="text-sm text-on-surface-variant/60 leading-relaxed pl-11 mb-10">${t('help.intro')}</p>
+
+                    <!-- Sections -->
+                    <div class="space-y-10">
+                        ${sections.map((section, sIdx) => html`
+                            <div key=${sIdx}>
+                                <div class="flex items-baseline gap-4 mb-4">
+                                    <p class="text-[10px] text-primary/70 uppercase tracking-[0.3em] font-bold">0${sIdx + 1}</p>
+                                    <h2 class="font-headline text-sm font-bold text-on-surface/90 uppercase tracking-widest">${section.label}</h2>
+                                    <div class="flex-1 h-px bg-on-surface/8"></div>
+                                </div>
+                                <div class="space-y-3">
+                                    ${section.faqs.map((faq, i) => html`
+                                        <div key=${i} class="glass-card rounded-2xl p-5 transition-colors hover:border-primary/15">
+                                            <p class="text-sm font-semibold text-on-surface mb-2">${faq.q}</p>
+                                            <p class="text-[13px] text-on-surface-variant/75 leading-relaxed">${faq.a}</p>
+                                        </div>
+                                    `)}
+                                </div>
                             </div>
                         `)}
+                    </div>
+
+                    <!-- Footer CTA -->
+                    <div class="mt-12 pt-8 border-t border-on-surface/8 flex items-center justify-between gap-4">
+                        <p class="text-sm text-on-surface-variant/70">${t('help.feedbackCta')}</p>
+                        <button
+                            onClick=${() => onOpenFeedback?.()}
+                            class="btn-gradient rounded-full px-5 py-2.5 text-xs font-semibold flex items-center gap-2 shrink-0"
+                        >
+                            <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>feedback</span>
+                            <span>${t('nav.feedback')}</span>
+                        </button>
                     </div>
                 </div>
             `;
@@ -2262,14 +3241,29 @@
         //  MAIN APP
         // ══════════════════════════════════════════════
         function App() {
+            // Subscribe App to locale changes so every descendant re-renders
+            // (and picks up fresh t() strings) on toggle.
+            useLocale();
             const [view, setView] = useState('home');
             const [context, setContext] = useState({ situation: '', landingPeriods: [] });
             const _NO_KNOWLEDGE = new Set(['serene', 'architect', 'rebel', 'caretaker', 'tarot-master']);
             const [personas, setPersonas] = useState(INITIAL_PERSONAS.filter(p => !_NO_KNOWLEDGE.has(p.id)));
             const [selectedIds, setSelectedIds] = useState([]);
-            const [user, setUser] = useState(null);
+            // Hydrate from the Supabase token already sitting in localStorage so
+            // the first paint knows the user is signed in — skipping the flash
+            // of "Not signed in" while supabase.auth.getSession() resolves.
+            const [user, setUser] = useState(() => window.__lifeePreload?.user || null);
             const [isGuest, setIsGuest] = useState(false);
             const [authOpen, setAuthOpen] = useState(false);
+            const [redeemOpen, setRedeemOpen] = useState(false);
+            const [feedbackOpen, setFeedbackOpen] = useState(false);
+            const [confirmState, setConfirmState] = useState({ isOpen: false });
+            const openConfirm = useCallback((opts) => {
+                setConfirmState({ isOpen: true, ...opts });
+            }, []);
+            const closeConfirm = useCallback(() => {
+                setConfirmState(s => ({ ...s, isOpen: false }));
+            }, []);
             const [userAvatar, setUserAvatar] = useState(() => {
                 try { return window.localStorage.getItem('lifee_user_avatar') || null; } catch (_) { return null; }
             });
@@ -2280,8 +3274,27 @@
             const [sessionMessages, setSessionMessages] = useState([]);
             const [sessionOptions, setSessionOptions] = useState([]);
             const [sessionSummaries, setSessionSummaries] = useState([]);
-            const [chatSessions, setChatSessions] = useState([]);
+            // Hydrate sidebar instantly from localStorage; /sessions fetch
+            // refreshes in the background. Keyed by userId so a signed-out
+            // visit doesn't reveal a previous user's sessions.
+            const chatSessionsCacheKey = (uid) => `lifee_chat_sessions_cache_${uid || 'guest'}`;
+            const [chatSessions, setChatSessions] = useState(() => {
+                try {
+                    const uid = window.__lifeePreload?.userId || '';
+                    const raw = window.localStorage.getItem(chatSessionsCacheKey(uid));
+                    return raw ? (JSON.parse(raw) || []) : [];
+                } catch (_) { return []; }
+            });
             const [chatSessionsLoading, setChatSessionsLoading] = useState(false);
+            // Persist chatSessions to cache on any change (star toggle, delete,
+            // rename, etc.) so the next visit hydrates with the latest state.
+            useEffect(() => {
+                try {
+                    const uid = user?.id || window.__lifeePreload?.userId || '';
+                    if (!uid) return;
+                    window.localStorage.setItem(chatSessionsCacheKey(uid), JSON.stringify(chatSessions || []));
+                } catch (_) {}
+            }, [chatSessions, user?.id]);
             const [favoritePersonas, setFavoritePersonas] = useState([]);
             const [personaAssets, setPersonaAssets] = useState({});
             const [personaAvatarOverrides, setPersonaAvatarOverrides] = useState(() => {
@@ -2394,8 +3407,17 @@
                 (async () => {
                     setChatSessionsLoading(true);
                     try {
-                        const res = await fetch(`/sessions?userId=${user.id}`, { credentials: 'include' }).then(r => r.json());
-                        setChatSessions(res?.sessions || []);
+                        // Prefer pre-fired fetch started in <head> before React
+                        // evaluated (only valid if the peeked userId matches).
+                        const pre = (window.__lifeePreload?.userId === user.id)
+                            ? window.__lifeePreload?.sessions
+                            : null;
+                        const res = pre
+                            ? await pre
+                            : await fetch(`/sessions?userId=${user.id}`, { credentials: 'include' }).then(r => r.json());
+                        const sessions = res?.sessions || [];
+                        setChatSessions(sessions);
+                        try { window.localStorage.setItem(chatSessionsCacheKey(user.id), JSON.stringify(sessions)); } catch (_) {}
                     } catch (_) { setChatSessions([]); }
                     setChatSessionsLoading(false);
                 })();
@@ -2426,18 +3448,48 @@
                 setChatSessionsLoading(false);
             }, [user]);
 
-            // Display personas (merge assets + overrides + catalog knowledge)
+            // Localise a persona's name/role/worldview/decisionStyle/voice/
+            // lifeContext for the current locale. Custom personas skip
+            // localization since they're user-created and only have original
+            // text. lifeContext entries are stored as JSON in I18N and parsed
+            // back into an array here.
+            const localizePersona = (p) => {
+                if (!p?.id || p.isCustom) return p;
+                const get = (suffix) => {
+                    const key = `persona.${p.id}.${suffix}`;
+                    return I18N[key] ? t(key) : null;
+                };
+                let lifeContext = p.lifeContext;
+                const rawLC = get('lifeContext');
+                if (rawLC) {
+                    try {
+                        const parsed = JSON.parse(rawLC);
+                        if (Array.isArray(parsed)) lifeContext = parsed;
+                    } catch (_) {}
+                }
+                return {
+                    ...p,
+                    name:          get('name')          || p.name,
+                    role:          get('role')          || p.role,
+                    worldview:     get('worldview')     || p.worldview,
+                    decisionStyle: get('decisionStyle') || p.decisionStyle,
+                    voice:         get('voice')         || p.voice,
+                    lifeContext,
+                };
+            };
+
+            // Display personas (merge assets + overrides + catalog knowledge + i18n)
             const displayPersonas = [
                 ...personas.map(p => {
                     const asset = personaAssets[p.id];
                     const avatarOverride = personaAvatarOverrides?.[p.id];
                     const coverOverride = personaCoverOverrides?.[p.id];
-                    return {
+                    return localizePersona({
                         ...p,
                         avatar: avatarOverride || asset?.avatar_url || p.avatar,
                         cover_url: coverOverride || asset?.cover_url || p.cover_url || null,
                         knowledge: (p.knowledge || '').trim() || (personaCatalogKnowledge[p.id] || '').trim(),
-                    };
+                    });
                 }),
                 ...(customPersonas || []).map(p => ({ ...p, isCustom: true, category: p.category || 'CUSTOM' })),
             ];
@@ -2596,7 +3648,7 @@
 
                 if (view === 'help') {
                     if (window.VOID_VIEWS?.help) return window.VOID_VIEWS.help({ onBack: goBack });
-                    return html`<${HelpView} onBack=${goBack} />`;
+                    return html`<${HelpView} onBack=${goBack} onOpenFeedback=${() => setFeedbackOpen(true)} />`;
                 }
 
                 if (view === 'community') {
@@ -2623,6 +3675,7 @@
                     selectedIds=${selectedIds}
                     setSelectedIds=${setSelectedIds}
                     startFreshDebate=${startFreshDebate}
+                    chatSessions=${chatSessions}
                 />`;
             };
 
@@ -2658,6 +3711,9 @@
                         userAvatar=${userAvatar}
                         sidebarOpen=${sidebarOpen}
                         setSidebarOpen=${setSidebarOpen}
+                        onOpenRedeem=${() => setRedeemOpen(true)}
+                        onOpenFeedback=${() => setFeedbackOpen(true)}
+                        openConfirm=${openConfirm}
                     />
 
                     <!-- Main content area (no top header — editorial/masthead lives in each view) -->
@@ -2688,7 +3744,7 @@
                                             <button
                                                 onClick=${() => setIsGuest(true)}
                                                 class="w-full btn-ghost rounded-xl py-3 text-sm"
-                                            >Continue as Guest</button>
+                                            >${t('auth.guest')}</button>
                                         </div>
                                     </div>
                                 `}
@@ -2703,6 +3759,26 @@
                         onClose=${() => setAuthOpen(false)}
                         onAuthed=${(u) => { setUser(u); setIsGuest(false); setAuthOpen(false); }}
                         onGuest=${() => { setIsGuest(true); setAuthOpen(false); }}
+                    />
+
+                    <!-- Redeem modal (app-level so any view can trigger it) -->
+                    <${RedeemModal}
+                        isOpen=${redeemOpen}
+                        onClose=${() => setRedeemOpen(false)}
+                        user=${user}
+                    />
+
+                    <!-- Feedback modal -->
+                    <${FeedbackModal}
+                        isOpen=${feedbackOpen}
+                        onClose=${() => setFeedbackOpen(false)}
+                        user=${user}
+                    />
+
+                    <!-- Themed confirm modal (replaces window.confirm) -->
+                    <${ConfirmModal}
+                        state=${confirmState}
+                        onClose=${closeConfirm}
                     />
                 </div>
             `;
@@ -2814,6 +3890,53 @@
             return true;
         }
 
+        // Auto-split a multi-line leaf into one <span> per visual line so the
+        // shine band can target the line under the cursor (not the whole block).
+        // Runs once per element on first hover; loses inline text-level styling
+        // (<em>, <strong>, etc.) because we re-emit as plain-text spans.
+        //
+        // React-rendered children that are purely text (no nested formatting)
+        // round-trip cleanly; if React later re-renders the same element, the
+        // split is wiped and we re-split on the next hover.
+        function splitLeafIntoLines(el) {
+            if (el._shineSplit) return;
+            const text = el.textContent;
+            if (!text || text.trim().length === 0) return;
+            const P = window.Pretext;
+            if (!P || !P.prepareWithSegments) return;
+            const width = el.offsetWidth;
+            if (!width || width < 10) return;
+            const cs = getComputedStyle(el);
+            const fontStr = `${cs.fontStyle || 'normal'} ${cs.fontWeight || '400'} ${cs.fontSize} ${cs.fontFamily}`;
+            const lh = parseFloat(cs.lineHeight);
+            const fs = parseFloat(cs.fontSize);
+            const lineHeightPx = Number.isFinite(lh) ? lh : (Number.isFinite(fs) ? fs * 1.35 : 20);
+            // Safety check: if the element is currently rendered as a single line
+            // (its actual height ≈ one line-height), don't split. Pretext's glyph
+            // metrics can disagree slightly with the browser's layout and cause
+            // false-positive wraps on tight headings like "LIFEE".
+            if (el.offsetHeight < lineHeightPx * 1.5) {
+                el._shineSplit = true;
+                return;
+            }
+            try {
+                const prepared = P.prepareWithSegments(text, fontStr, { whiteSpace: cs.whiteSpace || 'normal' });
+                const out = P.layoutWithLines(prepared, width, lineHeightPx);
+                const lines = (out.lines || []).map(l => l.text);
+                if (lines.length < 2) { el._shineSplit = true; return; }
+                el.innerHTML = '';
+                lines.forEach((line, i) => {
+                    if (i > 0) el.appendChild(document.createElement('br'));
+                    const span = document.createElement('span');
+                    span.textContent = line;
+                    el.appendChild(span);
+                });
+                el._shineSplit = true;
+            } catch (_) {
+                /* swallow — leave element untouched */
+            }
+        }
+
         // Map cursor's horizontal ratio along the element to the background-position value
         // that lands the band centre (image-50%) under the cursor.
         //   With background-size 220%, image_left = pos% × (container - image) = pos × -1.2 × W.
@@ -2829,9 +3952,21 @@
         const FOLLOW_TRANSITION = '--shine-pos 0.4s cubic-bezier(0.22, 1, 0.36, 1)';
         const EXIT_TRANSITION   = '--shine-pos 1.1s cubic-bezier(0.22, 1, 0.36, 1)';
 
+        // Only split tags likely to hold prose. Buttons/labels/inline bits stay
+        // whole so a short "Sign In" doesn't get its letters rewritten.
+        const SPLIT_TAGS = new Set(['P', 'LI', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DD', 'DT']);
+
         document.addEventListener('mouseover', (e) => {
-            const el = e.target;
+            let el = e.target;
             if (!(el instanceof Element)) return;
+
+            // If this is a multi-line prose leaf, rewrite it into one-span-per-line
+            // on first hover. The event target may then be a newly-created child
+            // span on subsequent mouseover events; shine will track those.
+            if (el instanceof Element && isLeafText(el) && SPLIT_TAGS.has(el.tagName)) {
+                splitLeafIntoLines(el);
+            }
+
             if (!isLeafText(el)) return;
 
             if (el._shineExitTimer) {

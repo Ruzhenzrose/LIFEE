@@ -150,49 +150,60 @@ _SB_HEADERS = {
 
 
 async def _get_balance(uid: str) -> int:
-    """获取余额，新用户自动创建并给免费额度"""
+    """获取余额，新用户自动创建并给免费额度。任何外部错误都降级成初始额度，
+    保证 /credits 永不 500——UI 只需要一个数字就能显示。"""
+    initial = REGISTER_BONUS if uid.startswith("user:") else GUEST_CREDITS
     if not _SUPABASE_URL:
-        return REGISTER_BONUS if uid.startswith("user:") else GUEST_CREDITS
-    import httpx
-    async with httpx.AsyncClient() as c:
-        r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}&select=balance",
-            headers=_SB_HEADERS,
-        )
-        rows = r.json()
-        if rows:
-            return rows[0]["balance"]
-        # 新用户 → 插入（注册用户只给 bonus，Guest 给完整额度）
-        initial = REGISTER_BONUS if uid.startswith("user:") else GUEST_CREDITS
-        await c.post(
-            f"{_SUPABASE_URL}/rest/v1/user_credits",
-            headers=_SB_HEADERS,
-            json={"uid": uid, "balance": initial},
-        )
         return initial
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as c:
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}&select=balance",
+                headers=_SB_HEADERS,
+            )
+            rows = r.json() if r.status_code < 400 else None
+            # PostgREST 正常返回 list，错误时返回 dict — 只相信 list。
+            if isinstance(rows, list):
+                if rows:
+                    return int(rows[0].get("balance", initial))
+                # 新 uid → 插入（幂等失败不致命）
+                try:
+                    await c.post(
+                        f"{_SUPABASE_URL}/rest/v1/user_credits",
+                        headers=_SB_HEADERS,
+                        json={"uid": uid, "balance": initial},
+                    )
+                except Exception:
+                    pass
+                return initial
+    except Exception:
+        pass
+    return initial
 
 
 async def _migrate_balance(from_uid: str, to_uid: str):
-    """把 from_uid 的余额迁移到 to_uid（IP → cookie 迁移用）"""
+    """把 from_uid 的余额迁移到 to_uid（IP → cookie 迁移用）。失败静默，不阻断请求。"""
     if not _SUPABASE_URL or not from_uid:
         return
     import httpx
-    async with httpx.AsyncClient() as c:
-        # 查 from_uid 是否有记录
-        r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{from_uid}&select=balance",
-            headers=_SB_HEADERS,
-        )
-        rows = r.json()
-        if not rows:
-            return  # IP 没用过，不需要迁移
-        balance = rows[0]["balance"]
-        # 创建 to_uid 继承余额
-        await c.post(
-            f"{_SUPABASE_URL}/rest/v1/user_credits",
-            headers=_SB_HEADERS,
-            json={"uid": to_uid, "balance": balance},
-        )
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as c:
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{from_uid}&select=balance",
+                headers=_SB_HEADERS,
+            )
+            rows = r.json() if r.status_code < 400 else None
+            if not isinstance(rows, list) or not rows:
+                return  # 没记录 / 错误响应 → 不迁移
+            balance = int(rows[0].get("balance", 0))
+            await c.post(
+                f"{_SUPABASE_URL}/rest/v1/user_credits",
+                headers=_SB_HEADERS,
+                json={"uid": to_uid, "balance": balance},
+            )
+    except Exception:
+        return
 
 
 async def _deduct(uid: str, amount: int = 1) -> bool:
@@ -399,18 +410,23 @@ def _get_ip_uid(request: Request) -> str:
 
 async def _resolve_uid(request: Request) -> str:
     """解析真实 uid：cookie 有效 → 用 cookie，否则打回 IP 池。
-    伪造不存在的 cookie 不会拿到新额度。"""
+    伪造不存在的 cookie 不会拿到新额度。任何 Supabase 异常都降级为 IP 池。"""
     cookie_uid = request.cookies.get(_COOKIE_NAME, "")
     if cookie_uid and _SUPABASE_URL:
         # 验证 cookie uid 在数据库里是否存在
         import httpx
-        async with httpx.AsyncClient() as c:
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{cookie_uid}&select=uid",
-                headers=_SB_HEADERS,
-            )
-            if r.json():
-                return cookie_uid  # 合法 cookie
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as c:
+                r = await c.get(
+                    f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{cookie_uid}&select=uid",
+                    headers=_SB_HEADERS,
+                )
+                rows = r.json() if r.status_code < 400 else None
+                if isinstance(rows, list) and rows:
+                    return cookie_uid  # 合法 cookie
+        except Exception:
+            # 网络/DB 故障 → 信任 cookie，避免把已登录用户打回 IP 池
+            return cookie_uid
         # cookie uid 不在数据库 → 伪造的，打回 IP
     elif cookie_uid:
         return cookie_uid  # 无 Supabase 时信任 cookie
@@ -747,6 +763,149 @@ async def list_sessions(request: Request, userId: str = ""):
         for s in sessions:
             s.pop("chat_messages", None)
         return {"sessions": sessions}
+
+
+# Alias → canonical persona id. chat_sessions.personas historically stored
+# display names (Chinese or English) rather than ids, so we normalise here
+# before aggregating.
+_PERSONA_ALIASES: dict[str, str] = {
+    # Chinese
+    "克里希那穆提": "krishnamurti",
+    "拉康": "lacan",
+    "西蒙娜·德·波伏瓦": "Simone de Beauvoir",
+    "巴菲特": "buffett",
+    "芒格": "munger",
+    "德鲁克": "drucker",
+    "韦尔奇": "welch",
+    "香农": "shannon",
+    "图灵": "turing",
+    "冯·诺依曼": "vonneumann",
+    "奥黛丽·赫本": "audrey-hepburn",
+    # English display names
+    "Krishnamurti": "krishnamurti",
+    "Lacan": "lacan",
+    "Warren Buffett": "buffett",
+    "Charlie Munger": "munger",
+    "Peter Drucker": "drucker",
+    "Jack Welch": "welch",
+    "Claude Shannon": "shannon",
+    "Alan Turing": "turing",
+    "John von Neumann": "vonneumann",
+    "Audrey Hepburn": "audrey-hepburn",
+}
+
+
+def _canonical_persona_id(raw: str) -> str:
+    if not raw:
+        return ""
+    if raw in _PERSONA_ALIASES:
+        return _PERSONA_ALIASES[raw]
+    # fallback: lowercase, strip whitespace — matches many persona ids
+    return raw.lower().replace(" ", "")
+
+
+class FeedbackRequest(BaseModel):
+    content: str
+    userId: str = ""
+    email: str = ""
+    url: str = ""
+
+
+@app.post("/feedback")
+async def submit_feedback(req: FeedbackRequest, request: Request):
+    """Store user feedback in Supabase `feedback` table.
+
+    Expected table schema (create in Supabase SQL editor):
+        create table feedback (
+            id uuid primary key default gen_random_uuid(),
+            user_id uuid,
+            email text,
+            content text not null,
+            url text,
+            created_at timestamptz default now()
+        );
+    """
+    content = (req.content or "").strip()
+    if not content:
+        return {"ok": False, "message": "empty feedback"}
+    if len(content) > 5000:
+        return {"ok": False, "message": "feedback too long (max 5000 chars)"}
+    if not _SUPABASE_URL:
+        return {"ok": False, "message": "storage not configured"}
+    import httpx
+    payload = {
+        "content": content,
+        "email": (req.email or "").strip()[:200] or None,
+        "url": (req.url or "").strip()[:500] or None,
+    }
+    if req.userId:
+        payload["user_id"] = req.userId
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as c:
+            r = await c.post(
+                f"{_SUPABASE_URL}/rest/v1/feedback",
+                headers=_SB_HEADERS,
+                json=payload,
+            )
+            if r.status_code not in (200, 201, 204):
+                # Surface the Supabase error so the frontend can show something
+                # actionable (missing table, RLS, etc).
+                body = r.text[:300] if r.text else ""
+                return {"ok": False, "message": f"store failed: {r.status_code} {body}"}
+    except Exception as e:
+        return {"ok": False, "message": str(e)[:200]}
+    return {"ok": True}
+
+
+@app.get("/personas/hot")
+async def hot_personas(days: int = 7, limit: int = 8):
+    """Site-wide hot personas in the last N days.
+
+    Aggregates from chat_sessions.personas over updated_at >= now - days.
+    Each session counts once per persona (so heavy single-session users
+    don't dominate the ranking the way /chat_messages would).
+    """
+    if not _SUPABASE_URL:
+        return {"hot": []}
+    from datetime import datetime, timedelta, timezone
+    from urllib.parse import quote
+    # URL-encode so the `+00:00` offset isn't decoded as a space → PostgREST
+    # returns 400 "invalid datetime" otherwise.
+    cutoff = quote((datetime.now(timezone.utc) - timedelta(days=days)).isoformat(), safe="")
+    import httpx
+    counts: dict[str, int] = {}
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        # Paginate through all sessions in window. Supabase default limit is 1000
+        # per page; we bump via range headers.
+        offset = 0
+        page_size = 1000
+        while True:
+            # Note: we intentionally include deleted sessions. "Hot" is about
+            # which persona people picked, not which conversations they kept.
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_sessions"
+                f"?updated_at=gte.{cutoff}&select=personas",
+                headers={
+                    **_SB_HEADERS,
+                    "Range": f"{offset}-{offset + page_size - 1}",
+                    "Range-Unit": "items",
+                    "Prefer": "count=exact",
+                },
+            )
+            if r.status_code not in (200, 206):
+                break
+            rows = r.json() if r.content else []
+            for row in rows:
+                for raw in (row.get("personas") or []):
+                    if not raw or raw in ("user", "system", "lifee-followup"):
+                        continue
+                    canonical = _canonical_persona_id(raw)
+                    counts[canonical] = counts.get(canonical, 0) + 1
+            if len(rows) < page_size:
+                break
+            offset += page_size
+    ranked = sorted(counts.items(), key=lambda kv: -kv[1])[:max(1, limit)]
+    return {"hot": [{"id": pid, "count": n} for pid, n in ranked]}
 
 
 @app.get("/sessions/{session_id}/observe-stream")

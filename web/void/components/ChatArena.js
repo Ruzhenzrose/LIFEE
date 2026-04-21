@@ -2,6 +2,12 @@
     const { useState, useEffect, useLayoutEffect, useRef, useMemo } = React;
     const html = htm.bind(React.createElement);
 
+    // i18n shims — the real t / useLocale are installed on window by
+    // index.html's inline script AFTER this file's IIFE runs, so we defer to
+    // window at call-time (not at IIFE-parse time).
+    const t = (key) => (typeof window !== 'undefined' && typeof window.t === 'function' ? window.t(key) : key);
+    const useLocale = () => (typeof window !== 'undefined' && typeof window.useLocale === 'function' ? window.useLocale() : 'en');
+
     // ── ShinyLines: split text into per-visual-line spans using Pretext (loaded via ES
     // module in index.html and exposed on window.Pretext). Each line renders as its own
     // <span> so the warm-shine band aligns with the line the cursor is actually on.
@@ -719,7 +725,7 @@
                                 <button
                                     onClick=${() => copyText(m.text)}
                                     class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-widest"
-                                >Copy</button>
+                                >${t('chat.copy')}</button>
                             </div>
                         </div>
                     </div>
@@ -768,11 +774,11 @@
                             <button
                                 onClick=${() => copyText(m.text)}
                                 class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-widest"
-                            >Copy</button>
+                            >${t('chat.copy')}</button>
                             <button
                                 onClick=${() => quoteText(m.text, persona.name)}
                                 class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-widest"
-                            >Quote</button>
+                            >${t('chat.quote')}</button>
                         </div>
                     </div>
                 </div>
@@ -790,7 +796,7 @@
             const removeMember = (id) => {
                 if (!setSelectedIds) return;
                 if (members.length <= 1) {
-                    if (!confirm('This is the last voice — remove anyway?')) return;
+                    if (!confirm(t('members.confirmLast'))) return;
                 }
                 setSelectedIds(prev => prev.filter(x => x !== id));
             };
@@ -829,13 +835,13 @@
                             <button
                                 onClick=${() => removeMember(p.id)}
                                 class="no-shine w-7 h-7 rounded-full btn-ghost flex items-center justify-center shrink-0"
-                                title="Remove"
+                                title=${t('members.remove')}
                             ><span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>remove</span></button>
                         ` : html`
                             <button
                                 onClick=${() => addMember(p.id)}
                                 class="no-shine w-7 h-7 rounded-full btn-ghost flex items-center justify-center shrink-0 text-primary"
-                                title="Add to council"
+                                title=${t('members.addToCouncil')}
                             ><span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>add</span></button>
                         `}
                     </div>
@@ -849,8 +855,8 @@
                         <!-- Header -->
                         <div class="flex items-center justify-between px-6 py-4 border-b border-white/5 shrink-0">
                             <div>
-                                <h2 class="font-headline text-lg font-bold text-on-surface">Council members</h2>
-                                <p class="text-[10px] text-on-surface-variant/60 uppercase tracking-[0.2em] mt-0.5">${members.length} in session · ${available.length} available</p>
+                                <h2 class="font-headline text-lg font-bold text-on-surface">${t('members.title')}</h2>
+                                <p class="text-[10px] text-on-surface-variant/60 uppercase tracking-[0.2em] mt-0.5">${members.length} ${t('members.inSession')} · ${available.length} ${t('members.available')}</p>
                             </div>
                             <button onClick=${() => setShowMembersPanel(false)} class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center">
                                 <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>close</span>
@@ -860,15 +866,15 @@
                         <!-- Scrollable body -->
                         <div class="overflow-y-auto px-3 py-3 space-y-5 flex-1">
                             <div>
-                                <p class="text-[10px] font-black uppercase tracking-[0.25em] text-primary/70 px-3 mb-1">In Council</p>
+                                <p class="text-[10px] font-black uppercase tracking-[0.25em] text-primary/70 px-3 mb-1">${t('members.inCouncil')}</p>
                                 ${members.length === 0
-                                    ? html`<p class="text-xs text-on-surface-variant/40 italic px-3 py-2">No members yet — pick some below.</p>`
+                                    ? html`<p class="text-xs text-on-surface-variant/40 italic px-3 py-2">${t('members.noMembers')}</p>`
                                     : members.map(p => renderPersonaRow(p, true))
                                 }
                             </div>
                             ${available.length > 0 ? html`
                                 <div>
-                                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-on-surface-variant/50 px-3 mb-1">Available</p>
+                                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-on-surface-variant/50 px-3 mb-1">${t('members.availSection')}</p>
                                     ${available.map(p => renderPersonaRow(p, false))}
                                 </div>
                             ` : null}
@@ -1013,7 +1019,7 @@
                     <div class="flex items-center justify-between px-6 h-14 border-b border-white/5 shrink-0">
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-primary/60" style=${{ fontSize: '16px' }}>menu_book</span>
-                            <span class="text-[10px] font-black uppercase tracking-[0.35em] text-on-surface-variant/70">Voice Archive</span>
+                            <span class="text-[10px] font-black uppercase tracking-[0.35em] text-on-surface-variant/70">${t('chat.voiceMap')}</span>
                         </div>
                         <div class="flex items-center gap-1">
                             <button
@@ -1026,12 +1032,12 @@
                                     ? html`<span class="material-symbols-outlined animate-spin" style=${{ fontSize: '12px' }}>progress_activity</span>`
                                     : html`<span class="material-symbols-outlined" style=${{ fontSize: '12px' }}>summarize</span>`
                                 }
-                                <span>Summary</span>
+                                <span>${t('chat.summary')}</span>
                             </button>
                             <button onClick=${reset}
                                 class="no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider"
                                 title="Reset view"
-                            ><span>Reset</span></button>
+                            ><span>${t('chat.reset')}</span></button>
                             <span class="text-[9px] font-bold text-on-surface-variant/40 w-9 text-center">${Math.round(scale * 100)}%</span>
                             <button onClick=${() => setShowVoiceMap(false)}
                                 class="w-7 h-7 rounded-md btn-ghost flex items-center justify-center"
@@ -1043,7 +1049,7 @@
                     <!-- Canvas -->
                     <div
                         ref=${canvasRef}
-                        class="flex-1 relative overflow-hidden cursor-grab"
+                        class="flex-1 relative overflow-hidden cursor-grab active:cursor-grabbing"
                         style=${{
                             backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)',
                             backgroundSize: '18px 18px',
@@ -1066,7 +1072,7 @@
                                 return html`
                                     <div
                                         key=${v.id}
-                                        class="absolute w-[255px] cursor-move select-none"
+                                        class="absolute w-[255px] cursor-grab active:cursor-grabbing select-none"
                                         style=${{ left: pos.x + 'px', top: pos.y + 'px', transform: `rotate(${pos.rotate}deg)`, transformOrigin: 'center center' }}
                                         onMouseDown=${(e) => startCardDrag(e, v.id)}
                                     >
@@ -1094,7 +1100,7 @@
                                                 ${summaryLoading ? html`
                                                     <div class="flex items-center gap-2">
                                                         <span class="material-symbols-outlined text-on-surface-variant/40 animate-spin" style=${{ fontSize: '12px' }}>progress_activity</span>
-                                                        <span class="text-[10px] text-on-surface-variant/35">Summarizing…</span>
+                                                        <span class="text-[10px] text-on-surface-variant/35">${t('chat.summarizing')}</span>
                                                     </div>
                                                 ` : summaryData[v.id] ? html`
                                                     <div
@@ -1110,7 +1116,7 @@
                                                         </div>
                                                     </div>
                                                 ` : recent.length === 0 ? html`
-                                                    <p class="text-[10px] italic text-on-surface-variant/25">Waiting to speak…</p>
+                                                    <p class="text-[10px] italic text-on-surface-variant/25">${t('chat.waiting')}</p>
                                                 ` : recent.map((msg, i) => {
                                                     const isLatest = i === recent.length - 1;
                                                     return html`
@@ -1144,7 +1150,7 @@
 
                             <!-- User node -->
                             <div
-                                class="absolute w-[255px] cursor-move select-none"
+                                class="absolute w-[255px] cursor-grab active:cursor-grabbing select-none"
                                 style=${{
                                     left: (cardPos['__user']?.x || 0) + 'px',
                                     top: (cardPos['__user']?.y || 0) + 'px',
@@ -1161,7 +1167,7 @@
                                             }
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">You</p>
+                                            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">${t('chat.you')}</p>
                                             <p class="text-[8px] font-bold uppercase tracking-[0.15em] text-primary/60">${userCount} message${userCount === 1 ? '' : 's'}</p>
                                         </div>
                                     </div>
@@ -1176,7 +1182,7 @@
                                                 />
                                             </div>
                                         ` : html`
-                                            <p class="text-[10px] italic text-on-surface-variant/25">You haven't spoken yet.</p>
+                                            <p class="text-[10px] italic text-on-surface-variant/25">${t('chat.silent')}</p>
                                         `}
                                     </div>
                                 </div>
@@ -1221,13 +1227,13 @@
                     <!-- Max speakers select -->
                     ${(selectedPersonas || []).length > 1 ? html`
                         <div class="px-4 py-3 border-b border-white/5 flex items-center justify-between gap-3">
-                            <span class="text-xs text-on-surface font-semibold">Max Speakers</span>
+                            <span class="text-xs text-on-surface font-semibold">${t('chat.maxSpeakers')}</span>
                             <select
                                 value=${maxSpeakers}
                                 onChange=${(e) => setMaxSpeakers(Number(e.target.value))}
                                 class="text-xs text-on-surface bg-surface-container-high border border-white/10 rounded-lg px-2 py-1"
                             >
-                                <option value=${0}>All</option>
+                                <option value=${0}>${t('chat.all')}</option>
                                 ${Array.from({ length: (selectedPersonas || []).length - 1 }, (_, i) =>
                                     html`<option key=${i + 1} value=${i + 1}>${i + 1}</option>`
                                 )}
@@ -1295,8 +1301,8 @@
                     class="absolute left-0 bottom-full mb-2 w-72 bg-surface-container/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
                 >
                     <${Row}
-                        label="Web Search"
-                        desc="Ground answers in live web results (via Gemini)"
+                        label=${t('chat.webSearch')}
+                        desc=${t('chat.webSearchDesc')}
                         icon="travel_explore"
                         active=${webSearchMode}
                         color="text-secondary"
@@ -1304,8 +1310,8 @@
                     />
                     <div class="h-px bg-white/5"></div>
                     <${Row}
-                        label="Follow-up Questions"
-                        desc="After each reply, suggest tap-to-ask options"
+                        label=${t('chat.followUp')}
+                        desc=${t('chat.followUpDesc')}
                         icon="quick_reference_all"
                         active=${followUpMode}
                         color="text-primary"
@@ -1324,14 +1330,14 @@
                 <header class="flex justify-between items-center w-full px-8 h-20 bg-surface-dim/30 backdrop-blur-lg border-b border-white/5 z-10 shrink-0">
                     <div class="flex items-center gap-6">
                         <div>
-                            <h2 class="text-xl md:text-2xl font-headline font-bold tracking-tight text-on-surface">Your Council</h2>
-                            <p class="text-[10px] uppercase tracking-[0.2em] text-primary/80 leading-none mt-0.5">${(selectedPersonas || []).length} ${(selectedPersonas || []).length === 1 ? 'voice' : 'voices'} in session</p>
+                            <h2 class="text-xl md:text-2xl font-headline font-bold tracking-tight text-on-surface">${t('chat.council')}</h2>
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-primary/80 leading-none mt-0.5">${(selectedPersonas || []).length} ${(selectedPersonas || []).length === 1 ? t('chat.voice') : t('chat.voices')} ${t('chat.inSession')}</p>
                         </div>
                         <!-- Member Avatars cluster — click to edit members -->
                         <button
                             onClick=${() => setShowMembersPanel(true)}
                             class="no-shine hidden lg:flex -space-x-3 ml-4 cursor-pointer hover:opacity-80 transition-opacity"
-                            title="Edit members"
+                            title=${t('members.title')}
                         >
                             ${(selectedPersonas || []).slice(0, 4).map((p, idx) => {
                                 const color = getColor(p.id);
@@ -1477,7 +1483,7 @@
                         ${options.length > 0 && !isDebating ? html`
                             <div class="group relative cursor-default animate-in">
                                 <div class="flex items-center justify-center gap-1 text-[10px] uppercase tracking-[0.25em] text-primary/50 py-2 transition-opacity duration-200 group-hover:opacity-0">
-                                    <span>${options.length} suggested follow-ups</span>
+                                    <span>${options.length} ${t('chat.suggested')}</span>
                                     <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>expand_more</span>
                                 </div>
                                 <div class="absolute left-0 right-0 bottom-0 flex flex-col items-center gap-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
@@ -1558,12 +1564,12 @@
                                 disabled=${isDebating}
                                 onClick=${() => runRound(null)}
                                 class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/30 hover:text-primary transition-colors disabled:opacity-30"
-                            >Stay Silent</button>
+                            >${t('chat.staySilent')}</button>
 
                             ${extractStatus === 'done' ? html`
                                 <div class="flex items-center gap-1.5 text-[10px] text-on-surface-variant/50 animate-in">
                                     <span class="material-symbols-outlined text-sm" style=${{ fontSize: '14px' }}>auto_stories</span>
-                                    Profile updated
+                                    ${t('chat.profileUpdated')}
                                 </div>
                             ` : html`<span></span>`}
                         </div>
