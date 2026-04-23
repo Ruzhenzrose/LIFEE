@@ -164,8 +164,6 @@
         const [inputValue, setInputValue]       = useState('');
         const [credits, setCredits]             = useState(null);
         const [showPaywall, setShowPaywall]     = useState(false);
-        const [showVerify, setShowVerify]       = useState(false);
-        const [verifyError, setVerifyError]     = useState('');
         const [redeemCode, setRedeemCode]       = useState('');
         const [followUpMode, setFollowUpMode]   = useState(false);
         const [webSearchMode, setWebSearchMode] = useState(false);
@@ -216,8 +214,6 @@
         // ── Refs ──────────────────────────────────────────────────────────────
         const scrollRef        = useRef(null);
         const inputFieldRef    = useRef(null);
-        const verifyRef        = useRef(null);
-        const verifyWidgetRef  = useRef(null);
         const sessionIdRef     = useRef(sessionId);
         const extractTimerRef  = useRef(null);
         const summaryAtCountRef = useRef(0);
@@ -559,12 +555,6 @@
 
                 try {
                     await fetchLifeeDecisionStream(payload, handlers);
-                    if (window.__lifeeNeedsVerification) {
-                        window.__lifeeNeedsVerification = false;
-                        setVerifyError('');
-                        setShowVerify(true);
-                        return;
-                    }
                     if (window.__lifeeNeedsPayment) {
                         window.__lifeeNeedsPayment = false;
                         setCredits(window.__lifeeBalance || 0);
@@ -588,7 +578,6 @@
                         return;
                     }
                     const data = await fetchLifeeDecision(payload);
-                    if (data?.needsVerification) { setVerifyError(''); setShowVerify(true); return; }
                     if (data?.needsPayment) { setCredits(data.balance || 0); setShowPaywall(true); return; }
                     if (Array.isArray(data?.messages)) {
                         for (const m of data.messages) await handlers.onMessage(m);
@@ -1607,47 +1596,6 @@
                     <div class="fixed top-24 right-4 z-50 text-xs text-rose-300 bg-rose-900/80 border border-rose-500/30 px-4 py-3 rounded-2xl shadow-lg backdrop-blur-md">
                         ${summaryData._error}
                         <button onClick=${() => setSummaryData({})} class="ml-2 opacity-50 hover:opacity-100">✕</button>
-                    </div>
-                ` : null}
-
-                <!-- ── Human verification modal ── -->
-                ${showVerify ? html`
-                    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                        <div class="bg-surface-container border border-white/10 rounded-2xl p-8 max-w-sm mx-4 shadow-2xl text-center">
-                            <div class="text-4xl mb-4">🛡️</div>
-                            <h3 class="text-lg font-bold mb-2 text-on-surface">Please verify you're human</h3>
-                            <div ref=${verifyRef} class="flex justify-center mb-4"></div>
-                            ${(() => {
-                                setTimeout(() => {
-                                    if (verifyRef.current && window.turnstile && !verifyWidgetRef.current) {
-                                        verifyWidgetRef.current = window.turnstile.render(verifyRef.current, {
-                                            sitekey: typeof TURNSTILE_SITEKEY !== 'undefined' ? TURNSTILE_SITEKEY : '',
-                                            callback: async (token) => {
-                                                const result = await verifyHumanTokenWithServer(token);
-                                                if (result.ok) {
-                                                    setVerifyError('');
-                                                    setShowVerify(false);
-                                                    verifyWidgetRef.current = null;
-                                                } else {
-                                                    setVerifyError(result.message || 'Verification failed. Please retry.');
-                                                }
-                                            },
-                                            theme: 'dark',
-                                        });
-                                    }
-                                }, 100);
-                                return null;
-                            })()}
-                            ${verifyError ? html`
-                                <div class="text-xs text-rose-300 bg-rose-900/50 border border-rose-500/30 px-4 py-3 rounded-xl mb-4">
-                                    ${verifyError}
-                                </div>
-                            ` : null}
-                            <button
-                                onClick=${() => setShowVerify(false)}
-                                class="text-sm text-on-surface-variant/50 hover:text-primary transition-colors"
-                            >Cancel</button>
-                        </div>
                     </div>
                 ` : null}
 

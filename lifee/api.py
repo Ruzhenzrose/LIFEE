@@ -1413,9 +1413,7 @@ async def extract_memory(req: ExtractMemoryRequest):
 @app.post("/decision")
 async def decision(req: DecisionRequest, request: Request):
     """处理辩论请求 — 兼容前端的 /decision 接口"""
-    # 人机验证检查
-    if not request.cookies.get("lifee_verified"):
-        return JSONResponse({"needsVerification": True, "messages": [], "options": []})
+    # 人机验证只在登录/注册时做（AuthModal 里的 Turnstile），登录后不再拦每条消息。
     import traceback
     try:
         return await _handle_decision(req, request)

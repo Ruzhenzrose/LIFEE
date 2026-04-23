@@ -172,11 +172,10 @@ async function fetchLifeeDecisionStream(payload, handlers = {}) {
         throw new Error("LIFEE API stream failed: " + text);
     }
 
-    // Backend may return JSON (not SSE) for quota/verification responses
+    // Backend may return JSON (not SSE) for quota responses
     const ct = res.headers.get('content-type') || '';
     if (ct.includes('application/json')) {
         const data = await res.json();
-        if (data?.needsVerification) window.__lifeeNeedsVerification = true;
         if (data?.needsPayment) {
             window.__lifeeNeedsPayment = true;
             window.__lifeeBalance = data.balance || 0;

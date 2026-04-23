@@ -37,10 +37,6 @@ const DebateArena = ({
     const [tarotModalOpen, setTarotModalOpen] = useState(false);
     const [credits, setCredits] = useState(null);
     const [showPaywall, setShowPaywall] = useState(false);
-    const [showVerify, setShowVerify] = useState(false);
-    const [verifyError, setVerifyError] = useState('');
-    const verifyRef = useRef(null);
-    const verifyWidgetRef = useRef(null);
     const [redeemCode, setRedeemCode] = useState('');
     const [followUpMode, setFollowUpMode] = useState(false);
     const [webSearchMode, setWebSearchMode] = useState(false);
@@ -303,12 +299,6 @@ const DebateArena = ({
 
             try {
                 await fetchLifeeDecisionStream(payload, handlers);
-                if (window.__lifeeNeedsVerification) {
-                    window.__lifeeNeedsVerification = false;
-                    setVerifyError('');
-                    setShowVerify(true);
-                    return;
-                }
                 if (window.__lifeeNeedsPayment) {
                     window.__lifeeNeedsPayment = false;
                     setCredits(window.__lifeeBalance || 0);
@@ -320,7 +310,6 @@ const DebateArena = ({
             } catch (streamErr) {
                 console.warn('stream failed; fallback to non-stream', streamErr);
                 const data = await fetchLifeeDecision(payload);
-                if (data?.needsVerification) { setVerifyError(''); setShowVerify(true); return; }
                 if (data?.needsPayment) { setCredits(data.balance || 0); setShowPaywall(true); return; }
                 if (Array.isArray(data?.messages)) for (const m of data.messages) await handlers.onMessage(m);
                 if (Array.isArray(data?.options)) handlers.onOptions(data.options);
@@ -898,38 +887,6 @@ const DebateArena = ({
                 onClose={() => setTarotModalOpen(false)}
                 onInterpret={handleInterpretTarot}
             />
-            {showVerify && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-white rounded-2xl p-8 max-w-sm mx-4 shadow-2xl text-center">
-                        <div className="text-4xl mb-4">🛡️</div>
-                        <h3 className="text-lg font-bold mb-2">Please verify you're human</h3>
-                        <div ref={verifyRef} className="flex justify-center mb-4"></div>
-                        {(() => {
-                            setTimeout(() => {
-                                if (verifyRef.current && window.turnstile && !verifyWidgetRef.current) {
-                                    verifyWidgetRef.current = window.turnstile.render(verifyRef.current, {
-                                        sitekey: TURNSTILE_SITEKEY,
-                                        callback: async (token) => {
-                                            const result = await verifyHumanTokenWithServer(token);
-                                            if (result.ok) {
-                                                setVerifyError('');
-                                                setShowVerify(false);
-                                                verifyWidgetRef.current = null;
-                                            } else {
-                                                setVerifyError(result.message || 'Human verification failed. Please retry.');
-                                            }
-                                        },
-                                        theme: 'light',
-                                    });
-                                }
-                            }, 100);
-                            return null;
-                        })()}
-                        {verifyError && <div className="text-xs text-[#C97A7A] bg-[#FDF1F1] border border-[#F7D7D7] px-4 py-3 rounded-2xl mb-4">{verifyError}</div>}
-                        <button onClick={() => setShowVerify(false)} className="text-sm text-neutral-400 hover:text-neutral-600">Cancel</button>
-                    </div>
-                </div>
-            )}
             {/* Summary error toast */}
             {summaryData._error && (
                 <div className="fixed top-20 right-4 z-50 text-xs text-[#C97A7A] bg-[#FDF1F1] border border-[#F7D7D7] px-4 py-3 rounded-2xl shadow-lg animate-in" style={{animation: 'slideInRight 0.3s ease-out'}}>
