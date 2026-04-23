@@ -447,6 +447,8 @@ class PersonaInput(BaseModel):
     id: str
     name: str
     knowledge: str = ""
+    soul: str = ""      # AI-generated persona system prompt (non-empty for gen-* personas)
+    emoji: str = "✨"   # display emoji for generated personas
 
 
 class DecisionRequest(BaseModel):
@@ -1094,6 +1096,204 @@ Reply in JSON format: {{"persona_id": "1-2 sentence summary", ...}}"""
         return {"summaries": {}, "error": str(e)}
 
 
+# ---- Persona Recommendation API ----
+
+class RecommendPersonasRequest(BaseModel):
+    situation: str = ""
+    periods: list = []
+    persona_ids: list = []
+
+
+@app.post("/recommend-personas")
+async def recommend_personas(req: RecommendPersonasRequest):
+    """根据用户情境，用 LLM 推荐最相关的 4 个角色 ID"""
+    if not req.situation.strip():
+        return {"ids": []}
+
+    ids_list = ", ".join(req.persona_ids) if req.persona_ids else "(none)"
+    periods_str = ", ".join(req.periods) if req.periods else "none"
+
+    prompt = (
+        "You are a persona recommendation engine for a life-coaching debate app.\n\n"
+        f"User's situation:\n{req.situation.strip()}\n\n"
+        f"Life context tags: {periods_str}\n\n"
+        f"Available persona IDs: {ids_list}\n\n"
+        "Select exactly 4 persona IDs that would resonate most with this user's situation. "
+        "Prioritise emotional fit first, then intellectual fit. "
+        "Only use IDs from the available list. "
+        'Reply ONLY with a JSON array, e.g. ["buffett","serene","rebel","drucker"]'
+    )
+
+    try:
+        provider = _get_provider()
+        from lifee.providers.base import Message, MessageRole
+        messages = [Message(role=MessageRole.USER, content=prompt)]
+        chunks = []
+        async for chunk in provider.stream(messages=messages, max_tokens=80, temperature=0.3):
+            chunks.append(chunk)
+        text = "".join(chunks).strip()
+        if "```" in text:
+            text = text.split("```")[1].replace("json", "", 1).strip()
+        ids = json.loads(text)
+        if not isinstance(ids, list):
+            raise ValueError("not a list")
+        # keep only valid ids and cap at 4
+        valid = [i for i in ids if i in req.persona_ids][:4]
+        return {"ids": valid}
+    except Exception as e:
+        print(f"[recommend-personas] failed: {e}")
+        return {"ids": [], "error": str(e)}
+
+
+# ---- Generate New Personas API ----
+
+class GeneratePersonasRequest(BaseModel):
+    situation: str = ""
+    periods: list = []
+    existing_ids: list = []   # IDs already in the recommend list (avoid duplicates)
+
+
+async def _gemini_grounding_search(query: str) -> str:
+    """Use Gemini with Google Search grounding to get web context.
+
+    Uses GOOGLE_SEARCH_API_KEY if set, otherwise falls back to GOOGLE_API_KEY.
+    Returns empty string if no key is available.
+    """
+    api_key = (
+        os.getenv("GOOGLE_SEARCH_API_KEY", "").strip()
+        or os.getenv("GOOGLE_API_KEY", "").strip()
+    )
+    if not api_key:
+        return ""
+    try:
+        import httpx
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": query}]}],
+            "tools": [{"google_search": {}}],
+        }
+        async with httpx.AsyncClient(timeout=15.0) as c:
+            r = await c.post(url, json=payload)
+            data = r.json()
+
+        # Extract text from the response
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return ""
+        parts_out = candidates[0].get("content", {}).get("parts", [])
+        text_parts = [p.get("text", "") for p in parts_out if p.get("text")]
+        result = " ".join(text_parts).strip()
+
+        # Also extract grounding citations if present
+        grounding = candidates[0].get("groundingMetadata", {})
+        chunks = grounding.get("groundingChunks", [])
+        sources = []
+        for ch in chunks[:4]:
+            web = ch.get("web", {})
+            title = web.get("title", "")
+            uri = web.get("uri", "")
+            if title:
+                sources.append(f"- {title}: {uri}")
+
+        if sources:
+            result += "\n\nSources:\n" + "\n".join(sources)
+
+        return result[:1200]  # cap context size
+    except Exception as e:
+        print(f"[gemini-grounding] search failed: {e}")
+        return ""
+
+
+@app.post("/generate-personas")
+async def generate_new_personas(req: GeneratePersonasRequest):
+    """Use LLM (+ optional Tavily web search) to generate 1-2 brand-new persona definitions.
+
+    These are distinct from the existing persona roster — the LLM picks real-world figures
+    or archetypes that would be uniquely valuable for the user's situation and generates
+    a full system prompt (soul) so they can participate in debates without needing disk files.
+    """
+    if not req.situation.strip():
+        return {"personas": []}
+
+    # Optional web search context via Gemini Grounding (uses GOOGLE_SEARCH_API_KEY or GOOGLE_API_KEY)
+    search_ctx = ""
+    google_key = os.getenv("GOOGLE_SEARCH_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip()
+    if google_key:
+        search_query = f"Who are the most insightful historical figures, thinkers or archetypes for someone dealing with: {req.situation[:120]}"
+        search_ctx = await _gemini_grounding_search(search_query)
+
+    periods_str = ", ".join(req.periods) if req.periods else "none"
+    existing_str = ", ".join(req.existing_ids) if req.existing_ids else "(none)"
+    search_section = f"\n\nWeb search context:\n{search_ctx}" if search_ctx else ""
+
+    prompt = (
+        "You are a persona-generation engine for a life-coaching app called LIFEE. "
+        "Users share their life situations and get advice from diverse historical/fictional voices.\n\n"
+        f"User situation: {req.situation.strip()}\n"
+        f"Life context tags: {periods_str}\n"
+        f"Already-recommended persona IDs (do NOT duplicate): {existing_str}"
+        f"{search_section}\n\n"
+        "Generate exactly 2 new persona definitions that would offer unique, valuable perspectives "
+        "for this situation — perspectives NOT covered by typical advisors. "
+        "Think beyond the obvious: consider philosophers, scientists, artists, cultural figures, "
+        "fictional archetypes, or any voice that would genuinely surprise and illuminate.\n\n"
+        "For each persona output:\n"
+        "- id: slug like 'gen-name' (lowercase, hyphens, must start with 'gen-')\n"
+        "- name: display name (English, max 25 chars)\n"
+        "- role: archetype label in CAPS (max 30 chars), e.g. 'STOIC EMPEROR', 'ZEN DISRUPTOR'\n"
+        "- avatar: single emoji\n"
+        "- voice: one evocative sentence in their voice (max 120 chars)\n"
+        "- soul: a 200-300 word system prompt defining who they are, how they think, "
+        "their speech style, and what they prioritise. Write in second person ('You are...'). "
+        "Make them feel vivid and distinct — not generic. "
+        "They should respond in the same language as the user.\n\n"
+        'Reply ONLY with a JSON array of 2 objects with keys: id, name, role, avatar, voice, soul.\n'
+        'Example: [{"id":"gen-marcus","name":"Marcus Aurelius","role":"STOIC EMPEROR",'
+        '"avatar":"⚔️","voice":"The obstacle is the way.","soul":"You are Marcus Aurelius..."}]'
+    )
+
+    try:
+        provider = _get_provider()
+        from lifee.providers.base import Message, MessageRole
+        chunks = []
+        async for chunk in provider.stream(
+            messages=[Message(role=MessageRole.USER, content=prompt)],
+            max_tokens=1200,
+            temperature=0.8,
+        ):
+            chunks.append(chunk)
+        text = "".join(chunks).strip()
+        if "```" in text:
+            text = text.split("```")[1].replace("json", "", 1).strip()
+        # strip trailing ``` if present
+        if text.endswith("```"):
+            text = text[:-3].strip()
+        personas = json.loads(text)
+        if not isinstance(personas, list):
+            raise ValueError("not a list")
+        # Validate structure and enforce gen- prefix
+        valid = []
+        for p in personas[:2]:
+            pid = str(p.get("id", "")).strip()
+            if not pid.startswith("gen-"):
+                pid = f"gen-{pid}"
+            soul = str(p.get("soul", "")).strip()
+            if not soul or len(soul) < 50:
+                continue
+            valid.append({
+                "id": pid,
+                "name": str(p.get("name", pid))[:40],
+                "role": str(p.get("role", ""))[:40].upper(),
+                "avatar": str(p.get("avatar", "✨"))[:4],
+                "voice": str(p.get("voice", ""))[:160],
+                "soul": soul,
+            })
+        return {"personas": valid}
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return {"personas": [], "error": str(e)}
+
+
 # ---- User Memory API ----
 
 class ExtractMemoryRequest(BaseModel):
@@ -1274,15 +1474,26 @@ async def _handle_decision(req: DecisionRequest, request: Request):
     # 映射角色
     participants = []
     for persona in req.personas:
-        role_name = _match_role(persona.id, persona.name)
-        if not role_name:
-            continue
-        km = _get_knowledge_manager(role_name)
-        p = Participant(role_name, provider, rm, knowledge_manager=km)
-        # API 端：默认关闭 tools，只在用户开启 webSearch 时保留
-        if not req.webSearch:
-            p.tools = []
-            p.tool_executor = None
+        if persona.soul:
+            # AI-generated persona: bypass file system entirely
+            p = Participant(
+                role_name=persona.id,
+                provider=provider,
+                role_manager=rm,
+                custom_soul=persona.soul,
+                custom_display_name=persona.name,
+                custom_emoji=persona.emoji or "✨",
+            )
+        else:
+            role_name = _match_role(persona.id, persona.name)
+            if not role_name:
+                continue
+            km = _get_knowledge_manager(role_name)
+            p = Participant(role_name, provider, rm, knowledge_manager=km)
+            # API 端：默认关闭 tools，只在用户开启 webSearch 时保留
+            if not req.webSearch:
+                p.tools = []
+                p.tool_executor = None
         participants.append((persona.id, p))
 
     if not participants:

@@ -1,54 +1,4 @@
-﻿<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIFEE - Let Them Argue</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-        <script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
-    <script src="./help/view.js"></script>
-    <script src="./my-chats/view.js"></script>
-    <script src="./my-personas/view.js"></script>
-    <script src="./settings/view.js"></script>
-    <link rel="stylesheet" href="./style.css">
-</head>
-<body>
-    <div id="root"></div>
-
-    <script src="./constants.js"></script>
-    <script src="./api.js"></script>
-
-    <script type="text/babel" src="./components/ui.js"></script>
-    <script type="text/babel" src="./components/modals.js"></script>
-    <script type="text/babel" src="./components/AppLayout.js"></script>
-    <script type="text/babel" src="./components/tools.js"></script>
-    <script type="text/babel" src="./components/DebateArena.js"></script>
-    <script type="text/babel" src="./components/JobOfferModal.js"></script>
-    <script type="text/babel" src="./components/PersonaRecommendModal.js"></script>
-
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        // Components loaded from external Babel scripts
-        const { Icon, AvatarDisplay, PatternCover, pickRandom } = window;
-        const { loadUserAvatar, saveUserAvatar, rotateUserDefaultAvatar, fileToDataURL } = window;
-        const { loadPersonaAvatarOverrides, savePersonaAvatarOverrides, loadPersonaCoverOverrides, savePersonaCoverOverrides } = window;
-        const { DEFAULT_PERSONA_ICONS } = window;
-        const { AuthModal, AdminPanel, PersonaEditModal, PersonaIconEditorModal } = window;
-        const { AppLayout } = window;
-        const { TAROT_DECK, LifeSimulator, AITarot, TarotReadingModal, DecisionLab, PersonaBuilder } = window;
-        const { DebateArena, CommunityView } = window;
-        const { JobOfferModal } = window;
-        const { PersonaRecommendModal } = window;
-
-        function App() {
-            const [view, setView] = useState('home');
+﻿            const [view, setView] = useState('home');
             const [context, setContext] = useState({ situation: '', landingPeriods: [] });
             const [landingTab, setLandingTab] = useState('scenario');
             const [personas, setPersonas] = useState(INITIAL_PERSONAS);
@@ -61,21 +11,11 @@
             const [user, setUser] = useState(null);
             const [isGuest, setIsGuest] = useState(false);
             const [authOpen, setAuthOpen] = useState(false);
+            const [jobOfferModalOpen, setJobOfferModalOpen] = useState(false);
+            const [recommendModalOpen, setRecommendModalOpen] = useState(false);
             const [userAvatar, setUserAvatar] = useState(() => loadUserAvatar());
             const [sessionId, setSessionId] = useState(null);
             const [sessionMessages, setSessionMessages] = useState([]);
-            const [savedSessions, setSavedSessions] = useState([]);
-            const [jobOfferModalOpen, setJobOfferModalOpen] = useState(false);
-            const [recommendModalOpen, setRecommendModalOpen] = useState(false);
-            const [generatedPersonas, setGeneratedPersonas] = useState([]);
-
-            // 拉取后端会话列表
-            useEffect(() => {
-                const url = user?.id ? `/sessions?userId=${user.id}` : '/sessions';
-                fetch(url, { credentials: 'include' }).then(r => r.json()).then(d => {
-                    if (Array.isArray(d?.sessions)) setSavedSessions(d.sessions);
-                }).catch(() => {});
-            }, [user]);
             const [sessionSummaries, setSessionSummaries] = useState([]);
             const [summaryEvery, setSummaryEvery] = useState(SUMMARY_EVERY_DEFAULT);
             const [contextWindow, setContextWindow] = useState(CONTEXT_WINDOW_DEFAULT);
@@ -223,10 +163,12 @@
 
                 const loadChatSessions = async () => {
                     setChatSessionsLoading(true);
-                    try {
-                        const res = await fetch(`/sessions?userId=${user.id}`, { credentials: 'include' }).then(r => r.json());
-                        setChatSessions(res?.sessions || []);
-                    } catch { setChatSessions([]); }
+                    const { data } = await supabaseClient
+                        .from('chat_sessions')
+                        .select('id, title, updated_at, latest_message_at')
+                        .eq('user_id', user.id)
+                        .order('updated_at', { ascending: false });
+                    setChatSessions(data || []);
                     setChatSessionsLoading(false);
                 };
                 loadChatSessions();
@@ -265,7 +207,7 @@
                 const lines = messages.map(m => `${m.role.toUpperCase()}: ${m.text}`);
                 const joined = lines.join('\n');
                 if (joined.length <= 1200) return joined;
-                return joined.slice(0, 1200) + '…';
+                return joined.slice(0, 1200) + '鈥?;
             };
 
             const buildShareTextFromSession = (title, messages, summaries) => {
@@ -292,12 +234,59 @@
             };
 
             const ensureSession = async () => {
-                // session 由后端 _ensure_chat_session 在第一条消息时创建
-                return sessionId || null;
+                if (sessionId) return sessionId;
+                const { data, error } = await supabaseClient.from('chat_sessions').insert({
+                    user_id: user.id,
+                    title: 'New Chat'
+                }).select('id').single();
+                if (error) return null;
+                setSessionId(data.id);
+                setSessionMessages([]);
+                setSessionSummaries([]);
+                return data.id;
             };
 
-            // persistMessage 已废弃 — 所有消息持久化由后端 _save_message 统一处理
-            const persistMessage = async () => {};
+            const persistMessage = async (role, text) => {
+                if (!user) return;
+                const activeSessionId = await ensureSession();
+                if (!activeSessionId) return;
+
+                const nextSeq = (sessionMessagesRef.current?.length || 0) + 1;
+                const newMsg = { role, text, seq: nextSeq };
+                const nextMessages = [...sessionMessagesRef.current, newMsg];
+                setSessionMessages(nextMessages);
+
+                await supabaseClient.from('chat_messages').insert({
+                    session_id: activeSessionId,
+                    user_id: user.id,
+                    role,
+                    content: text,
+                    seq: nextSeq
+                });
+
+                await supabaseClient.from('chat_sessions').update({
+                    updated_at: new Date().toISOString(),
+                    latest_message_at: new Date().toISOString()
+                }).eq('id', activeSessionId);
+
+                if (nextMessages.length % summaryEvery === 0) {
+                    const batch = nextMessages.slice(-summaryEvery);
+                    const summaryText = buildRoughSummary(batch);
+                    const startSeq = nextMessages.length - summaryEvery + 1;
+                    const endSeq = nextMessages.length;
+
+                    const summaryRow = {
+                        session_id: activeSessionId,
+                        user_id: user.id,
+                        summary: summaryText,
+                        start_seq: startSeq,
+                        end_seq: endSeq
+                    };
+
+                    await supabaseClient.from('chat_summaries').insert(summaryRow);
+                    setSessionSummaries(prev => [...prev, summaryRow]);
+                }
+            };
 
             const handleNewChat = async () => {
                 if (!user) {
@@ -309,12 +298,17 @@
                     setView('home');
                     return;
                 }
-                setSessionId(null);
+                const { data } = await supabaseClient.from('chat_sessions').insert({
+                    user_id: user.id,
+                    title: 'New Chat'
+                }).select('id').single();
+                setSessionId(data?.id || null);
                 setSessionMessages([]);
                 setSessionSummaries([]);
                 setContext({ situation: '', landingPeriods: [] });
                 setSelectedIds([]);
                 setView('home');
+                await refreshChatSessions();
             };
 
             const toggleSelect = (e, p) => { e.stopPropagation(); setSelectedIds(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]); };
@@ -333,12 +327,12 @@
             const refreshChatSessions = async () => {
                 if (!user) return;
                 setChatSessionsLoading(true);
-                try {
-                    const res = await fetch(`/sessions?userId=${user.id}`, { credentials: 'include' }).then(r => r.json());
-                    const sessions = res?.sessions || [];
-                    setChatSessions(sessions);
-                    setSavedSessions(sessions); // 同步侧栏
-                } catch { setChatSessions([]); }
+                const { data } = await supabaseClient
+                    .from('chat_sessions')
+                    .select('id, title, updated_at, latest_message_at')
+                    .eq('user_id', user.id)
+                    .order('updated_at', { ascending: false });
+                setChatSessions(data || []);
                 setChatSessionsLoading(false);
             };
 
@@ -366,7 +360,9 @@
                 if (!sessionRow?.id) return;
                 if (!window.confirm('Delete this chat? This cannot be undone.')) return;
                 setChatStatus('');
-                await fetch(`/sessions/${sessionRow.id}`, { method: 'DELETE', credentials: 'include' });
+                await supabaseClient.from('chat_messages').delete().eq('session_id', sessionRow.id);
+                await supabaseClient.from('chat_summaries').delete().eq('session_id', sessionRow.id);
+                await supabaseClient.from('chat_sessions').delete().eq('id', sessionRow.id);
                 if (chatDetailSession?.id === sessionRow.id) {
                     setChatDetailSession(null);
                     setChatDetailMessages([]);
@@ -425,9 +421,6 @@
             };
 
             const renderContent = () => {
-                if (view === 'life-simulator') return <LifeSimulator />;
-                if (view === 'ai-tarot') return <AITarot />;
-                if (view === 'decision-lab') return <DecisionLab />;
                 if (view === 'community') return (
                     <CommunityView
                         communityTab={communityTab}
@@ -444,7 +437,7 @@
                         onBack: () => setView('home'),
                         refreshChatSessions,
                         chatSessionsLoading,
-                        chatSessions: savedSessions,
+                        chatSessions,
                         chatDetailSession,
                         loadSessionDetail,
                         deleteSession,
@@ -623,7 +616,7 @@
                                         <h1 className="text-4xl md:text-6xl font-black text-[#1A1A1A] italic tracking-tighter uppercase leading-tight">{detailPersona?.name}</h1>
                                         <p className="text-xs md:text-sm font-bold text-blue-brand uppercase tracking-[0.4em]">{detailPersona?.role}</p>
                                         <div className="h-px w-20 bg-blue-brand/30 mx-auto md:mx-0" />
-                                        <p className="text-lg md:text-xl italic opacity-70 leading-relaxed">“{detailPersona?.worldview}”</p>
+                                        <p className="text-lg md:text-xl italic opacity-70 leading-relaxed">鈥渰detailPersona?.worldview}鈥?/p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12 font-sans text-left relative z-10">
@@ -646,8 +639,7 @@
                     );
                 }
                 if (view === 'persona-selection') {
-                    const filtered = (category === 'ALL' ? displayPersonas : displayPersonas.filter(p => p.category === category))
-                        .slice().sort((a, b) => (b.cover_url ? 1 : 0) - (a.cover_url ? 1 : 0));
+                    const filtered = category === 'ALL' ? displayPersonas : displayPersonas.filter(p => p.category === category);
                     return (
                         <div className="w-full flex flex-col items-center pt-8 md:pt-12 animate-in pb-32">
                             <div className="flex justify-center mb-10 px-4 w-full">
@@ -672,25 +664,13 @@
                                 {filtered.map(p => {
                                     const isSel = selectedIds.includes(p.id);
                                     return (
-                                        <div key={p.id} onClick={() => { setDetailPersona(p); setView('persona-detail'); }} className={`relative px-6 pb-6 pt-16 md:px-8 md:pb-8 md:pt-20 rounded-[40px] shadow-xl border-2 transition-all transform hover:scale-[1.03] flex flex-col aspect-[3/4] min-h-[300px] overflow-hidden group ${p.cover_url ? 'bg-transparent' : 'bg-white'} ${isSel ? 'border-blue-brand shadow-blue-brand/10' : 'border-white/20'}`}>
-                                            {p.cover_url && (
-                                                <div className="absolute inset-0 z-0">
-                                                    <img
-                                                        src={p.cover_url}
-                                                        alt=""
-                                                        className="w-full h-full grayscale"
-                                                        style={{ objectFit: p.cover_fit || 'cover', objectPosition: p.cover_position || 'center' }}
-                                                        loading="lazy"
-                                                    />
-                                                    <div className="absolute inset-0 bg-white/75" />
-                                                </div>
-                                            )}
+                                        <div key={p.id} onClick={() => { setDetailPersona(p); setView('persona-detail'); }} className={`relative px-6 pb-6 pt-16 md:px-8 md:pb-8 md:pt-20 bg-white rounded-[40px] shadow-xl border-2 transition-all transform hover:scale-[1.03] flex flex-col aspect-[3/4] min-h-[300px] overflow-hidden group ${isSel ? 'border-blue-brand shadow-blue-brand/10' : 'border-white/20'}`}>
                                             <button onClick={(e) => toggleSelect(e, p)} className={`absolute top-6 right-6 w-10 h-10 rounded-full border-2 flex items-center justify-center z-30 transition-all ${isSel ? 'bg-blue-brand border-blue-brand shadow-lg scale-110' : 'bg-transparent border-slate-100 group-hover:border-blue-brand/40'}`}>{isSel && <Icon name="Check" size={18} className="text-white" />}</button>
                                             <div className="absolute top-6 left-6 w-12 h-12 rounded-2xl bg-white/70 border border-white shadow-sm flex items-center justify-center overflow-hidden z-20">
                                                 <AvatarDisplay avatar={p.avatar} className="w-full h-full text-2xl" />
                                             </div>
                                             <div className="flex-1" />
-                                            <div className="mt-auto text-left space-y-2 relative z-10"><h4 className="font-black text-xl md:text-2xl text-[#1A1A1A] tracking-tighter uppercase italic">{p.name}</h4><p className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-blue-brand/80">{p.role}</p><p className="text-[10px] md:text-xs italic opacity-40 leading-relaxed line-clamp-2">&quot;{p.worldview}&quot;</p></div>
+                                            <div className="mt-auto text-left space-y-2"><h4 className="font-black text-xl md:text-2xl text-[#1A1A1A] tracking-tighter uppercase italic">{p.name}</h4><p className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-blue-brand/80">{p.role}</p><p className="text-[10px] md:text-xs italic opacity-40 leading-relaxed line-clamp-2">鈥渰p.worldview}鈥?/p></div>
                                         </div>
                                     );
                                 })}
@@ -703,24 +683,17 @@
                 if (view === 'debate') return (
                     <DebateArena
                         context={context}
-                        selectedPersonas={[
-                            ...displayPersonas.filter(p => selectedIds.includes(p.id)),
-                            ...generatedPersonas.filter(p => selectedIds.includes(p.id) && !displayPersonas.some(d => d.id === p.id))
-                        ]}
-                        generatedPersonas={generatedPersonas}
+                        selectedPersonas={displayPersonas.filter(p => selectedIds.includes(p.id))}
                         setView={setView}
                         ensureSession={ensureSession}
                         persistMessage={persistMessage}
                         buildContextBlock={buildContextBlock}
                         userAvatar={userAvatar}
-                        user={user}
-                        initialMessages={sessionMessages}
-                        parentSessionId={sessionId}
                     />
                 );
-                if (view === 'summary') return <div className="text-center py-32 md:py-48 px-4 animate-in space-y-8 md:space-y-10 max-w-2xl mx-auto"><div className="text-5xl md:text-7xl animate-bounce">🌱</div><h2 className="text-3xl md:text-5xl font-serif italic text-[#1A1A1A] tracking-tight">Pattern Observed</h2><button onClick={handleNewChat} className="px-12 md:px-16 py-5 md:py-6 bg-blue-brand text-white rounded-full font-black shadow-xl uppercase tracking-widest text-[9px] md:text-[10px] hover:shadow-2xl transition-all">Start New Chapter</button></div>;
+                if (view === 'summary') return <div className="text-center py-32 md:py-48 px-4 animate-in space-y-8 md:space-y-10 max-w-2xl mx-auto"><div className="text-5xl md:text-7xl animate-bounce">馃尡</div><h2 className="text-3xl md:text-5xl font-serif italic text-[#1A1A1A] tracking-tight">Pattern Observed</h2><button onClick={handleNewChat} className="px-12 md:px-16 py-5 md:py-6 bg-blue-brand text-white rounded-full font-black shadow-xl uppercase tracking-widest text-[9px] md:text-[10px] hover:shadow-2xl transition-all">Start New Chapter</button></div>;
                 return (
-                    <section className="space-y-6 md:space-y-10 py-10 md:py-20 px-4 max-w-5xl mx-auto w-full animate-in flex flex-col items-center">
+                    <section className="space-y-6 md:space-y-10 py-10 md:py-20 px-4 max-w-3xl mx-auto w-full animate-in flex flex-col items-center">
                         <header className="mb-2 md:mb-4 text-center space-y-3"><h1 className="text-6xl md:text-8xl font-black tracking-tighter text-blue-brand uppercase italic leading-none">LIFEE</h1><p className="italic text-[8px] md:text-[10px] text-[#C1C1C1] uppercase tracking-[0.4em] md:tracking-[0.6em] font-black font-sans">YOUR LIFE & FRIEND COACH</p></header>
                         {(() => {
                             const suggestedQuestions = [
@@ -754,7 +727,7 @@
                                 </div>
                             );
                         })()}
-                        <div className="w-full bg-white p-8 md:p-16 rounded-[40px] md:rounded-[70px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden transition-all hover:shadow-xl"><h2 className="text-xl md:text-3xl font-serif italic mb-6 md:mb-10 text-[#1A1A1A] tracking-tight">“Let them argue, you decide.”</h2><textarea className="w-full h-40 md:h-52 p-6 md:p-8 bg-[#FDFBF7]/50 rounded-[30px] md:rounded-[40px] border-2 border-transparent focus-blue-brand transition-all duration-300 focus:outline-none text-base md:text-xl leading-relaxed placeholder:italic no-scrollbar" placeholder="Describe the current tension..." value={context.situation} onChange={(e) => setContext({...context, situation: e.target.value})} /></div>
+                        <div className="w-full bg-white p-8 md:p-16 rounded-[40px] md:rounded-[70px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden transition-all hover:shadow-xl"><div className="absolute top-0 right-0 p-8 md:p-12 opacity-5"><Icon name="Sparkles" size={64} /></div><h2 className="text-xl md:text-3xl font-serif italic mb-6 md:mb-10 text-[#1A1A1A] tracking-tight">鈥淟et them argue, you decide.鈥?/h2><textarea className="w-full h-40 md:h-52 p-6 md:p-8 bg-[#FDFBF7]/50 rounded-[30px] md:rounded-[40px] border-2 border-transparent focus-blue-brand transition-all duration-300 focus:outline-none text-base md:text-xl leading-relaxed placeholder:italic no-scrollbar" placeholder="Describe the current tension..." value={context.situation} onChange={(e) => setContext({...context, situation: e.target.value})} /></div>
                         <div className="space-y-6 md:space-y-8 px-4 text-center w-full">
                             <h3 className="text-xs md:text-sm font-black uppercase tracking-[0.3em] text-[#5D576B]/70">WHEN IS THIS LANDING?</h3>
                             <div className="capsule-container shadow-sm">
@@ -795,7 +768,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button disabled={!context.situation} onClick={() => setRecommendModalOpen(true)} className="w-full max-w-2xl py-5 md:py-7 bg-blue-brand text-white rounded-full font-black shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all hover:translate-y-[-2px] uppercase tracking-[0.3em] text-[10px] md:text-xs disabled:opacity-20 active:scale-95">STEP FORWARD</button>
+                        <button disabled={!context.situation} onClick={() => setRecommendModalOpen(true)} className="w-full max-w-lg py-5 md:py-7 bg-blue-brand text-white rounded-full font-black shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all hover:translate-y-[-2px] uppercase tracking-[0.3em] text-[10px] md:text-xs disabled:opacity-20 active:scale-95">STEP FORWARD</button>
                     </section>
                 );
             };
@@ -817,12 +790,6 @@
                             setAuthOpen(true);
                         }}
                         onNewChat={handleNewChat}
-                        savedSessions={savedSessions}
-                        setSavedSessions={setSavedSessions}
-                        setSessionMessages={setSessionMessages}
-                        setSessionId={setSessionId}
-                        setSelectedIds={setSelectedIds}
-                        personas={displayPersonas}
                     >
                         {(user || isGuest) ? renderContent() : (
                             <div className="min-h-screen flex items-center justify-center">
@@ -838,27 +805,7 @@
                     </AppLayout>
                     <AuthModal isOpen={authOpen || (!user && !isGuest)} onClose={() => setAuthOpen(false)} onAuthed={(u) => { setUser(u); setIsGuest(false); }} onGuest={() => { setIsGuest(true); setAuthOpen(false); }} />
                     <JobOfferModal isOpen={jobOfferModalOpen} onClose={() => setJobOfferModalOpen(false)} onConfirm={(text) => setContext({...context, situation: text})} />
-                    <PersonaRecommendModal
-                        isOpen={recommendModalOpen}
-                        onClose={() => setRecommendModalOpen(false)}
-                        situation={context.situation}
-                        periods={context.landingPeriods}
-                        personas={displayPersonas}
-                        selectedIds={selectedIds}
-                        onConfirm={({ ids, generatedPersonas: genP }) => {
-                            setSelectedIds(ids);
-                            if (genP && genP.length > 0) {
-                                setPersonas(prev => {
-                                    const existingIds = new Set(prev.map(p => p.id));
-                                    const newOnes = genP.filter(p => !existingIds.has(p.id));
-                                    return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
-                                });
-                                setGeneratedPersonas(genP);
-                            }
-                            setRecommendModalOpen(false);
-                            setView('persona-selection');
-                        }}
-                    />
+                    <PersonaRecommendModal isOpen={recommendModalOpen} onClose={() => setRecommendModalOpen(false)} situation={context.situation} periods={context.landingPeriods} personas={displayPersonas} selectedIds={selectedIds} onConfirm={(merged) => { setSelectedIds(merged); setRecommendModalOpen(false); setView('persona-selection'); }} />
                     {isAdmin && (
                         <AdminPanel
                             isOpen={adminOpen}
@@ -897,7 +844,7 @@
                                 delete next[detailPersona.id];
                                 return next;
                             });
-                            const base = personaAssets?.[detailPersona.id]?.avatar_url || personas.find(x => x.id === detailPersona.id)?.avatar || '👤';
+                            const base = personaAssets?.[detailPersona.id]?.avatar_url || personas.find(x => x.id === detailPersona.id)?.avatar || '馃懁';
                             setDetailPersona(prev => prev ? ({ ...prev, avatar: base }) : prev);
                         }}
                     />
@@ -906,8 +853,3 @@
         }
 
         const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
-        root.render(<App />);
-    </script>
-</body>
-</html>

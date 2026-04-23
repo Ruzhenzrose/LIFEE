@@ -18,6 +18,7 @@ const CANVAS_CARD_POSITIONS = [
 const DebateArena = ({
     context,
     selectedPersonas,
+    generatedPersonas = [],
     setView,
     ensureSession,
     persistMessage,
@@ -257,7 +258,12 @@ const DebateArena = ({
             const payload = {
                 situation: situation || (history.length > 0 ? "" : "Start the internal debate."),
                 userInput: cleanInput,
-                personas: debatePersonas.map(p => ({ id: p.id, name: p.name })),
+                personas: debatePersonas.map(p => {
+                    const gen = generatedPersonas.find(g => g.id === p.id);
+                    return gen
+                        ? { id: p.id, name: p.name, soul: gen.soul || '', emoji: gen.avatar || '✨' }
+                        : { id: p.id, name: p.name };
+                }),
                 sessionId: sessionId,
                 userId: user?.id || "",
                 language: lang,

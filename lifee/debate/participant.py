@@ -34,16 +34,33 @@ class Participant:
         provider: LLMProvider,
         role_manager: RoleManager,
         knowledge_manager: Optional[MemoryManager] = None,
+        custom_soul: Optional[str] = None,
+        custom_display_name: Optional[str] = None,
+        custom_emoji: str = "✨",
     ):
         self.role_name = role_name
         self.provider = provider
         self.role_manager = role_manager
         self.knowledge_manager = knowledge_manager
-        self.skill_set: SkillSet = role_manager.load_skills(role_name)
+        self._custom_soul = custom_soul
+        self._custom_display_name = custom_display_name
+        self._custom_emoji = custom_emoji
+        self.skill_set: SkillSet = SkillSet() if custom_soul else role_manager.load_skills(role_name)
         self._load_role_metadata()
 
     def _load_role_metadata(self):
         """加载角色的显示信息和工具（单次读取 identity.md）"""
+        if self._custom_soul is not None:
+            self.info = ParticipantInfo(
+                name=self.role_name,
+                display_name=self._custom_display_name or self.role_name,
+                emoji=self._custom_emoji,
+            )
+            self.system_prompt = self._custom_soul
+            self.tools = []
+            self.tool_executor = None
+            return
+
         info = self.role_manager.get_role_info(self.role_name)
 
         self.info = ParticipantInfo(
