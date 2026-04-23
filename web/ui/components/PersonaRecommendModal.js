@@ -56,7 +56,7 @@ function scorePersonas(situation, periods, allPersonas) {
 
     const ids = ranked.length >= 2 ? ranked : [...new Set([...ranked, ...FALLBACK_IDS])];
     return ids
-        .slice(0, 4)
+        .slice(0, 2)
         .map(id => allPersonas.find(p => p.id === id))
         .filter(Boolean);
 }
@@ -167,9 +167,9 @@ const PersonaRecommendModal = ({ isOpen, onClose, situation, periods, personas, 
         .then(r => r.json())
         .then(data => {
             if (signal.aborted) return [];
-            const ids = Array.isArray(data.ids) && data.ids.length >= 2 ? data.ids : null;
+            const ids = Array.isArray(data.ids) && data.ids.length >= 1 ? data.ids : null;
             const recs = ids
-                ? ids.map(id => (personas || []).find(p => p.id === id)).filter(Boolean).slice(0, 4)
+                ? ids.map(id => (personas || []).find(p => p.id === id)).filter(Boolean).slice(0, 2)
                 : scorePersonas(situation, periods, personas || []);
             setRecommended(recs);
             setPicks(recs.map(p => p.id));
@@ -268,10 +268,10 @@ const PersonaRecommendModal = ({ isOpen, onClose, situation, periods, personas, 
                 {/* Scrollable content */}
                 <div className="flex-1 overflow-y-auto no-scrollbar px-8 md:px-10 pb-4 space-y-5">
 
-                    {/* ── Recommended from roster ── */}
+                    {/* ── 2 recommended from roster ── */}
                     {loading ? (
                         <div className="grid grid-cols-2 gap-3">
-                            {[0,1,2,3].map(i => <SkeletonCard key={i} />)}
+                            <SkeletonCard /><SkeletonCard />
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 gap-3">
@@ -287,7 +287,7 @@ const PersonaRecommendModal = ({ isOpen, onClose, situation, periods, personas, 
                         </div>
                     )}
 
-                    {/* ── AI-generated new personas ── */}
+                    {/* ── 2 AI-generated new personas ── */}
                     {generating && !loading && (
                         <div>
                             <p className="text-[9px] uppercase tracking-[0.3em] font-black text-violet-400/70 mb-2 flex items-center gap-1.5">
@@ -306,7 +306,7 @@ const PersonaRecommendModal = ({ isOpen, onClose, situation, periods, personas, 
                                 ✦ Voices created for you
                             </p>
                             <div className="grid grid-cols-2 gap-3">
-                                {generated.map(persona => (
+                                {generated.slice(0, 2).map(persona => (
                                     <PersonaCard
                                         key={persona.id}
                                         persona={persona}

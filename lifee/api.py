@@ -1118,10 +1118,10 @@ async def recommend_personas(req: RecommendPersonasRequest):
         f"User's situation:\n{req.situation.strip()}\n\n"
         f"Life context tags: {periods_str}\n\n"
         f"Available persona IDs: {ids_list}\n\n"
-        "Select exactly 4 persona IDs that would resonate most with this user's situation. "
+        "Select exactly 2 persona IDs that would resonate most with this user's situation. "
         "Prioritise emotional fit first, then intellectual fit. "
         "Only use IDs from the available list. "
-        'Reply ONLY with a JSON array, e.g. ["buffett","serene","rebel","drucker"]'
+        'Reply ONLY with a JSON array of exactly 2 items, e.g. ["buffett","serene"]'
     )
 
     try:
@@ -1129,7 +1129,7 @@ async def recommend_personas(req: RecommendPersonasRequest):
         from lifee.providers.base import Message, MessageRole
         messages = [Message(role=MessageRole.USER, content=prompt)]
         chunks = []
-        async for chunk in provider.stream(messages=messages, max_tokens=80, temperature=0.3):
+        async for chunk in provider.stream(messages=messages, max_tokens=40, temperature=0.3):
             chunks.append(chunk)
         text = "".join(chunks).strip()
         if "```" in text:
@@ -1137,8 +1137,8 @@ async def recommend_personas(req: RecommendPersonasRequest):
         ids = json.loads(text)
         if not isinstance(ids, list):
             raise ValueError("not a list")
-        # keep only valid ids and cap at 4
-        valid = [i for i in ids if i in req.persona_ids][:4]
+        # keep only valid ids and cap at 2
+        valid = [i for i in ids if i in req.persona_ids][:2]
         return {"ids": valid}
     except Exception as e:
         print(f"[recommend-personas] failed: {e}")
@@ -1228,28 +1228,32 @@ async def generate_new_personas(req: GeneratePersonasRequest):
 
     prompt = (
         "You are a persona-generation engine for a life-coaching app called LIFEE. "
-        "Users share their life situations and get advice from diverse historical/fictional voices.\n\n"
+        "Users share their life situations and get advice from real historical figures and famous people.\n\n"
         f"User situation: {req.situation.strip()}\n"
         f"Life context tags: {periods_str}\n"
         f"Already-recommended persona IDs (do NOT duplicate): {existing_str}"
         f"{search_section}\n\n"
-        "Generate exactly 2 new persona definitions that would offer unique, valuable perspectives "
-        "for this situation — perspectives NOT covered by typical advisors. "
-        "Think beyond the obvious: consider philosophers, scientists, artists, cultural figures, "
-        "fictional archetypes, or any voice that would genuinely surprise and illuminate.\n\n"
+        "Generate exactly 2 persona definitions based on REAL, FAMOUS historical figures or well-known public figures "
+        "(NOT fictional or archetypal characters). "
+        "Choose real people — philosophers, scientists, entrepreneurs, artists, writers, leaders, athletes — "
+        "whose actual life experience and known worldview would genuinely illuminate this situation. "
+        "Pick people who are somewhat surprising and non-obvious for this context, not the first cliché that comes to mind. "
+        "Do NOT invent fictional archetypes. Every persona must be a real person with a verifiable life story.\n\n"
         "For each persona output:\n"
-        "- id: slug like 'gen-name' (lowercase, hyphens, must start with 'gen-')\n"
-        "- name: display name (English, max 25 chars)\n"
-        "- role: archetype label in CAPS (max 30 chars), e.g. 'STOIC EMPEROR', 'ZEN DISRUPTOR'\n"
-        "- avatar: single emoji\n"
-        "- voice: one evocative sentence in their voice (max 120 chars)\n"
-        "- soul: a 200-300 word system prompt defining who they are, how they think, "
-        "their speech style, and what they prioritise. Write in second person ('You are...'). "
-        "Make them feel vivid and distinct — not generic. "
+        "- id: slug like 'gen-firstname-lastname' (lowercase, hyphens, must start with 'gen-')\n"
+        "- name: their real full name or most recognised name (max 25 chars)\n"
+        "- role: a SHORT label in CAPS describing their identity/legacy (max 30 chars), "
+        "e.g. 'STOIC EMPEROR', 'RENAISSANCE GENIUS', 'JAZZ INNOVATOR'\n"
+        "- avatar: single emoji that fits their essence\n"
+        "- voice: one sentence written in their authentic voice, capturing how they actually spoke/wrote (max 120 chars)\n"
+        "- soul: a 200-300 word system prompt. Start with 'You are [Name].' "
+        "Describe their real biography highlights, core beliefs, signature thinking style, "
+        "how they would approach the user's situation, and their speech mannerisms. "
+        "Write in second person. Make them feel like the real person, not a caricature. "
         "They should respond in the same language as the user.\n\n"
         'Reply ONLY with a JSON array of 2 objects with keys: id, name, role, avatar, voice, soul.\n'
-        'Example: [{"id":"gen-marcus","name":"Marcus Aurelius","role":"STOIC EMPEROR",'
-        '"avatar":"⚔️","voice":"The obstacle is the way.","soul":"You are Marcus Aurelius..."}]'
+        'Example: [{"id":"gen-simone-de-beauvoir","name":"Simone de Beauvoir","role":"EXISTENTIALIST WRITER",'
+        '"avatar":"✒️","voice":"One is not born a woman, but becomes one.","soul":"You are Simone de Beauvoir..."}]'
     )
 
     try:
