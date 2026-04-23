@@ -682,55 +682,124 @@
                 if (view === 'persona-selection') {
                     const filtered = (category === 'ALL' ? displayPersonas : displayPersonas.filter(p => p.category === category))
                         .slice().sort((a, b) => (b.cover_url ? 1 : 0) - (a.cover_url ? 1 : 0));
+                    const selectedPersonas = displayPersonas.filter(p => selectedIds.includes(p.id));
                     return (
-                        <div className="w-full flex flex-col items-center pt-8 md:pt-12 animate-in pb-32">
-                            <div className="flex justify-center mb-10 px-4 w-full">
-                                <div className="overflow-x-auto no-scrollbar py-4 w-full">
-                                    <div className="flex justify-center px-6 md:px-10">
-                                        <div className="inline-flex bg-white/60 backdrop-blur-md p-1.5 rounded-full border-2 border-white shadow-lg whitespace-nowrap">
+                        <div className="animate-in px-4 pb-24 pt-8 md:px-8 md:pt-10">
+                            <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+                                <aside className="h-fit rounded-[34px] border border-[#E8E6E0] bg-white/82 p-6 shadow-[0_18px_40px_rgba(152,166,212,0.10)] backdrop-blur-sm lg:sticky lg:top-24">
+                                    <div className="border-b border-[#EEE8DE] pb-5">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A59DB3]">Council Setup</div>
+                                        <h2 className="mt-3 text-3xl font-serif italic tracking-tight text-[#1A1A1A]">Assemble the Voices</h2>
+                                        <p className="mt-3 text-sm leading-relaxed text-[#7C748D]">Browse categories, keep track of selected voices, and move into debate from one focused side panel.</p>
+                                    </div>
+
+                                    <div className="mt-6">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#A59DB3]">Categories</div>
+                                        <div className="mt-3 flex flex-wrap gap-2">
                                             {['ALL', 'CREATIVE', 'RATIONAL', 'SUPPORT', 'CUSTOM'].map(cat => (
                                                 <button
                                                     key={cat}
                                                     onClick={() => setCategory(cat)}
-                                                    className={`px-4 md:px-8 py-2 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] transition-all duration-300 ${category === cat ? 'bg-blue-brand text-white shadow-lg scale-105' : 'text-[#5D576B]/40 hover:text-blue-brand'}`}
+                                                    className={`rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${category === cat ? 'bg-blue-brand text-white shadow-[0_8px_22px_rgba(152,166,212,0.28)]' : 'border border-[#E8E6E0] bg-[#FAF8F4] text-[#7D768E] hover:border-[#D6DDEF] hover:text-blue-brand'}`}
                                                 >
                                                     {cat}
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
+
+                                    <div className="mt-6 rounded-[28px] border border-[#EEE8DE] bg-[#FCFBF8] p-4">
+                                        <div className="flex items-end justify-between gap-3">
+                                            <div>
+                                                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#A59DB3]">Selected</div>
+                                                <div className="mt-2 text-3xl font-black italic tracking-tight text-blue-brand">{selectedIds.length}</div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedIds([])}
+                                                className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8D88A0] transition-all hover:text-blue-brand"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+                                        <div className="mt-4 space-y-2">
+                                            {selectedPersonas.length > 0 ? selectedPersonas.slice(0, 4).map(p => (
+                                                <div key={p.id} className="flex items-center gap-3 rounded-2xl bg-white px-3 py-3 shadow-sm">
+                                                    <div className="h-10 w-10 overflow-hidden rounded-2xl border border-[#ECE7DE] bg-[#F6F4F0]">
+                                                        <AvatarDisplay avatar={p.avatar} className="h-full w-full text-2xl" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="truncate text-sm font-black text-[#1A1A1A]">{p.name}</div>
+                                                        <div className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-blue-brand/75">{p.role}</div>
+                                                    </div>
+                                                </div>
+                                            )) : (
+                                                <div className="rounded-2xl border border-dashed border-[#E8E6E0] px-4 py-5 text-sm italic text-[#9C95AA]">Pick at least two voices to start a debate.</div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => selectedIds.length >= 2 && setView('debate')}
+                                        disabled={selectedIds.length < 2}
+                                        className="mt-6 w-full rounded-full bg-blue-brand px-6 py-4 text-[10px] font-black uppercase tracking-[0.26em] text-white shadow-[0_12px_28px_rgba(152,166,212,0.26)] transition-all hover:-translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-30"
+                                    >
+                                        {selectedIds.length >= 2 ? 'Commence Dialogue' : 'Select More Voices'}
+                                    </button>
+                                </aside>
+
+                                <div className="space-y-6">
+                                    <div className="flex items-end justify-between gap-4 border-b border-[#ECE7DE] pb-4">
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#A59DB3]">Archive</div>
+                                            <h3 className="mt-2 text-2xl font-serif italic text-[#5D576B]">Choose the panel that should speak for this tension.</h3>
+                                        </div>
+                                        <div className="hidden rounded-full border border-[#E8E6E0] bg-white/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#8D88A0] md:block">
+                                            {filtered.length} Voices
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                                        {filtered.map(p => {
+                                            const isSel = selectedIds.includes(p.id);
+                                            return (
+                                                <div key={p.id} onClick={() => { setDetailPersona(p); setView('persona-detail'); }} className={`group relative flex min-h-[320px] flex-col overflow-hidden rounded-[36px] border p-6 pt-16 shadow-[0_18px_44px_rgba(152,166,212,0.10)] transition-all hover:-translate-y-1 ${p.cover_url ? 'bg-transparent' : 'bg-white/88'} ${isSel ? 'border-blue-brand/40' : 'border-[#ECE7DE]'}`}>
+                                                    {p.cover_url && (
+                                                        <div className="absolute inset-0 z-0">
+                                                            <img
+                                                                src={p.cover_url}
+                                                                alt=""
+                                                                className="h-full w-full grayscale"
+                                                                style={{ objectFit: p.cover_fit || 'cover', objectPosition: p.cover_position || 'center' }}
+                                                                loading="lazy"
+                                                            />
+                                                            <div className="absolute inset-0 bg-white/80" />
+                                                        </div>
+                                                    )}
+                                                    <button onClick={(e) => toggleSelect(e, p)} className={`absolute right-5 top-5 z-30 flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all ${isSel ? 'scale-110 border-blue-brand bg-blue-brand shadow-lg' : 'border-white/90 bg-white/60 backdrop-blur group-hover:border-blue-brand/40'}`}>{isSel && <Icon name="Check" size={18} className="text-white" />}</button>
+                                                    <div className="absolute left-5 top-5 z-20 flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-white bg-white/80 shadow-sm">
+                                                        <AvatarDisplay avatar={p.avatar} className="h-full w-full text-2xl" />
+                                                    </div>
+                                                    <div className="relative z-10 flex-1" />
+                                                    <div className="relative z-10 mt-auto space-y-3 text-left">
+                                                        <div>
+                                                            <h4 className="text-2xl font-black uppercase italic tracking-tight text-[#1A1A1A]">{p.name}</h4>
+                                                            <p className="mt-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-brand/80">{p.role}</p>
+                                                        </div>
+                                                        <p className="line-clamp-3 text-sm italic leading-relaxed text-[#6B647B]/75">&quot;{p.worldview}&quot;</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        <div onClick={() => alert('New feature coming soon')} className="group relative flex min-h-[320px] cursor-pointer flex-col items-center justify-center gap-4 rounded-[36px] border-2 border-dashed border-blue-brand/30 bg-white/45 p-6 text-center transition-all hover:border-blue-brand hover:bg-white">
+                                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-blue-brand shadow-lg transition-transform group-hover:scale-110">
+                                                <Icon name="Plus" size={24} />
+                                            </div>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8C86A0]">Create Voice</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <h2 className="text-3xl md:text-5xl font-serif italic mb-12 md:mb-20 text-[#5D576B] text-center tracking-tight px-4">Assemble the Voices</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-10 px-4 md:px-8 w-full max-w-[1250px]">
-                                {filtered.map(p => {
-                                    const isSel = selectedIds.includes(p.id);
-                                    return (
-                                        <div key={p.id} onClick={() => { setDetailPersona(p); setView('persona-detail'); }} className={`relative px-6 pb-6 pt-16 md:px-8 md:pb-8 md:pt-20 rounded-[40px] shadow-xl border-2 transition-all transform hover:scale-[1.03] flex flex-col aspect-[3/4] min-h-[300px] overflow-hidden group ${p.cover_url ? 'bg-transparent' : 'bg-white'} ${isSel ? 'border-blue-brand shadow-blue-brand/10' : 'border-white/20'}`}>
-                                            {p.cover_url && (
-                                                <div className="absolute inset-0 z-0">
-                                                    <img
-                                                        src={p.cover_url}
-                                                        alt=""
-                                                        className="w-full h-full grayscale"
-                                                        style={{ objectFit: p.cover_fit || 'cover', objectPosition: p.cover_position || 'center' }}
-                                                        loading="lazy"
-                                                    />
-                                                    <div className="absolute inset-0 bg-white/75" />
-                                                </div>
-                                            )}
-                                            <button onClick={(e) => toggleSelect(e, p)} className={`absolute top-6 right-6 w-10 h-10 rounded-full border-2 flex items-center justify-center z-30 transition-all ${isSel ? 'bg-blue-brand border-blue-brand shadow-lg scale-110' : 'bg-transparent border-slate-100 group-hover:border-blue-brand/40'}`}>{isSel && <Icon name="Check" size={18} className="text-white" />}</button>
-                                            <div className="absolute top-6 left-6 w-12 h-12 rounded-2xl bg-white/70 border border-white shadow-sm flex items-center justify-center overflow-hidden z-20">
-                                                <AvatarDisplay avatar={p.avatar} className="w-full h-full text-2xl" />
-                                            </div>
-                                            <div className="flex-1" />
-                                            <div className="mt-auto text-left space-y-2 relative z-10"><h4 className="font-black text-xl md:text-2xl text-[#1A1A1A] tracking-tighter uppercase italic">{p.name}</h4><p className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-blue-brand/80">{p.role}</p><p className="text-[10px] md:text-xs italic opacity-40 leading-relaxed line-clamp-2">&quot;{p.worldview}&quot;</p></div>
-                                        </div>
-                                    );
-                                })}
-                                <div onClick={() => alert('New feature coming soon')} className="relative p-6 bg-white/30 backdrop-blur-sm rounded-[40px] border-2 border-dashed border-blue-brand/30 cursor-pointer transition-all hover:bg-white hover:border-blue-brand flex flex-col items-center justify-center gap-4 aspect-[3/4] min-h-[300px] text-center group"><div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-brand group-hover:scale-110 transition-transform"><Icon name="Plus" size={24} /></div><p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-80 transition-opacity">Create Voice</p></div>
-                            </div>
-                            {selectedIds.length >= 2 && <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 animate-in w-[90%] md:w-auto text-center"><button onClick={() => setView('debate')} className="px-12 md:px-16 py-5 md:py-6 bg-[#1A1A1A] text-white rounded-full font-black text-[10px] md:text-xs tracking-[0.3em] md:tracking-[0.4em] shadow-2xl hover:scale-105 transition-all uppercase">Commence Dialogue</button></div>}
                         </div>
                     );
                 }
@@ -753,83 +822,242 @@
                     />
                 );
                 if (view === 'summary') return <div className="text-center py-32 md:py-48 px-4 animate-in space-y-8 md:space-y-10 max-w-2xl mx-auto"><div className="text-5xl md:text-7xl animate-bounce">🌱</div><h2 className="text-3xl md:text-5xl font-serif italic text-[#1A1A1A] tracking-tight">Pattern Observed</h2><button onClick={handleNewChat} className="px-12 md:px-16 py-5 md:py-6 bg-blue-brand text-white rounded-full font-black shadow-xl uppercase tracking-widest text-[9px] md:text-[10px] hover:shadow-2xl transition-all">Start New Chapter</button></div>;
+                const featuredVoice =
+                    displayPersonas.find(p => selectedIds.includes(p.id)) ||
+                    displayPersonas.find(p => p.id === 'lacan') ||
+                    displayPersonas[0];
+                const quickCards = [
+                    {
+                        key: 'choice',
+                        icon: 'Scale',
+                        title: 'A 还是 B',
+                        description: '把一个分岔选择摊开来看。',
+                        onClick: () => setContext({ ...context, situation: "I'm torn between two paths and want to compare them clearly." })
+                    },
+                    {
+                        key: 'values',
+                        icon: 'Gem',
+                        title: '价值观',
+                        description: '看看你真正想守住什么。',
+                        onClick: () => setContext({ ...context, situation: "I know my options, but I need help identifying what matters most to me." })
+                    },
+                    {
+                        key: 'mystic',
+                        icon: 'Sparkles',
+                        title: '玄学',
+                        description: '从直觉、征兆与气氛切入。',
+                        onClick: () => setContext({ ...context, situation: "I want a softer, more intuitive reading of what this situation is asking from me." })
+                    }
+                ];
                 return (
-                    <section className="space-y-6 md:space-y-10 py-10 md:py-20 px-4 max-w-5xl mx-auto w-full animate-in flex flex-col items-center">
-                        <header className="mb-2 md:mb-4 text-center space-y-3"><h1 className="text-6xl md:text-8xl font-black tracking-tighter text-blue-brand uppercase italic leading-none">LIFEE</h1><p className="italic text-[8px] md:text-[10px] text-[#C1C1C1] uppercase tracking-[0.4em] md:tracking-[0.6em] font-black font-sans">YOUR LIFE & FRIEND COACH</p></header>
-                        {(() => {
-                            const suggestedQuestions = [
-                                "I'm not sure which job offer to choose",
-                                "I have so many hobbies, but why do I still feel empty inside?",
-                                "How should young adults navigate the confusing years of their twenties?",
-                                "When chasing a crush, is it better to confess directly or take it slow?",
-                                "I'm approaching 30. With no house, no kids and the low cost of silence, I should seriously consider long-term development. I'm very torn about whether to leave or stay in Beijing.",
-                                "For those who entered the entertainment industry because of fandom, how's life treating you now?"
-                            ];
-                            return (
-                                <div className="w-full suggested-questions-scroll">
-                                    <div className="suggested-questions-container">
-                                        {suggestedQuestions.map((question, index) => (
-                                            <button
-                                                key={index}
-                                                type="button"
-                                                className="question-capsule"
-                                                onClick={() => {
-                                                    if (question === "I'm not sure which job offer to choose") {
-                                                        setJobOfferModalOpen(true);
-                                                    } else {
-                                                        setContext({...context, situation: question});
+                    <section className="animate-in mx-auto w-full max-w-[1320px] px-4 pb-16 pt-8 md:px-8 md:pb-24 md:pt-10">
+                        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_310px] lg:items-start">
+                            <div>
+                                <div className="flex items-center justify-between border-b border-[#E9E5DC] pb-4">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.32em] text-[#AAA3B7]">第 01 卷</span>
+                                    <span className="hidden text-[10px] font-black uppercase tracking-[0.32em] text-[#AAA3B7] md:block">Let Them Argue</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.32em] text-[#AAA3B7]">{new Date().toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}</span>
+                                </div>
+
+                                <div className="pt-8">
+                                    <div className="text-[10px] font-black uppercase tracking-[0.32em] text-[#AAA3B7]">今日提问</div>
+                                    <h1 className="mt-5 text-4xl font-black leading-none tracking-tight text-[#1A1A1A] md:text-6xl">
+                                        你在想什么？
+                                    </h1>
+
+                                    <div className="mt-8 max-w-3xl">
+                                        <div className="flex items-center gap-3 rounded-[28px] border border-[#E5E1D8] bg-white/92 p-3 shadow-[0_20px_50px_rgba(152,166,212,0.10)]">
+                                            <textarea
+                                                className="h-14 min-h-[56px] flex-1 resize-none rounded-[22px] border border-transparent bg-[#FAF8F4] px-5 py-4 text-base leading-6 text-[#3C3747] transition-all placeholder:text-[#AAA3B7] focus-blue-brand focus:outline-none"
+                                                placeholder="描述一下你的处境..."
+                                                value={context.situation}
+                                                onChange={(e) => setContext({ ...context, situation: e.target.value })}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        if (context.situation) setRecommendModalOpen(true);
                                                     }
                                                 }}
+                                            />
+                                            <button
+                                                type="button"
+                                                disabled={!context.situation}
+                                                onClick={() => setRecommendModalOpen(true)}
+                                                className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-blue-brand text-white shadow-[0_12px_26px_rgba(152,166,212,0.30)] transition-all hover:translate-x-[1px] disabled:cursor-not-allowed disabled:opacity-25"
                                             >
-                                                {question}
+                                                <Icon name="ArrowRight" size={18} />
                                             </button>
-                                        ))}
+                                        </div>
+
+                                        {(() => {
+                                            const suggestedQuestions = [
+                                                "I'm not sure which job offer to choose",
+                                                "I have so many hobbies, but why do I still feel empty inside?",
+                                                "How should young adults navigate the confusing years of their twenties?",
+                                                "When chasing a crush, is it better to confess directly or take it slow?"
+                                            ];
+                                            return (
+                                                <div className="mt-4 w-full suggested-questions-scroll">
+                                                    <div className="suggested-questions-container">
+                                                        {suggestedQuestions.map((question, index) => (
+                                                            <button
+                                                                key={index}
+                                                                type="button"
+                                                                className="question-capsule"
+                                                                onClick={() => {
+                                                                    if (question === "I'm not sure which job offer to choose") {
+                                                                        setJobOfferModalOpen(true);
+                                                                    } else {
+                                                                        setContext({ ...context, situation: question });
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {question}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+
+                                    <div className="mt-14">
+                                        <div className="mb-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#AAA3B7]">问题类型</div>
+                                        <div className="grid gap-4 md:grid-cols-3">
+                                            {quickCards.map(card => (
+                                                <button
+                                                    key={card.key}
+                                                    type="button"
+                                                    onClick={card.onClick}
+                                                    className="rounded-[28px] border border-[#E5E1D8] bg-white/82 p-5 text-left shadow-[0_16px_36px_rgba(152,166,212,0.08)] transition-all hover:-translate-y-[2px] hover:border-[#D6DDEF] hover:bg-white"
+                                                >
+                                                    <div className="text-blue-brand">
+                                                        <Icon name={card.icon} size={18} />
+                                                    </div>
+                                                    <div className="mt-6 text-2xl font-black tracking-tight text-[#1A1A1A]">{card.title}</div>
+                                                    <p className="mt-2 text-sm leading-relaxed text-[#7B748B]">{card.description}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-10 flex flex-wrap items-center gap-3">
+                                        <div className="capsule-container shadow-sm">
+                                            {[
+                                                { key: 'scenario', label: 'SCENARIO' },
+                                                { key: 'problemType', label: 'PROBLEM TYPE' }
+                                            ].map(({ key, label }) => (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    onClick={() => setLandingTab(key)}
+                                                    className={`capsule-item ${landingTab === key ? 'capsule-item-active' : 'capsule-item-inactive'}`}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {LANDING_CATEGORIES[landingTab].slice(0, 6).map(opt => {
+                                                const isSel = (context.landingPeriods || []).includes(opt);
+                                                return (
+                                                    <button
+                                                        key={opt}
+                                                        type="button"
+                                                        onClick={() => setContext(prev => {
+                                                            const periods = isSel ? (prev.landingPeriods || []).filter(x => x !== opt) : [...(prev.landingPeriods || []), opt];
+                                                            const situationBase = (prev.situation || '').replace(new RegExp('(^|\\n)Context: [^\\n]*', 'g'), '').trimEnd();
+                                                            const situationContext = periods.length > 0 ? `${situationBase ? situationBase + '\n' : ''}Context: ${periods.join(', ')}` : situationBase;
+                                                            return { ...prev, landingPeriods: periods, situation: situationContext };
+                                                        })}
+                                                        className={`landing-opt ${isSel ? 'selected' : ''}`}
+                                                    >
+                                                        {opt.toUpperCase()}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
-                            );
-                        })()}
-                        <div className="w-full bg-white p-8 md:p-16 rounded-[40px] md:rounded-[70px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden transition-all hover:shadow-xl"><h2 className="text-xl md:text-3xl font-serif italic mb-6 md:mb-10 text-[#1A1A1A] tracking-tight">“Let them argue, you decide.”</h2><textarea className="w-full h-40 md:h-52 p-6 md:p-8 bg-[#FDFBF7]/50 rounded-[30px] md:rounded-[40px] border-2 border-transparent focus-blue-brand transition-all duration-300 focus:outline-none text-base md:text-xl leading-relaxed placeholder:italic no-scrollbar" placeholder="Describe the current tension..." value={context.situation} onChange={(e) => setContext({...context, situation: e.target.value})} /></div>
-                        <div className="space-y-6 md:space-y-8 px-4 text-center w-full">
-                            <h3 className="text-xs md:text-sm font-black uppercase tracking-[0.3em] text-[#5D576B]/70">WHEN IS THIS LANDING?</h3>
-                            <div className="capsule-container shadow-sm">
-                                {[
-                                    { key: 'scenario', label: 'SCENARIO' },
-                                    { key: 'problemType', label: 'PROBLEM TYPE' }
-                                ].map(({ key, label }) => (
-                                    <button
-                                        key={key}
-                                        type="button"
-                                        onClick={() => setLandingTab(key)}
-                                        className={`capsule-item ${landingTab === key ? 'capsule-item-active' : 'capsule-item-inactive'}`}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
                             </div>
-                            <div className="animate-in pb-4" key={landingTab}>
-                                <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-                                    {LANDING_CATEGORIES[landingTab].map(opt => {
-                                        const isSel = (context.landingPeriods || []).includes(opt);
-                                        return (
+
+                            <aside className="space-y-4 lg:pt-12">
+                                <div className="overflow-hidden rounded-[30px] border border-[#E5E1D8] bg-white/88 shadow-[0_24px_56px_rgba(152,166,212,0.12)]">
+                                    <div className="relative min-h-[420px]">
+                                        {featuredVoice?.cover_url ? (
+                                            <>
+                                                <img
+                                                    src={featuredVoice.cover_url}
+                                                    alt={featuredVoice.name}
+                                                    className="absolute inset-0 h-full w-full object-cover grayscale"
+                                                    style={{ objectFit: featuredVoice.cover_fit || 'cover', objectPosition: featuredVoice.cover_position || 'center' }}
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/78 to-white/30" />
+                                            </>
+                                        ) : (
+                                            <div className="absolute inset-0 bg-gradient-to-br from-[#EEF2FF] via-white to-[#F8F5F1]" />
+                                        )}
+                                        <div className="relative z-10 flex h-full flex-col justify-end p-6">
+                                            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#9F98AE]">今日推荐</div>
+                                            <div className="mt-3 flex items-center gap-3">
+                                                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-white/90 bg-white/80 shadow-sm">
+                                                    <AvatarDisplay avatar={featuredVoice?.avatar || '👤'} className="h-full w-full text-2xl" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-blue-brand/75">{featuredVoice?.role || 'VOICE'}</div>
+                                                    <div className="truncate text-4xl font-black tracking-tight text-[#1A1A1A]">{featuredVoice?.name || 'LIFEE'}</div>
+                                                </div>
+                                            </div>
+                                            <p className="mt-4 line-clamp-3 text-sm italic leading-relaxed text-[#5F596E]/75">
+                                                “{featuredVoice?.worldview || 'A reflective voice for difficult choices.'}”
+                                            </p>
                                             <button
-                                                key={opt}
                                                 type="button"
-                                                onClick={() => setContext(prev => {
-                                                    const periods = isSel ? (prev.landingPeriods || []).filter(x => x !== opt) : [...(prev.landingPeriods || []), opt];
-                                                    const situationBase = (prev.situation || '').replace(new RegExp('(^|\\n)Context: [^\\n]*', 'g'), '').trimEnd();
-                                                    const situationContext = periods.length > 0 ? `${situationBase ? situationBase + '\n' : ''}Context: ${periods.join(', ')}` : situationBase;
-                                                    return { ...prev, landingPeriods: periods, situation: situationContext };
-                                                })}
-                                                className={`landing-opt ${isSel ? 'selected' : ''}`}
+                                                onClick={() => featuredVoice && (setDetailPersona(featuredVoice), setView('persona-detail'))}
+                                                className="mt-6 inline-flex w-fit items-center gap-2 rounded-full border border-[#E3DFF2] bg-white/86 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#6D6880] transition-all hover:border-[#D6DDEF] hover:text-blue-brand"
                                             >
-                                                {opt.toUpperCase()}
+                                                查看完整档案
+                                                <Icon name="ArrowUpRight" size={14} />
                                             </button>
-                                        );
-                                    })}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+
+                                <div className="rounded-[26px] border border-[#E5E1D8] bg-[#FCFBF8]/92 p-5 shadow-[0_16px_36px_rgba(152,166,212,0.08)]">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#AAA3B7]">已选声音</div>
+                                            <div className="mt-2 text-3xl font-black tracking-tight text-blue-brand">{selectedIds.length}</div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setView('persona-selection')}
+                                            className="rounded-full border border-[#E8E6E0] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#7D768E] transition-all hover:border-[#D6DDEF] hover:text-blue-brand"
+                                        >
+                                            编辑
+                                        </button>
+                                    </div>
+                                    <div className="mt-4 space-y-2">
+                                        {displayPersonas.filter(p => selectedIds.includes(p.id)).slice(0, 3).map(p => (
+                                            <div key={p.id} className="flex items-center gap-3 rounded-2xl bg-white px-3 py-3">
+                                                <div className="h-10 w-10 overflow-hidden rounded-2xl border border-[#ECE7DE] bg-[#F6F4F0]">
+                                                    <AvatarDisplay avatar={p.avatar} className="h-full w-full text-2xl" />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="truncate text-sm font-black text-[#1A1A1A]">{p.name}</div>
+                                                    <div className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-blue-brand/75">{p.role}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {selectedIds.length === 0 && (
+                                            <div className="rounded-2xl border border-dashed border-[#E8E6E0] px-4 py-4 text-sm italic text-[#9C95AA]">
+                                                先写下问题，再挑选进入房间的声音。
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </aside>
                         </div>
-                        <button disabled={!context.situation} onClick={() => setRecommendModalOpen(true)} className="w-full max-w-2xl py-5 md:py-7 bg-blue-brand text-white rounded-full font-black shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all hover:translate-y-[-2px] uppercase tracking-[0.3em] text-[10px] md:text-xs disabled:opacity-20 active:scale-95">STEP FORWARD</button>
                     </section>
                 );
             };
