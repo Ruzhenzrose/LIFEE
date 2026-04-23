@@ -719,8 +719,8 @@
                         <!-- Bubble -->
                         <div class="space-y-1.5 items-end flex flex-col flex-1 min-w-0">
                             <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 mr-1">You</p>
-                            <div class="bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-xl rounded-tr-sm text-on-surface shadow-sm leading-relaxed border-r-2 border-on-surface-variant/20 text-sm">
-                                <${ShinyLines} text=${m.text || ''} />
+                            <div class="bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-xl rounded-tr-sm text-on-surface shadow-sm leading-relaxed border-r-2 border-on-surface-variant/20 text-sm max-w-full">
+                                <p class="whitespace-pre-wrap break-words">${m.text || ''}</p>
                             </div>
                             <div class="flex gap-3 px-1 flex-row-reverse">
                                 <button
