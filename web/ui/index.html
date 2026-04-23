@@ -35,6 +35,40 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // ── Error Boundary ────────────────────────────────────────────────────────
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+            componentDidCatch(error, info) {
+                console.error('[LIFEE ErrorBoundary]', error, info);
+            }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#FDFBF7', padding: '2rem', textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+                            <h2 style={{ fontFamily: 'serif', fontSize: '1.5rem', color: '#1A1A1A', marginBottom: '0.5rem' }}>Something went wrong</h2>
+                            <p style={{ fontSize: '0.75rem', color: '#5D576B', opacity: 0.6, marginBottom: '1.5rem' }}>
+                                {this.state.error ? String(this.state.error.message || this.state.error) : 'Unknown error'}
+                            </p>
+                            <button
+                                onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+                                style={{ padding: '0.75rem 2rem', background: '#98A6D4', color: '#fff', border: 'none', borderRadius: '9999px', fontWeight: 900, fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer' }}
+                            >
+                                Reload
+                            </button>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
         // Components loaded from external Babel scripts
         const { Icon, AvatarDisplay, PatternCover, pickRandom } = window;
         const { loadUserAvatar, saveUserAvatar, rotateUserDefaultAvatar, fileToDataURL } = window;
@@ -846,14 +880,28 @@
                         personas={displayPersonas}
                         selectedIds={selectedIds}
                         onConfirm={({ ids, generatedPersonas: genP }) => {
-                            setSelectedIds(ids);
+                            setSelectedIds(Array.isArray(ids) ? ids : []);
                             if (genP && genP.length > 0) {
+                                // Normalize generated personas to ensure all required fields exist
+                                const normalizedGenP = genP.map(p => ({
+                                    id: p.id || `gen-${Date.now()}`,
+                                    name: p.name || 'New Voice',
+                                    role: p.role || 'GUIDE',
+                                    category: 'CREATIVE',
+                                    avatar: p.avatar || '✨',
+                                    voice: typeof p.voice === 'string' ? p.voice : '',
+                                    worldview: typeof p.voice === 'string' ? p.voice : '',
+                                    soul: p.soul || '',
+                                    knowledge: p.soul || '',
+                                    decisionStyle: p.soul ? p.soul.slice(0, 120) : '',
+                                    lifeContext: [],
+                                }));
                                 setPersonas(prev => {
                                     const existingIds = new Set(prev.map(p => p.id));
-                                    const newOnes = genP.filter(p => !existingIds.has(p.id));
+                                    const newOnes = normalizedGenP.filter(p => !existingIds.has(p.id));
                                     return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
                                 });
-                                setGeneratedPersonas(genP);
+                                setGeneratedPersonas(normalizedGenP);
                             }
                             setRecommendModalOpen(false);
                             setView('persona-selection');
@@ -907,7 +955,7 @@
 
         const container = document.getElementById('root');
         const root = ReactDOM.createRoot(container);
-        root.render(<App />);
+        root.render(<ErrorBoundary><App /></ErrorBoundary>);
     </script>
 </body>
 </html>
