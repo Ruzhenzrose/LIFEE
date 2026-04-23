@@ -19,8 +19,11 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from pathlib import Path as _Path
 
-load_dotenv()
+# Resolve .env at the project root (two levels up from this file) so the backend
+# loads secrets regardless of which cwd uvicorn was started from.
+load_dotenv(_Path(__file__).resolve().parent.parent / ".env")
 
 app = FastAPI(title="LIFEE API")
 
@@ -462,6 +465,18 @@ class DecisionRequest(BaseModel):
     language: str = ""   # 偏好语言（Chinese/English/空=自动）
     webSearch: bool = False  # 网络搜索开关
     maxSpeakers: int = 0    # 每轮最多发言人数（0=全部）
+
+
+class FollowupTranscriptItem(BaseModel):
+    role: str = "user"   # "user" | "assistant"
+    content: str = ""
+    name: str = ""       # "LIFEE" for prior follow-up cards; display name for personas
+
+
+class FollowupRequest(BaseModel):
+    userInput: str = ""
+    personas: list[PersonaInput] = []
+    history: list[FollowupTranscriptItem] = []  # Prior Q&A exchanges (including the current userInput at the end is fine)
 
 
 def _get_provider():
@@ -1410,6 +1425,38 @@ async def extract_memory(req: ExtractMemoryRequest):
         import traceback
         traceback.print_exc()
         return {"updated": False, "error": str(e)}
+
+
+# ---- Followup API ----
+
+@app.post("/followup")
+async def generate_followup_endpoint(req: FollowupRequest):
+    """Generate a single round of structured follow-up questions without touching
+    session / persona-streaming infra. Used by the home-page popup flow that
+    gathers context before the chat view opens.
+    """
+    from lifee.debate.moderator import generate_followup as _gen
+    lines = []
+    for m in (req.history or []):
+        if not m.content or not m.content.strip():
+            continue
+        if m.role == "user":
+            label = "user"
+        else:
+            label = m.name or "assistant"
+        lines.append(f"[{label}] {m.content.strip()}")
+    if req.userInput and req.userInput.strip():
+        lines.append(f"[user] {req.userInput.strip()}")
+    transcript = "\n".join(lines) or "[user] (no input)"
+    names = "、".join(
+        (p.name or p.id or "").strip() for p in (req.personas or []) if (p.name or p.id)
+    ) or "your guides"
+    try:
+        provider = _get_provider()
+    except Exception as e:
+        return {"data": None, "error": f"provider unavailable: {e}"}
+    data = await _gen(provider, names, transcript)
+    return {"data": data}
 
 
 # ---- Decision API ----

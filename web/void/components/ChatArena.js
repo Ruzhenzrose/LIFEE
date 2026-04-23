@@ -153,6 +153,7 @@
         initialMessages = [],
         initialOptions = [],
         parentSessionId = "",
+        initialMode = null,
         onSessionCreated,
         onOpenShare,
     }) => {
@@ -166,6 +167,11 @@
         const [showPaywall, setShowPaywall]     = useState(false);
         const [redeemCode, setRedeemCode]       = useState('');
         const [followUpMode, setFollowUpMode]   = useState(false);
+        // Pending answers for the latest unanswered follow-up card:
+        //   { [questionIdx]: selectedOptionText }
+        // Answered follow-ups derive their state from the next user message in history,
+        // so this only holds the in-flight form.
+        const [followupAnswers, setFollowupAnswers] = useState({});
         const [webSearchMode, setWebSearchMode] = useState(false);
         const [maxSpeakers, setMaxSpeakers]     = useState(0);
         const [language, setLanguage]           = useState(() => localStorage.getItem('lifee_lang') || '');
@@ -499,6 +505,7 @@
             stoppedRef.current = false;            // reopen Realtime gate for the new round
             const isActive = () => roundIdRef.current === myRound;
             setIsDebating(true);
+            setFollowupAnswers({});
             const cleanInput = (userInput ?? inputValue ?? '').toString().trim();
 
             if (cleanInput) {
@@ -679,6 +686,36 @@
         };
 
         // ── Render helpers ────────────────────────────────────────────────────
+        // Parse a lifee-followup message's content, which is a JSON envelope
+        // `{"__lifee_followup__": {intro, questions: [...]}}`. Returns null if the
+        // content isn't valid JSON yet (still streaming) or doesn't match the shape.
+        const parseFollowupEnvelope = (text) => {
+            if (!text || typeof text !== 'string') return null;
+            const trimmed = text.trim();
+            if (!trimmed.startsWith('{')) return null;
+            try {
+                const parsed = JSON.parse(trimmed);
+                const data = parsed && parsed.__lifee_followup__;
+                if (data && Array.isArray(data.questions)) return data;
+            } catch (_) {}
+            return null;
+        };
+
+        // Parse numbered answers from a user reply ("1. 英国\n2. 独自一人") into
+        // { [qIdx]: answerText }. Falls back to empty map if no structured lines.
+        const parseSubmittedAnswers = (text) => {
+            const out = {};
+            if (!text) return out;
+            for (const raw of String(text).split('\n')) {
+                const m = raw.trim().match(/^(\d+)\s*[\.、]\s*(.+)$/);
+                if (m) {
+                    const qi = parseInt(m[1], 10) - 1;
+                    if (qi >= 0) out[qi] = m[2].trim();
+                }
+            }
+            return out;
+        };
+
         const renderMessage = (m, idx) => {
             const isUser     = m.personaId === 'user';
             const isSystem   = m.personaId === 'system';
@@ -722,7 +759,115 @@
                 `;
             }
 
-            // Persona or follow-up message
+            // Follow-up: render as a structured form card (persistable via history).
+            // If the content isn't a valid JSON envelope — legacy messages from before
+            // the JSON refactor, or a chunk still streaming — fall through to the plain
+            // LIFEE bubble below so nothing disappears.
+            const followupEnvelope = isFollowUp ? parseFollowupEnvelope(m.text) : null;
+            if (isFollowUp && followupEnvelope) {
+                const data = followupEnvelope;
+                const nextUserMsg = history.slice(idx + 1).find(x => x.personaId === 'user');
+                const isAnswered = !!nextUserMsg;
+                const submittedAnswers = isAnswered ? parseSubmittedAnswers(nextUserMsg.text) : null;
+                const qs = data.questions || [];
+                const getAnswer = (qi) => isAnswered ? (submittedAnswers[qi] || '') : (followupAnswers[qi] || '');
+                const answeredCount = Object.keys(followupAnswers).length;
+                const sendAnswers = () => {
+                    const parts = qs
+                        .map((q, qi) => followupAnswers[qi] ? `${qi + 1}. ${followupAnswers[qi]}` : null)
+                        .filter(Boolean);
+                    if (!parts.length) return;
+                    const message = parts.join('\n');
+                    setFollowupAnswers({});
+                    runRound(message);
+                };
+                return html`
+                    <div key=${idx} class="w-full max-w-full animate-in">
+                        <div class=${`rounded-2xl border bg-surface-container/70 backdrop-blur-md p-4 space-y-3 transition-opacity ${
+                            isAnswered ? 'border-white/10 opacity-70' : 'border-primary/25'
+                        }`}>
+                            ${data.intro ? html`
+                                <p class="text-xs text-on-surface/70 italic leading-relaxed">${data.intro}</p>
+                            ` : null}
+                            ${qs.map((q, qi) => {
+                                const current = getAnswer(qi);
+                                const isPillMatch = (q.options || []).includes(current);
+                                const freeText = isPillMatch ? '' : current;
+                                return html`
+                                    <div key=${qi} class="space-y-1.5">
+                                        <p class="text-sm font-semibold text-on-surface">
+                                            <span class="text-primary/60 mr-2">Q${qi + 1}.</span>${q.q}
+                                        </p>
+                                        <div class="flex flex-wrap gap-2 pl-6">
+                                            ${(q.options || []).map((opt, oi) => {
+                                                const isSel = current === opt;
+                                                const baseCls = isSel
+                                                    ? 'bg-primary/15 border border-primary text-primary'
+                                                    : 'bg-surface-container-high/80 border border-white/15 text-on-surface/80';
+                                                const hoverCls = isAnswered ? '' : ' hover:border-primary/50 hover:text-primary hover:bg-surface-container';
+                                                return html`
+                                                    <button
+                                                        key=${oi}
+                                                        disabled=${isAnswered}
+                                                        onClick=${isAnswered ? null : () => setFollowupAnswers(prev => {
+                                                            if (prev[qi] === opt) {
+                                                                const { [qi]: _, ...rest } = prev;
+                                                                return rest;
+                                                            }
+                                                            return { ...prev, [qi]: opt };
+                                                        })}
+                                                        class=${'no-shine text-xs px-3 py-1.5 rounded-full transition-colors ' + baseCls + hoverCls + (isAnswered ? ' cursor-default' : '')}
+                                                    >
+                                                        <span class=${`mr-1.5 ${isSel ? 'text-primary/80' : 'text-primary/50'}`}>${String.fromCharCode(65 + oi)}</span>${opt}
+                                                    </button>
+                                                `;
+                                            })}
+                                        </div>
+                                        <div class="pl-6 pt-1">
+                                            <input
+                                                type="text"
+                                                placeholder=${t('chat.followUpCustom') || 'Or write your own…'}
+                                                value=${freeText}
+                                                readOnly=${isAnswered}
+                                                onInput=${isAnswered ? null : (e) => {
+                                                    const v = e.target.value;
+                                                    setFollowupAnswers(prev => {
+                                                        if (!v.trim()) {
+                                                            const { [qi]: _, ...rest } = prev;
+                                                            return rest;
+                                                        }
+                                                        return { ...prev, [qi]: v };
+                                                    });
+                                                }}
+                                                class=${`no-shine w-full text-xs px-3 py-1.5 rounded-lg bg-transparent border transition-colors focus:outline-none placeholder-on-surface/25 ${
+                                                    freeText
+                                                        ? 'border-primary/50 text-primary'
+                                                        : 'border-white/10 text-on-surface/80' + (isAnswered ? '' : ' focus:border-primary/40')
+                                                }`}
+                                            />
+                                        </div>
+                                    </div>
+                                `;
+                            })}
+                            ${!isAnswered ? html`
+                                <div class="flex items-center justify-end pt-1">
+                                    <button
+                                        onClick=${sendAnswers}
+                                        disabled=${answeredCount === 0}
+                                        class=${`no-shine text-xs font-semibold uppercase tracking-widest px-5 py-2 rounded-full transition-all ${
+                                            answeredCount === 0
+                                                ? 'bg-surface-container-high/40 text-on-surface/30 cursor-not-allowed'
+                                                : 'bg-primary text-on-primary hover:bg-primary/90'
+                                        }`}
+                                    >${t('chat.submitAnswers') || 'Send'} ${answeredCount > 0 ? `· ${answeredCount}/${qs.length}` : ''}</button>
+                                </div>
+                            ` : null}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Persona message (or follow-up fallback for legacy / partially-streamed content)
             const persona = isFollowUp
                 ? { name: 'LIFEE', avatar: '💬', id: 'lifee-followup' }
                 : (

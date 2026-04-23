@@ -12,9 +12,11 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8000 " ^| findstr "LISTENIN
     taskkill /F /PID %%a >nul 2>&1
 )
 
-echo [LIFEE] Starting backend in a new window (uvicorn, no --reload)...
-REM --reload uses watchfiles which segfaults on Python 3.13 on Windows.
-start "LIFEE backend" cmd /k "cd /d %~dp0 && uvicorn lifee.api:app --host 127.0.0.1 --port 8000"
+echo [LIFEE] Starting backend in a new window (uvicorn with --reload)...
+REM --reload: safe because watchfiles is NOT installed; uvicorn falls back to
+REM StatReload (stat-based polling) which does not segfault on Python 3.13.
+REM If you ever `pip install watchfiles`, drop --reload or the backend may crash.
+start "LIFEE backend" cmd /k "cd /d %~dp0 && uvicorn lifee.api:app --host 127.0.0.1 --port 8000 --reload"
 
 echo [LIFEE] Waiting 3s for server to boot...
 timeout /t 3 /nobreak >nul

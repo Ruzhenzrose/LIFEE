@@ -22,6 +22,82 @@ from .filter import StreamingFilter
 from .participant import Participant, ParticipantInfo
 
 
+async def generate_followup(provider, names: str, transcript: str) -> dict | None:
+    """独立生成一轮结构化追问。跟 Moderator 解耦，方便直接从 API 层调用（例如首页弹窗前先收信息）。
+
+    返回 {"intro": str, "questions": [{"q": str, "options": [str, ...]}]} ，
+    JSON 解析失败 / LLM 报错时返回 None。
+    """
+    from lifee.providers.base import Message, MessageRole
+    import json as _json, re as _re
+
+    prompt = f"""Before {names} discuss the user's topic, ask 2-3 follow-up questions to gather the key context you need.
+
+Recent conversation (the last [user] line is the message you are responding to):
+{transcript}
+
+Take the full conversation into account: if the user has already answered something (including via an earlier follow-up card), don't ask for it again. Focus only on what's still genuinely unknown.
+
+The user will see each question rendered as clickable chips plus a write-in text box.
+
+Output STRICT JSON (no prose, no markdown fences) with this exact shape:
+{{
+  "intro": "<one warm transition sentence in the user's language>",
+  "questions": [
+    {{"q": "<question text>", "options": ["<option 1>", "<option 2>", "<option 3>"]}}
+  ]
+}}
+
+What each option should be:
+- A single concrete answer that, on its own, fully resolves the question — so the
+  next turn has everything it needs from that one pick.
+- A specific named instance of the thing being asked about (a country, a stage, a
+  tool, a person, a price band). Match the user's context: enumerate the specific
+  answers most likely given what they said.
+- Chip-shaped: short and standalone, ideally ≤ 15 characters.
+
+Other rules:
+- 2-3 questions total
+- List as many options per question as naturally cover the likely answers
+- Sound like a curious friend, not a survey or intake form
+- Reply in the same language as the user
+- NO extra text outside the JSON object"""
+
+    try:
+        response = await provider.chat(
+            messages=[Message(role=MessageRole.USER, content=prompt)],
+            max_tokens=500,
+            temperature=0.3,
+        )
+        raw = (response.content or "").strip()
+        print(f"[followup] raw LLM output (first 300 chars): {raw[:300]!r}")
+        raw = _re.sub(r"^```(?:json)?\s*", "", raw)
+        raw = _re.sub(r"\s*```$", "", raw)
+        if not raw.startswith("{"):
+            m = _re.search(r"\{.*\}", raw, _re.DOTALL)
+            if m:
+                raw = m.group(0)
+        data = _json.loads(raw)
+        if not isinstance(data, dict):
+            return None
+        questions = data.get("questions") or []
+        if not isinstance(questions, list) or not questions:
+            return None
+        for q in questions:
+            if not isinstance(q, dict) or not q.get("q") or not isinstance(q.get("options"), list):
+                return None
+        return {
+            "intro": str(data.get("intro") or "").strip(),
+            "questions": [
+                {"q": str(q["q"]).strip(), "options": [str(o).strip() for o in q["options"] if str(o).strip()]}
+                for q in questions
+            ],
+        }
+    except Exception as e:
+        print(f"[followup] generate_followup error: {type(e).__name__}: {e}")
+        return None
+
+
 def clean_response(text: str) -> str:
     """
     清理 LLM 响应中可能泄露的格式标记
@@ -126,64 +202,24 @@ class Moderator:
         self.enable_moderator_check = enable_moderator_check  # 主持人预审开关
         self.language = language  # 用户偏好语言
 
-    async def check_clarification(self, user_input: str) -> str | None:
-        """主持人预审：判断用户输入是否需要补充信息。
-
-        仅在第一轮、开关开启时触发。
-        返回追问文本（需要补充时），或 None（信息已充分）。
-        """
-        if not self.enable_moderator_check:
-            return None
-        if self.round_number > 3:  # 前3轮可以追问，之后不再追问
-            return None
-        if not user_input or len(user_input.strip()) < 5:
+    async def check_clarification(self, user_input: str) -> dict | None:
+        """追问模式：开关开启时，无条件生成结构化追问（JSON）。委托给模块级
+        `generate_followup` 以便 API 层能直接复用。"""
+        if not self.enable_moderator_check or not user_input or not user_input.strip():
             return None
 
-        from lifee.providers.base import MessageRole
+        def _label(msg):
+            from lifee.providers.base import MessageRole as _MR
+            if msg.role == _MR.USER:
+                return "user"
+            return msg.name or "assistant"
+        recent = self.session.get_messages(limit=12)
+        transcript = "\n".join(
+            f"[{_label(m)}] {(m.content or '').strip()}" for m in recent if (m.content or '').strip()
+        ) or f"[user] {user_input}"
 
-        provider = self.participants[0].provider
         names = "、".join(p.info.display_name for p in self.participants)
-
-        prompt = f"""You are deciding whether to ask follow-up questions before {names} discuss the user's topic.
-
-User said:
-{user_input}
-
-Rules:
-- If the question is already specific enough (contains key context), output: PASS
-- If key details are missing that would make the advice generic, ask 2-3 casual follow-up questions
-- ONLY ask when truly needed. Simple greetings, clear questions, or specific scenarios → PASS
-
-If follow-up is needed:
-- Sound like a curious friend, NOT a survey or intake form
-- Give 2-3 options per question so the user can quickly pick
-- Max 3 questions
-- Start with a brief, warm transition line
-- Reply in the same language as the user
-
-Example:
-想更好地帮你分析，能先聊几个小问题吗？
-
-1. 你目前大概处于什么阶段？
-   A. 刚毕业/工作1-2年  B. 工作3-5年  C. 5年以上
-
-2. 你最在意的是什么？
-   A. 收入和稳定  B. 成长和学习  C. 自由和生活质量
-
-If info is sufficient, just output: PASS"""
-
-        try:
-            response = await provider.chat(
-                messages=[Message(role=MessageRole.USER, content=prompt)],
-                max_tokens=400,
-                temperature=0.3,
-            )
-            result = response.content.strip()
-            if result.upper().startswith("PASS"):
-                return None
-            return result
-        except Exception:
-            return None
+        return await generate_followup(self.participants[0].provider, names, transcript)
 
     async def run(
         self,
@@ -221,14 +257,20 @@ If info is sufficient, just output: PASS"""
         self.session.add_user_message(user_input, media=media)
 
         # 1.5 追问检查
+        print(f"[followup] enable_moderator_check={self.enable_moderator_check}, round={self.round_number}")
         if self.enable_moderator_check:
             followup = await self.check_clarification(user_input)
             if followup:
-                self.session.add_assistant_message(followup, name="LIFEE")
-                # 用一个虚拟 participant 标识追问，personaId = "lifee-followup"
+                # Store the structured follow-up directly as the message content (JSON string)
+                # so it persists into chat_messages as-is and the frontend can parse it back
+                # into a form card on reload. A small "__lifee_followup__" envelope lets us
+                # distinguish it cheaply from a human-typed message that happens to be JSON.
+                import json as _json
+                text = _json.dumps({"__lifee_followup__": followup}, ensure_ascii=False)
+                self.session.add_assistant_message(text, name="LIFEE")
                 class _FollowUpProxy:
                     info = ParticipantInfo(name="lifee-followup", display_name="LIFEE", emoji="💬")
-                yield (_FollowUpProxy(), followup, False)
+                yield (_FollowUpProxy(), text, False)
                 return
 
         # 获取所有参与者信息（用于构建上下文）
