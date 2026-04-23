@@ -173,6 +173,7 @@
     <script src="./components/ui.js"></script>
     <script src="./components/ChatArena.js"></script>
     <script src="./components/modals.js"></script>
+    <script src="./components/PersonaRecommendModal.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -1802,7 +1803,7 @@
         // ══════════════════════════════════════════════
         //  HOME VIEW
         // ══════════════════════════════════════════════
-        function HomeView({ context, setContext, setView, personas, selectedIds, setSelectedIds, startFreshDebate, chatSessions }) {
+        function HomeView({ context, setContext, setView, personas, selectedIds, setSelectedIds, setPersonas, startFreshDebate, chatSessions }) {
             // Domain classification by persona id
             const DOMAIN_MAP = {
                 'krishnamurti': 'Philosophy', 'lacan': 'Philosophy', 'Simone de Beauvoir': 'Philosophy',
@@ -1901,6 +1902,13 @@
             const [followupFlow, setFollowupFlow] = useState(null);
             // Shape: { round, card, answers, qa: [{q, a, options}], loading, error }
 
+            // Persona recommendation modal state. Opened after the follow-up flow
+            // completes so the user can pick recommended / AI-generated personas
+            // before the chat view opens.
+            const [recommendOpen, setRecommendOpen] = useState(false);
+            // Enriched situation staged for the chat view once the user confirms.
+            const [stagedSituation, setStagedSituation] = useState('');
+
             const fetchFollowupRound = async (qa, situation) => {
                 // Build history: user's situation, then any prior Q&A assistant/user turns.
                 const history = [{ role: 'user', content: situation }];
@@ -1942,21 +1950,17 @@
                     const answerText = parts.join('\n');
                     const qa = [...prev.qa, { card: prev.card, answers: prev.answers, answerText }];
                     if (prev.round >= 3) {
-                        // Finished — bake Q&A into situation and start the chat.
+                        // Finished — stage the enriched situation and open the
+                        // persona recommendation modal instead of diving into chat.
                         const lang = window.__lifeeLocale === 'zh' ? 'zh' : 'en';
                         const header = lang === 'zh' ? '补充信息：' : 'Additional context:';
-                        const blocks = qa.map((r, i) => {
-                            const qs = (r.card.questions || []).map((q, qi) => {
-                                const a = r.answers[qi];
-                                return a ? `- ${q.q} → ${a}` : null;
-                            }).filter(Boolean).join('\n');
-                            return qs;
-                        }).filter(Boolean).join('\n');
+                        const blocks = qa.map((r) => (r.card.questions || []).map((q, qi) => {
+                            const a = r.answers[qi];
+                            return a ? `- ${q.q} → ${a}` : null;
+                        }).filter(Boolean).join('\n')).filter(Boolean).join('\n');
                         const enriched = `${context.situation}\n\n${header}\n${blocks}`;
-                        setContext(c => ({ ...c, situation: enriched }));
-                        setTimeout(() => {
-                            (startFreshDebate || (() => setView('debate')))(null);
-                        }, 0);
+                        setStagedSituation(enriched);
+                        setTimeout(() => setRecommendOpen(true), 0);
                         return null;
                     }
                     // Kick off next round fetch
@@ -1975,13 +1979,14 @@
 
             const trySubmit = () => {
                 if (!context.situation?.trim()) return;
-                if (selectedIds.length === 0) {
-                    setToastMsg(t('home.pickVoice'));
-                    return;
-                }
-                // "A or B" mode: pop up the 3-round follow-up modal first.
+                // "A or B" mode: the recommend modal will supply voices, so an
+                // empty selection is fine here — user may not know who to ask yet.
                 if (mode === 'ab') {
                     startFollowupFlow();
+                    return;
+                }
+                if (selectedIds.length === 0) {
+                    setToastMsg(t('home.pickVoice'));
                     return;
                 }
                 // Other modes / no mode: go straight to chat.
@@ -2517,6 +2522,46 @@
                         isSel=${selectedIds.includes(detailPersona.id)}
                         onClose=${() => setDetailPersonaId(null)}
                         onToggle=${() => { toggleSelect(detailPersona.id); }}
+                    />` : null}
+
+                    ${recommendOpen ? html`<${window.VoidPersonaRecommendModal}
+                        isOpen=${true}
+                        onClose=${() => setRecommendOpen(false)}
+                        situation=${stagedSituation || context.situation}
+                        personas=${personas}
+                        selectedIds=${selectedIds}
+                        onConfirm=${({ ids, generatedPersonas: genP }) => {
+                            // Merge any AI-generated personas into the App-level personas
+                            // list so they render in the chat + sidebar consistently.
+                            if (genP && genP.length > 0 && typeof setPersonas === 'function') {
+                                const normalized = genP.map(p => ({
+                                    id: p.id || `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                                    name: p.name || 'New Voice',
+                                    role: p.role || 'GUIDE',
+                                    category: 'CREATIVE',
+                                    avatar: p.avatar || '✨',
+                                    voice: typeof p.voice === 'string' ? p.voice : '',
+                                    worldview: typeof p.voice === 'string' ? p.voice : '',
+                                    soul: p.soul || '',
+                                    knowledge: p.soul || '',
+                                    decisionStyle: p.soul ? p.soul.slice(0, 120) : '',
+                                    lifeContext: [],
+                                    isGenerated: true,
+                                }));
+                                setPersonas(prev => {
+                                    const existing = new Set(prev.map(p => p.id));
+                                    const add = normalized.filter(p => !existing.has(p.id));
+                                    return add.length ? [...prev, ...add] : prev;
+                                });
+                            }
+                            setSelectedIds(Array.isArray(ids) ? ids : []);
+                            setRecommendOpen(false);
+                            // Commit the enriched situation to context and kick off the debate.
+                            if (stagedSituation) setContext(c => ({ ...c, situation: stagedSituation }));
+                            setTimeout(() => {
+                                (startFreshDebate || (() => setView('debate')))(null);
+                            }, 0);
+                        }}
                     />` : null}
 
                     ${followupFlow ? (() => {
@@ -4012,6 +4057,7 @@
                     personas=${displayPersonas}
                     selectedIds=${selectedIds}
                     setSelectedIds=${setSelectedIds}
+                    setPersonas=${setPersonas}
                     startFreshDebate=${startFreshDebate}
                     chatSessions=${chatSessions}
                 />`;
