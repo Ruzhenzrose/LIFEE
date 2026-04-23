@@ -173,6 +173,7 @@
     <script src="./components/ui.js"></script>
     <script src="./components/ChatArena.js"></script>
     <script src="./components/modals.js"></script>
+    <script src="./components/PersonaRecommendModal.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -526,6 +527,9 @@
             'chat.webSearch':    { en: 'Web Search',    zh: '联网搜索' },
             'chat.webSearchDesc': { en: 'Ground answers in live web results (via Gemini)', zh: '基于实时网络搜索结果（Gemini 驱动）' },
             'chat.followUp':     { en: 'Follow-up Questions', zh: '追问' },
+            'chat.dismiss':      { en: 'Dismiss',        zh: '关闭' },
+            'chat.submitAnswers':{ en: 'Send',           zh: '提交' },
+            'chat.followUpCustom':{ en: 'Or write your own…', zh: '或自己填…' },
             'chat.followUpDesc': { en: 'After each reply, suggest tap-to-ask options', zh: '每次回复后给出可一键提问的选项' },
             'chat.maxSpeakers':  { en: 'Max Speakers',  zh: '最多发言人数' },
             'chat.all':          { en: 'All',           zh: '全部' },
@@ -1799,7 +1803,7 @@
         // ══════════════════════════════════════════════
         //  HOME VIEW
         // ══════════════════════════════════════════════
-        function HomeView({ context, setContext, setView, personas, selectedIds, setSelectedIds, startFreshDebate, chatSessions }) {
+        function HomeView({ context, setContext, setView, personas, selectedIds, setSelectedIds, setPersonas, startFreshDebate, chatSessions }) {
             // Domain classification by persona id
             const DOMAIN_MAP = {
                 'krishnamurti': 'Philosophy', 'lacan': 'Philosophy', 'Simone de Beauvoir': 'Philosophy',
@@ -1893,14 +1897,100 @@
                 return () => clearTimeout(t);
             }, [toastMsg]);
 
+            // Follow-up popup state: when mode === 'ab', send opens a 3-round
+            // Q&A modal that feeds richer context to the chat arena before it starts.
+            const [followupFlow, setFollowupFlow] = useState(null);
+            // Shape: { round, card, answers, qa: [{q, a, options}], loading, error }
+
+            // Persona recommendation modal state. Opened after the follow-up flow
+            // completes so the user can pick recommended / AI-generated personas
+            // before the chat view opens.
+            const [recommendOpen, setRecommendOpen] = useState(false);
+            // Enriched situation staged for the chat view once the user confirms.
+            const [stagedSituation, setStagedSituation] = useState('');
+
+            const fetchFollowupRound = async (qa, situation) => {
+                // Build history: user's situation, then any prior Q&A assistant/user turns.
+                const history = [{ role: 'user', content: situation }];
+                for (const round of qa) {
+                    history.push({ role: 'assistant', name: 'LIFEE', content: JSON.stringify({ __lifee_followup__: round.card }) });
+                    history.push({ role: 'user', content: round.answerText });
+                }
+                const selectedPersonas = personas.filter(p => selectedIds.includes(p.id));
+                const res = await fetch('/followup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userInput: '',  // transcript already carries the last line
+                        personas: selectedPersonas.map(p => ({ id: p.id, name: p.name })),
+                        history,
+                    }),
+                });
+                const data = await res.json().catch(() => ({}));
+                return data?.data || null;
+            };
+
+            const startFollowupFlow = async () => {
+                setFollowupFlow({ round: 1, card: null, answers: {}, qa: [], loading: true, error: '' });
+                try {
+                    const card = await fetchFollowupRound([], context.situation);
+                    if (!card) throw new Error('Could not generate follow-up questions.');
+                    setFollowupFlow({ round: 1, card, answers: {}, qa: [], loading: false, error: '' });
+                } catch (e) {
+                    setFollowupFlow({ round: 1, card: null, answers: {}, qa: [], loading: false, error: e?.message || 'Failed' });
+                }
+            };
+
+            const submitFollowupRound = async () => {
+                setFollowupFlow(prev => {
+                    if (!prev?.card) return prev;
+                    const parts = (prev.card.questions || [])
+                        .map((q, qi) => prev.answers[qi] ? `${qi + 1}. ${prev.answers[qi]}` : null)
+                        .filter(Boolean);
+                    const answerText = parts.join('\n');
+                    const qa = [...prev.qa, { card: prev.card, answers: prev.answers, answerText }];
+                    if (prev.round >= 3) {
+                        // Finished — stage the enriched situation and open the
+                        // persona recommendation modal instead of diving into chat.
+                        const lang = window.__lifeeLocale === 'zh' ? 'zh' : 'en';
+                        const header = lang === 'zh' ? '补充信息：' : 'Additional context:';
+                        const blocks = qa.map((r) => (r.card.questions || []).map((q, qi) => {
+                            const a = r.answers[qi];
+                            return a ? `- ${q.q} → ${a}` : null;
+                        }).filter(Boolean).join('\n')).filter(Boolean).join('\n');
+                        const enriched = `${context.situation}\n\n${header}\n${blocks}`;
+                        setStagedSituation(enriched);
+                        setTimeout(() => setRecommendOpen(true), 0);
+                        return null;
+                    }
+                    // Kick off next round fetch
+                    (async () => {
+                        try {
+                            const next = await fetchFollowupRound(qa, context.situation);
+                            if (!next) throw new Error('Could not generate follow-up questions.');
+                            setFollowupFlow({ round: prev.round + 1, card: next, answers: {}, qa, loading: false, error: '' });
+                        } catch (e) {
+                            setFollowupFlow(cur => cur ? { ...cur, loading: false, error: e?.message || 'Failed' } : cur);
+                        }
+                    })();
+                    return { round: prev.round + 1, card: null, answers: {}, qa, loading: true, error: '' };
+                });
+            };
+
             const trySubmit = () => {
                 if (!context.situation?.trim()) return;
+                // "A or B" mode: the recommend modal will supply voices, so an
+                // empty selection is fine here — user may not know who to ask yet.
+                if (mode === 'ab') {
+                    startFollowupFlow();
+                    return;
+                }
                 if (selectedIds.length === 0) {
                     setToastMsg(t('home.pickVoice'));
                     return;
                 }
-                // Home → always a new session (the sidebar keeps past ones)
-                (startFreshDebate || (() => setView('debate')))();
+                // Other modes / no mode: go straight to chat.
+                (startFreshDebate || (() => setView('debate')))(null);
             };
 
             // Preload persona cover images in parallel so first click is instant
@@ -2433,6 +2523,169 @@
                         onClose=${() => setDetailPersonaId(null)}
                         onToggle=${() => { toggleSelect(detailPersona.id); }}
                     />` : null}
+
+                    ${recommendOpen ? html`<${window.VoidPersonaRecommendModal}
+                        isOpen=${true}
+                        onClose=${() => setRecommendOpen(false)}
+                        situation=${stagedSituation || context.situation}
+                        personas=${personas}
+                        selectedIds=${selectedIds}
+                        onConfirm=${({ ids, generatedPersonas: genP }) => {
+                            // Merge any AI-generated personas into the App-level personas
+                            // list so they render in the chat + sidebar consistently.
+                            if (genP && genP.length > 0 && typeof setPersonas === 'function') {
+                                const normalized = genP.map(p => ({
+                                    id: p.id || `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                                    name: p.name || 'New Voice',
+                                    role: p.role || 'GUIDE',
+                                    category: 'CREATIVE',
+                                    avatar: p.avatar || '✨',
+                                    voice: typeof p.voice === 'string' ? p.voice : '',
+                                    worldview: typeof p.voice === 'string' ? p.voice : '',
+                                    soul: p.soul || '',
+                                    knowledge: p.soul || '',
+                                    decisionStyle: p.soul ? p.soul.slice(0, 120) : '',
+                                    lifeContext: [],
+                                    isGenerated: true,
+                                }));
+                                setPersonas(prev => {
+                                    const existing = new Set(prev.map(p => p.id));
+                                    const add = normalized.filter(p => !existing.has(p.id));
+                                    return add.length ? [...prev, ...add] : prev;
+                                });
+                            }
+                            setSelectedIds(Array.isArray(ids) ? ids : []);
+                            setRecommendOpen(false);
+                            // Commit the enriched situation to context and kick off the debate.
+                            if (stagedSituation) setContext(c => ({ ...c, situation: stagedSituation }));
+                            setTimeout(() => {
+                                (startFreshDebate || (() => setView('debate')))(null);
+                            }, 0);
+                        }}
+                    />` : null}
+
+                    ${followupFlow ? (() => {
+                        const { round, card, answers, loading, error } = followupFlow;
+                        const qs = card?.questions || [];
+                        const answeredCount = Object.keys(answers).length;
+                        const setAnswers = (fn) => setFollowupFlow(prev => prev ? { ...prev, answers: fn(prev.answers) } : prev);
+                        return html`
+                            <div class="fixed inset-0 z-50 flex items-center justify-center">
+                                <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+                                <div class="relative w-full max-w-2xl mx-4 bg-surface-container/95 backdrop-blur-2xl rounded-2xl border border-white/15 shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <p class="text-xs uppercase tracking-[0.3em] text-on-surface/80 font-bold">
+                                            ${t('home.mode.ab.title')} · ${round} / 3
+                                        </p>
+                                        <button
+                                            onClick=${() => setFollowupFlow(null)}
+                                            class="text-on-surface/40 hover:text-on-surface/80 transition-colors"
+                                            aria-label="Close"
+                                        >
+                                            <span class="material-symbols-outlined" style=${{ fontSize: '20px' }}>close</span>
+                                        </button>
+                                    </div>
+
+                                    ${loading ? html`
+                                        <div class="py-12 text-center text-sm text-on-surface/50 italic animate-in">
+                                            ${window.__lifeeLocale === 'zh' ? '正在生成问题…' : 'Generating questions…'}
+                                        </div>
+                                    ` : null}
+
+                                    ${error ? html`
+                                        <div class="py-8 text-center space-y-3 animate-in">
+                                            <p class="text-sm text-rose-400">${error}</p>
+                                            <button
+                                                onClick=${startFollowupFlow}
+                                                class="text-xs uppercase tracking-widest text-primary hover:text-primary/80"
+                                            >${window.__lifeeLocale === 'zh' ? '重试' : 'Retry'}</button>
+                                        </div>
+                                    ` : null}
+
+                                    ${!loading && !error && card ? html`
+                                        <div class="space-y-4 animate-in">
+                                            ${card.intro ? html`
+                                                <p class="text-sm text-on-surface/75 italic leading-relaxed">${card.intro}</p>
+                                            ` : null}
+                                            ${qs.map((q, qi) => {
+                                                const current = answers[qi] || '';
+                                                const isPillMatch = (q.options || []).includes(current);
+                                                const freeText = isPillMatch ? '' : current;
+                                                return html`
+                                                    <div key=${qi} class="space-y-2">
+                                                        <p class="text-sm font-semibold text-on-surface">
+                                                            <span class="text-primary/60 mr-2">Q${qi + 1}.</span>${q.q}
+                                                        </p>
+                                                        <div class="flex flex-wrap gap-2 pl-6">
+                                                            ${(q.options || []).map((opt, oi) => {
+                                                                const isSel = current === opt;
+                                                                return html`
+                                                                    <button
+                                                                        key=${oi}
+                                                                        onClick=${() => setAnswers(prev => {
+                                                                            if (prev[qi] === opt) {
+                                                                                const { [qi]: _, ...rest } = prev;
+                                                                                return rest;
+                                                                            }
+                                                                            return { ...prev, [qi]: opt };
+                                                                        })}
+                                                                        class=${`no-shine text-xs px-3 py-1.5 rounded-full transition-colors ${
+                                                                            isSel
+                                                                                ? 'bg-primary/15 border border-primary text-primary'
+                                                                                : 'bg-surface-container-high/80 border border-white/15 text-on-surface/80 hover:border-primary/50 hover:text-primary hover:bg-surface-container'
+                                                                        }`}
+                                                                    >
+                                                                        <span class=${`mr-1.5 ${isSel ? 'text-primary/80' : 'text-primary/50'}`}>${String.fromCharCode(65 + oi)}</span>${opt}
+                                                                    </button>
+                                                                `;
+                                                            })}
+                                                        </div>
+                                                        <div class="pl-6">
+                                                            <input
+                                                                type="text"
+                                                                placeholder=${t('chat.followUpCustom') || 'Or write your own…'}
+                                                                value=${freeText}
+                                                                onInput=${(e) => {
+                                                                    const v = e.target.value;
+                                                                    setAnswers(prev => {
+                                                                        if (!v.trim()) {
+                                                                            const { [qi]: _, ...rest } = prev;
+                                                                            return rest;
+                                                                        }
+                                                                        return { ...prev, [qi]: v };
+                                                                    });
+                                                                }}
+                                                                class=${`no-shine w-full text-xs px-3 py-1.5 rounded-lg bg-transparent border transition-colors focus:outline-none placeholder-on-surface/25 ${
+                                                                    freeText
+                                                                        ? 'border-primary/50 text-primary'
+                                                                        : 'border-white/10 text-on-surface/80 focus:border-primary/40'
+                                                                }`}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            })}
+                                            <div class="flex items-center justify-between pt-2">
+                                                <button
+                                                    onClick=${() => setFollowupFlow(null)}
+                                                    class="no-shine text-[10px] uppercase tracking-[0.25em] text-on-surface/40 hover:text-on-surface/70 transition-colors"
+                                                >${t('chat.dismiss') || 'Dismiss'}</button>
+                                                <button
+                                                    onClick=${submitFollowupRound}
+                                                    disabled=${answeredCount === 0}
+                                                    class=${`no-shine text-xs font-semibold uppercase tracking-widest px-5 py-2 rounded-full transition-all ${
+                                                        answeredCount === 0
+                                                            ? 'bg-surface-container-high/40 text-on-surface/30 cursor-not-allowed'
+                                                            : 'bg-primary text-on-primary hover:bg-primary/90'
+                                                    }`}
+                                                >${round === 3 ? (t('chat.submitAnswers') || 'Send') : (window.__lifeeLocale === 'zh' ? '下一步' : 'Next')} ${answeredCount > 0 ? `· ${answeredCount}/${qs.length}` : ''}</button>
+                                            </div>
+                                        </div>
+                                    ` : null}
+                                </div>
+                            </div>
+                        `;
+                    })() : null}
                 </div>
             `;
         }
@@ -3644,7 +3897,9 @@
             // Submitting from Home always starts a fresh session (empty sessionId
             // + no restored messages). Keeps the user's just-typed situation and
             // selected personas intact so ChatArena auto-starts with them.
-            const startFreshDebate = useCallback(() => {
+            const [initialMode, setInitialMode] = useState(null);
+            const startFreshDebate = useCallback((mode = null) => {
+                setInitialMode(mode);
                 setSessionId(null);
                 setSessionMessages([]);
                 setSessionSummaries([]);
@@ -3708,6 +3963,7 @@
                     initialMessages: sessionMessages,
                     initialOptions: sessionOptions,
                     parentSessionId: sessionId,
+                    initialMode: sessionId ? null : initialMode,
                     onSessionCreated: (id) => {
                         setSessionId(id);
                         refreshChatSessions();
@@ -3801,6 +4057,7 @@
                     personas=${displayPersonas}
                     selectedIds=${selectedIds}
                     setSelectedIds=${setSelectedIds}
+                    setPersonas=${setPersonas}
                     startFreshDebate=${startFreshDebate}
                     chatSessions=${chatSessions}
                 />`;
