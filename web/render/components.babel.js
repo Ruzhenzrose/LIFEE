@@ -1,176 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIFEE - Let Them Argue</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
-<script src="./data/navigation.js"></script>
-        <script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
-    <script src="./help/view.js"></script>
-    <script src="./my-chats/view.js"></script>
-    <script src="./my-personas/view.js"></script>
-    <script src="./settings/view.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap');
-
-        body {
-            font-family: 'Noto Sans SC', sans-serif;
-            background-color: #FDFBF7;
-            color: #5D576B;
-            margin: 0;
-            overflow: hidden;
-        }
-        .font-serif {
-            font-family: 'Noto Serif SC', serif;
-        }
-        .animate-in {
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        .focus-blue-brand:focus {
-            outline: none;
-            border-color: #98A6D4 !important;
-            box-shadow: 0 0 0 3px rgba(152, 166, 212, 0.3);
-        }
-
-        .text-blue-brand { color: #98A6D4; }
-        .bg-blue-brand { background-color: #98A6D4; }
-        .border-blue-brand { border-color: #98A6D4; }
-
-        /* Capsule toggle bar (SCENARIO / PROBLEM TYPE) */
-        .capsule-container {
-            background-color: #F1F3F4;
-            padding: 5px;
-            border-radius: 9999px;
-            display: inline-flex;
-            gap: 4px;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .capsule-item {
-            padding: 10px 36px;
-            border-radius: 9999px;
-            font-size: 10px;
-            font-weight: 900;
-            letter-spacing: 0.2em;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-        .capsule-item-active {
-            background-color: #98A6D4;
-            color: white;
-            box-shadow: 0 4px 12px rgba(152, 166, 212, 0.35);
-        }
-        .capsule-item-inactive {
-            color: #5D576B;
-            opacity: 0.5;
-        }
-        .capsule-item-inactive:hover {
-            opacity: 1;
-            background-color: rgba(255,255,255,0.6);
-        }
-
-        /* Landing category option button — unselected: white bg, thin gray border, light gray text */
-        .landing-opt {
-            background-color: white;
-            border: 1px solid #E8E6E0;
-            color: #5D576B;
-            opacity: 0.85;
-            border-radius: 9999px;
-            padding: 10px 20px;
-            font-size: 10px;
-            font-weight: 900;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            transition: all 0.25s ease;
-        }
-        .landing-opt:hover {
-            border-color: #98A6D4;
-            color: #98A6D4;
-            opacity: 1;
-        }
-        .landing-opt.selected {
-            background-color: #98A6D4;
-            color: white;
-            border-color: #98A6D4;
-            box-shadow: 0 4px 12px rgba(152, 166, 212, 0.35);
-            opacity: 1;
-        }
-
-        .sidebar-transition {
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Suggested questions scrollbar style */
-        .suggested-questions-scroll {
-            width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding: 6px 0 14px 0;
-            -webkit-overflow-scrolling: touch;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .suggested-questions-scroll::-webkit-scrollbar {
-            display: none;
-        }
-        .suggested-questions-container {
-            display: inline-flex;
-            gap: 12px;
-            padding: 0 4px;
-            min-width: 100%;
-        }
-        .question-capsule {
-            /* Tailwind preflight may set button background to transparent; use !important to ensure a solid button */
-            background: #FFFFFF !important;
-            background-color: #FFFFFF !important;
-            border: 1px solid rgba(232, 230, 224, 0.85);
-            border-radius: 9999px;
-            padding: 12px 20px;
-            white-space: nowrap;
-            font-size: 13px;
-            color: #5D576B;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            flex-shrink: 0;
-            box-shadow: none;
-        }
-        .question-capsule:hover {
-            border-color: #98A6D4;
-            color: #98A6D4;
-            background: #FFFFFF !important;
-            background-color: #FFFFFF !important;
-            box-shadow: none;
-            transform: translateY(-1px);
-        }
-        @media (min-width: 768px) {
-            .question-capsule {
-                padding: 14px 24px;
-                font-size: 14px;
-            }
-            .suggested-questions-container {
-                gap: 16px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+﻿        const { useState, useEffect, useRef } = React;
 
         const copyToClipboard = async (text) => {
             try {
@@ -209,7 +37,7 @@
             "First year after graduation",
             "Early career confusion",
             "Career transition",
-            "Around 30 — feeling stuck",
+            "Around 30 鈥?feeling stuck",
             "Relationship turning point",
             "Creative burnout",
             "Major failure or loss",
@@ -229,7 +57,7 @@
             ],
             problemType: [
                 "Early career confusion",
-                "Around 30 — feeling stuck",
+                "Around 30 鈥?feeling stuck",
                 "Creative burnout",
                 "Major failure or loss"
             ]
@@ -241,8 +69,8 @@
                 name: 'SERENE',
                 role: 'WARM COMFORTER',
                 category: 'SUPPORT',
-                worldview: "Gentleness isn't weakness — it's the strength to hold the storm.",
-                avatar: '✨',
+                worldview: "Gentleness isn't weakness 鈥?it's the strength to hold the storm.",
+                avatar: '鉁?,
                 decisionStyle: "Settle the feelings first, then choose: take small steps until life feels bearable again.",
                 lifeContext: [
                     { period: "Learning to hold myself", detail: "In the low point, I learned not to deny what I feel: soothe first, then act." },
@@ -255,13 +83,13 @@
                 name: 'The Entrepreneur',
                 role: 'FOUNDER / OPERATOR',
                 category: 'RATIONAL',
-                worldview: "Pressure isn't the problem — vagueness is. Break reality down and find the leverage.",
-                avatar: '📐',
+                worldview: "Pressure isn't the problem 鈥?vagueness is. Break reality down and find the leverage.",
+                avatar: '馃搻',
                 decisionStyle: "Calm under pressure: name the key constraints and pursue the fastest feedback loop.",
                 lifeContext: [
                     { period: "Operator Mode", detail: "Make decisions amid uncertainty: use data, cadence, and retrospectives to withstand pressure." }
                 ],
-                voice: "I'll be direct: you don't lack answers — you lack a testable hypothesis and the next step. Let's make this real."
+                voice: "I'll be direct: you don't lack answers 鈥?you lack a testable hypothesis and the next step. Let's make this real."
             },
             {
                 id: 'rebel',
@@ -269,7 +97,7 @@
                 role: 'DISRUPTIVE VOICE',
                 category: 'RATIONAL',
                 worldview: 'Status quo is the enemy of the soul.',
-                avatar: '🔥',
+                avatar: '馃敟',
                 voice: "If it doesn't hurt a little, you're probably lying to yourself."
             },
             {
@@ -278,8 +106,8 @@
                 role: 'POSITIVE PSYCHOLOGIST',
                 category: 'SUPPORT',
                 worldview: 'Warmth plus evidence turns confusion into direction.',
-                avatar: '🕯️',
-                voice: "First, steady the emotions; then look at the facts and options. You've been trying hard — we can break the confusion into smaller, doable pieces."
+                avatar: '馃暞锔?,
+                voice: "First, steady the emotions; then look at the facts and options. You've been trying hard 鈥?we can break the confusion into smaller, doable pieces."
             },
             {
                 id: 'audrey-hepburn',
@@ -287,19 +115,19 @@
                 role: 'ELEGANT MUSE',
                 category: 'CREATIVE',
                 worldview: "Elegance is the quiet courage to be kind, even when the world is loud.",
-                avatar: '🕊️',
+                avatar: '馃晩锔?,
                 cover_url: 'https://upload.wikimedia.org/wikipedia/commons/e/ed/My_Fair_Lady_Audrey_Hepburn.jpg',
                 cover_fit: 'cover',
                 cover_position: '50% 20%',
                 decisionStyle: "Choose the simplest graceful option: protect your dignity, keep your promise, and make one small act of kindness that moves the story forward.",
                 lifeContext: [
                     { period: "Carrying grace through hard years", detail: "Raised in Europe during WWII, she learned restraint, gratitude, and the art of standing tall without becoming hard." },
-                    { period: "Roman Holiday (1953)", detail: "An unexpected breakthrough — and an Academy Award for Best Actress. Sincerity over performance, softness as strength." },
-                    { period: "Breakfast at Tiffany’s (1961)", detail: "A cultural icon of style and solitude: lightness on the surface, longing underneath." },
-                    { period: "UNICEF Goodwill Ambassador (1988–1993)", detail: "Later in life she traveled relentlessly for children, turning fame into a tool for service rather than self." },
-                    { period: "Presidential Medal of Freedom (1992)", detail: "Honored for humanitarian work — proof that gentleness can also be public courage." }
+                    { period: "Roman Holiday (1953)", detail: "An unexpected breakthrough 鈥?and an Academy Award for Best Actress. Sincerity over performance, softness as strength." },
+                    { period: "Breakfast at Tiffany鈥檚 (1961)", detail: "A cultural icon of style and solitude: lightness on the surface, longing underneath." },
+                    { period: "UNICEF Goodwill Ambassador (1988鈥?993)", detail: "Later in life she traveled relentlessly for children, turning fame into a tool for service rather than self." },
+                    { period: "Presidential Medal of Freedom (1992)", detail: "Honored for humanitarian work 鈥?proof that gentleness can also be public courage." }
                 ],
-                voice: "Darling, breathe. Ask: what would look simple and honest tomorrow morning? We'll choose the small step that keeps your heart gentle — and your posture upright."
+                voice: "Darling, breathe. Ask: what would look simple and honest tomorrow morning? We'll choose the small step that keeps your heart gentle 鈥?and your posture upright."
             },
             {
                 id: 'krishnamurti',
@@ -307,13 +135,13 @@
                 role: 'THE QUESTIONER',
                 category: 'RATIONAL',
                 worldview: 'Truth is a pathless land. No method can lead you there.',
-                avatar: '🌿',
+                avatar: '馃尶',
                 decisionStyle: "Never gives answers. Only questions. Points you back to look at the problem itself, not solutions.",
                 lifeContext: [
                     { period: "The Dissolution", detail: "Dissolved the Order of the Star, rejecting the role of World Teacher that was prepared for him." },
                     { period: "Pathless Journey", detail: "Spent 60 years in dialogue, refusing to become an authority while speaking to millions." }
                 ],
-                voice: "Are you really asking, or seeking confirmation? Don't accept what I say — look for yourself."
+                voice: "Are you really asking, or seeking confirmation? Don't accept what I say 鈥?look for yourself."
             },
             {
                 id: 'lacan',
@@ -321,7 +149,7 @@
                 role: 'THE ANALYST',
                 category: 'RATIONAL',
                 worldview: 'Truth can only be half-said. The complete truth is impossible.',
-                avatar: '🪞',
+                avatar: '馃獮',
                 decisionStyle: "Responds to questions with questions. No comfort, no advice. Cuts through certainty to let the unconscious speak.",
                 lifeContext: [
                     { period: "Return to Freud", detail: "Revolutionized psychoanalysis by insisting: the unconscious is structured like a language." },
@@ -331,8 +159,8 @@
             }
         ];
 
-        // ✅ LIFEE API (JSON: { messages: [...], options: [...] })
-        const LIFEE_API = "https://lifee-api.guolinn.workers.dev/decision";
+        // 鉁?LIFEE API (JSON: { messages: [...], options: [...] })
+        const LIFEE_API = "https://lifee-q94l.onrender.com/decision";
 
         async function fetchLifeeDecision(payload, url = LIFEE_API) {
             const res = await fetch(url, {
@@ -421,8 +249,7 @@
         }
 
         async function fetchLifeeDecisionProgressive(payload, { onMessage, onOptions } = {}) {
-            // 默认：按 persona 逐个请求，先出第一个角色的消息，再出下一个（体感更快）
-            const personas = Array.isArray(payload?.personas) ? payload.personas : [];
+            // 榛樿锛氭寜 persona 閫愪釜璇锋眰锛屽厛鍑虹涓€涓鑹茬殑娑堟伅锛屽啀鍑轰笅涓€涓紙浣撴劅鏇村揩锛?            const personas = Array.isArray(payload?.personas) ? payload.personas : [];
             if (personas.length <= 1) {
                 const data = await fetchLifeeDecision(payload);
                 if (Array.isArray(data?.messages)) {
@@ -450,8 +277,9 @@
                     }
                 }
                 if (Array.isArray(data?.options)) lastOptions = data.options;
-                // 给 React 一次渲染机会，让“先出第一个角色”更明显
-                await sleep(0);
+                // 缁?React 涓€娆℃覆鏌撴満浼氾紱澶氳鑹叉椂鍔犵煭鏆傚欢杩熼伩鍏?Gemini rate limit
+                if (i < personas.length - 1) await sleep(2000);
+                else await sleep(0);
             }
             onOptions?.(lastOptions);
         }
@@ -475,7 +303,7 @@
         // --- User avatar (local, upload or random icon) ---
         const USER_AVATAR_KEY = 'lifee_user_avatar';
         const USER_AVATAR_DEFAULT_KEY = 'lifee_user_avatar_default';
-        const USER_AVATAR_CHOICES = ['✨', '🌿', '🔥', '🕯️', '🪞', '🦉', '🌊', '💎', '🎭', '🛡️', '🌱', '☁️'];
+        const USER_AVATAR_CHOICES = ['鉁?, '馃尶', '馃敟', '馃暞锔?, '馃獮', '馃', '馃寠', '馃拵', '馃幁', '馃洝锔?, '馃尡', '鈽侊笍'];
 
         const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -487,7 +315,7 @@
                 window.localStorage.setItem(USER_AVATAR_DEFAULT_KEY, next);
                 return next;
             } catch (_) {
-                return '👤';
+                return '馃懁';
             }
         };
 
@@ -495,7 +323,7 @@
             try {
                 return window.localStorage.getItem(USER_AVATAR_KEY) || getOrCreateDefaultUserAvatar();
             } catch (_) {
-                return '👤';
+                return '馃懁';
             }
         };
 
@@ -512,7 +340,7 @@
                 window.localStorage.setItem(USER_AVATAR_DEFAULT_KEY, next);
                 return next;
             } catch (_) {
-                return '👤';
+                return '馃懁';
             }
         };
 
@@ -530,7 +358,7 @@
         // --- Persona avatar overrides (local) ---
         const PERSONA_AVATAR_OVERRIDES_KEY = 'lifee_persona_avatar_overrides';
         const PERSONA_COVER_OVERRIDES_KEY = 'lifee_persona_cover_overrides';
-        const DEFAULT_PERSONA_ICONS = ['✨', '🌿', '🔥', '🕯️', '🪞', '🦉', '🌊', '💎', '🎭', '🛡️', '🌱', '☁️', '👤'];
+        const DEFAULT_PERSONA_ICONS = ['鉁?, '馃尶', '馃敟', '馃暞锔?, '馃獮', '馃', '馃寠', '馃拵', '馃幁', '馃洝锔?, '馃尡', '鈽侊笍', '馃懁'];
 
         const loadPersonaAvatarOverrides = () => {
             try {
@@ -580,11 +408,11 @@
                         </>
                     ) : (
                         <>
-                            <div className="absolute -top-10 -left-8 text-[120px] opacity-[0.08] select-none">{avatar || '👤'}</div>
-                            <div className="absolute -bottom-12 -right-8 text-[140px] opacity-[0.07] select-none">{avatar || '👤'}</div>
+                            <div className="absolute -top-10 -left-8 text-[120px] opacity-[0.08] select-none">{avatar || '馃懁'}</div>
+                            <div className="absolute -bottom-12 -right-8 text-[140px] opacity-[0.07] select-none">{avatar || '馃懁'}</div>
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <div className="w-20 h-20 rounded-[28px] bg-white/70 border border-white shadow-sm flex items-center justify-center">
-                                    <AvatarDisplay avatar={avatar || '👤'} className="w-full h-full text-3xl opacity-60" />
+                                    <AvatarDisplay avatar={avatar || '馃懁'} className="w-full h-full text-3xl opacity-60" />
                                 </div>
                             </div>
                         </>
@@ -758,7 +586,7 @@
 
         const PersonaEditModal = ({ isOpen, persona, onClose, onSave }) => {
             const [draft, setDraft] = useState(null);
-            const emojis = ['👤', '🎭', '🛡️', '🌱', '🦉', '💎', '🌩️', '🌊', '🔥', '🎀', '🧸', '☁️'];
+            const emojis = ['馃懁', '馃幁', '馃洝锔?, '馃尡', '馃', '馃拵', '馃尒锔?, '馃寠', '馃敟', '馃巰', '馃Ц', '鈽侊笍'];
 
             useEffect(() => {
                 if (!isOpen || !persona) return;
@@ -767,7 +595,7 @@
                     role: persona.role || '',
                     worldview: persona.worldview || '',
                     voice: persona.voice || '',
-                    avatar: persona.avatar || '👤'
+                    avatar: persona.avatar || '馃懁'
                 });
             }, [isOpen, persona?.id]);
 
@@ -1019,8 +847,8 @@
 
         const PersonaBuilder = ({ onSave, onCancel }) => {
             const [step, setStep] = useState(1);
-            const [newP, setNewP] = useState({ name: '', role: '', worldview: '', avatar: '👤', voice: '', knowledge: '' });
-            const emojis = ['👤', '🎭', '🛡️', '🌱', '🦉', '💎', '🌩️', '🌊', '🔥', '🎀', '🧸', '☁️'];
+            const [newP, setNewP] = useState({ name: '', role: '', worldview: '', avatar: '馃懁', voice: '', knowledge: '' });
+            const emojis = ['馃懁', '馃幁', '馃洝锔?, '馃尡', '馃', '馃拵', '馃尒锔?, '馃寠', '馃敟', '馃巰', '馃Ц', '鈽侊笍'];
             return (
                 <div className="max-w-2xl mx-auto w-full pt-8 md:pt-12 px-4 font-sans animate-in">
                     <div className="mb-8 flex items-center justify-between">
@@ -1107,16 +935,11 @@
                         }
                     };
 
-                    // Prefer SSE streaming (single request, progressive persona outputs).
-                    try {
-                        await fetchLifeeDecisionStream(payload, handlers);
-                    } catch (streamErr) {
-                        console.warn('stream failed; fallback to progressive JSON calls', streamErr);
-                        await fetchLifeeDecisionProgressive(payload, handlers);
-                    }
+                    // Render free tier doesn't support SSE 鈥?use progressive JSON directly
+                    await fetchLifeeDecisionProgressive(payload, handlers);
                 } catch (e) {
                     console.error(e);
-                    setHistory(prev => [...prev, { personaId: "system", text: "(Request failed) Check API / CORS / response format" }]);
+                    setHistory(prev => [...prev, { personaId: "system", text: `(Request failed) ${e.message}` }]);
                     setOptions([]);
                 } finally {
                     setIsDebating(false);
@@ -1126,7 +949,7 @@
             const copyText = (text) => { copyToClipboard(text); };
 
             const quoteText = (text, name) => {
-                const quote = `"${text}" — ${name}\n\n`;
+                const quote = `"${text}" 鈥?${name}\n\n`;
                 setInputValue(prev => quote + prev);
                 inputFieldRef.current?.focus();
             };
@@ -1152,7 +975,7 @@
                             const isUser = m.personaId === 'user';
                             const p = isUser
                                 ? { name: 'YOU', avatar: (userAvatar || loadUserAvatar()) }
-                                : (selectedPersonas.find(x => x.id === m.personaId) || (m.personaId === "system" ? { name: "SYSTEM", avatar: "⚠️" } : { name: 'Voice', avatar: '☁️' }));
+                                : (selectedPersonas.find(x => x.id === m.personaId) || (m.personaId === "system" ? { name: "SYSTEM", avatar: "鈿狅笍" } : { name: 'Voice', avatar: '鈽侊笍' }));
                             return (
                                 <div key={idx} className={`flex gap-4 md:gap-5 ${isUser ? 'flex-row-reverse' : 'items-start'} animate-in`}>
                                     <div className={`w-10 h-10 md:w-11 md:h-11 rounded-full border flex items-center justify-center shadow-sm shrink-0 bg-white overflow-hidden ${isUser ? 'border-blue-brand/30' : 'border-[#F0EDEA]'}`}><AvatarDisplay avatar={p.avatar} className="w-full h-full text-2xl" /></div>
@@ -1192,7 +1015,7 @@
                     <div className="flex justify-center px-4 w-full"><div className="inline-flex bg-white/60 backdrop-blur-md p-1.5 rounded-full border-2 border-white shadow-lg whitespace-nowrap">{['DEBATE', 'PERSONA'].map(tab => <button key={tab} onClick={() => setCommunityTab(tab)} className={`px-8 md:px-12 py-2.5 md:py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${communityTab === tab ? 'bg-blue-brand text-white shadow-lg scale-105' : 'text-[#5D576B]/40 hover:text-blue-brand'}`}>{tab}</button>)}</div></div>
                 </div>
                 {communityTab === 'DEBATE' ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 animate-in">{[1, 2, 3, 4].map(i => <div key={i} className="bg-white p-8 rounded-[48px] border border-[#E8E6E0] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"><div className="flex items-center gap-5 mb-6"><div className="w-12 h-12 rounded-2xl bg-[#FDFBF7] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🎭</div><div><h4 className="font-bold text-lg text-[#1A1A1A]">Shared Reflection #{i}204</h4><p className="text-[10px] uppercase font-bold text-blue-brand tracking-widest">3 Voices Engaging</p></div></div><p className="text-sm italic opacity-60 leading-relaxed line-clamp-2">"Exploring the complex tension between the safety of the known and the fear of the unknown during graduation..."</p><div className="mt-8 pt-6 border-t border-slate-50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-30"><span>Reflected 2 days ago</span><span className="group-hover:text-blue-brand transition-colors">Enter Archive →</span></div></div>)}</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 animate-in">{[1, 2, 3, 4].map(i => <div key={i} className="bg-white p-8 rounded-[48px] border border-[#E8E6E0] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"><div className="flex items-center gap-5 mb-6"><div className="w-12 h-12 rounded-2xl bg-[#FDFBF7] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">馃幁</div><div><h4 className="font-bold text-lg text-[#1A1A1A]">Shared Reflection #{i}204</h4><p className="text-[10px] uppercase font-bold text-blue-brand tracking-widest">3 Voices Engaging</p></div></div><p className="text-sm italic opacity-60 leading-relaxed line-clamp-2">"Exploring the complex tension between the safety of the known and the fear of the unknown during graduation..."</p><div className="mt-8 pt-6 border-t border-slate-50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-30"><span>Reflected 2 days ago</span><span className="group-hover:text-blue-brand transition-colors">Enter Archive 鈫?/span></div></div>)}</div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 animate-in">
                         {INITIAL_PERSONAS.map(p => {
@@ -1213,7 +1036,7 @@
                                     <div className="mt-auto text-left space-y-2">
                                         <h4 className="font-black text-xl md:text-2xl text-[#1A1A1A] tracking-tighter uppercase italic">{p.name}</h4>
                                         <p className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-blue-brand/80">COMMUNITY CREATION</p>
-                                        <p className="text-[10px] md:text-xs italic opacity-40 leading-relaxed line-clamp-2">“{p.worldview}”</p>
+                                        <p className="text-[10px] md:text-xs italic opacity-40 leading-relaxed line-clamp-2">鈥渰p.worldview}鈥?/p>
                                     </div>
                                 </div>
                             );
@@ -1223,7 +1046,7 @@
             </div>
         );
 
-        // ── Job Offer Priority Modal ──────────────────────────────────────────────
+        // 鈹€鈹€ Job Offer Priority Modal 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
         const JOB_DIMENSIONS = [
             { id: 1, label: 'Money (short-term income)' },
             { id: 2, label: 'Growth potential' },
@@ -1263,8 +1086,8 @@
             const removeOffer = (id) => setOffers(prev => prev.filter(o => o.id !== id));
             const handleFinalConfirm = () => {
                 const ranked = items.map((item, i) => `${i + 1}. ${item.label}`).join('\n');
-                const offerTexts = offers.map((o, i) => { const name = `Offer ${String.fromCharCode(65 + i)}${o.company ? ` — ${o.company}` : ''}`; const fields = [o.stage && `Stage: ${o.stage}`, o.role && `Role: ${o.role}`, o.cash && `Cash comp: ${o.cash}`, o.equity && `Equity: ${o.equity}`, o.clarity && `Role clarity: ${o.clarity}`, o.reportsTo && `Reports to: ${o.reportsTo}`].filter(Boolean).map(f => `  • ${f}`).join('\n'); const notesLine = o.notes ? `\n  Notes: ${o.notes}` : ''; return `${name}${fields ? '\n' + fields : ''}${notesLine}`; }).join('\n\n');
-                onConfirm(`I'm not sure which job offer to choose.\n\nMy priorities (most → least important):\n${ranked}\n\n${offerTexts}`);
+                const offerTexts = offers.map((o, i) => { const name = `Offer ${String.fromCharCode(65 + i)}${o.company ? ` 鈥?${o.company}` : ''}`; const fields = [o.stage && `Stage: ${o.stage}`, o.role && `Role: ${o.role}`, o.cash && `Cash comp: ${o.cash}`, o.equity && `Equity: ${o.equity}`, o.clarity && `Role clarity: ${o.clarity}`, o.reportsTo && `Reports to: ${o.reportsTo}`].filter(Boolean).map(f => `  鈥?${f}`).join('\n'); const notesLine = o.notes ? `\n  Notes: ${o.notes}` : ''; return `${name}${fields ? '\n' + fields : ''}${notesLine}`; }).join('\n\n');
+                onConfirm(`I'm not sure which job offer to choose.\n\nMy priorities (most 鈫?least important):\n${ranked}\n\n${offerTexts}`);
                 onClose();
             };
             const labelCls = "text-[9px] uppercase tracking-[0.2em] font-black text-[#5D576B]/40 mb-1";
@@ -1280,7 +1103,7 @@
                                 <div className="text-center space-y-1.5 pr-4">
                                     <p className="text-[9px] uppercase tracking-[0.3em] font-black text-blue-brand/40">Step 1 of 2</p>
                                     <h2 className="text-2xl font-serif italic tracking-tight text-[#1A1A1A] leading-snug">What matters most to you?</h2>
-                                    <p className="text-[9px] uppercase tracking-[0.25em] font-black text-[#5D576B]/40">Drag to rank · most → least important</p>
+                                    <p className="text-[9px] uppercase tracking-[0.25em] font-black text-[#5D576B]/40">Drag to rank 路 most 鈫?least important</p>
                                 </div>
                                 <div className="flex flex-col gap-2.5">
                                     {items.map((item, i) => (
@@ -1291,7 +1114,7 @@
                                         </div>
                                     ))}
                                 </div>
-                                <button onClick={() => setStep(2)} className="w-full py-4 bg-blue-brand text-white rounded-full font-black uppercase tracking-[0.2em] text-[11px] shadow-lg hover:shadow-xl hover:translate-y-[-1px] transition-all active:scale-95 mt-1">Next — Add Your Offers</button>
+                                <button onClick={() => setStep(2)} className="w-full py-4 bg-blue-brand text-white rounded-full font-black uppercase tracking-[0.2em] text-[11px] shadow-lg hover:shadow-xl hover:translate-y-[-1px] transition-all active:scale-95 mt-1">Next 鈥?Add Your Offers</button>
                             </div>
                         ) : (
                             <>
@@ -1310,7 +1133,7 @@
                                             <div><p className={labelCls}>Company name</p><input type="text" className={inputCls} placeholder="e.g. Acme Corp" value={offer.company} onChange={e => updateOffer(offer.id, 'company', e.target.value)} /></div>
                                             <div><p className={labelCls}>Stage</p><PillSelect options={STAGES} value={offer.stage} onChange={v => updateOffer(offer.id, 'stage', v)} /></div>
                                             <div><p className={labelCls}>Role type</p><PillSelect options={ROLES} value={offer.role} onChange={v => updateOffer(offer.id, 'role', v)} /></div>
-                                            <div><p className={labelCls}>Total cash comp</p><input type="text" className={inputCls} placeholder="e.g. ¥500k / year" value={offer.cash} onChange={e => updateOffer(offer.id, 'cash', e.target.value)} /></div>
+                                            <div><p className={labelCls}>Total cash comp</p><input type="text" className={inputCls} placeholder="e.g. 楼500k / year" value={offer.cash} onChange={e => updateOffer(offer.id, 'cash', e.target.value)} /></div>
                                             <div><p className={labelCls}>Equity</p><PillSelect options={EQUITY_OPTS} value={offer.equity} onChange={v => updateOffer(offer.id, 'equity', v)} /></div>
                                             <div><p className={labelCls}>Role clarity</p><PillSelect options={CLARITY_OPTS} value={offer.clarity} onChange={v => updateOffer(offer.id, 'clarity', v)} /></div>
                                             <div><p className={labelCls}>Reports to</p><PillSelect options={REPORTS_OPTS} value={offer.reportsTo} onChange={v => updateOffer(offer.id, 'reportsTo', v)} /></div>
@@ -1329,9 +1152,9 @@
             );
         };
 
-        // ── Persona Recommendation Modal ──────────────────────────────────────────
+        // 鈹€鈹€ Persona Recommendation Modal 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
         const PERSONA_KEYWORDS_MAP = { 'buffett': ['invest','money','offer','salary','cash','compensation','stock','value','financial','wealth'], 'munger': ['decision','choice','choose','weigh','invert','mistake','bias','tradeoff','offer','compare'], 'drucker': ['career','job','work','first job','offer','manage','skill','strength','contribute','role','position','effectiveness'], 'welch': ['company','boss','leader','team','performance','hire','culture','candor','win','execute','job','promotion'], 'architect': ['startup','founder','build','product','series','seed','venture','equity','stage','business','bd'], 'shannon': ['engineer','tech','software','data','signal','information','noise','algorithm'], 'turing': ['code','software','ai','algorithm','machine','program','computer'], 'vonneumann': ['game','strategy','optimize','rational','theory','model','math'], 'serene': ['empty','lonely','sad','hurt','feel','lost','confused','alone','hollow','numb','depressed'], 'caretaker': ['anxious','worry','stress','burnout','tired','overwhelm','pressure','scared','afraid','exhausted'], 'rebel': ['stuck','trapped','break','quit','leave','escape','change','disrupt','unconventional','beijing','stay or leave'], 'audrey-hepburn': ['relationship','love','crush','partner','romance','dating','heart','confess'], 'krishnamurti': ['meaning','why','purpose','philosophy','life','question','freedom','who am i','truth'], 'lacan': ['desire','unconscious','identity','self','pattern','repeat','why do i'], 'tarot-master': ['uncertain','unknown','crossroads','torn','sign','fate','future','destiny'] };
-        const PERIOD_BONUSES_MAP = { 'My first job': ['drucker','welch','buffett','architect'], 'Career transition': ['drucker','welch','rebel','munger'], 'First year after graduation': ['drucker','caretaker','serene','rebel'], 'Relationship turning point': ['audrey-hepburn','serene','caretaker','krishnamurti'], 'Around 30 — feeling stuck': ['rebel','krishnamurti','lacan','caretaker'], 'Early career confusion': ['drucker','caretaker','serene','welch'], 'Creative burnout': ['rebel','krishnamurti','serene','audrey-hepburn'], 'Major failure or loss': ['serene','caretaker','krishnamurti','munger'], 'Starting over in a new city': ['rebel','serene','caretaker','drucker'], 'Becoming independent': ['rebel','drucker','welch','buffett'], 'First time studying abroad': ['serene','caretaker','rebel','audrey-hepburn'] };
+        const PERIOD_BONUSES_MAP = { 'My first job': ['drucker','welch','buffett','architect'], 'Career transition': ['drucker','welch','rebel','munger'], 'First year after graduation': ['drucker','caretaker','serene','rebel'], 'Relationship turning point': ['audrey-hepburn','serene','caretaker','krishnamurti'], 'Around 30 鈥?feeling stuck': ['rebel','krishnamurti','lacan','caretaker'], 'Early career confusion': ['drucker','caretaker','serene','welch'], 'Creative burnout': ['rebel','krishnamurti','serene','audrey-hepburn'], 'Major failure or loss': ['serene','caretaker','krishnamurti','munger'], 'Starting over in a new city': ['rebel','serene','caretaker','drucker'], 'Becoming independent': ['rebel','drucker','welch','buffett'], 'First time studying abroad': ['serene','caretaker','rebel','audrey-hepburn'] };
         const scoreAndRecommend = (situation, periods, allPersonas) => {
             const text = (situation + ' ' + (periods||[]).join(' ')).toLowerCase();
             const scores = {};
@@ -1364,9 +1187,9 @@
                         <div className="w-10 h-1 bg-[#E0DDD8] rounded-full mx-auto mt-4 flex-shrink-0 md:hidden" />
                         <button onClick={onClose} className="absolute top-5 right-6 w-8 h-8 rounded-full bg-[#F0EDEA] flex items-center justify-center text-[#5D576B]/60 hover:text-[#5D576B] transition-colors z-10"><Icon name="X" size={16} /></button>
                         <div className="flex-shrink-0 px-8 pt-8 pb-5 md:px-10 md:pt-10">
-                            <p className="text-[9px] uppercase tracking-[0.3em] font-black text-blue-brand/50 mb-2">✦ Just for you</p>
+                            <p className="text-[9px] uppercase tracking-[0.3em] font-black text-blue-brand/50 mb-2">鉁?Just for you</p>
                             <h2 className="text-2xl font-serif italic tracking-tight text-[#1A1A1A] leading-snug pr-8">These voices might resonate</h2>
-                            <p className="text-[10px] text-[#5D576B]/50 mt-1.5">Based on what you shared · tap to select or deselect</p>
+                            <p className="text-[10px] text-[#5D576B]/50 mt-1.5">Based on what you shared 路 tap to select or deselect</p>
                         </div>
                         <div className="flex-1 overflow-y-auto no-scrollbar px-8 md:px-10 pb-4">
                             {loading ? (<div className="grid grid-cols-2 gap-3">{[0,1,2,3].map(i => (<div key={i} className="rounded-[22px] border-2 border-[#F0EDEA] bg-white p-4 flex flex-col gap-3 animate-pulse"><div className="w-10 h-10 rounded-full bg-[#F0EDEA]" /><div className="h-3 bg-[#F0EDEA] rounded-full w-3/4" /><div className="h-2 bg-[#F0EDEA] rounded-full w-1/2" /><div className="h-2 bg-[#F0EDEA] rounded-full w-full" /></div>))}</div>) : (
@@ -1378,7 +1201,7 @@
                                             <div className={`absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSel ? 'bg-blue-brand border-blue-brand' : 'border-[#D8D5D0]'}`}>{isSel && <Icon name="Check" size={11} className="text-white" />}</div>
                                             {persona.cover_url ? (<div className="w-10 h-10 rounded-full bg-[#F0EDEA] overflow-hidden flex-shrink-0" style={{backgroundImage:`url(${persona.cover_url})`,backgroundSize:'cover',backgroundPosition:persona.cover_position||'50% 30%'}} />) : (<div className="w-10 h-10 rounded-full bg-[#F0EDEA] flex items-center justify-center text-xl flex-shrink-0">{persona.avatar||'?'}</div>)}
                                             <div className="min-w-0 pr-4"><p className="font-serif italic font-bold text-[#1A1A1A] text-sm leading-tight truncate">{persona.name}</p><p className="text-[9px] uppercase tracking-widest text-[#5D576B]/50 mt-0.5 leading-tight">{persona.role}</p></div>
-                                            {persona.voice && <p className="text-[10px] text-[#5D576B]/60 italic leading-relaxed line-clamp-2">"{persona.voice.slice(0,72)}{persona.voice.length>72?'…':''}"</p>}
+                                            {persona.voice && <p className="text-[10px] text-[#5D576B]/60 italic leading-relaxed line-clamp-2">"{persona.voice.slice(0,72)}{persona.voice.length>72?'鈥?:''}"</p>}
                                         </button>
                                     );
                                 })}
@@ -1388,7 +1211,7 @@
                         </div>
                         <div className="flex-shrink-0 px-8 pb-8 md:px-10 md:pb-10 pt-4 border-t border-[#F0EDEA] space-y-3">
                             <button onClick={handleConfirm} disabled={picks.length===0||loading} className="w-full py-4 bg-blue-brand text-white rounded-full font-black uppercase tracking-[0.2em] text-[11px] shadow-lg hover:shadow-xl hover:translate-y-[-1px] transition-all active:scale-95 disabled:opacity-30">Add to My Panel & Continue</button>
-                            <button onClick={() => onConfirm(selectedIds)} className="w-full py-2 text-[10px] uppercase tracking-[0.2em] font-black text-[#5D576B]/40 hover:text-[#5D576B]/70 transition-colors">Skip — I'll choose my own</button>
+                            <button onClick={() => onConfirm(selectedIds)} className="w-full py-2 text-[10px] uppercase tracking-[0.2em] font-black text-[#5D576B]/40 hover:text-[#5D576B]/70 transition-colors">Skip 鈥?I'll choose my own</button>
                         </div>
                     </div>
                 </div>
@@ -1396,863 +1219,3 @@
         };
 
         function App() {
-            const [view, setView] = useState('home');
-            const [context, setContext] = useState({ situation: '', landingPeriods: [] });
-            const [landingTab, setLandingTab] = useState('scenario');
-            const [personas, setPersonas] = useState(INITIAL_PERSONAS);
-            const [personaKnowledge, setPersonaKnowledge] = useState({});
-            const [personaCatalogKnowledge, setPersonaCatalogKnowledge] = useState({});
-            const [selectedIds, setSelectedIds] = useState([]);
-            const [detailPersona, setDetailPersona] = useState(null);
-            const [category, setCategory] = useState('ALL');
-            const [communityTab, setCommunityTab] = useState('DEBATE');
-            const [user, setUser] = useState(null);
-            const [isGuest, setIsGuest] = useState(false);
-            const [authOpen, setAuthOpen] = useState(false);
-            const [jobOfferModalOpen, setJobOfferModalOpen] = useState(false);
-            const [recommendModalOpen, setRecommendModalOpen] = useState(false);
-            const [userAvatar, setUserAvatar] = useState(() => loadUserAvatar());
-            const [sessionId, setSessionId] = useState(null);
-            const [sessionMessages, setSessionMessages] = useState([]);
-            const [sessionSummaries, setSessionSummaries] = useState([]);
-            const [summaryEvery, setSummaryEvery] = useState(SUMMARY_EVERY_DEFAULT);
-            const [contextWindow, setContextWindow] = useState(CONTEXT_WINDOW_DEFAULT);
-            const [personaAssets, setPersonaAssets] = useState({});
-            const [personaAvatarOverrides, setPersonaAvatarOverrides] = useState(() => loadPersonaAvatarOverrides());
-            const [personaCoverOverrides, setPersonaCoverOverrides] = useState(() => loadPersonaCoverOverrides());
-            const [adminOpen, setAdminOpen] = useState(false);
-            const [chatSessions, setChatSessions] = useState([]);
-            const [chatSessionsLoading, setChatSessionsLoading] = useState(false);
-            const [chatDetailSession, setChatDetailSession] = useState(null);
-            const [chatDetailMessages, setChatDetailMessages] = useState([]);
-            const [chatDetailSummaries, setChatDetailSummaries] = useState([]);
-            const [chatStatus, setChatStatus] = useState('');
-            const [favoritePersonas, setFavoritePersonas] = useState([]);
-            const [editPersona, setEditPersona] = useState(null);
-            const [personaIconEditorOpen, setPersonaIconEditorOpen] = useState(false);
-
-            const sessionMessagesRef = useRef([]);
-
-            useEffect(() => {
-                sessionMessagesRef.current = sessionMessages;
-            }, [sessionMessages]);
-
-            useEffect(() => {
-                // Load persona-specific knowledge notes (optional).
-                // Kept in UI folder so static hosting can serve it.
-                let cancelled = false;
-                (async () => {
-                    try {
-                        const txt = await fetchText('./my-personas/audrey-hepburn.md');
-                        if (cancelled) return;
-                        const clipped = (txt || '').trim().slice(0, 12000);
-                        if (clipped) setPersonaKnowledge(prev => ({ ...(prev || {}), 'audrey-hepburn': clipped }));
-                    } catch (e) {
-                        console.warn('persona knowledge load failed', e);
-                    }
-                })();
-                return () => { cancelled = true; };
-            }, []);
-
-            useEffect(() => {
-                // Load default persona knowledge from Supabase persona_catalog (decision_style).
-                let cancelled = false;
-                (async () => {
-                    try {
-                        const { data, error } = await supabaseClient
-                            .from('persona_catalog')
-                            .select('id, decision_style');
-                        if (error) {
-                            console.warn('persona_catalog load failed', error);
-                            return;
-                        }
-                        if (cancelled) return;
-                        const map = {};
-                        (data || []).forEach((row) => {
-                            const ds = (row?.decision_style || '').trim();
-                            if (ds) map[row.id] = ds;
-                        });
-                        setPersonaCatalogKnowledge(map);
-                    } catch (e) {
-                        console.warn('persona_catalog load error', e);
-                    }
-                })();
-                return () => { cancelled = true; };
-            }, []);
-
-            useEffect(() => {
-                if (view !== 'persona-detail' && personaIconEditorOpen) setPersonaIconEditorOpen(false);
-            }, [view, personaIconEditorOpen]);
-
-            useEffect(() => {
-                let mounted = true;
-                const init = async () => {
-                    const { data } = await supabaseClient.auth.getSession();
-                    if (mounted) setUser(data?.session?.user || null);
-                };
-                init();
-                const { data: sub } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-                    setUser(session?.user || null);
-                    if (session?.user) setIsGuest(false);
-                });
-                return () => {
-                    mounted = false;
-                    sub?.subscription?.unsubscribe?.();
-                };
-            }, []);
-
-            useEffect(() => {
-                try {
-                    const raw = window.localStorage.getItem('lifee_favorite_personas');
-                    if (raw) setFavoritePersonas(JSON.parse(raw));
-                } catch (_) {}
-            }, []);
-
-            useEffect(() => {
-                try {
-                    window.localStorage.setItem('lifee_favorite_personas', JSON.stringify(favoritePersonas || []));
-                } catch (_) {}
-            }, [favoritePersonas]);
-
-            useEffect(() => {
-                savePersonaAvatarOverrides(personaAvatarOverrides || {});
-            }, [personaAvatarOverrides]);
-
-            useEffect(() => {
-                savePersonaCoverOverrides(personaCoverOverrides || {});
-            }, [personaCoverOverrides]);
-
-            useEffect(() => {
-                if (!user) return;
-                const ensureProfileAndSettings = async () => {
-                    await supabaseClient.from('profiles').upsert({
-                        id: user.id,
-                        email: user.email,
-                        display_name: user.user_metadata?.name || null,
-                        avatar_url: user.user_metadata?.avatar_url || null
-                    }, { onConflict: 'id' });
-
-                    const { data: settings } = await supabaseClient.from('user_settings').select('summary_every, context_window').eq('id', user.id).maybeSingle();
-                    if (!settings) {
-                        await supabaseClient.from('user_settings').insert({
-                            id: user.id,
-                            summary_every: SUMMARY_EVERY_DEFAULT,
-                            context_window: CONTEXT_WINDOW_DEFAULT
-                        });
-                        setSummaryEvery(SUMMARY_EVERY_DEFAULT);
-                        setContextWindow(CONTEXT_WINDOW_DEFAULT);
-                    } else {
-                        setSummaryEvery(settings.summary_every || SUMMARY_EVERY_DEFAULT);
-                        setContextWindow(settings.context_window || CONTEXT_WINDOW_DEFAULT);
-                    }
-                };
-                ensureProfileAndSettings();
-            }, [user]);
-
-            useEffect(() => {
-                if (!user) return;
-                const loadPersonaAssets = async () => {
-                    const { data } = await supabaseClient.from('personas').select('id, avatar_url, cover_url');
-                    const map = {};
-                    (data || []).forEach(row => { map[row.id] = row; });
-                    setPersonaAssets(map);
-                };
-                loadPersonaAssets();
-
-                const loadChatSessions = async () => {
-                    setChatSessionsLoading(true);
-                    const { data } = await supabaseClient
-                        .from('chat_sessions')
-                        .select('id, title, updated_at, latest_message_at')
-                        .eq('user_id', user.id)
-                        .order('updated_at', { ascending: false });
-                    setChatSessions(data || []);
-                    setChatSessionsLoading(false);
-                };
-                loadChatSessions();
-
-                const loadLatestSession = async () => {
-                    const { data: sessions } = await supabaseClient
-                        .from('chat_sessions')
-                        .select('id, title, updated_at')
-                        .eq('user_id', user.id)
-                        .order('updated_at', { ascending: false })
-                        .limit(1);
-
-                    const latest = sessions?.[0];
-                    if (!latest) return;
-
-                    setSessionId(latest.id);
-                    const { data: msgs } = await supabaseClient
-                        .from('chat_messages')
-                        .select('id, role, content, seq, created_at')
-                        .eq('session_id', latest.id)
-                        .order('seq', { ascending: true })
-                        .limit(200);
-                    setSessionMessages((msgs || []).map(m => ({ role: m.role, text: m.content, seq: m.seq })));
-
-                    const { data: sums } = await supabaseClient
-                        .from('chat_summaries')
-                        .select('summary, start_seq, end_seq, created_at')
-                        .eq('session_id', latest.id)
-                        .order('created_at', { ascending: true });
-                    setSessionSummaries(sums || []);
-                };
-                loadLatestSession();
-            }, [user]);
-
-            const buildRoughSummary = (messages) => {
-                const lines = messages.map(m => `${m.role.toUpperCase()}: ${m.text}`);
-                const joined = lines.join('\n');
-                if (joined.length <= 1200) return joined;
-                return joined.slice(0, 1200) + '…';
-            };
-
-            const buildShareTextFromSession = (title, messages, summaries) => {
-                const summaryBlock = (summaries || []).length
-                    ? summaries.map(s => `Summary(${s.start_seq || '-'}-${s.end_seq || '-'})\n${s.summary}`).join('\n\n')
-                    : '';
-                const msgBlock = (messages || []).map(m => `${(m.role || '').toUpperCase()}: ${m.text || ''}`).join('\n');
-                return [
-                    `LIFEE Chat Export`,
-                    `Title: ${title || 'New Chat'}`,
-                    `Date: ${new Date().toISOString()}`,
-                    ``,
-                    summaryBlock ? `---\n${summaryBlock}\n---\n` : '',
-                    msgBlock ? msgBlock : '(no messages yet)'
-                ].filter(Boolean).join('\n');
-            };
-
-            const buildContextBlock = () => {
-                const summaryBlock = sessionSummaries.length
-                    ? sessionSummaries.map(s => `Summary(${s.start_seq || '-'}-${s.end_seq || '-'})\n${s.summary}`).join('\n\n')
-                    : '';
-                const latestMsgs = sessionMessages.slice(-contextWindow).map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
-                return [summaryBlock, latestMsgs].filter(Boolean).join('\n\n');
-            };
-
-            const ensureSession = async () => {
-                if (sessionId) return sessionId;
-                const { data, error } = await supabaseClient.from('chat_sessions').insert({
-                    user_id: user.id,
-                    title: 'New Chat'
-                }).select('id').single();
-                if (error) return null;
-                setSessionId(data.id);
-                setSessionMessages([]);
-                setSessionSummaries([]);
-                return data.id;
-            };
-
-            const persistMessage = async (role, text) => {
-                if (!user) return;
-                const activeSessionId = await ensureSession();
-                if (!activeSessionId) return;
-
-                const nextSeq = (sessionMessagesRef.current?.length || 0) + 1;
-                const newMsg = { role, text, seq: nextSeq };
-                const nextMessages = [...sessionMessagesRef.current, newMsg];
-                setSessionMessages(nextMessages);
-
-                await supabaseClient.from('chat_messages').insert({
-                    session_id: activeSessionId,
-                    user_id: user.id,
-                    role,
-                    content: text,
-                    seq: nextSeq
-                });
-
-                await supabaseClient.from('chat_sessions').update({
-                    updated_at: new Date().toISOString(),
-                    latest_message_at: new Date().toISOString()
-                }).eq('id', activeSessionId);
-
-                if (nextMessages.length % summaryEvery === 0) {
-                    const batch = nextMessages.slice(-summaryEvery);
-                    const summaryText = buildRoughSummary(batch);
-                    const startSeq = nextMessages.length - summaryEvery + 1;
-                    const endSeq = nextMessages.length;
-
-                    const summaryRow = {
-                        session_id: activeSessionId,
-                        user_id: user.id,
-                        summary: summaryText,
-                        start_seq: startSeq,
-                        end_seq: endSeq
-                    };
-
-                    await supabaseClient.from('chat_summaries').insert(summaryRow);
-                    setSessionSummaries(prev => [...prev, summaryRow]);
-                }
-            };
-
-            const handleNewChat = async () => {
-                if (!user) {
-                    setSessionId(null);
-                    setSessionMessages([]);
-                    setSessionSummaries([]);
-                    setContext({ situation: '', landingPeriods: [] });
-                    setSelectedIds([]);
-                    setView('home');
-                    return;
-                }
-                const { data } = await supabaseClient.from('chat_sessions').insert({
-                    user_id: user.id,
-                    title: 'New Chat'
-                }).select('id').single();
-                setSessionId(data?.id || null);
-                setSessionMessages([]);
-                setSessionSummaries([]);
-                setContext({ situation: '', landingPeriods: [] });
-                setSelectedIds([]);
-                setView('home');
-                await refreshChatSessions();
-            };
-
-            const toggleSelect = (e, p) => { e.stopPropagation(); setSelectedIds(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]); };
-
-            const isAdmin = user?.email === ADMIN_EMAIL;
-            const displayPersonas = personas.map(p => {
-                const asset = personaAssets[p.id];
-                const override = personaAvatarOverrides?.[p.id];
-                const nextAvatar = override || asset?.avatar_url || p.avatar;
-                const nextCover = personaCoverOverrides?.[p.id] || asset?.cover_url || p.cover_url || null;
-                const catalogKnowledge = personaCatalogKnowledge?.[p.id] || '';
-                const knowledge = (personaKnowledge?.[p.id] || '').trim() || (catalogKnowledge || '').trim() || p.knowledge || '';
-                return { ...p, avatar: nextAvatar, cover_url: nextCover, knowledge };
-            });
-
-            const refreshChatSessions = async () => {
-                if (!user) return;
-                setChatSessionsLoading(true);
-                const { data } = await supabaseClient
-                    .from('chat_sessions')
-                    .select('id, title, updated_at, latest_message_at')
-                    .eq('user_id', user.id)
-                    .order('updated_at', { ascending: false });
-                setChatSessions(data || []);
-                setChatSessionsLoading(false);
-            };
-
-            const loadSessionDetail = async (sessionRow) => {
-                if (!user || !sessionRow?.id) return;
-                setChatStatus('');
-                setChatDetailSession(sessionRow);
-                const { data: msgs } = await supabaseClient
-                    .from('chat_messages')
-                    .select('id, role, content, seq, created_at')
-                    .eq('session_id', sessionRow.id)
-                    .order('seq', { ascending: true })
-                    .limit(300);
-                setChatDetailMessages((msgs || []).map(m => ({ role: m.role, text: m.content, seq: m.seq })));
-
-                const { data: sums } = await supabaseClient
-                    .from('chat_summaries')
-                    .select('summary, start_seq, end_seq, created_at')
-                    .eq('session_id', sessionRow.id)
-                    .order('created_at', { ascending: true });
-                setChatDetailSummaries(sums || []);
-            };
-
-            const deleteSession = async (sessionRow) => {
-                if (!sessionRow?.id) return;
-                if (!window.confirm('Delete this chat? This cannot be undone.')) return;
-                setChatStatus('');
-                await supabaseClient.from('chat_messages').delete().eq('session_id', sessionRow.id);
-                await supabaseClient.from('chat_summaries').delete().eq('session_id', sessionRow.id);
-                await supabaseClient.from('chat_sessions').delete().eq('id', sessionRow.id);
-                if (chatDetailSession?.id === sessionRow.id) {
-                    setChatDetailSession(null);
-                    setChatDetailMessages([]);
-                    setChatDetailSummaries([]);
-                }
-                await refreshChatSessions();
-                setChatStatus('Deleted');
-            };
-
-            const uploadChatToCommunity = async (sessionRow, messages, summaries) => {
-                if (!user || !sessionRow?.id) return;
-                setChatStatus('');
-                const content = buildShareTextFromSession(sessionRow.title, messages, summaries);
-                const payload = {
-                    user_id: user.id,
-                    session_id: sessionRow.id,
-                    title: sessionRow.title || 'New Chat',
-                    content,
-                    created_at: new Date().toISOString()
-                };
-                const { error } = await supabaseClient.from('community_chats').insert(payload);
-                if (error) {
-                    setChatStatus(error.message || 'Upload failed');
-                } else {
-                    setChatStatus('Uploaded to community');
-                }
-            };
-
-            const uploadPersonaToCommunity = async (persona) => {
-                if (!user || !persona?.id) return;
-                setChatStatus('');
-                const payload = {
-                    user_id: user.id,
-                    persona_id: persona.id,
-                    name: persona.name,
-                    role: persona.role,
-                    avatar: persona.avatar,
-                    payload: persona,
-                    created_at: new Date().toISOString()
-                };
-                const { error } = await supabaseClient.from('community_personas').insert(payload);
-                if (error) {
-                    setChatStatus(error.message || 'Upload failed');
-                } else {
-                    setChatStatus('Persona uploaded to community');
-                }
-            };
-
-            const toggleFavoritePersona = (persona) => {
-                if (!persona?.id) return;
-                setFavoritePersonas(prev => {
-                    const exists = prev?.some(p => p.id === persona.id);
-                    if (exists) return prev.filter(p => p.id !== persona.id);
-                    return [...(prev || []), persona];
-                });
-            };
-
-            const renderContent = () => {
-                if (view === 'community') return (
-                    <CommunityView
-                        communityTab={communityTab}
-                        setCommunityTab={setCommunityTab}
-                        favoriteIds={(favoritePersonas || []).map(p => p.id)}
-                        onToggleFavorite={toggleFavoritePersona}
-                    />
-                );
-                if (view === 'help') {
-                    return window.LIFEE_VIEWS?.help?.({ onBack: () => setView('home') }) || null;
-                }
-                if (view === 'my-chats') {
-                    return window.LIFEE_VIEWS?.myChats?.({
-                        onBack: () => setView('home'),
-                        refreshChatSessions,
-                        chatSessionsLoading,
-                        chatSessions,
-                        chatDetailSession,
-                        loadSessionDetail,
-                        deleteSession,
-                        uploadChatToCommunity,
-                        chatDetailMessages,
-                        chatDetailSummaries,
-                        buildShareTextFromSession,
-                        copyToClipboard,
-                        setChatStatus,
-                        chatStatus
-                    }) || null;
-                }
-                if (view === 'my-personas') {
-                    return window.LIFEE_VIEWS?.myPersonas?.({
-                        onBack: () => setView('home'),
-                        displayPersonas,
-                        favoritePersonas,
-                        setEditPersona,
-                        uploadPersonaToCommunity,
-                        toggleFavoritePersona,
-                        goToCommunity: () => { setCommunityTab('PERSONA'); setView('community'); },
-                        onNewPersona: () => setView('builder'),
-                        chatStatus
-                    }) || null;
-                }
-                if (view === 'settings') {
-                    const lastMsgs = sessionMessages.slice(-40);
-                    const summaryBlock = sessionSummaries.length
-                        ? sessionSummaries.slice(-3).map(s => `Summary(${s.start_seq || '-'}-${s.end_seq || '-'})\n${s.summary}`).join('\n\n')
-                        : '';
-                    const msgBlock = lastMsgs.map(m => `${(m.role || '').toUpperCase()}: ${m.text || ''}`).join('\n');
-                    const shareText = [
-                        `LIFEE Chat Export`,
-                        `Date: ${new Date().toISOString()}`,
-                        ``,
-                        `Situation:`,
-                        (context?.situation || '').trim() || '(empty)',
-                        ``,
-                        `Landing:`,
-                        (context?.landingPeriods || []).join(', ') || '(empty)',
-                        ``,
-                        summaryBlock ? `---\n${summaryBlock}\n---\n` : '',
-                        msgBlock ? msgBlock : '(no messages yet)'
-                    ].filter(Boolean).join('\n');
-
-                    return window.LIFEE_VIEWS?.settings?.({
-                        user,
-                        isAdmin,
-                        onOpenAdmin: () => setAdminOpen(true),
-                        onSignOut: async () => {
-                            await supabaseClient.auth.signOut();
-                            setUser(null);
-                            setIsGuest(false);
-                            setView('home');
-                            setAuthOpen(true);
-                        },
-                        onBack: () => setView('home'),
-                        onOpenPersona: () => setView('persona-selection'),
-                        onOpenCommunityPersona: () => { setCommunityTab('PERSONA'); setView('community'); },
-                        shareText,
-                        userAvatar,
-                        onUserAvatarChange: (a) => setUserAvatar(a || loadUserAvatar())
-                    }) || null;
-                }
-                if (view === 'builder') return <PersonaBuilder onSave={(newP) => { setPersonas([...personas, {...newP, id: `custom-${Date.now()}`, category: 'CUSTOM'}]); setView('persona-selection'); }} onCancel={() => setView('persona-selection')} />;
-                if (view === 'persona-detail') {
-                    const cover = detailPersona?.cover_url || null;
-                    const hasCover = !!(cover && typeof cover === 'string');
-                    const coverFit = (detailPersona?.cover_fit || 'cover');
-                    const coverPosition = (detailPersona?.cover_position || 'center');
-                    return (
-                        <div className="p-4 md:p-8 animate-in pb-20 overflow-y-auto no-scrollbar h-[calc(100vh-64px)]">
-                            <div className={`max-w-5xl mx-auto ${hasCover ? 'bg-transparent' : 'bg-white'} rounded-[40px] md:rounded-[60px] p-6 md:p-12 shadow-2xl border border-[#F0EDEA] relative overflow-hidden`}>
-                                {hasCover && (
-                                    <div className="absolute inset-0">
-                                        <img
-                                            src={cover}
-                                            alt="persona cover"
-                                            className={`w-full h-full grayscale ${coverFit === 'cover' ? 'scale-105' : ''}`}
-                                            style={{ objectFit: coverFit, objectPosition: coverPosition }}
-                                            loading="lazy"
-                                        />
-                                        <div className="absolute inset-0 bg-white/80" />
-                                    </div>
-                                )}
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-brand/5 rounded-bl-full" />
-                                <div className="flex justify-between mb-8 md:mb-16 relative z-10"><button onClick={() => setView('persona-selection')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-all"><Icon name="ChevronLeft" size={14} /> Back</button><span className="text-[10px] uppercase font-bold opacity-30 tracking-[0.3em]">Archive ID: {detailPersona?.id.toUpperCase()}</span></div>
-                                <div className="grid grid-cols-1 md:grid-cols-[360px_minmax(0,1fr)] gap-8 md:gap-12 mb-12 md:mb-16 relative z-10">
-                                    <div className="space-y-4 flex flex-col items-center md:items-start">
-                                        <div className="bg-white p-4 shadow-lg border border-[#F0EDEA] rotate-[-2deg] rounded-2xl overflow-hidden w-full sm:max-w-[300px] mx-auto md:mx-0">
-                                            <div className="text-[10px] font-black uppercase tracking-[0.25em] opacity-40 mb-3 text-center">Card Background</div>
-                                            <label className="block relative cursor-pointer group w-full sm:max-w-[240px] mx-auto">
-                                                <div className="absolute inset-0 rounded-xl ring-0 group-hover:ring-2 group-hover:ring-blue-brand/20 transition-all pointer-events-none" />
-                                                <div className="aspect-[3/4] bg-slate-50 rounded-xl overflow-hidden relative">
-                                                    {hasCover ? (
-                                                        <img
-                                                            src={cover}
-                                                            alt="cover preview"
-                                                            className="absolute inset-0 w-full h-full grayscale"
-                                                            style={{ objectFit: coverFit, objectPosition: coverPosition }}
-                                                            loading="lazy"
-                                                        />
-                                                    ) : (
-                                                        <div className="absolute inset-0 bg-gradient-to-br from-white via-[#FDFBF7] to-[#F3F1EC]" />
-                                                    )}
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent pointer-events-none" />
-                                                    <div className="absolute inset-0 flex items-end justify-center pb-4 pointer-events-none">
-                                                        <div className="px-4 py-2 bg-white/85 border border-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] opacity-70 group-hover:opacity-100 transition-opacity">
-                                                            Click to upload background
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    className="hidden"
-                                                    onChange={async (e) => {
-                                                        const file = e.target.files?.[0];
-                                                        if (!file || !detailPersona?.id) return;
-                                                        try {
-                                                            const url = await fileToDataURL(file);
-                                                            setPersonaCoverOverrides(prev => ({ ...(prev || {}), [detailPersona.id]: url }));
-                                                            setDetailPersona(prev => prev ? ({ ...prev, cover_url: url }) : prev);
-                                                        } catch (err) {
-                                                            console.error(err);
-                                                        } finally {
-                                                            e.target.value = '';
-                                                        }
-                                                    }}
-                                                />
-                                            </label>
-                                            <div className="mt-4 flex items-center justify-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (!detailPersona?.id) return;
-                                                        setPersonaCoverOverrides(prev => {
-                                                            const next = { ...(prev || {}) };
-                                                            delete next[detailPersona.id];
-                                                            return next;
-                                                        });
-                                                        const baseCover = personaAssets?.[detailPersona.id]?.cover_url || null;
-                                                        setDetailPersona(prev => prev ? ({ ...prev, cover_url: baseCover }) : prev);
-                                                    }}
-                                                    className="px-4 h-10 rounded-full bg-[#FDFBF7] border border-[#E8E6E0] text-[10px] font-black uppercase tracking-[0.2em] hover:shadow-md transition-all"
-                                                >
-                                                    Use default background
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col justify-center space-y-4 md:space-y-6 text-center md:text-left">
-                                        <div className="flex justify-center md:justify-start">
-                                            <div className="relative inline-flex">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPersonaIconEditorOpen(true)}
-                                                    className="w-16 h-16 rounded-3xl bg-[#FDFBF7] border border-[#F0EDEA] overflow-hidden shadow-sm hover:shadow-md transition-all"
-                                                    title="Edit icon"
-                                                    aria-label="Edit persona icon"
-                                                >
-                                                    <AvatarDisplay avatar={detailPersona?.avatar} className="w-full h-full text-3xl" />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPersonaIconEditorOpen(true)}
-                                                    className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur border border-[#F0EDEA] shadow-md hover:shadow-lg transition-all flex items-center justify-center text-blue-brand"
-                                                    title="Edit icon"
-                                                    aria-label="Edit persona icon"
-                                                >
-                                                    <Icon name="Pencil" size={15} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <h1 className="text-4xl md:text-6xl font-black text-[#1A1A1A] italic tracking-tighter uppercase leading-tight">{detailPersona?.name}</h1>
-                                        <p className="text-xs md:text-sm font-bold text-blue-brand uppercase tracking-[0.4em]">{detailPersona?.role}</p>
-                                        <div className="h-px w-20 bg-blue-brand/30 mx-auto md:mx-0" />
-                                        <p className="text-lg md:text-xl italic opacity-70 leading-relaxed">“{detailPersona?.worldview}”</p>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12 font-sans text-left relative z-10">
-                                    <div className="md:col-span-2 p-6 md:p-10 bg-[#FDFBF7] border-2 border-dashed border-[#D1CEC7] rounded-3xl space-y-8">
-                                        <div><h3 className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-6">Soul & Wisdom</h3><h4 className="text-[10px] font-black uppercase text-[#D1CEC7] tracking-widest mb-2">Decision Priorities</h4><p className="text-sm italic leading-relaxed">{detailPersona?.decisionStyle || "Grounded and reflective."}</p></div>
-                                        <div className="space-y-4 pt-2">
-                                            {detailPersona?.lifeContext?.map((item, idx) => (
-                                                <div key={idx} className="flex gap-4"><span className="text-xs font-mono opacity-20 mt-1">[{idx+1}]</span><div><h5 className="font-bold text-sm text-[#1A1A1A]">{item.period}</h5><p className="text-xs opacity-50 italic">{item.detail}</p></div></div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="p-6 md:p-8 bg-white border border-[#F0EDEA] rounded-3xl shadow-sm text-center">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-8">Voice</h3>
-                                        <p className="text-xs md:text-sm italic text-neutral-600 border-l-2 border-blue-brand/20 pl-4 py-2 text-left">{detailPersona?.voice}</p>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-[#F0EDEA] gap-4 relative z-10"><p className="text-[10px] italic opacity-40 uppercase tracking-widest text-center">Observation over noise.</p><button onClick={() => { if(!selectedIds.includes(detailPersona?.id)) setSelectedIds([...selectedIds, detailPersona?.id]); setView('persona-selection'); }} className={`w-full md:w-auto px-10 py-4 rounded-full font-black uppercase tracking-widest text-[10px] transition-all shadow-xl ${selectedIds.includes(detailPersona?.id) ? 'bg-slate-200 text-slate-50' : 'bg-blue-brand text-white shadow-blue-brand/20'}`}>{selectedIds.includes(detailPersona?.id) ? 'In Panel' : 'Invite to Debate'}</button></div>
-                            </div>
-                        </div>
-                    );
-                }
-                if (view === 'persona-selection') {
-                    const filtered = category === 'ALL' ? displayPersonas : displayPersonas.filter(p => p.category === category);
-                    return (
-                        <div className="w-full flex flex-col items-center pt-8 md:pt-12 animate-in pb-32">
-                            <div className="flex justify-center mb-10 px-4 w-full">
-                                <div className="overflow-x-auto no-scrollbar py-4 w-full">
-                                    <div className="flex justify-center px-6 md:px-10">
-                                        <div className="inline-flex bg-white/60 backdrop-blur-md p-1.5 rounded-full border-2 border-white shadow-lg whitespace-nowrap">
-                                            {['ALL', 'CREATIVE', 'RATIONAL', 'SUPPORT', 'CUSTOM'].map(cat => (
-                                                <button
-                                                    key={cat}
-                                                    onClick={() => setCategory(cat)}
-                                                    className={`px-4 md:px-8 py-2 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] transition-all duration-300 ${category === cat ? 'bg-blue-brand text-white shadow-lg scale-105' : 'text-[#5D576B]/40 hover:text-blue-brand'}`}
-                                                >
-                                                    {cat}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <h2 className="text-3xl md:text-5xl font-serif italic mb-12 md:mb-20 text-[#5D576B] text-center tracking-tight px-4">Assemble the Voices</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-10 px-4 md:px-8 w-full max-w-[1250px]">
-                                {filtered.map(p => {
-                                    const isSel = selectedIds.includes(p.id);
-                                    return (
-                                        <div key={p.id} onClick={() => { setDetailPersona(p); setView('persona-detail'); }} className={`relative px-6 pb-6 pt-16 md:px-8 md:pb-8 md:pt-20 bg-white rounded-[40px] shadow-xl border-2 transition-all transform hover:scale-[1.03] flex flex-col aspect-[3/4] min-h-[300px] overflow-hidden group ${isSel ? 'border-blue-brand shadow-blue-brand/10' : 'border-white/20'}`}>
-                                            <button onClick={(e) => toggleSelect(e, p)} className={`absolute top-6 right-6 w-10 h-10 rounded-full border-2 flex items-center justify-center z-30 transition-all ${isSel ? 'bg-blue-brand border-blue-brand shadow-lg scale-110' : 'bg-transparent border-slate-100 group-hover:border-blue-brand/40'}`}>{isSel && <Icon name="Check" size={18} className="text-white" />}</button>
-                                            <div className="absolute top-6 left-6 w-12 h-12 rounded-2xl bg-white/70 border border-white shadow-sm flex items-center justify-center overflow-hidden z-20">
-                                                <AvatarDisplay avatar={p.avatar} className="w-full h-full text-2xl" />
-                                            </div>
-                                            <div className="flex-1" />
-                                            <div className="mt-auto text-left space-y-2"><h4 className="font-black text-xl md:text-2xl text-[#1A1A1A] tracking-tighter uppercase italic">{p.name}</h4><p className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-blue-brand/80">{p.role}</p><p className="text-[10px] md:text-xs italic opacity-40 leading-relaxed line-clamp-2">“{p.worldview}”</p></div>
-                                        </div>
-                                    );
-                                })}
-                                <div onClick={() => alert('New feature coming soon')} className="relative p-6 bg-white/30 backdrop-blur-sm rounded-[40px] border-2 border-dashed border-blue-brand/30 cursor-pointer transition-all hover:bg-white hover:border-blue-brand flex flex-col items-center justify-center gap-4 aspect-[3/4] min-h-[300px] text-center group"><div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-brand group-hover:scale-110 transition-transform"><Icon name="Plus" size={24} /></div><p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-80 transition-opacity">Create Voice</p></div>
-                            </div>
-                            {selectedIds.length >= 2 && <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 animate-in w-[90%] md:w-auto text-center"><button onClick={() => setView('debate')} className="px-12 md:px-16 py-5 md:py-6 bg-[#1A1A1A] text-white rounded-full font-black text-[10px] md:text-xs tracking-[0.3em] md:tracking-[0.4em] shadow-2xl hover:scale-105 transition-all uppercase">Commence Dialogue</button></div>}
-                        </div>
-                    );
-                }
-                if (view === 'debate') return (
-                    <DebateArena
-                        context={context}
-                        selectedPersonas={displayPersonas.filter(p => selectedIds.includes(p.id))}
-                        setView={setView}
-                        ensureSession={ensureSession}
-                        persistMessage={persistMessage}
-                        buildContextBlock={buildContextBlock}
-                        userAvatar={userAvatar}
-                    />
-                );
-                if (view === 'summary') return <div className="text-center py-32 md:py-48 px-4 animate-in space-y-8 md:space-y-10 max-w-2xl mx-auto"><div className="text-5xl md:text-7xl animate-bounce">🌱</div><h2 className="text-3xl md:text-5xl font-serif italic text-[#1A1A1A] tracking-tight">Pattern Observed</h2><button onClick={handleNewChat} className="px-12 md:px-16 py-5 md:py-6 bg-blue-brand text-white rounded-full font-black shadow-xl uppercase tracking-widest text-[9px] md:text-[10px] hover:shadow-2xl transition-all">Start New Chapter</button></div>;
-                return (
-                    <section className="space-y-6 md:space-y-10 py-10 md:py-20 px-4 max-w-3xl mx-auto w-full animate-in flex flex-col items-center">
-                        <header className="mb-2 md:mb-4 text-center space-y-3"><h1 className="text-6xl md:text-8xl font-black tracking-tighter text-blue-brand uppercase italic leading-none">LIFEE</h1><p className="italic text-[8px] md:text-[10px] text-[#C1C1C1] uppercase tracking-[0.4em] md:tracking-[0.6em] font-black font-sans">YOUR LIFE & FRIEND COACH</p></header>
-                        {(() => {
-                            const suggestedQuestions = [
-                                "I'm not sure which job offer to choose",
-                                "I have so many hobbies, but why do I still feel empty inside?",
-                                "How should young adults navigate the confusing years of their twenties?",
-                                "When chasing a crush, is it better to confess directly or take it slow?",
-                                "I'm approaching 30. With no house, no kids and the low cost of silence, I should seriously consider long-term development. I'm very torn about whether to leave or stay in Beijing.",
-                                "For those who entered the entertainment industry because of fandom, how's life treating you now?"
-                            ];
-                            return (
-                                <div className="w-full suggested-questions-scroll">
-                                    <div className="suggested-questions-container">
-                                        {suggestedQuestions.map((question, index) => (
-                                            <button
-                                                key={index}
-                                                type="button"
-                                                className="question-capsule"
-                                                onClick={() => {
-                                                    if (question === "I'm not sure which job offer to choose") {
-                                                        setJobOfferModalOpen(true);
-                                                    } else {
-                                                        setContext({...context, situation: question});
-                                                    }
-                                                }}
-                                            >
-                                                {question}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })()}
-                        <div className="w-full bg-white p-8 md:p-16 rounded-[40px] md:rounded-[70px] shadow-sm border border-[#F0EDEA] text-center relative overflow-hidden transition-all hover:shadow-xl"><div className="absolute top-0 right-0 p-8 md:p-12 opacity-5"><Icon name="Sparkles" size={64} /></div><h2 className="text-xl md:text-3xl font-serif italic mb-6 md:mb-10 text-[#1A1A1A] tracking-tight">“Let them argue, you decide.”</h2><textarea className="w-full h-40 md:h-52 p-6 md:p-8 bg-[#FDFBF7]/50 rounded-[30px] md:rounded-[40px] border-2 border-transparent focus-blue-brand transition-all duration-300 focus:outline-none text-base md:text-xl leading-relaxed placeholder:italic no-scrollbar" placeholder="Describe the current tension..." value={context.situation} onChange={(e) => setContext({...context, situation: e.target.value})} /></div>
-                        <div className="space-y-6 md:space-y-8 px-4 text-center w-full">
-                            <h3 className="text-xs md:text-sm font-black uppercase tracking-[0.3em] text-[#5D576B]/70">WHEN IS THIS LANDING?</h3>
-                            <div className="capsule-container shadow-sm">
-                                {[
-                                    { key: 'scenario', label: 'SCENARIO' },
-                                    { key: 'problemType', label: 'PROBLEM TYPE' }
-                                ].map(({ key, label }) => (
-                                    <button
-                                        key={key}
-                                        type="button"
-                                        onClick={() => setLandingTab(key)}
-                                        className={`capsule-item ${landingTab === key ? 'capsule-item-active' : 'capsule-item-inactive'}`}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="animate-in pb-4" key={landingTab}>
-                                <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-                                    {LANDING_CATEGORIES[landingTab].map(opt => {
-                                        const isSel = (context.landingPeriods || []).includes(opt);
-                                        return (
-                                            <button
-                                                key={opt}
-                                                type="button"
-                                                onClick={() => setContext(prev => {
-                                                    const periods = isSel ? (prev.landingPeriods || []).filter(x => x !== opt) : [...(prev.landingPeriods || []), opt];
-                                                    const situationBase = (prev.situation || '').replace(new RegExp('(^|\\n)Context: [^\\n]*', 'g'), '').trimEnd();
-                                                    const situationContext = periods.length > 0 ? `${situationBase ? situationBase + '\n' : ''}Context: ${periods.join(', ')}` : situationBase;
-                                                    return { ...prev, landingPeriods: periods, situation: situationContext };
-                                                })}
-                                                className={`landing-opt ${isSel ? 'selected' : ''}`}
-                                            >
-                                                {opt.toUpperCase()}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                        <button disabled={!context.situation} onClick={() => setRecommendModalOpen(true)} className="w-full max-w-lg py-5 md:py-7 bg-blue-brand text-white rounded-full font-black shadow-[0_4px_14px_rgba(152,166,212,0.35)] transition-all hover:translate-y-[-2px] uppercase tracking-[0.3em] text-[10px] md:text-xs disabled:opacity-20 active:scale-95">STEP FORWARD</button>
-                    </section>
-                );
-            };
-
-            return (
-                <div className="min-h-screen">
-                    <AppLayout
-                        activeView={view}
-                        setView={setView}
-                        user={user}
-                        isAdmin={isAdmin}
-                        onOpenAdmin={() => setAdminOpen(true)}
-                        onLogin={() => setAuthOpen(true)}
-                        onSignOut={async () => {
-                            await supabaseClient.auth.signOut();
-                            setUser(null);
-                            setIsGuest(false);
-                            setView('home');
-                            setAuthOpen(true);
-                        }}
-                        onNewChat={handleNewChat}
-                    >
-                        {(user || isGuest) ? renderContent() : (
-                            <div className="min-h-screen flex items-center justify-center">
-                                <div className="text-center px-6">
-                                    <h1 className="text-4xl font-serif italic text-[#1A1A1A] mb-4">Welcome to LIFEE</h1>
-                                    <p className="text-xs uppercase tracking-[0.3em] opacity-40">Please sign in to continue</p>
-<div className="pt-6 flex flex-col items-center gap-2">
-                                        <button onClick={() => setAuthOpen(true)} className="px-8 py-4 bg-blue-brand text-white rounded-full font-bold uppercase text-xs tracking-[0.2em] shadow-xl">Sign in</button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </AppLayout>
-                    <AuthModal isOpen={authOpen || (!user && !isGuest)} onClose={() => setAuthOpen(false)} onAuthed={(u) => { setUser(u); setIsGuest(false); }} onGuest={() => { setIsGuest(true); setAuthOpen(false); }} />
-                    <JobOfferModal isOpen={jobOfferModalOpen} onClose={() => setJobOfferModalOpen(false)} onConfirm={(text) => setContext({...context, situation: text})} />
-                    <PersonaRecommendModal isOpen={recommendModalOpen} onClose={() => setRecommendModalOpen(false)} situation={context.situation} periods={context.landingPeriods} personas={displayPersonas} selectedIds={selectedIds} onConfirm={(merged) => { setSelectedIds(merged); setRecommendModalOpen(false); setView('persona-selection'); }} />
-                    {isAdmin && (
-                        <AdminPanel
-                            isOpen={adminOpen}
-                            onClose={() => setAdminOpen(false)}
-                            personas={displayPersonas.filter(p => !p.id.startsWith('custom-'))}
-                            onRefresh={async () => {
-                                const { data } = await supabaseClient.from('personas').select('id, avatar_url, cover_url');
-                                const map = {};
-                                (data || []).forEach(row => { map[row.id] = row; });
-                                setPersonaAssets(map);
-                            }}
-                        />
-                    )}
-                    <PersonaEditModal
-                        isOpen={!!editPersona}
-                        persona={editPersona}
-                        onClose={() => setEditPersona(null)}
-                        onSave={(next) => {
-                            setPersonas(prev => prev.map(p => p.id === next.id ? next : p));
-                            setEditPersona(null);
-                        }}
-                    />
-                    <PersonaIconEditorModal
-                        isOpen={personaIconEditorOpen}
-                        persona={detailPersona}
-                        onClose={() => setPersonaIconEditorOpen(false)}
-                        onSetAvatar={(value) => {
-                            if (!detailPersona?.id) return;
-                            setPersonaAvatarOverrides(prev => ({ ...(prev || {}), [detailPersona.id]: value }));
-                            setDetailPersona(prev => prev ? ({ ...prev, avatar: value }) : prev);
-                        }}
-                        onUseDefault={() => {
-                            if (!detailPersona?.id) return;
-                            setPersonaAvatarOverrides(prev => {
-                                const next = { ...(prev || {}) };
-                                delete next[detailPersona.id];
-                                return next;
-                            });
-                            const base = personaAssets?.[detailPersona.id]?.avatar_url || personas.find(x => x.id === detailPersona.id)?.avatar || '👤';
-                            setDetailPersona(prev => prev ? ({ ...prev, avatar: base }) : prev);
-                        }}
-                    />
-                </div>
-            );
-        }
-
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
-        root.render(<App />);
-    </script>
-</body>
-</html>
