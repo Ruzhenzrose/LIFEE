@@ -490,6 +490,15 @@
             'home.voices':       { en: 'voices',         zh: '位成员' },
             'home.worldview':    { en: 'Worldview',      zh: '世界观' },
 
+            // Home mode cards
+            'home.questionType':        { en: 'Question Type', zh: '问题类型' },
+            'home.mode.ab.title':       { en: 'A or B',     zh: 'A 还是 B' },
+            'home.mode.ab.desc':        { en: "Tell me your offers. I'll ask the right questions.", zh: '说出你的选项，我来问对的问题。' },
+            'home.mode.values.title':   { en: 'Values',     zh: '价值观' },
+            'home.mode.values.desc':    { en: 'Rank what matters. See what that reveals.', zh: '为在意的事排序，看出自己真正在乎什么。' },
+            'home.mode.mystical.title': { en: 'Mystical',   zh: '玄学' },
+            'home.mode.mystical.desc':  { en: 'Not logic. Something else entirely.', zh: '不靠逻辑，靠别的。' },
+
             // Domain names
             'domain.hot':        { en: 'Hot',           zh: '热门' },
             'domain.philosophy': { en: 'Philosophy',    zh: '哲学' },
@@ -1870,6 +1879,8 @@
 
             // Preview: hovered/tapped persona in the right panel
             const [previewId, setPreviewId] = useState(null);
+            // Conversation mode (null = default multi-voice council)
+            const [mode, setMode] = useState(null);
             // Detail modal state (full persona profile)
             const [detailPersonaId, setDetailPersonaId] = useState(null);
             const detailPersona = detailPersonaId ? personas.find(p => p.id === detailPersonaId) : null;
@@ -1901,13 +1912,12 @@
                 });
             }, [personas.length]);
 
-            // Domain carousel — per-domain section height (1 row vs 2 rows)
+            // Domain carousel — single row of square cards, horizontal scroll on overflow
             const activeDomains = DOMAIN_ORDER.filter(d => grouped[d].length > 0);
-            const CARDS_PER_ROW = 3;
             const HEADER_H = 70;   // domain header row + gap + buffer
-            const ROW_H = 120;     // one row of persona cards + buffer
-            const sectionHFor = (n) => HEADER_H + Math.min(2, Math.ceil(n / CARDS_PER_ROW)) * ROW_H;
-            const sectionHeights = activeDomains.map(d => sectionHFor(grouped[d].length));
+            const ROW_H = 260;     // one row of 240px square cards + buffer
+            const sectionHFor = () => HEADER_H + ROW_H;
+            const sectionHeights = activeDomains.map(() => sectionHFor());
 
             const carouselRef = useRef(null);
             const sectionRefs = useRef([]);
@@ -2203,7 +2213,7 @@
                             <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em]">${t('home.todaysQuestion')}</p>
                             <h1 class="font-headline text-4xl md:text-5xl font-bold leading-[1.1] text-on-surface" dangerouslySetInnerHTML=${{ __html: t('home.onYourMind') }}></h1>
                             <div class="flex items-end gap-3 mt-4">
-                                <div class="flex-1 flex items-center bg-surface-container border border-outline-variant/20 rounded-2xl px-5 py-4 focus-within:border-primary/30 transition-colors">
+                                <div class="flex-1 flex items-center bg-surface-container border border-white/25 rounded-2xl px-5 py-4 focus-within:border-primary/50 transition-colors">
                                     <textarea
                                         rows="1"
                                         class="flex-1 bg-transparent text-on-surface placeholder-on-surface-variant/30 text-sm focus:outline-none resize-none leading-relaxed overflow-y-auto"
@@ -2302,10 +2312,51 @@
 
                     <!-- Domain sections (editorial list style) -->
                     <section class="w-full max-w-6xl mx-auto px-8 pb-20">
-                        <div class="flex items-baseline gap-4 mb-10 border-t border-on-surface/10 pt-6">
-                            <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] font-bold">${t('home.theCouncil')}</p>
-                            <div class="flex-1 h-px bg-on-surface/8"></div>
-                            <p class="text-[10px] text-on-surface-variant/40">${personas.length} ${t('home.voices')}</p>
+                        <!-- Mode selector (replaces The Council divider) -->
+                        <div class="mb-4 pt-6">
+                            <p class="text-xs text-on-surface/90 uppercase tracking-[0.3em] font-bold">${t('home.questionType')}</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                            ${[
+                                { id: 'ab',       icon: 'balance' },
+                                { id: 'values',   icon: 'diamond' },
+                                { id: 'mystical', icon: 'auto_awesome' },
+                            ].map(m => {
+                                const isActive = mode === m.id;
+                                return html`
+                                    <button
+                                        key=${m.id}
+                                        onClick=${() => setMode(isActive ? null : m.id)}
+                                        class=${`text-left p-5 rounded-2xl border transition-all ${
+                                            isActive
+                                                ? 'border-primary/70 bg-primary/5 shadow-sm shadow-primary/10'
+                                                : 'border-white/25 bg-surface-container/50 hover:border-white/40 hover:bg-surface-container'
+                                        }`}
+                                    >
+                                        <span class=${`material-symbols-outlined block mb-3 transition-colors ${isActive ? 'text-primary' : 'text-on-surface/70'}`}
+                                              style=${{ fontSize: '24px' }}>${m.icon}</span>
+                                        <h3 class=${`font-headline text-lg font-bold mb-1 transition-colors ${isActive ? 'text-primary' : 'text-on-surface'}`}>${t('home.mode.' + m.id + '.title')}</h3>
+                                        <p class="text-xs text-on-surface-variant/60 leading-relaxed">${t('home.mode.' + m.id + '.desc')}</p>
+                                    </button>
+                                `;
+                            })}
+                        </div>
+
+                        <!-- Domain directory — sticky above the carousel (moved from bottom) -->
+                        <div class="sticky top-0 z-10 flex items-center justify-start flex-wrap gap-x-8 gap-y-3 mb-6 -mx-8 px-8 py-3.5 bg-surface/90 backdrop-blur-xl">
+                            ${activeDomains.map((domain, dIdx) => {
+                                const isActive = dIdx === activeDomainIdx;
+                                return html`
+                                    <button
+                                        key=${domain}
+                                        onClick=${() => goToDomain(dIdx)}
+                                        class=${`text-xs font-bold uppercase tracking-widest transition-colors
+                                            ${isActive ? 'text-primary' : 'text-on-surface/70 hover:text-primary'}`}
+                                    >
+                                        <span class="opacity-60 mr-2">0${dIdx + 1}</span><span>${t('domain.' + domain.toLowerCase()) || domain}</span>
+                                    </button>
+                                `;
+                            })}
                         </div>
 
                         <!-- Vertical carousel (one domain at a time, dynamic height: 1 or 2 rows)
@@ -2334,8 +2385,8 @@
                                             </div>
                                         </div>
 
-                                        <!-- Persona row(s) — fixed-width cards, wrap to up to 2 rows -->
-                                        <div class="flex-1 min-h-0 flex flex-wrap content-start gap-x-8 gap-y-4">
+                                        <!-- Persona row — square cards, single row, horizontal scroll on overflow -->
+                                        <div class="flex-1 min-h-0 flex flex-nowrap items-start gap-x-5 overflow-x-auto no-scrollbar">
                                             ${items.map(p => {
                                                 const isSel = selectedIds.includes(p.id);
                                                 const isPreview = previewId === p.id;
@@ -2346,42 +2397,31 @@
                                                             if (previewId === p.id) toggleSelect(p.id);
                                                             else setPreviewId(p.id);
                                                         }}
-                                                        class=${`group cursor-pointer w-72 py-4 border-t transition-colors
-                                                            ${isSel ? 'border-primary/40' : isPreview ? 'border-primary/30' : 'border-on-surface/10 hover:border-on-surface/30'}`}
+                                                        class=${`group shrink-0 cursor-pointer w-60 h-60 rounded-xl overflow-hidden relative transition-all
+                                                            ${isSel
+                                                                ? 'ring-2 ring-primary shadow-lg shadow-primary/20'
+                                                                : isPreview
+                                                                    ? 'ring-1 ring-primary/40'
+                                                                    : 'ring-1 ring-on-surface/10 hover:ring-primary/50'}`}
+                                                        style=${p.cover_url ? {
+                                                            backgroundImage: `linear-gradient(to bottom, rgba(18,17,15,0.15) 0%, rgba(18,17,15,0.55) 55%, rgba(18,17,15,0.95) 100%), url(${p.cover_url})`,
+                                                            backgroundSize: 'cover',
+                                                            backgroundPosition: p.cover_position || 'center top',
+                                                        } : {}}
                                                     >
-                                                        <div class="flex items-start gap-3">
-                                                            <span class=${`text-xl mt-0.5 transition-opacity ${isSel || isPreview ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>${p.avatar || '☁️'}</span>
-                                                            <div class="flex-1 min-w-0">
-                                                                <div class="flex items-center justify-between gap-2">
-                                                                    <p class=${`font-headline text-sm font-bold leading-tight transition-colors ${isSel ? 'text-primary' : isPreview ? 'text-on-surface' : 'text-on-surface/90 group-hover:text-on-surface'}`}>${p.name}</p>
-                                                                    ${isSel ? html`<span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>` : null}
-                                                                </div>
-                                                                <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-widest mt-1">${p.role}</p>
-                                                                <p class="text-[11px] text-on-surface-variant/40 italic mt-2 leading-relaxed line-clamp-2">"${p.worldview}"</p>
+                                                        <div class=${`relative h-full flex flex-col justify-end p-3 ${p.cover_url ? '' : 'bg-surface-container-high'}`}>
+                                                            <div class="flex items-center justify-between gap-2">
+                                                                <p class=${`text-[9px] uppercase tracking-[0.25em] font-bold ${isSel ? 'text-primary' : 'text-white/60'}`}>${p.role}</p>
+                                                                ${isSel ? html`<span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>` : null}
                                                             </div>
+                                                            <p class=${`font-headline text-base font-bold leading-tight mt-0.5 ${isSel ? 'text-primary' : 'text-white'}`}>${p.name}</p>
+                                                            <p class="text-[10px] text-white/50 italic leading-snug line-clamp-2 mt-1">"${p.worldview}"</p>
                                                         </div>
                                                     </div>
                                                 `;
                                             })}
                                         </div>
                                     </div>
-                                `;
-                            })}
-                        </div>
-
-                        <!-- Bottom domain tabs -->
-                        <div class="flex items-center justify-start flex-wrap gap-x-8 gap-y-3 mt-6 pt-4 border-t border-on-surface/10">
-                            ${activeDomains.map((domain, dIdx) => {
-                                const isActive = dIdx === activeDomainIdx;
-                                return html`
-                                    <button
-                                        key=${domain}
-                                        onClick=${() => goToDomain(dIdx)}
-                                        class=${`text-[11px] font-bold uppercase tracking-widest transition-colors
-                                            ${isActive ? 'text-primary' : 'text-on-surface-variant/30 hover:text-primary'}`}
-                                    >
-                                        <span class="opacity-50 mr-2">0${dIdx + 1}</span><span>${t('domain.' + domain.toLowerCase()) || domain}</span>
-                                    </button>
                                 `;
                             })}
                         </div>
@@ -4070,13 +4110,18 @@
 
             const targetPos = cursorToPos(el, e.clientX).toFixed(2) + '%';
 
-            if (!el.classList.contains('warm-shine-active')) {
-                // First entry: slow elegant sweep from off-left to the cursor.
-                el.style.transition = ENTER_TRANSITION;
+            // Treat "class absent" OR "class present but parked off-screen at 130%"
+            // (the post-sweep resting state) as an entry — do the slow elegant sweep.
+            const parked = el.style.getPropertyValue('--shine-pos') === '130%';
+            const firstEntry = !el.classList.contains('warm-shine-active');
+
+            if (firstEntry || parked) {
+                el.style.transition = 'none';
                 el.style.setProperty('--shine-pos', '130%');
-                el.classList.add('warm-shine-active');
+                if (firstEntry) el.classList.add('warm-shine-active');
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
+                        el.style.transition = ENTER_TRANSITION;
                         el.style.setProperty('--shine-pos', targetPos);
                     });
                 });
@@ -4108,9 +4153,14 @@
             el.style.setProperty('--shine-pos', '-40%');
             if (el._shineExitTimer) clearTimeout(el._shineExitTimer);
             el._shineExitTimer = setTimeout(() => {
-                el.classList.remove('warm-shine-active');
-                el.style.removeProperty('--shine-pos');
-                el.style.transition = '';
+                // Don't tear down the class at all: removing warm-shine-active
+                // triggers a 1-frame repaint where background-clip:text drops
+                // before bg-image/bg-color:currentColor, painting a solid
+                // whitish rectangle. Instead leave the class on and just park
+                // --shine-pos off-screen + kill the transition so the next
+                // mouseenter re-starts cleanly from 130%.
+                el.style.transition = 'none';
+                el.style.setProperty('--shine-pos', '130%');
                 el._shineExitTimer = null;
             }, SWEEP_MS);
         }, true);
