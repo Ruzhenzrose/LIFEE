@@ -810,10 +810,11 @@ async def _insert_message_stub(session_id: str, user_id: str, role: str, persona
 
 
 async def _patch_message_content(session_id: str, seq: int, content: str):
-    """Update the content of an in-flight message row keyed by (session_id, seq)."""
+    """Update the content of an in-flight message row keyed by (session_id, seq)。
+    只改 content，不碰 persona_id。"""
     try:
         from lifee import store as _s
-        await asyncio.to_thread(_s.msg_save, session_id, "assistant", content, seq=seq)
+        await asyncio.to_thread(_s.msg_update_content, session_id, seq, content)
     except Exception:
         pass
 

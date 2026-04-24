@@ -501,6 +501,15 @@ def msg_save(
     return seq
 
 
+def msg_update_content(session_id: str, seq: int, content: str) -> None:
+    """只改 content，保留 persona_id / role / created_at。
+    流式生成中每个 token 到达都会调这个，不能用 INSERT OR REPLACE（会把 persona_id 清掉）。"""
+    _get_conn().execute(
+        "UPDATE chat_messages SET content=? WHERE session_id=? AND seq=?",
+        (content, session_id, seq),
+    )
+
+
 def msg_next_seq(session_id: str) -> int:
     r = _get_conn().execute(
         "SELECT COALESCE(MAX(seq), -1) + 1 AS next_seq FROM chat_messages WHERE session_id=?",
