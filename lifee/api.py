@@ -33,6 +33,22 @@ _knowledge_paths: dict = {}     # role_name → (db_path, knowledge_lang)
 _knowledge_embedding = None     # shared embedding provider
 _km_initialized = False
 
+# 共享的 Supabase httpx client —— 避免每次请求都付 TCP+TLS 握手成本
+# 对国内网络 → Cloudflare (Supabase) 很关键，每次新建 client 经常 >10s 超时
+_sb_client = None  # type: ignore
+
+
+def _sb():
+    """获取共享 Supabase httpx client（懒初始化）。调用者不要用 async with 包它。"""
+    global _sb_client
+    import httpx
+    if _sb_client is None or _sb_client.is_closed:
+        _sb_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(15.0, connect=10.0),
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
+        )
+    return _sb_client
+
 # 会话缓存：session_id → (Session, Moderator, participants, last_access_time)
 _sessions: dict = {}
 _SESSION_TTL = 3600  # 1小时过期
@@ -359,11 +375,30 @@ async def _init_knowledge():
         print(f"[knowledge] Failed to create embedding provider: {e}")
         return
 
+    bg_tasks: list = []  # (role_name, db_path, knowledge_dir, knowledge_lang)
+
     for role_name in target_roles:
         try:
             db_path = rm.get_knowledge_db_path(role_name)
+            local_dir = rm.get_knowledge_dir(role_name)
+            has_local = False
+            if local_dir:
+                src_files = list(local_dir.rglob("*.md")) + list(local_dir.rglob("*.txt"))
+                has_local = any(f.is_file() for f in src_files)
 
-            # 启动时下载，确保文件就绪
+            if has_local:
+                # 本地有语料 → 用本地索引（跳过 Release 下载），后台增量索引
+                role_info = rm.get_role_info(role_name)
+                knowledge_lang = role_info.get("knowledge_lang", "English")
+                if db_path.exists():
+                    _knowledge_paths[role_name] = (db_path, knowledge_lang)
+                    print(f"[knowledge] {role_name}: local db ready (reindex check in bg)")
+                else:
+                    print(f"[knowledge] {role_name}: no db, will build in background")
+                bg_tasks.append((role_name, db_path, local_dir, knowledge_lang))
+                continue
+
+            # 无本地语料 → 从 Release 下载 pre-built db
             if not db_path.exists() and role_name in _RELEASE_DBS:
                 db_path.parent.mkdir(parents=True, exist_ok=True)
                 if not _download_db(role_name, db_path):
@@ -378,6 +413,46 @@ async def _init_knowledge():
             print(f"[knowledge] {role_name}: failed ({e})")
 
     print(f"[knowledge] {len(_knowledge_paths)} roles ready (connections lazy)")
+
+    if bg_tasks:
+        print(f"[knowledge] {len(bg_tasks)} roles queued for background indexing")
+        asyncio.create_task(_background_index(rm, bg_tasks))
+
+
+async def _background_index(rm, tasks: list):
+    """后台逐个 role 跑增量索引，不阻塞 web 启动。"""
+    from lifee.memory import MemoryManager
+    for role_name, db_path, knowledge_dir, knowledge_lang in tasks:
+        try:
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            manager = MemoryManager(db_path, _knowledge_embedding, knowledge_lang=knowledge_lang)
+            files = list(knowledge_dir.rglob("*.md")) + list(knowledge_dir.rglob("*.txt"))
+            files = [f for f in files if f.is_file()]
+            need_index = [f for f in files if manager._needs_reindex(f)]
+            if not need_index:
+                _knowledge_paths[role_name] = (db_path, knowledge_lang)
+                print(f"[knowledge:bg] {role_name}: up-to-date ({len(files)} files)")
+                continue
+
+            total = len(need_index)
+            print(f"[knowledge:bg] {role_name}: indexing {total} files...", flush=True)
+            done = 0
+            failed = 0
+            for f in need_index:
+                try:
+                    await manager.index_file(f)
+                except Exception as e:
+                    failed += 1
+                    print(f"[knowledge:bg] {role_name}: {f.name} failed ({e})", flush=True)
+                done += 1
+                if done % 5 == 0 or done == total:
+                    print(f"[knowledge:bg] {role_name}: {done}/{total}", flush=True)
+
+            _knowledge_paths[role_name] = (db_path, knowledge_lang)
+            _knowledge_managers.pop(role_name, None)
+            print(f"[knowledge:bg] {role_name}: done ({total - failed}/{total})", flush=True)
+        except Exception as e:
+            print(f"[knowledge:bg] {role_name}: fatal ({e})", flush=True)
 
 
 def _get_knowledge_manager(role_name: str):
@@ -408,6 +483,17 @@ def _get_knowledge_manager(role_name: str):
 @app.on_event("startup")
 async def startup():
     await _init_knowledge()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    global _sb_client
+    if _sb_client is not None and not _sb_client.is_closed:
+        try:
+            await _sb_client.aclose()
+        except Exception:
+            pass
+        _sb_client = None
 
 # CORS
 app.add_middleware(
@@ -784,19 +870,18 @@ async def list_sessions(request: Request, userId: str = ""):
     """列出用户的会话"""
     if not _SUPABASE_URL or not userId:
         return {"sessions": []}
-    import httpx
-    async with httpx.AsyncClient() as c:
-        # 获取有消息的 session（通过 inner join chat_messages）
-        r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&deleted=eq.false&select=id,title,personas,starred,updated_at,chat_messages(id)&order=updated_at.desc&limit=20",
-            headers=_SB_HEADERS,
-        )
-        sessions = r.json()
-        # 过滤掉没有消息的空 session
-        sessions = [s for s in sessions if isinstance(s, dict) and s.get("chat_messages")]
-        for s in sessions:
-            s.pop("chat_messages", None)
-        return {"sessions": sessions}
+    c = _sb()
+    # 获取有消息的 session（通过 inner join chat_messages）
+    r = await c.get(
+        f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&deleted=eq.false&select=id,title,personas,starred,updated_at,chat_messages(id)&order=updated_at.desc&limit=20",
+        headers=_SB_HEADERS,
+    )
+    sessions = r.json()
+    # 过滤掉没有消息的空 session
+    sessions = [s for s in sessions if isinstance(s, dict) and s.get("chat_messages")]
+    for s in sessions:
+        s.pop("chat_messages", None)
+    return {"sessions": sessions}
 
 
 # Alias → canonical persona id. chat_sessions.personas historically stored
@@ -995,19 +1080,19 @@ async def get_session_messages(session_id: str):
     Supabase REST 偶发 5xx / 超时时降级为 200 + 空列表，别让前端 JSON.parse 炸。"""
     if not _SUPABASE_URL:
         return {"messages": [], "options": []}
-    import httpx, traceback
+    import traceback
     try:
-        async with httpx.AsyncClient(timeout=10.0) as c:
-            m, s = await _asyncio.gather(
-                c.get(
-                    f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=role,content,persona_id,seq,created_at&order=seq.asc",
-                    headers=_SB_HEADERS,
-                ),
-                c.get(
-                    f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&select=last_options",
-                    headers=_SB_HEADERS,
-                ),
-            )
+        c = _sb()
+        # 串行请求：并行 gather 在并发新建 TCP+TLS 握手时从国内网络连 Cloudflare 容易失败
+        # 串行让第二个请求复用第一个的 keep-alive 连接，反而更快更稳
+        m = await c.get(
+            f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=role,content,persona_id,seq,created_at&order=seq.asc",
+            headers=_SB_HEADERS,
+        )
+        s = await c.get(
+            f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&select=last_options",
+            headers=_SB_HEADERS,
+        )
         messages = m.json() if m.status_code == 200 else []
         if not isinstance(messages, list):
             messages = []
@@ -1036,7 +1121,6 @@ async def update_session(session_id: str, req: SessionUpdateRequest):
     if not _SUPABASE_URL:
         return {"ok": False}
     try:
-        import httpx
         updates = {}
         if req.title:
             updates["title"] = req.title
@@ -1044,11 +1128,11 @@ async def update_session(session_id: str, req: SessionUpdateRequest):
             updates["starred"] = req.starred
         if not updates:
             return {"ok": False, "message": "nothing to update"}
-        async with httpx.AsyncClient() as c:
-            await c.patch(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
-                headers=_SB_HEADERS, json=updates,
-            )
+        c = _sb()
+        await c.patch(
+            f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
+            headers=_SB_HEADERS, json=updates,
+        )
         return {"ok": True}
     except Exception:
         return {"ok": False}
@@ -1060,13 +1144,12 @@ async def delete_session(session_id: str):
     if not _SUPABASE_URL:
         return {"ok": False}
     try:
-        import httpx
-        async with httpx.AsyncClient() as c:
-            await c.patch(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
-                headers=_SB_HEADERS,
-                json={"deleted": True},
-            )
+        c = _sb()
+        await c.patch(
+            f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
+            headers=_SB_HEADERS,
+            json={"deleted": True},
+        )
         return {"ok": True}
     except Exception:
         return {"ok": False}

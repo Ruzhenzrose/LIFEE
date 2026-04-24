@@ -200,28 +200,37 @@ class Participant:
         stock_data_context: str = "",
     ) -> str:
         """
-        构建包含知识库上下文和辩论上下文的 system prompt
+        构建 system prompt。顺序经过重排以最大化 DeepSeek 前缀缓存命中率
+        （命中段按 $0.028/M input 计费 vs $0.14/M 未命中，相差 5 倍）。
 
-        注入顺序（重要性从低到高，最后的影响力最大）：
-        1. 角色定义 (SOUL + IDENTITY + core skills)
-        2. RAG 知识库（参考资料，放前面降低影响力）
-        3. 触发技能 (Tier 2)
-        4. 实时市场数据
-        5. 用户记忆
-        6. 最近对话记录
-        7. 辩论上下文（含语言指令等关键规则，放最后）
+        拼接顺序：由"最稳定"→"最动态"，前缀缓存从 token 0 开始，第一个不同处断。
+        1. 角色定义 (SOUL + IDENTITY + core skills)  — 静态（persona 级）
+        2. 用户记忆                                  — 半静态（user 级，session 内基本不变）
+        3. 最近对话记录                              — 每轮只在尾部追加，前缀稳定增长
+        4. RAG 知识库                                — 动态（随用户 query 变）
+        5. 触发技能 (Tier 2)                         — 动态（关键词触发）
+        6. 实时市场数据                              — 动态
+        7. 辩论上下文（含语言指令等关键规则，放最后影响力最大）
         """
         parts = [self.system_prompt]
 
-        # 知识库上下文（放前面，降低对模型的影响）
+        # [2] 用户记忆——用户级稳定，放在静态 soul 之后最大化共享前缀
+        if user_memory_context:
+            parts.append(f"关于与你对话的用户：\n{user_memory_context}")
+
+        # [3] 最近对话记录——逐轮增长，前 N-1 轮的 tokens 在第 N 轮作为前缀可命中
+        if dialogue_context:
+            parts.append(dialogue_context)
+
+        # [4] 知识库上下文
         if knowledge_context:
             parts.append(f"<reference_knowledge>\nExcerpts from your published works for reference:\n\n{knowledge_context}\n</reference_knowledge>")
 
-        # 注入触发技能 (Tier 2)
+        # [5] 注入触发技能 (Tier 2)
         if triggered_skill_context:
             parts.append(triggered_skill_context)
 
-        # 注入实时市场数据
+        # [6] 注入实时市场数据
         if stock_data_context:
             parts.append(
                 "The following real-time market data has been retrieved by the system. "
@@ -230,15 +239,7 @@ class Participant:
                 + stock_data_context
             )
 
-        # 注入用户记忆上下文
-        if user_memory_context:
-            parts.append(f"关于与你对话的用户：\n{user_memory_context}")
-
-        # 最近对话记录（让分身明确看到其他人说了什么）
-        if dialogue_context:
-            parts.append(dialogue_context)
-
-        # 辩论上下文（含语言指令等关键规则，放最后影响力最大）
+        # [7] 辩论上下文（含语言指令等关键规则，放最后影响力最大）
         if debate_context:
             parts.append(debate_context.build_context_prompt())
 
