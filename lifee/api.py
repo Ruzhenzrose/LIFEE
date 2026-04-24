@@ -43,9 +43,12 @@ def _sb():
     global _sb_client
     import httpx
     if _sb_client is None or _sb_client.is_closed:
+        # AsyncHTTPTransport(retries=2): 建立连接失败时自动重试 2 次
+        # 你这个网络环境到 Cloudflare 首次握手偶尔抽风，内建重试比上层加 try/except 干净
         _sb_client = httpx.AsyncClient(
-            timeout=httpx.Timeout(15.0, connect=10.0),
-            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
+            timeout=httpx.Timeout(20.0, connect=15.0),
+            limits=httpx.Limits(max_connections=10, max_keepalive_connections=10, keepalive_expiry=60.0),
+            transport=httpx.AsyncHTTPTransport(retries=2),
         )
     return _sb_client
 
@@ -193,26 +196,26 @@ async def _get_balance(uid: str) -> int:
         return initial
     import httpx
     try:
-        async with httpx.AsyncClient(timeout=5.0) as c:
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}&select=balance",
-                headers=_SB_HEADERS,
-            )
-            rows = r.json() if r.status_code < 400 else None
-            # PostgREST 正常返回 list，错误时返回 dict — 只相信 list。
-            if isinstance(rows, list):
-                if rows:
-                    return int(rows[0].get("balance", initial))
-                # 新 uid → 插入（幂等失败不致命）
-                try:
-                    await c.post(
-                        f"{_SUPABASE_URL}/rest/v1/user_credits",
-                        headers=_SB_HEADERS,
-                        json={"uid": uid, "balance": initial},
-                    )
-                except Exception:
-                    pass
-                return initial
+        c = _sb()
+        r = await c.get(
+            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}&select=balance",
+            headers=_SB_HEADERS,
+        )
+        rows = r.json() if r.status_code < 400 else None
+        # PostgREST 正常返回 list，错误时返回 dict — 只相信 list。
+        if isinstance(rows, list):
+            if rows:
+                return int(rows[0].get("balance", initial))
+            # 新 uid → 插入（幂等失败不致命）
+            try:
+                await c.post(
+                    f"{_SUPABASE_URL}/rest/v1/user_credits",
+                    headers=_SB_HEADERS,
+                    json={"uid": uid, "balance": initial},
+                )
+            except Exception:
+                pass
+            return initial
     except Exception:
         pass
     return initial
@@ -224,20 +227,20 @@ async def _migrate_balance(from_uid: str, to_uid: str):
         return
     import httpx
     try:
-        async with httpx.AsyncClient(timeout=5.0) as c:
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{from_uid}&select=balance",
-                headers=_SB_HEADERS,
-            )
-            rows = r.json() if r.status_code < 400 else None
-            if not isinstance(rows, list) or not rows:
-                return  # 没记录 / 错误响应 → 不迁移
-            balance = int(rows[0].get("balance", 0))
-            await c.post(
-                f"{_SUPABASE_URL}/rest/v1/user_credits",
-                headers=_SB_HEADERS,
-                json={"uid": to_uid, "balance": balance},
-            )
+        c = _sb()
+        r = await c.get(
+            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{from_uid}&select=balance",
+            headers=_SB_HEADERS,
+        )
+        rows = r.json() if r.status_code < 400 else None
+        if not isinstance(rows, list) or not rows:
+            return  # 没记录 / 错误响应 → 不迁移
+        balance = int(rows[0].get("balance", 0))
+        await c.post(
+            f"{_SUPABASE_URL}/rest/v1/user_credits",
+            headers=_SB_HEADERS,
+            json={"uid": to_uid, "balance": balance},
+        )
     except Exception:
         return
 
@@ -251,12 +254,12 @@ async def _deduct(uid: str, amount: int = 1) -> bool:
     bal = await _get_balance(uid)
     if bal < amount:
         return False
-    async with httpx.AsyncClient() as c:
-        await c.patch(
-            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}",
-            headers=_SB_HEADERS,
-            json={"balance": bal - amount, "updated_at": datetime.now(timezone.utc).isoformat()},
-        )
+    c = _sb()
+    await c.patch(
+        f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}",
+        headers=_SB_HEADERS,
+        json={"balance": bal - amount, "updated_at": datetime.now(timezone.utc).isoformat()},
+    )
     return True
 
 
@@ -265,43 +268,43 @@ async def _redeem(uid: str, code: str) -> tuple[bool, str]:
     if not _SUPABASE_URL:
         return False, "no database"
     import httpx
-    async with httpx.AsyncClient() as c:
-        # 查找未使用的兑换码
-        r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/redeem_codes?code=eq.{code}&used_by=is.null&select=credits",
-            headers=_SB_HEADERS,
-        )
-        rows = r.json()
-        if not rows:
-            return False, "invalid code"
-        credits = rows[0]["credits"]
+    c = _sb()
+    # 查找未使用的兑换码
+    r = await c.get(
+        f"{_SUPABASE_URL}/rest/v1/redeem_codes?code=eq.{code}&used_by=is.null&select=credits",
+        headers=_SB_HEADERS,
+    )
+    rows = r.json()
+    if not rows:
+        return False, "invalid code"
+    credits = rows[0]["credits"]
 
-        from datetime import datetime, timezone
-        now = datetime.now(timezone.utc).isoformat()
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
 
-        # 标记已使用
-        await c.patch(
-            f"{_SUPABASE_URL}/rest/v1/redeem_codes?code=eq.{code}",
-            headers=_SB_HEADERS,
-            json={"used_by": uid, "used_at": now},
-        )
+    # 标记已使用
+    await c.patch(
+        f"{_SUPABASE_URL}/rest/v1/redeem_codes?code=eq.{code}",
+        headers=_SB_HEADERS,
+        json={"used_by": uid, "used_at": now},
+    )
 
-        # 增加余额
-        bal = await _get_balance(uid)
-        await c.patch(
-            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}",
-            headers=_SB_HEADERS,
-            json={"balance": bal + credits, "updated_at": now},
-        )
+    # 增加余额
+    bal = await _get_balance(uid)
+    await c.patch(
+        f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}",
+        headers=_SB_HEADERS,
+        json={"balance": bal + credits, "updated_at": now},
+    )
 
-        # 记录交易
-        await c.post(
-            f"{_SUPABASE_URL}/rest/v1/credit_transactions",
-            headers=_SB_HEADERS,
-            json={"uid": uid, "amount": credits, "reason": f"redeem:{code}"},
-        )
+    # 记录交易
+    await c.post(
+        f"{_SUPABASE_URL}/rest/v1/credit_transactions",
+        headers=_SB_HEADERS,
+        json={"uid": uid, "amount": credits, "reason": f"redeem:{code}"},
+    )
 
-        return True, f"+{credits} credits"
+    return True, f"+{credits} credits"
 
 
 async def _generate_redeem_codes(n: int = 10, credits_each: int = 100) -> list[str]:
@@ -316,12 +319,12 @@ async def _generate_redeem_codes(n: int = 10, credits_each: int = 100) -> list[s
 
     if _SUPABASE_URL:
         import httpx
-        async with httpx.AsyncClient() as c:
-            await c.post(
-                f"{_SUPABASE_URL}/rest/v1/redeem_codes",
-                headers=_SB_HEADERS,
-                json=rows,
-            )
+        c = _sb()
+        await c.post(
+            f"{_SUPABASE_URL}/rest/v1/redeem_codes",
+            headers=_SB_HEADERS,
+            json=rows,
+        )
     return codes
 
 
@@ -387,15 +390,18 @@ async def _init_knowledge():
                 has_local = any(f.is_file() for f in src_files)
 
             if has_local:
-                # 本地有语料 → 用本地索引（跳过 Release 下载），后台增量索引
+                # 本地有语料 → 用本地索引（跳过 Release 下载）
                 role_info = rm.get_role_info(role_name)
                 knowledge_lang = role_info.get("knowledge_lang", "English")
                 if db_path.exists():
+                    # db 已存在（上次索引过或 Release 下载过）→ 直接用，不进后台队列。
+                    # 如果要重新索引（比如语料变了），手动删 db 再启动。
                     _knowledge_paths[role_name] = (db_path, knowledge_lang)
-                    print(f"[knowledge] {role_name}: local db ready (reindex check in bg)")
+                    print(f"[knowledge] {role_name}: local db ready")
                 else:
+                    # 只有 db 缺失时才后台重建（首次启动 / 主动清除后）
                     print(f"[knowledge] {role_name}: no db, will build in background")
-                bg_tasks.append((role_name, db_path, local_dir, knowledge_lang))
+                    bg_tasks.append((role_name, db_path, local_dir, knowledge_lang))
                 continue
 
             # 无本地语料 → 从 Release 下载 pre-built db
@@ -483,6 +489,14 @@ def _get_knowledge_manager(role_name: str):
 @app.on_event("startup")
 async def startup():
     await _init_knowledge()
+    # 预热一个 Supabase 连接，前端第一批请求直接复用（省一次 TCP+TLS 握手）
+    if _SUPABASE_URL:
+        try:
+            c = _sb()
+            await c.get(f"{_SUPABASE_URL}/rest/v1/", headers=_SB_HEADERS)
+            print("[supabase] warmup OK")
+        except Exception as e:
+            print(f"[supabase] warmup failed (non-fatal): {type(e).__name__}")
 
 
 @app.on_event("shutdown")
@@ -522,14 +536,14 @@ async def _resolve_uid(request: Request) -> str:
         # 验证 cookie uid 在数据库里是否存在
         import httpx
         try:
-            async with httpx.AsyncClient(timeout=5.0) as c:
-                r = await c.get(
-                    f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{cookie_uid}&select=uid",
-                    headers=_SB_HEADERS,
-                )
-                rows = r.json() if r.status_code < 400 else None
-                if isinstance(rows, list) and rows:
-                    return cookie_uid  # 合法 cookie
+            c = _sb()
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{cookie_uid}&select=uid",
+                headers=_SB_HEADERS,
+            )
+            rows = r.json() if r.status_code < 400 else None
+            if isinstance(rows, list) and rows:
+                return cookie_uid  # 合法 cookie
         except Exception:
             # 网络/DB 故障 → 信任 cookie，避免把已登录用户打回 IP 池
             return cookie_uid
@@ -768,13 +782,13 @@ async def _save_message(session_id: str, user_id: str, role: str, content: str, 
         return
     try:
         import httpx
-        async with httpx.AsyncClient() as c:
-            await c.post(
-                f"{_SUPABASE_URL}/rest/v1/chat_messages",
-                headers=_SB_HEADERS,
-                json={"session_id": session_id, "user_id": user_id, "role": role,
-                      "content": content, "persona_id": persona_id, "seq": seq},
-            )
+        c = _sb()
+        await c.post(
+            f"{_SUPABASE_URL}/rest/v1/chat_messages",
+            headers=_SB_HEADERS,
+            json={"session_id": session_id, "user_id": user_id, "role": role,
+                  "content": content, "persona_id": persona_id, "seq": seq},
+        )
     except Exception:
         pass
 
@@ -790,13 +804,13 @@ async def _insert_message_stub(session_id: str, user_id: str, role: str, persona
         return
     try:
         import httpx
-        async with httpx.AsyncClient() as c:
-            await c.post(
-                f"{_SUPABASE_URL}/rest/v1/chat_messages",
-                headers=_SB_HEADERS,
-                json={"session_id": session_id, "user_id": user_id, "role": role,
-                      "content": "", "persona_id": persona_id, "seq": seq},
-            )
+        c = _sb()
+        await c.post(
+            f"{_SUPABASE_URL}/rest/v1/chat_messages",
+            headers=_SB_HEADERS,
+            json={"session_id": session_id, "user_id": user_id, "role": role,
+                  "content": "", "persona_id": persona_id, "seq": seq},
+        )
     except Exception:
         pass
 
@@ -807,12 +821,12 @@ async def _patch_message_content(session_id: str, seq: int, content: str):
         return
     try:
         import httpx
-        async with httpx.AsyncClient() as c:
-            await c.patch(
-                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&seq=eq.{seq}",
-                headers={**_SB_HEADERS, "Prefer": "return=minimal"},
-                json={"content": content},
-            )
+        c = _sb()
+        await c.patch(
+            f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&seq=eq.{seq}",
+            headers={**_SB_HEADERS, "Prefer": "return=minimal"},
+            json={"content": content},
+        )
     except Exception:
         pass
 
@@ -826,12 +840,12 @@ async def _log_conversation(uid: str, role: str, persona_id: str, content_previe
     try:
         # 确保 uid 存在于 user_credits（外键约束）
         await _get_balance(uid)
-        async with httpx.AsyncClient() as c:
-            await c.post(
-                f"{_SUPABASE_URL}/rest/v1/credit_transactions",
-                headers=_SB_HEADERS,
-                json={"uid": uid, "amount": 0, "reason": f"msg:{role}:{persona_id}:{preview}"},
-            )
+        c = _sb()
+        await c.post(
+            f"{_SUPABASE_URL}/rest/v1/credit_transactions",
+            headers=_SB_HEADERS,
+            json={"uid": uid, "amount": 0, "reason": f"msg:{role}:{persona_id}:{preview}"},
+        )
     except Exception:
         pass  # 日志失败不影响对话
 
@@ -842,25 +856,25 @@ async def _ensure_chat_session(session_id: str, user_id: str, title: str = "New 
         return
     try:
         import httpx
-        async with httpx.AsyncClient() as c:
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&deleted=eq.false&select=id",
+        c = _sb()
+        r = await c.get(
+            f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&deleted=eq.false&select=id",
+            headers=_SB_HEADERS,
+        )
+        if not r.json():
+            await c.post(
+                f"{_SUPABASE_URL}/rest/v1/chat_sessions",
                 headers=_SB_HEADERS,
+                json={"id": session_id, "user_id": user_id, "title": title,
+                      "personas": personas or []},
             )
-            if not r.json():
-                await c.post(
-                    f"{_SUPABASE_URL}/rest/v1/chat_sessions",
-                    headers=_SB_HEADERS,
-                    json={"id": session_id, "user_id": user_id, "title": title,
-                          "personas": personas or []},
-                )
-            else:
-                from datetime import datetime, timezone
-                await c.patch(
-                    f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
-                    headers=_SB_HEADERS,
-                    json={"updated_at": datetime.now(timezone.utc).isoformat()},
-                )
+        else:
+            from datetime import datetime, timezone
+            await c.patch(
+                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
+                headers=_SB_HEADERS,
+                json={"updated_at": datetime.now(timezone.utc).isoformat()},
+            )
     except Exception:
         pass
 
@@ -960,17 +974,17 @@ async def submit_feedback(req: FeedbackRequest, request: Request):
     if req.userId:
         payload["user_id"] = req.userId
     try:
-        async with httpx.AsyncClient(timeout=10.0) as c:
-            r = await c.post(
-                f"{_SUPABASE_URL}/rest/v1/feedback",
-                headers=_SB_HEADERS,
-                json=payload,
-            )
-            if r.status_code not in (200, 201, 204):
-                # Surface the Supabase error so the frontend can show something
-                # actionable (missing table, RLS, etc).
-                body = r.text[:300] if r.text else ""
-                return {"ok": False, "message": f"store failed: {r.status_code} {body}"}
+        c = _sb()
+        r = await c.post(
+            f"{_SUPABASE_URL}/rest/v1/feedback",
+            headers=_SB_HEADERS,
+            json=payload,
+        )
+        if r.status_code not in (200, 201, 204):
+            # Surface the Supabase error so the frontend can show something
+            # actionable (missing table, RLS, etc).
+            body = r.text[:300] if r.text else ""
+            return {"ok": False, "message": f"store failed: {r.status_code} {body}"}
     except Exception as e:
         return {"ok": False, "message": str(e)[:200]}
     return {"ok": True}
@@ -993,36 +1007,36 @@ async def hot_personas(days: int = 7, limit: int = 8):
     cutoff = quote((datetime.now(timezone.utc) - timedelta(days=days)).isoformat(), safe="")
     import httpx
     counts: dict[str, int] = {}
-    async with httpx.AsyncClient(timeout=10.0) as c:
-        # Paginate through all sessions in window. Supabase default limit is 1000
-        # per page; we bump via range headers.
-        offset = 0
-        page_size = 1000
-        while True:
-            # Note: we intentionally include deleted sessions. "Hot" is about
-            # which persona people picked, not which conversations they kept.
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions"
-                f"?updated_at=gte.{cutoff}&select=personas",
-                headers={
-                    **_SB_HEADERS,
-                    "Range": f"{offset}-{offset + page_size - 1}",
-                    "Range-Unit": "items",
-                    "Prefer": "count=exact",
-                },
-            )
-            if r.status_code not in (200, 206):
-                break
-            rows = r.json() if r.content else []
-            for row in rows:
-                for raw in (row.get("personas") or []):
-                    if not raw or raw in ("user", "system", "lifee-followup"):
-                        continue
-                    canonical = _canonical_persona_id(raw)
-                    counts[canonical] = counts.get(canonical, 0) + 1
-            if len(rows) < page_size:
-                break
-            offset += page_size
+    c = _sb()
+    # Paginate through all sessions in window. Supabase default limit is 1000
+    # per page; we bump via range headers.
+    offset = 0
+    page_size = 1000
+    while True:
+        # Note: we intentionally include deleted sessions. "Hot" is about
+        # which persona people picked, not which conversations they kept.
+        r = await c.get(
+            f"{_SUPABASE_URL}/rest/v1/chat_sessions"
+            f"?updated_at=gte.{cutoff}&select=personas",
+            headers={
+                **_SB_HEADERS,
+                "Range": f"{offset}-{offset + page_size - 1}",
+                "Range-Unit": "items",
+                "Prefer": "count=exact",
+            },
+        )
+        if r.status_code not in (200, 206):
+            break
+        rows = r.json() if r.content else []
+        for row in rows:
+            for raw in (row.get("personas") or []):
+                if not raw or raw in ("user", "system", "lifee-followup"):
+                    continue
+                canonical = _canonical_persona_id(raw)
+                counts[canonical] = counts.get(canonical, 0) + 1
+        if len(rows) < page_size:
+            break
+        offset += page_size
     ranked = sorted(counts.items(), key=lambda kv: -kv[1])[:max(1, limit)]
     return {"hot": [{"id": pid, "count": n} for pid, n in ranked]}
 
@@ -1083,15 +1097,15 @@ async def get_session_messages(session_id: str):
     import traceback
     try:
         c = _sb()
-        # 串行请求：并行 gather 在并发新建 TCP+TLS 握手时从国内网络连 Cloudflare 容易失败
-        # 串行让第二个请求复用第一个的 keep-alive 连接，反而更快更稳
-        m = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=role,content,persona_id,seq,created_at&order=seq.asc",
-            headers=_SB_HEADERS,
-        )
-        s = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&select=last_options",
-            headers=_SB_HEADERS,
+        m, s = await _asyncio.gather(
+            c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=role,content,persona_id,seq,created_at&order=seq.asc",
+                headers=_SB_HEADERS,
+            ),
+            c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&select=last_options",
+                headers=_SB_HEADERS,
+            ),
         )
         messages = m.json() if m.status_code == 200 else []
         if not isinstance(messages, list):
@@ -1171,13 +1185,13 @@ async def summarize_debate(req: SummarizeRequest):
     if req.sessionId and _SUPABASE_URL and not msgs:
         try:
             import httpx
-            async with httpx.AsyncClient() as c:
-                r = await c.get(
-                    f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
-                    headers=_SB_HEADERS,
-                )
-                db_msgs = r.json() or []
-                msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
+            c = _sb()
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
+                headers=_SB_HEADERS,
+            )
+            db_msgs = r.json() or []
+            msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
         except Exception:
             pass
 
@@ -1247,13 +1261,13 @@ async def generate_timeline(req: TimelineRequest):
     if req.sessionId and _SUPABASE_URL and not msgs:
         try:
             import httpx
-            async with httpx.AsyncClient() as c:
-                r = await c.get(
-                    f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
-                    headers=_SB_HEADERS,
-                )
-                db_msgs = r.json() or []
-                msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
+            c = _sb()
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
+                headers=_SB_HEADERS,
+            )
+            db_msgs = r.json() or []
+            msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
         except Exception:
             pass
 
@@ -1348,13 +1362,13 @@ async def plan_30_days(req: PlanRequest):
     if req.sessionId and _SUPABASE_URL and not msgs:
         try:
             import httpx
-            async with httpx.AsyncClient() as c:
-                r = await c.get(
-                    f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
-                    headers=_SB_HEADERS,
-                )
-                db_msgs = r.json() or []
-                msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
+            c = _sb()
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
+                headers=_SB_HEADERS,
+            )
+            db_msgs = r.json() or []
+            msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
         except Exception:
             pass
 
@@ -1651,14 +1665,14 @@ async def extract_memory(req: ExtractMemoryRequest):
     if req.sessionId and _SUPABASE_URL:
         try:
             import httpx
-            async with httpx.AsyncClient() as c:
-                r = await c.get(
-                    f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{req.sessionId}&select=last_extract_msg_count",
-                    headers=_SB_HEADERS,
-                )
-                rows = r.json() or []
-                if rows:
-                    last_seq = rows[0].get("last_extract_msg_count", 0) or 0
+            c = _sb()
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{req.sessionId}&select=last_extract_msg_count",
+                headers=_SB_HEADERS,
+            )
+            rows = r.json() or []
+            if rows:
+                last_seq = rows[0].get("last_extract_msg_count", 0) or 0
         except Exception:
             pass
 
@@ -1666,12 +1680,12 @@ async def extract_memory(req: ExtractMemoryRequest):
     msgs = []
     if req.sessionId and _SUPABASE_URL:
         try:
-            async with httpx.AsyncClient() as c:
-                r = await c.get(
-                    f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&seq=gt.{last_seq}&select=role,content,persona_id,seq&order=seq.asc",
-                    headers=_SB_HEADERS,
-                )
-                msgs = r.json() or []
+            c = _sb()
+            r = await c.get(
+                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&seq=gt.{last_seq}&select=role,content,persona_id,seq&order=seq.asc",
+                headers=_SB_HEADERS,
+            )
+            msgs = r.json() or []
         except Exception:
             pass
 
@@ -1717,12 +1731,12 @@ async def extract_memory(req: ExtractMemoryRequest):
         if _SUPABASE_URL:
             try:
                 import httpx
-                async with httpx.AsyncClient() as c:
-                    await c.patch(
-                        f"{_SUPABASE_URL}/rest/v1/profiles?id=eq.{req.userId}",
-                        headers=_SB_HEADERS,
-                        json={"user_memory": updated},
-                    )
+                c = _sb()
+                await c.patch(
+                    f"{_SUPABASE_URL}/rest/v1/profiles?id=eq.{req.userId}",
+                    headers=_SB_HEADERS,
+                    json={"user_memory": updated},
+                )
             except Exception:
                 pass
 
@@ -1730,12 +1744,12 @@ async def extract_memory(req: ExtractMemoryRequest):
         if req.sessionId and _SUPABASE_URL and msgs:
             try:
                 max_seq = max(m.get("seq", 0) for m in msgs)
-                async with httpx.AsyncClient() as c:
-                    await c.patch(
-                        f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{req.sessionId}",
-                        headers=_SB_HEADERS,
-                        json={"last_extract_msg_count": max_seq},
-                    )
+                c = _sb()
+                await c.patch(
+                    f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{req.sessionId}",
+                    headers=_SB_HEADERS,
+                    json={"last_extract_msg_count": max_seq},
+                )
             except Exception:
                 pass
 
@@ -1813,13 +1827,13 @@ async def _handle_decision(req: DecisionRequest, request: Request):
         # Guest→注册 余额合并：首次以注册身份登录时，把 Guest 剩余余额加到注册 bonus 上
         if _SUPABASE_URL:
             import httpx
-            async with httpx.AsyncClient() as c:
-                r = await c.get(f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}&select=balance", headers=_SB_HEADERS)
-                if not r.json():
-                    # user:xxx 不存在 → 首次注册，合并 Guest 余额
-                    guest_bal = await _get_balance(guest_uid)
-                    merged = guest_bal + REGISTER_BONUS
-                    await c.post(f"{_SUPABASE_URL}/rest/v1/user_credits", headers=_SB_HEADERS, json={"uid": uid, "balance": merged})
+            c = _sb()
+            r = await c.get(f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}&select=balance", headers=_SB_HEADERS)
+            if not r.json():
+                # user:xxx 不存在 → 首次注册，合并 Guest 余额
+                guest_bal = await _get_balance(guest_uid)
+                merged = guest_bal + REGISTER_BONUS
+                await c.post(f"{_SUPABASE_URL}/rest/v1/user_credits", headers=_SB_HEADERS, json={"uid": uid, "balance": merged})
     else:
         uid = guest_uid
     _need_set_cookie = not request.cookies.get(_COOKIE_NAME)
@@ -1901,15 +1915,15 @@ async def _handle_decision(req: DecisionRequest, request: Request):
                 try:
                     import httpx
                     from lifee.providers.base import MessageRole
-                    async with httpx.AsyncClient() as _c:
-                        _r = await _c.get(
-                            f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{sid}&select=role,content,persona_id&order=seq.asc",
-                            headers=_SB_HEADERS,
-                        )
-                        for m in _r.json() or []:
-                            role = MessageRole.USER if m["role"] == "user" else MessageRole.ASSISTANT
-                            name = m.get("persona_id") or None
-                            session.add_message(role, m["content"], name=name)
+                    _c = _sb()
+                    _r = await _c.get(
+                        f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{sid}&select=role,content,persona_id&order=seq.asc",
+                        headers=_SB_HEADERS,
+                    )
+                    for m in _r.json() or []:
+                        role = MessageRole.USER if m["role"] == "user" else MessageRole.ASSISTANT
+                        name = m.get("persona_id") or None
+                        session.add_message(role, m["content"], name=name)
                     if session.history:
                         print(f"[session] Restored {len(session.history)} messages for {sid[:8]}")
                 except Exception as e:
@@ -1920,14 +1934,14 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             if req.userId and _SUPABASE_URL:
                 try:
                     import httpx
-                    async with httpx.AsyncClient() as _c:
-                        _r = await _c.get(
-                            f"{_SUPABASE_URL}/rest/v1/profiles?id=eq.{req.userId}&select=user_memory",
-                            headers=_SB_HEADERS,
-                        )
-                        rows = _r.json() or []
-                        if rows and rows[0].get("user_memory"):
-                            user_memory_context = rows[0]["user_memory"]
+                    _c = _sb()
+                    _r = await _c.get(
+                        f"{_SUPABASE_URL}/rest/v1/profiles?id=eq.{req.userId}&select=user_memory",
+                        headers=_SB_HEADERS,
+                    )
+                    rows = _r.json() or []
+                    if rows and rows[0].get("user_memory"):
+                        user_memory_context = rows[0]["user_memory"]
                 except Exception:
                     pass
 
@@ -2061,14 +2075,14 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
       if chat_user_id and session_id and _SUPABASE_URL:
           try:
               import httpx
-              async with httpx.AsyncClient() as _c:
-                  _r = await _c.get(
-                      f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=seq&order=seq.desc&limit=1",
-                      headers=_SB_HEADERS,
-                  )
-                  _rows = _r.json()
-                  if _rows and isinstance(_rows, list) and len(_rows) > 0:
-                      seq = _rows[0].get("seq", 0)
+              _c = _sb()
+              _r = await _c.get(
+                  f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=seq&order=seq.desc&limit=1",
+                  headers=_SB_HEADERS,
+              )
+              _rows = _r.json()
+              if _rows and isinstance(_rows, list) and len(_rows) > 0:
+                  seq = _rows[0].get("seq", 0)
           except Exception:
               pass
 
@@ -2157,12 +2171,12 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
           async def _save_options():
               try:
                   import httpx as _hx
-                  async with _hx.AsyncClient() as _c:
-                      await _c.patch(
-                          f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
-                          headers={**_SB_HEADERS, "Prefer": "return=minimal"},
-                          json={"last_options": options},
-                      )
+                  _c = _sb()
+                  await _c.patch(
+                      f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
+                      headers={**_SB_HEADERS, "Prefer": "return=minimal"},
+                      json={"last_options": options},
+                  )
               except Exception:
                   pass
           _bg(_save_options())
