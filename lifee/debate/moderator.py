@@ -277,8 +277,12 @@ class Moderator:
         all_participants_info = [p.info for p in self.participants]
         num_participants = len(self.participants)
 
-        # 2a. 多参与者时，根据 RAG 相关度重排发言顺序
+        # 2a. 多参与者时，根据 RAG 相关度重排发言顺序。
+        # 沿途向上游 (api.py → 前端) yield 状态信号，格式 (None, stage_code, False)。
+        # 这样前端在等待 LLM TTFT 之前就能显示"正在查询知识库"/"已选定发言者"
+        # 之类的指示器，而不是靠猜第一个 persona。
         if num_participants > 1 and user_input:
+            yield (None, "kb_search", False)
             search_tasks = [p._search_knowledge(user_input) for p in self.participants]
             all_results = await asyncio.gather(*search_tasks, return_exceptions=True)
             scores = [
@@ -291,6 +295,9 @@ class Moderator:
                     p for _, p in sorted(zip(scores, self.participants), key=lambda x: x[0], reverse=True)
                 ]
                 self.rotation.reorder(sorted_participants)
+                # 告诉前端真正的第一发言者——头像可以从"猜"切到真人
+                first_id = sorted_participants[0].info.name
+                yield (None, f"picked:{first_id}", False)
 
         # 2. 循环让角色发言
         for turn in range(1, max_turns + 1):

@@ -69,7 +69,7 @@ async function fetchText(url) {
 // Accumulators are LOCAL to each invocation so concurrent streams (original +
 // observer) can't interfere via shared global state.
 async function _drainLifeeSSE(res, handlers, resetIdle) {
-    const { onMessage, onMessageUpdate, onOptions, onSession } = handlers || {};
+    const { onMessage, onMessageUpdate, onOptions, onSession, onStatus } = handlers || {};
     if (!res.body) throw new Error("Streaming not supported in this browser.");
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -97,7 +97,15 @@ async function _drainLifeeSSE(res, handlers, resetIdle) {
                 window.__lifeeSessionId = data.sessionId;
                 try { await onSession?.(data.sessionId); } catch (_) {}
             }
+        } else if (eventName === "status") {
+            // Warming-up phase signal: "kb_search" / "picked:<id>" / etc.
+            // Frontend translates the stage code into a shimmery italic line.
+            if (data && typeof data === "object" && data.stage) {
+                try { await onStatus?.(data.stage); } catch (_) {}
+            }
         } else if (eventName === "messageStart") {
+            // Don't clear the warming-up status here — the bubble is still
+            // empty. Clear on the first real messageChunk instead.
             if (data?.personaId) {
                 streamPid = data.personaId;
                 streamText = "";
@@ -105,7 +113,11 @@ async function _drainLifeeSSE(res, handlers, resetIdle) {
             }
         } else if (eventName === "messageChunk") {
             if (data?.chunk && streamPid) {
+                const wasEmpty = streamText.length === 0;
                 streamText += data.chunk;
+                if (wasEmpty) {
+                    try { await onStatus?.(null); } catch (_) {}
+                }
                 await onMessageUpdate?.({ personaId: streamPid, text: streamText });
             }
         } else if (eventName === "messageEnd") {

@@ -147,6 +147,23 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+    <!-- htm → React shim: translate HTML-style attrs (`class`, `for`) to React
+         names so template literals don't trigger "Invalid DOM property" warnings. -->
+    <script>
+        window.__voidH = function (type, props, ...children) {
+            if (props && typeof props === 'object') {
+                if ('class' in props && !('className' in props)) {
+                    props.className = props.class;
+                    delete props.class;
+                }
+                if ('for' in props && !('htmlFor' in props)) {
+                    props.htmlFor = props.for;
+                    delete props.for;
+                }
+            }
+            return React.createElement(type, props, ...children);
+        };
+    </script>
 
     <!-- Supabase -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.43.4/dist/umd/supabase.js"></script>
@@ -446,7 +463,7 @@
     (function () {
         'use strict';
 
-        const html = htm.bind(React.createElement);
+        const html = htm.bind(window.__voidH);
         const { useState, useEffect, useLayoutEffect, useRef, useCallback } = React;
 
         // ══════════════════════════════════════════════
@@ -527,6 +544,10 @@
             'chat.webSearch':    { en: 'Web Search',    zh: '联网搜索' },
             'chat.webSearchDesc': { en: 'Ground answers in live web results (via Gemini)', zh: '基于实时网络搜索结果（Gemini 驱动）' },
             'chat.followUp':     { en: 'Follow-up Questions', zh: '追问' },
+            'chat.inputPlaceholder': { en: 'Type a transmission...', zh: '输入你想说的话……' },
+            'warmup.convening':  { en: 'Convening the council',          zh: '正在召集议会' },
+            'warmup.searchingKb':{ en: 'Searching the council archives', zh: '正在查询议会知识库' },
+            'warmup.organizing': { en: 'Gathering their thoughts',       zh: '正在组织语言' },
             'chat.dismiss':      { en: 'Dismiss',        zh: '关闭' },
             'chat.submitAnswers':{ en: 'Send',           zh: '提交' },
             'chat.followUpCustom':{ en: 'Or write your own…', zh: '或自己填…' },
@@ -1167,7 +1188,9 @@
 
             const restoreSession = async (s) => {
                 try {
-                    const res = await fetch(`/sessions/${s.id}/messages`, { credentials: 'include' }).then(r => r.json());
+                    const r = await fetch(`/sessions/${s.id}/messages`, { credentials: 'include' });
+                    if (!r.ok) { console.warn('restore: backend returned', r.status); return; }
+                    const res = await r.json().catch(() => null);
                     if (res?.messages) {
                         setSessionMessages(res.messages.map(m => ({ personaId: m.persona_id || m.role, text: m.content, seq: m.seq })));
                         if (setSessionOptions) setSessionOptions(Array.isArray(res.options) ? res.options : []);
@@ -3924,22 +3947,30 @@
             }, []);
 
             const restoreSession = useCallback(async (s) => {
+                // Optimistic: switch to the debate view immediately so the user
+                // doesn't stare at the home page for 2-10 s while Supabase
+                // coughs up the message list. Clear stale state first, then
+                // let the fetch fill in messages/options in the background.
+                setSessionMessages([]);
+                setSessionOptions([]);
+                setSessionId(s.id);
+                if (s.personas?.length) {
+                    const ids = s.personas.map(pid => {
+                        const found = displayPersonas.find(p =>
+                            p.id === pid || p.name === pid || p.id === pid.toLowerCase().replace(/\s+/g, '')
+                        );
+                        return found?.id;
+                    }).filter(Boolean);
+                    if (ids.length) setSelectedIds(ids);
+                }
+                setView('debate');
                 try {
-                    const res = await fetch(`/sessions/${s.id}/messages`, { credentials: 'include' }).then(r => r.json());
+                    const r = await fetch(`/sessions/${s.id}/messages`, { credentials: 'include' });
+                    if (!r.ok) { console.warn('restore: backend returned', r.status); return; }
+                    const res = await r.json().catch(() => null);
                     if (res?.messages) {
                         setSessionMessages(res.messages.map(m => ({ personaId: m.persona_id || m.role, text: m.content, seq: m.seq })));
                         setSessionOptions(Array.isArray(res.options) ? res.options : []);
-                        setSessionId(s.id);
-                        if (s.personas?.length) {
-                            const ids = s.personas.map(pid => {
-                                const found = displayPersonas.find(p =>
-                                    p.id === pid || p.name === pid || p.id === pid.toLowerCase().replace(/\s+/g, '')
-                                );
-                                return found?.id;
-                            }).filter(Boolean);
-                            if (ids.length) setSelectedIds(ids);
-                        }
-                        setView('debate');
                     }
                 } catch (e) { console.error('restore failed', e); }
             }, [displayPersonas]);
@@ -4268,14 +4299,21 @@
         function isLeafText(el) {
             if (!el || !el.tagName) return false;
             if (!SHINE_TAGS.has(el.tagName)) return false;
-            if (el.classList.contains('no-shine')) return false;
+            // Opt-out propagates: marking a container `.no-shine` suppresses
+            // shine for all prose inside. Used to restrict shine to editorial
+            // moments instead of smothering message bubbles with hover gradient.
+            if (el.closest && el.closest('.no-shine')) return false;
             // .btn-gradient already has its own gold background + dark text; shine would
             // override the background and make the dark text unreadable.
             if (el.classList.contains('btn-gradient')) return false;
             if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return false;
             for (const child of el.children) {
                 const t = child.tagName;
-                if (t !== 'BR' && t !== 'WBR') return false;
+                if (t === 'BR' || t === 'WBR') continue;
+                // CharBlurText wraps streamed chars in <span.cb-c>; treat them
+                // as transparent text so the parent still counts as a leaf.
+                if (t === 'SPAN' && child.classList.contains('cb-c')) continue;
+                return false;
             }
             if (EMOJI_RE.test(el.textContent || '')) return false;
             return true;

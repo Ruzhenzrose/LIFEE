@@ -1,6 +1,92 @@
 (() => {
     const { useState, useEffect, useLayoutEffect, useRef, useMemo } = React;
-    const html = htm.bind(React.createElement);
+    const html = htm.bind(window.__voidH || React.createElement);
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  CharBlurText — per-character blur-to-sharp reveal as text streams in.
+    //  Newly-arrived chars get their own <span.cb-c.is-new> with a CSS
+    //  `blur(5px) → 0` + opacity 0 → 1 animation. Already-rendered chars
+    //  become plain inline spans so layout stays identical between states.
+    //  Regenerate / non-prefix updates reset seenLen so the whole replacement
+    //  doesn't flash-animate. Respects prefers-reduced-motion.
+    // ══════════════════════════════════════════════════════════════════════
+    const CB_STYLE_ID = 'cb-char-blur-style';
+    const ensureCharBlurStyles = () => {
+        if (typeof document === 'undefined') return;
+        if (document.getElementById(CB_STYLE_ID)) return;
+        const style = document.createElement('style');
+        style.id = CB_STYLE_ID;
+        style.textContent = `
+            .cb-wrap { white-space: pre-wrap; word-wrap: break-word; }
+            .cb-c    { display: inline; white-space: pre-wrap; }
+            .cb-c.is-new {
+                display: inline-block;
+                opacity: 0;
+                filter: blur(5px);
+                transform: translateY(1px);
+                animation: cbCharIn 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            }
+            @keyframes cbCharIn {
+                0%   { opacity: 0; filter: blur(5px); transform: translateY(1px); }
+                60%  { opacity: 1; }
+                100% { opacity: 1; filter: blur(0); transform: none; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .cb-c.is-new { animation: none; opacity: 1; filter: none; transform: none; }
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    const CharBlurText = ({ text }) => {
+        const seenLenRef = useRef(null);
+        const prevTextRef = useRef('');
+
+        useLayoutEffect(() => { ensureCharBlurStyles(); }, []);
+
+        const next = text || '';
+        if (seenLenRef.current === null) {
+            // First render: treat any initial text as seen (avoid flash-
+            // animating history when reopening a chat).
+            seenLenRef.current = next.length;
+            prevTextRef.current = next;
+        } else {
+            const prev = prevTextRef.current || '';
+            if (!next.startsWith(prev)) seenLenRef.current = next.length;
+        }
+        const seenAtRender = Math.min(seenLenRef.current, next.length);
+
+        useLayoutEffect(() => {
+            prevTextRef.current = next;
+            seenLenRef.current = next.length;
+        });
+
+        if (next.length === 0) return null;
+
+        const seen = next.slice(0, seenAtRender);
+        const fresh = next.slice(seenAtRender);
+
+        const onAnimEnd = (e) => {
+            const el = e.target;
+            if (el && el.classList && el.classList.contains('is-new')) {
+                el.classList.remove('is-new');
+            }
+        };
+
+        const freshSpans = [];
+        for (let i = 0; i < fresh.length; i++) {
+            freshSpans.push(
+                html`<span key=${'n' + (seenAtRender + i)} class="cb-c is-new" onAnimationEnd=${onAnimEnd}>${fresh[i]}</span>`
+            );
+        }
+
+        return html`
+            <span class="cb-wrap">
+                ${seen ? html`<span class="cb-c">${seen}</span>` : null}
+                ${freshSpans}
+            </span>
+        `;
+    };
 
     // i18n shims — the real t / useLocale are installed on window by
     // index.html's inline script AFTER this file's IIFE runs, so we defer to
@@ -177,6 +263,10 @@
         const [language, setLanguage]           = useState(() => localStorage.getItem('lifee_lang') || '');
         const [extractStatus, setExtractStatus] = useState(''); // '' | 'extracting' | 'done'
         const [summaryData, setSummaryData]     = useState({});
+        // Warming-up stage from SSE `event: status`. Values: null (idle or
+        // bubble has tokens), "kb_search" (RAG ranking running), "picked:<id>"
+        // (first speaker resolved, waiting for LLM TTFT).
+        const [warmupStage, setWarmupStage]     = useState(null);
         // Persist summaries per session so they survive refresh. Shape:
         //   { [sessionId]: { summaries: {personaId: text}, atCount: number } }
         const loadSummaryStore = () => {
@@ -285,11 +375,102 @@
             setSessionId(sid);
             try { onSessionCreated?.(sid); } catch (_) {}
         };
+
+        // ── Typewriter throttle (strict sequential FIFO) ───────────────────
+        // Fast providers (DeepSeek, Groq) push 150+ chars/sec which looks
+        // frantic on CJK. Cap visual reveal to ~30 chars/sec, one persona at
+        // a time. If Lacan is still typewriting when Krishnamurti starts
+        // streaming, Krishnamurti queues. Lacan catches up, then Krishnamurti
+        // takes over. Bounded rAF cost; avoids "parallel typewriters feel
+        // jittery" effect.
+        const throttleQueueRef = useRef([]);            // FIFO pids with pending chars
+        const throttleStatesRef = useRef(new Map());    // pid → { target, shown, lastTick, prevShown, myRound }
+        const throttleRafRef = useRef(null);
+        const throttleActiveRef = useRef(null);
+
+        const kickThrottle = () => {
+            if (throttleRafRef.current) return;
+            const pid = throttleQueueRef.current[0];
+            if (!pid) return;
+            const s = throttleStatesRef.current.get(pid);
+            if (!s) { throttleQueueRef.current.shift(); kickThrottle(); return; }
+            throttleActiveRef.current = pid;
+            s.lastTick = performance.now();
+
+            const tick = () => {
+                if (s.myRound !== roundIdRef.current) {
+                    throttleRafRef.current = null;
+                    throttleActiveRef.current = null;
+                    return;
+                }
+                const now = performance.now();
+                const dt = Math.min(now - s.lastTick, 100);
+                s.lastTick = now;
+                s.shown = Math.min(s.target.length, s.shown + dt * 0.03);  // 30 chars/sec
+                const shownLen = Math.floor(s.shown);
+                if (shownLen !== s.prevShown) {
+                    s.prevShown = shownLen;
+                    commitMessage({ personaId: pid, text: s.target.slice(0, shownLen) }, 'sse', s.myRound);
+                }
+                if (shownLen < s.target.length) {
+                    throttleRafRef.current = requestAnimationFrame(tick);
+                } else {
+                    const hasNext = throttleQueueRef.current.length > 1;
+                    throttleRafRef.current = null;
+                    throttleActiveRef.current = null;
+                    if (hasNext) {
+                        throttleQueueRef.current.shift();
+                        kickThrottle();
+                    }
+                }
+            };
+            throttleRafRef.current = requestAnimationFrame(tick);
+        };
+
+        const queueThrottled = (incoming, myRound) => {
+            if (myRound !== roundIdRef.current) return;
+            const pid = incoming.personaId || incoming.persona_id || incoming.role;
+            const nextText = incoming.text || incoming.content || '';
+            if (!pid) return;
+            let s = throttleStatesRef.current.get(pid);
+            if (!s) {
+                s = { target: '', shown: 0, prevShown: 0, lastTick: 0, myRound };
+                throttleStatesRef.current.set(pid, s);
+            }
+            s.target = nextText;
+            s.myRound = myRound;
+            if (!throttleQueueRef.current.includes(pid)) {
+                throttleQueueRef.current.push(pid);
+            }
+            kickThrottle();
+        };
+
+        const flushThrottle = () => {
+            if (throttleRafRef.current) {
+                cancelAnimationFrame(throttleRafRef.current);
+                throttleRafRef.current = null;
+            }
+            throttleActiveRef.current = null;
+            throttleStatesRef.current.forEach((s, pid) => {
+                if (s.target && s.shown < s.target.length) {
+                    commitMessage({ personaId: pid, text: s.target }, 'sse', s.myRound);
+                }
+            });
+            throttleStatesRef.current.clear();
+            throttleQueueRef.current = [];
+        };
+
         const makeSseHandlers = (myRound) => ({
             onSession:       (sid) => commitSession(sid, 'sse', myRound),
+            // messageStart creates an empty stub — no text to throttle.
             onMessage:       (msg) => commitMessage(msg, 'sse', myRound),
-            onMessageUpdate: (msg) => commitMessage(msg, 'sse', myRound),
+            // messageChunk brings new text — route through throttle.
+            onMessageUpdate: (msg) => queueThrottled(msg, myRound),
             onOptions:       (opts) => commitOptions(opts, 'sse', myRound),
+            onStatus:        (stage) => {
+                if (roundIdRef.current !== myRound) return;
+                setWarmupStage(stage);
+            },
         });
 
         useEffect(() => {
@@ -337,6 +518,24 @@
             autoStartedRef.current = false;
         }, [parentSessionId]);
 
+        // Absorb late-arriving initialMessages for the current session. Parent
+        // (restoreSession) now flips the view before the REST call resolves, so
+        // initialMessages lands after the session-id sync above. Only fill in
+        // if we haven't started building history locally yet (empty or just
+        // the optimistic user message), otherwise an in-flight round would be
+        // stomped.
+        useEffect(() => {
+            if ((parentSessionId || '') !== (sessionIdRef.current || '')) return;
+            if (!initialMessages || initialMessages.length === 0) return;
+            setHistory(prev => {
+                const noRealContent = prev.every(m => !(m.text || '').length);
+                if (prev.length === 0 || (prev.length <= initialMessages.length && noRealContent)) {
+                    return initialMessages;
+                }
+                return prev;
+            });
+        }, [initialMessages]);
+
         // ── Close more menu on outside click ─────────────────────────────────
         useEffect(() => {
             if (!showMoreMenu) return;
@@ -355,20 +554,31 @@
         // the original stream: token-by-token, loading indicator, same handlers.
         useEffect(() => {
             if (!sessionId) return;
-            // If this tab is already the streamer, don't double-subscribe
-            if (isDebating) return;
-            const myRound = ++roundIdRef.current;
-            stoppedRef.current = false;  // fresh attach — reopen the gate
+            if (isDebating) return; // this tab is already the streamer
             let cancelled = false;
             (async () => {
                 try {
+                    // Cheap probe first so we don't trigger a 404 logged in the
+                    // browser's Network tab when nothing is actively generating.
+                    const r = await fetch(`/sessions/${encodeURIComponent(sessionId)}/generation-status`, {
+                        credentials: 'include',
+                    });
+                    if (!r.ok) return;
+                    const status = await r.json().catch(() => null);
+                    if (!status?.active) return;
+                    if (cancelled) return;
+
+                    const myRound = ++roundIdRef.current;
+                    stoppedRef.current = false;
                     setIsDebating(true);
-                    await fetchLifeeObserveStream(sessionId, makeSseHandlers(myRound));
-                } catch (e) {
-                    if (!e?.notActive) console.warn('[observe]', e);
-                } finally {
-                    if (!cancelled && roundIdRef.current === myRound) setIsDebating(false);
-                }
+                    try {
+                        await fetchLifeeObserveStream(sessionId, makeSseHandlers(myRound));
+                    } catch (e) {
+                        if (!e?.notActive) console.warn('[observe]', e);
+                    } finally {
+                        if (!cancelled && roundIdRef.current === myRound) setIsDebating(false);
+                    }
+                } catch (_) { /* probe failed (network etc.) — skip observe */ }
             })();
             return () => { cancelled = true; };
         }, [sessionId]);
@@ -501,10 +711,12 @@
 
         // ── Core round runner ─────────────────────────────────────────────────
         const runRound = async (userInput = null) => {
+            flushThrottle();                       // commit any pending typewriter text from previous round
             const myRound = ++roundIdRef.current;  // claim this round
             stoppedRef.current = false;            // reopen Realtime gate for the new round
             const isActive = () => roundIdRef.current === myRound;
             setIsDebating(true);
+            setWarmupStage(null);
             setFollowupAnswers({});
             const cleanInput = (userInput ?? inputValue ?? '').toString().trim();
 
@@ -603,7 +815,7 @@
                     setOptions([]);
                 }
             } finally {
-                if (isActive()) setIsDebating(false);
+                if (isActive()) { setIsDebating(false); setWarmupStage(null); }
                 fireExtractMemory(sessionIdRef.current);
             }
         };
@@ -716,7 +928,7 @@
             return out;
         };
 
-        const renderMessage = (m, idx) => {
+        const renderMessage = (m, idx, lastPersonaIdx = -1) => {
             const isUser     = m.personaId === 'user';
             const isSystem   = m.personaId === 'system';
             const isFollowUp = m.personaId === 'lifee-followup';
@@ -745,7 +957,7 @@
                         <!-- Bubble -->
                         <div class="space-y-1.5 items-end flex flex-col flex-1 min-w-0">
                             <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 mr-1">You</p>
-                            <div class="bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-xl rounded-tr-sm text-on-surface shadow-sm leading-relaxed border-r-2 border-on-surface-variant/20 text-sm max-w-full">
+                            <div class="no-shine bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-xl rounded-tr-sm text-on-surface shadow-sm leading-relaxed border-r-2 border-on-surface-variant/20 text-sm max-w-full">
                                 <p class="whitespace-pre-wrap break-words">${m.text || ''}</p>
                             </div>
                             <div class="flex gap-3 px-1 flex-row-reverse">
@@ -900,10 +1112,10 @@
                             ${persona.name}
                         </p>
                         <div
-                            class="bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-tl-none rounded-tr-xl rounded-br-xl rounded-bl-[2.5rem] text-on-surface shadow-sm leading-relaxed border-l-2 text-sm"
+                            class="no-shine bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-tl-none rounded-tr-xl rounded-br-xl rounded-bl-[2.5rem] text-on-surface shadow-sm leading-relaxed border-l-2 text-sm"
                             style=${{ borderLeftColor: color.border }}
                         >
-                            <${ShinyLines} text=${m.text || ''} />
+                            <${CharBlurText} text=${m.text || ''} />
                         </div>
                         <div class="flex gap-3 px-1">
                             <button
@@ -915,6 +1127,17 @@
                                 class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-widest"
                             >${t('chat.quote')}</button>
                         </div>
+                        ${idx === lastPersonaIdx && options.length > 0 && !isDebating && !(inputValue && inputValue.trim()) ? html`
+                            <div class="flex flex-wrap gap-2 pt-2 animate-in">
+                                ${options.map((opt, i) => html`
+                                    <button
+                                        key=${i}
+                                        onClick=${() => runRound(opt)}
+                                        class="no-shine text-left px-4 py-2 text-xs font-semibold rounded-full bg-surface-container-high/70 border border-primary/25 text-primary/80 hover:text-primary hover:border-primary/60 hover:bg-surface-container transition-colors"
+                                    ><span>${opt}</span></button>
+                                `)}
+                            </div>
+                        ` : null}
                     </div>
                 </div>
             `;
@@ -1563,51 +1786,97 @@
                         </div>
                     ` : null}
 
-                    ${history.map((m, idx) => renderMessage(m, idx))}
+                    ${(() => {
+                        // Compute the last persona-reply index so renderMessage can
+                        // pin the suggested-follow-up pills under it.
+                        let lastPersonaIdx = -1;
+                        for (let i = history.length - 1; i >= 0; i--) {
+                            const pid = history[i]?.personaId;
+                            if (pid && pid !== 'user' && pid !== 'system' && pid !== 'lifee-followup') {
+                                lastPersonaIdx = i;
+                                break;
+                            }
+                        }
+                        return history.map((m, idx) => renderMessage(m, idx, lastPersonaIdx));
+                    })()}
 
-                    <!-- Typing indicator: only while the NEXT persona is warming up
-                         (empty history OR last message is an empty stub from a just-
-                         started persona). Hidden once their tokens start flowing, and
-                         hidden during the post-stream options-generation phase. -->
+                    <!-- Warming-up indicator. Three states:
+                         • Multi-persona + no picked speaker → cluster avatars + shimmery
+                           "Convening the council" (or "Searching archives" during RAG).
+                         • Picked speaker (or single-persona fallback) → that persona's
+                           avatar + shimmery "Gathering their thoughts".
+                         • Any persona stub has text → hide (the bubble takes over). -->
                     ${(() => {
                         if (!isDebating) return null;
                         const last = history[history.length - 1];
-                        const hasText = last && (last.text || '').trim().length > 0;
-                        if (hasText) return null;  // persona is already speaking or options-gen phase
-                        // If last exists and it's an empty assistant stub, show THAT persona.
-                        // Otherwise fall back to a generic pulse (gap before first persona).
-                        const pid = (last && last.personaId && last.personaId !== 'user') ? last.personaId : null;
-                        const persona = pid
-                            ? ((selectedPersonas || []).find(p => p.id === pid) || { name: pid, avatar: '☁️' })
+                        if (last && last.personaId && last.personaId !== 'user' && (last.text || '').length > 0) return null;
+
+                        const pickedId = warmupStage && warmupStage.startsWith('picked:')
+                            ? warmupStage.slice('picked:'.length)
                             : null;
-                        const ava = persona?.avatar || '☁️';
-                        const color = pid ? getColor(pid) : { border: 'rgba(175,171,159,0.25)', text: 'rgba(175,171,159,0.6)', bg: 'rgba(28,26,22,0.8)', ring: 'rgba(255,255,255,0.1)' };
+                        const picked = pickedId
+                            ? ((selectedPersonas || []).find(p => p.id === pickedId) || null)
+                            : null;
+
+                        const numSelected = (selectedPersonas || []).length;
+                        const isImg = (a) => typeof a === 'string' && /^(https?:|\/|data:)/.test(a);
+
+                        if (numSelected > 1 && !picked) {
+                            const clusterLabel = warmupStage === 'kb_search'
+                                ? t('warmup.searchingKb')
+                                : t('warmup.convening');
+                            const members = (selectedPersonas || []).slice(0, 4);
+                            return html`
+                                <div class="flex items-start gap-4 w-full pr-14 animate-in">
+                                    <div class="flex -space-x-3 shrink-0">
+                                        ${members.map(p => {
+                                            const c = getColor(p.id);
+                                            const a = p.avatar || '☁️';
+                                            return html`
+                                                <div
+                                                    key=${p.id}
+                                                    class="w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg overflow-hidden"
+                                                    style=${{ borderColor: c.ring, backgroundColor: c.bg }}
+                                                >
+                                                    ${!isImg(a)
+                                                        ? html`<span>${a}</span>`
+                                                        : html`<img src=${a} class="w-full h-full object-cover" />`
+                                                    }
+                                                </div>
+                                            `;
+                                        })}
+                                    </div>
+                                    <div class="flex-1 min-w-0 pt-2">
+                                        <p class="warmup-status text-[11px] leading-relaxed">
+                                            <span class="mr-1 opacity-70">*</span>${clusterLabel}<span class="ml-0.5">…</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        const speaker = picked || (selectedPersonas || [])[0];
+                        if (!speaker) return null;
+                        const color = getColor(speaker.id);
+                        const ava = speaker.avatar || '☁️';
                         return html`
-                            <div class="flex items-start gap-4 animate-in">
+                            <div class="flex items-start gap-4 w-full pr-14 animate-in">
                                 <div
                                     class="w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg shrink-0 overflow-hidden"
                                     style=${{ borderColor: color.ring, backgroundColor: color.bg }}
                                 >
-                                    ${persona
-                                        ? (!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
-                                            ? html`<span>${ava}</span>`
-                                            : html`<img src=${ava} class="w-full h-full object-cover" />`)
-                                        : null}
+                                    ${!isImg(ava)
+                                        ? html`<span>${ava}</span>`
+                                        : html`<img src=${ava} class="w-full h-full object-cover" />`
+                                    }
                                 </div>
-                                <div class="space-y-1.5">
-                                    ${persona ? html`
-                                        <p class="text-[10px] font-bold uppercase tracking-widest ml-1" style=${{ color: color.text }}>
-                                            ${persona.name}
-                                        </p>
-                                    ` : null}
-                                    <div
-                                        class="flex items-center gap-1.5 bg-surface-container/80 px-5 py-4 rounded-xl rounded-tl-sm border-t-2 h-[54px]"
-                                        style=${{ borderTopColor: color.border }}
-                                    >
-                                        <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '0ms' }}></span>
-                                        <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '200ms' }}></span>
-                                        <span class="typing-dot w-1.5 h-1.5 rounded-full bg-primary/50" style=${{ animationDelay: '400ms' }}></span>
-                                    </div>
+                                <div class="space-y-1.5 flex-1 min-w-0">
+                                    <p class="text-[10px] font-bold uppercase tracking-widest ml-1" style=${{ color: color.text }}>
+                                        ${speaker.name}
+                                    </p>
+                                    <p class="warmup-status text-[11px] leading-relaxed ml-1">
+                                        <span class="mr-1 opacity-70">*</span>${t('warmup.organizing')}<span class="ml-0.5">…</span>
+                                    </p>
                                 </div>
                             </div>
                         `;
@@ -1618,27 +1887,6 @@
                 <!-- ── Footer input area ── -->
                 <footer class="p-6 bg-surface-dim/40 backdrop-blur-2xl border-t border-white/5 shrink-0">
                     <div class="max-w-5xl mx-auto space-y-3">
-
-                        <!-- Options pills: collapsed label by default; on hover the pills rise up
-                             and float above the input as opaque chips (absolute so they don't push
-                             layout; opaque bg so chat text behind doesn't bleed through). -->
-                        ${options.length > 0 && !isDebating ? html`
-                            <div class="group relative cursor-default animate-in -my-1">
-                                <div class="flex items-center justify-center gap-1 text-[10px] uppercase tracking-[0.25em] text-primary/50 py-0.5 transition-opacity duration-200 group-hover:opacity-0">
-                                    <span>${options.length} ${t('chat.suggested')}</span>
-                                    <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>expand_more</span>
-                                </div>
-                                <div class="absolute left-0 right-0 bottom-0 flex flex-col items-center gap-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
-                                    ${options.map((opt, i) => html`
-                                        <button
-                                            key=${i}
-                                            onClick=${() => runRound(opt)}
-                                            class="no-shine text-left px-5 py-2.5 text-xs font-semibold rounded-full bg-surface-container border border-primary/25 text-primary/75 hover:text-primary hover:border-primary/50 hover:bg-surface-container-high shadow-xl shadow-black/50 transition-colors"
-                                        ><span>${opt}</span></button>
-                                    `)}
-                                </div>
-                            </div>
-                        ` : null}
 
                         <!-- Main input row -->
                         <div class="input-warm-focus flex items-center bg-surface-container-lowest border border-white/5 rounded-2xl p-2 transition-all duration-300">
@@ -1806,6 +2054,31 @@
                     }
                     .typing-dot {
                         animation: typingPulse 1.2s ease-in-out infinite;
+                    }
+
+                    /* Warming-up status line — italic, warm-amber shimmer
+                       (Claude-style "*Building Phase 4…*" look) */
+                    .warmup-status {
+                        font-style: italic;
+                        letter-spacing: 0.04em;
+                        background-image: linear-gradient(
+                            90deg,
+                            rgba(232, 168, 76, 0.30) 0%,
+                            rgba(252, 227, 168, 1)   50%,
+                            rgba(232, 168, 76, 0.30) 100%
+                        );
+                        background-size: 220% 100%;
+                        -webkit-background-clip: text;
+                                background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        animation: warmupShimmer 2.4s linear infinite;
+                    }
+                    @keyframes warmupShimmer {
+                        0%   { background-position: 200% 50%; }
+                        100% { background-position: -200% 50%; }
+                    }
+                    @media (prefers-reduced-motion: reduce) {
+                        .warmup-status { animation: none; }
                     }
                 `}</style>
             </div>

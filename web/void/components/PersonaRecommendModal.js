@@ -1,6 +1,6 @@
 (() => {
     const { useState, useEffect, useRef } = React;
-    const html = htm.bind(React.createElement);
+    const html = htm.bind(window.__voidH || React.createElement);
 
     // ── Keyword fallback (mirrors old UI; used when /recommend-personas returns empty) ──
     const PERSONA_KEYWORDS = {

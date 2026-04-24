@@ -151,6 +151,23 @@ _SB_HEADERS = {
     "Prefer": "return=representation",
 }
 
+# Shared httpx client for Supabase REST. Keeping the TLS connection warm
+# between requests turns 2-4 s cold calls into ~200 ms once the pool is
+# primed. Created lazily on first use so tests that don't touch the network
+# still import cleanly.
+_sb_client = None
+
+def _sb() -> "httpx.AsyncClient":
+    global _sb_client
+    if _sb_client is None:
+        import httpx as _hx
+        _sb_client = _hx.AsyncClient(
+            timeout=_hx.Timeout(10.0, connect=5.0),
+            limits=_hx.Limits(max_connections=20, max_keepalive_connections=10),
+            http2=False,
+        )
+    return _sb_client
+
 
 async def _get_balance(uid: str) -> int:
     """获取余额，新用户自动创建并给免费额度。任何外部错误都降级成初始额度，
@@ -925,6 +942,17 @@ async def hot_personas(days: int = 7, limit: int = 8):
     return {"hot": [{"id": pid, "count": n} for pid, n in ranked]}
 
 
+@app.get("/sessions/{session_id}/generation-status")
+async def generation_status(session_id: str):
+    """Cheap probe: is there a detached generation task running for this session?
+
+    The frontend hits this before opening observe-stream so the common case
+    (nothing to observe) doesn't log a 404 to the browser's Network tab.
+    Always returns 200 with {active: bool}.
+    """
+    return {"active": _is_active_generation(session_id)}
+
+
 @app.get("/sessions/{session_id}/observe-stream")
 async def observe_stream(session_id: str):
     """Attach an SSE observer to an in-flight generation for this session.
@@ -963,29 +991,38 @@ async def cancel_generation(session_id: str):
 
 @app.get("/sessions/{session_id}/messages")
 async def get_session_messages(session_id: str):
-    """获取会话消息 + 最新 follow-up options"""
+    """获取会话消息 + 最新 follow-up options。
+    Supabase REST 偶发 5xx / 超时时降级为 200 + 空列表，别让前端 JSON.parse 炸。"""
     if not _SUPABASE_URL:
         return {"messages": [], "options": []}
-    import httpx
-    async with httpx.AsyncClient() as c:
-        m, s = await _asyncio.gather(
-            c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=role,content,persona_id,seq,created_at&order=seq.asc",
-                headers=_SB_HEADERS,
-            ),
-            c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&select=last_options",
-                headers=_SB_HEADERS,
-            ),
-        )
+    import httpx, traceback
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as c:
+            m, s = await _asyncio.gather(
+                c.get(
+                    f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=role,content,persona_id,seq,created_at&order=seq.asc",
+                    headers=_SB_HEADERS,
+                ),
+                c.get(
+                    f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&select=last_options",
+                    headers=_SB_HEADERS,
+                ),
+            )
+        messages = m.json() if m.status_code == 200 else []
+        if not isinstance(messages, list):
+            messages = []
         options = []
         try:
-            rows = s.json() or []
+            rows = s.json() if s.status_code == 200 else []
             if rows and isinstance(rows[0].get("last_options"), list):
                 options = rows[0]["last_options"]
         except Exception:
             pass
-        return {"messages": m.json(), "options": options}
+        return {"messages": messages, "options": options}
+    except Exception as e:
+        print(f"[sessions/{session_id}/messages] failed: {type(e).__name__}: {e}")
+        traceback.print_exc()
+        return {"messages": [], "options": [], "error": f"{type(e).__name__}: {e}"}
 
 
 class SessionUpdateRequest(BaseModel):
@@ -1470,7 +1507,8 @@ async def decision(req: DecisionRequest, request: Request):
         return await _handle_decision(req, request)
     except Exception as e:
         traceback.print_exc()
-        return {"messages": [{"personaId": "system", "text": f"Error: {e}"}], "options": []}
+        detail = str(e) or type(e).__name__ or "unknown error"
+        return {"messages": [{"personaId": "system", "text": f"Error: {detail}"}], "options": []}
 
 
 async def _handle_decision(req: DecisionRequest, request: Request):
@@ -1777,6 +1815,13 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
                   _bg(_patch_message_content(session_id, current_seq, current_text.strip()))
 
       async for participant, chunk, is_skip in moderator.run(question, max_turns=_turns):
+        # Out-of-band status signal from moderator (participant=None) — forward
+        # as SSE `event: status` so the frontend can swap its "Convening the
+        # council" indicator for "Searching the archives" / picked speaker
+        # before the first real token arrives.
+        if participant is None:
+            yield f"event: status\ndata: {json.dumps({'stage': chunk}, ensure_ascii=False)}\n\n"
+            continue
         if is_skip:
             continue
         pid = _find_persona_id(participant, participants)

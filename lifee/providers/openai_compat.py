@@ -208,7 +208,28 @@ class OpenAICompatProvider(LLMProvider):
             if openai_tools:
                 create_kwargs["tools"] = openai_tools
 
-            stream = await self._client.chat.completions.create(**create_kwargs)
+            # Tight inline retry for transient handshake drops. DeepSeek's
+            # streaming endpoint intermittently hangs up at SSL/SSE handshake
+            # (manifests as openai.APIConnectionError 'Connection error.')
+            # even when curl against the same URL succeeds 100% — the openai
+            # SDK's AsyncClient is more brittle. 5 attempts with short backoff
+            # cover the flakiness without adding noticeable latency on the
+            # common success path.
+            import asyncio as _aio_local
+            last_connect_err = None
+            stream = None
+            for _attempt in range(5):
+                try:
+                    stream = await self._client.chat.completions.create(**create_kwargs)
+                    last_connect_err = None
+                    break
+                except (APIConnectionError, httpx.ConnectError) as _e:
+                    last_connect_err = _e
+                    if _attempt < 4:
+                        await _aio_local.sleep(0.4 * (2 ** _attempt))  # 0.4, 0.8, 1.6, 3.2 s
+                        continue
+            if stream is None:
+                raise last_connect_err
         except (APIConnectionError, httpx.ConnectError) as e:
             if self._provider_name == "ollama":
                 raise ProviderConnectionError(
@@ -217,7 +238,7 @@ class OpenAICompatProvider(LLMProvider):
                     f"  如果已安装: 请运行 'ollama serve' 启动服务"
                 ) from e
             raise ProviderConnectionError(
-                f"无法连接到 {self._provider_name}，请检查网络连接"
+                f"无法连接到 {self._provider_name}，请检查网络连接: {type(e).__name__}: {e}"
             ) from e
         except NotFoundError as e:
             if self._provider_name == "ollama":
