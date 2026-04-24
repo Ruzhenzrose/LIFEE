@@ -411,21 +411,22 @@ class Moderator:
                     sys.stdout.flush()
                     final_response = ""
 
-            # 确保至少 yield 一次（如果所有重试都失败）
-            if not yielded_anything:
-                yield (participant, "", False)
-
-            # 检查是否是跳过令牌
+            # 检查是否是跳过令牌（角色主动结束辩论）
             if REPLY_SKIP_TOKEN in final_response:
+                if not yielded_anything:
+                    yield (participant, "", False)
                 yield (participant, "", True)
                 break
 
-            # 检查是否为空响应（不保存空消息到历史）
+            # 检查是否为空响应（API 失败 / 限流耗尽重试）
             cleaned_response = clean_response(final_response)
             if not cleaned_response.strip():
-                # 空响应视为跳过
-                yield (participant, "", True)
-                break
+                # 跳过本角色，继续让其他角色发言（不产生空气泡）
+                continue
+
+            # 确保至少 yield 一次（流式成功但未 yield 的极少数情况）
+            if not yielded_anything:
+                yield (participant, cleaned_response, False)
 
             # 添加到会话历史（带上角色名字）
             self.session.add_assistant_message(

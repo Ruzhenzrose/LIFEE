@@ -44,7 +44,14 @@ const DebateArena = ({
     const [showSummaryPanel, setShowSummaryPanel] = useState(false);
     const [summaryData, setSummaryData] = useState({});
     const [summaryLoading, setSummaryLoading] = useState(false);
-    const summaryAtCountRef = useRef(0); // 上次 summary 时的消息数
+    const summaryAtCountRef = useRef(0);
+    const [timelineData, setTimelineData] = useState(null);
+    const [timelineLoading, setTimelineLoading] = useState(false);
+    const [timelineError, setTimelineError] = useState('');
+    const [showPlanModal, setShowPlanModal] = useState(false);
+    const [planData, setPlanData] = useState(null);
+    const [planLoading, setPlanLoading] = useState(false);
+    const [planWeek, setPlanWeek] = useState(0);
     const [language, setLanguage] = useState(() => localStorage.getItem('lifee_lang') || '');
 
     // 用户档案自动提取
@@ -231,6 +238,86 @@ const DebateArena = ({
     };
     const resetCanvas = () => { setCanvasScale(0.82); setCanvasPan({ x: 0, y: 0 }); };
 
+    // A/B debate detection: 2 personas OR binary options
+    const isABDebate = debatePersonas.length === 2 || options.length === 2;
+
+    const generateTimeline = async () => {
+        if (timelineLoading) return;
+        setTimelineLoading(true);
+        setTimelineData(null);
+        setTimelineError('');
+        try {
+            const payload = sessionId
+                ? JSON.stringify({ sessionId, language: language || 'Chinese', situation: context.situation || '' })
+                : JSON.stringify({
+                    messages: history
+                        .filter(m => m.personaId !== 'system' && m.personaId !== 'lifee-followup')
+                        .slice(-12)
+                        .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 200) })),
+                    language: language || 'Chinese',
+                    situation: context.situation || '',
+                });
+            const r = await window.fetch('/timeline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload,
+            });
+            if (!r.ok) {
+                const txt = await r.text();
+                throw new Error(`Server ${r.status}: ${txt.slice(0, 100)}`);
+            }
+            const res = await r.json();
+            if (res?.error) throw new Error(res.error);
+            const tl = res?.timelines || res;
+            if (tl?.option_a || tl?.option_b) {
+                setTimelineData(tl);
+                setShowCanvas(true);
+            } else {
+                throw new Error('No timeline data returned');
+            }
+        } catch (e) {
+            console.error('Timeline error', e);
+            setTimelineError(e?.message || 'Timeline generation failed');
+            setTimeout(() => setTimelineError(''), 4000);
+        } finally {
+            setTimelineLoading(false);
+        }
+    };
+
+    const generatePlan = async (chosenOption = '') => {
+        if (planLoading) return;
+        setPlanLoading(true);
+        setPlanData(null);
+        setPlanWeek(0);
+        setShowPlanModal(true);
+        try {
+            const payload = sessionId
+                ? JSON.stringify({ sessionId, language: language || 'Chinese', situation: context.situation || '', chosenOption })
+                : JSON.stringify({
+                    messages: history
+                        .filter(m => m.personaId !== 'system' && m.personaId !== 'lifee-followup')
+                        .slice(-10)
+                        .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 200) })),
+                    language: language || 'Chinese',
+                    situation: context.situation || '',
+                    chosenOption,
+                });
+            const r = await window.fetch('/plan-30-days', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload,
+            });
+            const res = await r.json();
+            if (res?.plan?.weeks) {
+                setPlanData(res.plan);
+            }
+        } catch (e) {
+            console.error('Plan error', e);
+        } finally {
+            setPlanLoading(false);
+        }
+    };
+
     const runRound = async (userInput = null) => {
         setIsDebating(true);
         const cleanInput = (userInput ?? inputValue ?? "").toString().trim();
@@ -399,6 +486,18 @@ const DebateArena = ({
             <div className="px-4 py-3 flex items-center justify-between border-b border-[#F0EDEA] bg-white shrink-0">
                 <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#5D576B]/40">VOICE MAP</span>
                 <div className="flex items-center gap-1.5">
+                    {isABDebate && history.length >= 2 && (
+                        <button
+                            onClick={generateTimeline}
+                            disabled={timelineLoading}
+                            className="flex items-center gap-1 text-[8px] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full border transition-all disabled:opacity-40"
+                            style={{ borderColor: '#C6D4C1', color: '#5D8A5E', background: timelineData ? '#F0F7EF' : 'white' }}
+                            title="Generate 2 scenario timelines"
+                        >
+                            <Icon name="GitFork" size={9} />
+                            {timelineLoading ? '…' : 'TIMELINES'}
+                        </button>
+                    )}
                     <button
                         onClick={() => setCanvasScale(s => Math.min(2.5, s + 0.15))}
                         className="w-6 h-6 rounded-full bg-[#FDFBF7] border border-[#E8E6E0] text-sm font-bold flex items-center justify-center hover:border-blue-brand transition-all"
@@ -602,6 +701,80 @@ const DebateArena = ({
                     })()}
                 </div>
 
+                {/* Timeline overlay – appears when generated */}
+                {timelineData && (timelineData.option_a || timelineData.option_b) && (
+                    <div
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(253,251,247,0.97)',
+                            borderTop: '1px solid #F0EDEA',
+                            overflowY: 'auto',
+                            maxHeight: '58%',
+                            padding: '16px',
+                            zIndex: 10,
+                            pointerEvents: 'auto',
+                        }}
+                        onMouseDown={e => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                            <span style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#1A1A1A', opacity: 0.4 }}>SCENARIO TIMELINES</span>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                                <button
+                                    onClick={() => generatePlan(timelineData.option_a?.label || '')}
+                                    style={{ fontSize: 8, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: 99, border: '1px solid #98A6D4', color: '#98A6D4', background: 'white', cursor: 'pointer' }}
+                                >
+                                    Plan my first 30 days
+                                </button>
+                                <button onClick={() => setTimelineData(null)} style={{ width: 20, height: 20, borderRadius: '50%', border: '1px solid #E8E6E0', background: 'white', cursor: 'pointer', fontSize: 11, color: '#5D576B', opacity: 0.4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                            </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            {['option_a', 'option_b'].map((key, ki) => {
+                                const opt = timelineData[key];
+                                if (!opt) return null;
+                                const accentColors = ['#98A6D4', '#C6A6C1'];
+                                const bgColors = ['#F0F2FF', '#FBF0FF'];
+                                return (
+                                    <div key={key} style={{ background: 'white', borderRadius: 12, border: '1px solid #F0EDEA', overflow: 'hidden' }}>
+                                        <div style={{ padding: '8px 12px', background: bgColors[ki], borderBottom: '1px solid #F0EDEA', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', color: accentColors[ki] }}>
+                                                {String.fromCharCode(65 + ki)}. {opt.label || key}
+                                            </span>
+                                            <button
+                                                onClick={() => generatePlan(opt.label || '')}
+                                                style={{ fontSize: 7, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 99, border: `1px solid ${accentColors[ki]}`, color: accentColors[ki], background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                            >Plan →</button>
+                                        </div>
+                                        <div style={{ padding: '8px 0' }}>
+                                            {(opt.phases || []).map((phase, pi) => (
+                                                <div key={pi} style={{ display: 'flex', gap: 8, padding: '5px 12px', borderBottom: pi < opt.phases.length - 1 ? '1px solid #F5F4F0' : 'none' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                                                        <div style={{ width: 7, height: 7, borderRadius: '50%', background: pi === 0 ? accentColors[ki] : '#E8E6E0', border: `1.5px solid ${accentColors[ki]}`, marginTop: 2 }} />
+                                                        {pi < opt.phases.length - 1 && <div style={{ width: 1, flex: 1, background: '#E8E6E0', marginTop: 2 }} />}
+                                                    </div>
+                                                    <div style={{ minWidth: 0, paddingBottom: 4 }}>
+                                                        <div style={{ fontSize: 7, fontWeight: 700, color: accentColors[ki], letterSpacing: '0.1em', opacity: 0.7, marginBottom: 1 }}>{phase.period}</div>
+                                                        <div style={{ fontSize: 9, fontWeight: 900, color: '#1A1A1A', lineHeight: 1.4, marginBottom: 3 }}>{phase.title}</div>
+                                                        <div style={{ fontSize: 8, color: '#1A1A1A', opacity: 0.55, lineHeight: 1.5, marginBottom: 4 }}>{phase.description}</div>
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                                                            {(phase.tags || []).map((tag, ti) => (
+                                                                <span key={ti} style={{ fontSize: 7, padding: '1px 6px', borderRadius: 99, background: ti % 2 === 0 ? '#EBF0FF' : '#FFF0E8', color: ti % 2 === 0 ? '#6878D4' : '#C4824A', fontWeight: 700 }}>{tag}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 {/* Empty hint */}
                 {history.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -688,6 +861,16 @@ const DebateArena = ({
                     >
                         <Icon name="FileText" size={14} /> {summaryLoading ? 'Summarizing...' : 'Summary'}
                     </button>
+                    {isABDebate && history.length >= 4 && (
+                        <button
+                            onClick={() => generatePlan('')}
+                            disabled={planLoading}
+                            className="hidden md:flex items-center gap-2 text-xs font-bold px-4 py-2 border rounded-full transition-all disabled:opacity-40"
+                            style={{ borderColor: '#98A6D4', color: '#98A6D4' }}
+                        >
+                            <Icon name="CalendarDays" size={14} /> {planLoading ? '…' : 'Plan 30 days'}
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -747,6 +930,14 @@ const DebateArena = ({
                                             )}
                                         </div>
                                     ))}
+                                    {isABDebate && (
+                                        <button
+                                            onClick={() => generatePlan('')}
+                                            className="px-4 py-2 bg-white border border-[#98A6D4] rounded-full text-xs font-bold text-[#98A6D4] hover:bg-[#98A6D4] hover:text-white transition-all shadow-sm flex items-center gap-1.5"
+                                        >
+                                            <Icon name="CalendarDays" size={12} /> Plan my first 30 days
+                                        </button>
+                                    )}
                                 </div>
                             )}
 
@@ -887,6 +1078,127 @@ const DebateArena = ({
                 onClose={() => setTarotModalOpen(false)}
                 onInterpret={handleInterpretTarot}
             />
+            {/* 30-Day Plan Modal */}
+            {showPlanModal && (
+                <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+                    onClick={() => setShowPlanModal(false)}
+                >
+                    <div
+                        style={{ background: '#FDFBF7', borderRadius: 24, width: '100%', maxWidth: 640, maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.2)' }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Modal header */}
+                        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #F0EDEA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                            <div>
+                                <div style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#98A6D4', marginBottom: 4 }}>ACTION PLAN</div>
+                                <div style={{ fontSize: 18, fontWeight: 900, color: '#1A1A1A', fontFamily: 'serif', fontStyle: 'italic' }}>My First 30 Days</div>
+                            </div>
+                            <button onClick={() => setShowPlanModal(false)} style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid #E8E6E0', background: 'white', cursor: 'pointer', fontSize: 14, color: '#5D576B' }}>✕</button>
+                        </div>
+
+                        {planLoading && (
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 40 }}>
+                                <div style={{ width: 20, height: 20, border: '2px solid #98A6D430', borderTopColor: '#98A6D4', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                                <span style={{ fontSize: 12, color: '#5D576B', opacity: 0.5 }}>Crafting your 30-day plan…</span>
+                            </div>
+                        )}
+
+                        {!planLoading && planData?.weeks && (
+                            <>
+                                {/* Week tabs */}
+                                <div style={{ padding: '12px 24px', borderBottom: '1px solid #F0EDEA', display: 'flex', gap: 6, overflowX: 'auto', flexShrink: 0 }}>
+                                    {planData.weeks.map((week, wi) => (
+                                        <button
+                                            key={week.id || wi}
+                                            onClick={() => setPlanWeek(wi)}
+                                            style={{
+                                                padding: '8px 16px',
+                                                borderRadius: 12,
+                                                border: `1.5px solid ${planWeek === wi ? '#1A1A1A' : '#E8E6E0'}`,
+                                                background: planWeek === wi ? '#1A1A1A' : 'white',
+                                                color: planWeek === wi ? 'white' : '#5D576B',
+                                                fontSize: 11,
+                                                fontWeight: 900,
+                                                cursor: 'pointer',
+                                                whiteSpace: 'nowrap',
+                                                transition: 'all 0.15s',
+                                            }}
+                                        >
+                                            {week.label || `Week ${wi + 1}`}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Week content */}
+                                {(() => {
+                                    const week = planData.weeks[planWeek];
+                                    if (!week) return null;
+                                    return (
+                                        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px 24px' }}>
+                                            {week.goal && (
+                                                <div style={{ background: '#F5F4F0', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#1A1A1A', opacity: 0.7, lineHeight: 1.6 }}>
+                                                    <span style={{ fontWeight: 900 }}>Week {planWeek + 1} 目标：</span>{week.goal}
+                                                </div>
+                                            )}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                                {(week.tasks || []).map((task, ti) => (
+                                                    <div key={ti} style={{ background: 'white', borderRadius: 14, border: '1px solid #F0EDEA', padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                                                        <div style={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px solid #D0CDD7', flexShrink: 0, marginTop: 1 }} />
+                                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                                            <div style={{ fontSize: 13, fontWeight: 900, color: '#1A1A1A', marginBottom: 4 }}>{task.title}</div>
+                                                            <div style={{ fontSize: 11, color: '#5D576B', opacity: 0.65, lineHeight: 1.6, marginBottom: 8 }}>{task.description}</div>
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                                                {(task.tags || []).map((tag, tgi) => {
+                                                                    const tagColors = [
+                                                                        { bg: '#EBF0FF', color: '#6878D4' },
+                                                                        { bg: '#FFF0E8', color: '#C4824A' },
+                                                                        { bg: '#EEF7EE', color: '#4A8F5E' },
+                                                                        { bg: '#FFF8E1', color: '#B5900A' },
+                                                                    ];
+                                                                    const tc = tagColors[tgi % tagColors.length];
+                                                                    return (
+                                                                        <span key={tgi} style={{ fontSize: 9, padding: '2px 8px', borderRadius: 99, background: tc.bg, color: tc.color, fontWeight: 700 }}>{tag}</span>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {planWeek < planData.weeks.length - 1 && (
+                                                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                                                    <button
+                                                        onClick={() => setPlanWeek(w => w + 1)}
+                                                        style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid #E8E6E0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    >
+                                                        <Icon name="ChevronDown" size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+                            </>
+                        )}
+
+                        {!planLoading && !planData?.weeks && (
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, fontSize: 12, color: '#5D576B', opacity: 0.5 }}>
+                                Failed to generate plan. Try again.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Timeline error toast */}
+            {timelineError && (
+                <div className="fixed top-20 right-4 z-50 text-xs text-[#C97A7A] bg-[#FDF1F1] border border-[#F7D7D7] px-4 py-3 rounded-2xl shadow-lg animate-in" style={{animation: 'slideInRight 0.3s ease-out'}}>
+                    Timeline: {timelineError}
+                    <button onClick={() => setTimelineError('')} className="ml-2 opacity-40 hover:opacity-100">✕</button>
+                </div>
+            )}
+
             {/* Summary error toast */}
             {summaryData._error && (
                 <div className="fixed top-20 right-4 z-50 text-xs text-[#C97A7A] bg-[#FDF1F1] border border-[#F7D7D7] px-4 py-3 rounded-2xl shadow-lg animate-in" style={{animation: 'slideInRight 0.3s ease-out'}}>

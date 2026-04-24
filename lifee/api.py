@@ -1148,6 +1148,205 @@ Reply in JSON format: {{"persona_id": "1-2 sentence summary", ...}}"""
         return {"summaries": {}, "error": str(e)}
 
 
+# ---- Timeline API ----
+
+class TimelineRequest(BaseModel):
+    sessionId: str = ""
+    messages: list = []
+    language: str = "Chinese"
+    situation: str = ""
+
+
+@app.post("/timeline")
+async def generate_timeline(req: TimelineRequest):
+    """为A/B辩论生成两条人生时间线"""
+    msgs = req.messages
+    if req.sessionId and _SUPABASE_URL and not msgs:
+        try:
+            import httpx
+            async with httpx.AsyncClient() as c:
+                r = await c.get(
+                    f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
+                    headers=_SB_HEADERS,
+                )
+                db_msgs = r.json() or []
+                msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
+        except Exception:
+            pass
+
+    if not msgs:
+        return {"timelines": {}}
+
+    by_persona: dict = {}
+    for m in msgs:
+        pid = m.get("personaId", "")
+        if pid in ("user", "system", "lifee-followup", "moderator", ""):
+            continue
+        if pid not in by_persona:
+            by_persona[pid] = []
+        by_persona[pid].append(m.get("text", ""))
+
+    situation = req.situation.strip()
+    personas_list = list(by_persona.keys())
+    if len(personas_list) < 1:
+        return {"timelines": {}}
+
+    parts = []
+    for pid, texts in by_persona.items():
+        combined = "\n".join(texts[-4:])
+        parts.append(f"【{pid}的观点】:\n{combined}")
+
+    prompt = f"""You are a life strategy advisor. Based on this debate about a key life decision, generate 2 concrete future timelines — one for each path/option being debated.
+
+Situation: {situation or 'Major life decision'}
+
+Debate content:
+{chr(10).join(parts)}
+
+Generate exactly 2 timelines in {req.language}. Each timeline should have 4-5 phases spanning 3 years.
+
+Reply ONLY in this JSON format (no markdown, no extra text):
+{{
+  "option_a": {{
+    "label": "Short path name (e.g. 加入公司)",
+    "phases": [
+      {{"period": "Now → Month 3", "title": "Phase title", "description": "Concrete description of what happens", "tags": ["tag1", "tag2"]}},
+      {{"period": "Month 3 → 6", "title": "Phase title", "description": "...", "tags": ["tag1"]}},
+      {{"period": "Month 6 → 12", "title": "Phase title", "description": "...", "tags": ["tag1", "tag2"]}},
+      {{"period": "Year 1 → 2", "title": "Phase title", "description": "...", "tags": ["tag1"]}},
+      {{"period": "Year 2 → 3", "title": "Phase title", "description": "...", "tags": ["tag1", "tag2"]}}
+    ]
+  }},
+  "option_b": {{
+    "label": "Short path name (e.g. 自主创业)",
+    "phases": [
+      {{"period": "Now → Month 3", "title": "Phase title", "description": "...", "tags": ["tag1"]}},
+      {{"period": "Month 3 → 6", "title": "Phase title", "description": "...", "tags": ["tag1"]}},
+      {{"period": "Month 6 → 12", "title": "Phase title", "description": "...", "tags": ["tag1", "tag2"]}},
+      {{"period": "Year 1 → 2", "title": "Phase title", "description": "...", "tags": ["tag1"]}},
+      {{"period": "Year 2 → 3", "title": "Phase title", "description": "...", "tags": ["tag1", "tag2"]}}
+    ]
+  }}
+}}"""
+
+    try:
+        provider = _get_provider()
+        from lifee.providers.base import Message, MessageRole
+        messages_llm = [Message(role=MessageRole.USER, content=prompt)]
+        chunks = []
+        async for chunk in provider.stream(messages=messages_llm, max_tokens=1200, temperature=0.4):
+            chunks.append(chunk)
+        text = "".join(chunks).strip()
+        import json as _json
+        if '```' in text:
+            text = text.split('```')[1].replace('json', '', 1).strip()
+        timelines = _json.loads(text)
+        return {"timelines": timelines}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"timelines": {}, "error": str(e)}
+
+
+# ---- 30-Day Plan API ----
+
+class PlanRequest(BaseModel):
+    sessionId: str = ""
+    messages: list = []
+    language: str = "Chinese"
+    situation: str = ""
+    chosenOption: str = ""
+
+
+@app.post("/plan-30-days")
+async def plan_30_days(req: PlanRequest):
+    """生成前30天的周行动计划"""
+    msgs = req.messages
+    if req.sessionId and _SUPABASE_URL and not msgs:
+        try:
+            import httpx
+            async with httpx.AsyncClient() as c:
+                r = await c.get(
+                    f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
+                    headers=_SB_HEADERS,
+                )
+                db_msgs = r.json() or []
+                msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
+        except Exception:
+            pass
+
+    debate_text = "\n".join(
+        f"[{m.get('personaId','')}]: {m.get('text','')}"
+        for m in (msgs or [])
+        if m.get("personaId", "") not in ("system", "lifee-followup", "moderator")
+    )[-3000:]
+
+    situation = req.situation.strip()
+    chosen = req.chosenOption.strip()
+
+    prompt = f"""You are a life coach. Create a concrete 4-week action plan for the first 30 days.
+
+Situation: {situation or 'Major life transition'}
+{f'Chosen direction: {chosen}' if chosen else ''}
+
+Debate context (for background):
+{debate_text or '(no debate context)'}
+
+Generate a 4-week plan in {req.language}. Each week should have a theme, a goal, and 3-4 concrete tasks with tags.
+
+Reply ONLY in this JSON format (no markdown, no extra text):
+{{
+  "weeks": [
+    {{
+      "id": "week1",
+      "label": "Week 1 — 听懂",
+      "goal": "Week 1 goal — what you want to achieve by end of week",
+      "tasks": [
+        {{"title": "Task title", "description": "Specific action to take", "tags": ["tag1", "tag2"]}},
+        {{"title": "Task title", "description": "Specific action to take", "tags": ["tag1"]}},
+        {{"title": "Task title", "description": "Specific action to take", "tags": ["tag1", "tag2"]}}
+      ]
+    }},
+    {{
+      "id": "week2",
+      "label": "Week 2 — 找空白",
+      "goal": "Week 2 goal",
+      "tasks": [...]
+    }},
+    {{
+      "id": "week3",
+      "label": "Week 3 — 出方案",
+      "goal": "Week 3 goal",
+      "tasks": [...]
+    }},
+    {{
+      "id": "week4",
+      "label": "Week 4 — 亮牌",
+      "goal": "Week 4 goal",
+      "tasks": [...]
+    }}
+  ]
+}}"""
+
+    try:
+        provider = _get_provider()
+        from lifee.providers.base import Message, MessageRole
+        messages_llm = [Message(role=MessageRole.USER, content=prompt)]
+        chunks = []
+        async for chunk in provider.stream(messages=messages_llm, max_tokens=1500, temperature=0.4):
+            chunks.append(chunk)
+        text = "".join(chunks).strip()
+        import json as _json
+        if '```' in text:
+            text = text.split('```')[1].replace('json', '', 1).strip()
+        plan = _json.loads(text)
+        return {"plan": plan}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"plan": {}, "error": str(e)}
+
+
 # ---- Persona Recommendation API ----
 
 class RecommendPersonasRequest(BaseModel):
@@ -1604,6 +1803,11 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             session, moderator_cached, participants_cached, _ = _sessions[sid]
             all_participants = [p for _, p in participants]
             moderator = moderator_cached
+            # 如果参与者数量发生变化（增加/删除角色），同步更新 moderator
+            if all_participants and len(all_participants) != len(moderator.participants):
+                from lifee.debate.moderator import SpeakerRotation
+                moderator.participants = all_participants
+                moderator.rotation = SpeakerRotation(all_participants, randomize_first=True)
             _sessions[sid] = (session, moderator, participants, now)
         else:
             session = Session()
