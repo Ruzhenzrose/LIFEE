@@ -30,7 +30,7 @@ describe('lifee-api worker', () => {
 		const request = new IncomingRequest('http://example.com/decision', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ situation: 'test', personas: [{ id: 'serene', name: 'SERENE' }] }),
+			body: JSON.stringify({ situation: 'test', personas: [{ id: 'buffett', name: 'Warren Buffett' }] }),
 		});
 		const ctx = createExecutionContext();
 		// Explicitly override env for this test

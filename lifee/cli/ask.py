@@ -142,6 +142,8 @@ async def consult(roles: list[str], question: str, session_name: str):
         moderator = Moderator(participants, session)
         current_name = ""
         async for participant, chunk, is_skip in moderator.run(question, max_turns=len(participants)):
+            if participant is None:
+                continue  # moderator 的状态信号（kb_search / picked:...）CLI 忽略
             if is_skip:
                 continue
             if participant.info.display_name != current_name:

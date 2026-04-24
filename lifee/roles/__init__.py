@@ -156,6 +156,8 @@ class RoleManager:
                     info["knowledge_lang"] = line.split(":**")[1].strip()
                 elif "**Tools:**" in line:
                     info["tools"] = [t.strip() for t in line.split(":**")[1].split(",")]
+                elif "**Role:**" in line or "**角色:**" in line:
+                    info["role_tag"] = line.split(":**")[1].strip()
 
         # 从 i18n 获取当前语言的显示名（优先级最高）
         # 注意：在 API 模式（Linux）下 cli 模块不可用（依赖 msvcrt），跳过

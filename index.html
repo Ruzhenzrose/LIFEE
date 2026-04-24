@@ -237,51 +237,6 @@
 
         const INITIAL_PERSONAS = [
             {
-                id: 'serene',
-                name: 'SERENE',
-                role: 'WARM COMFORTER',
-                category: 'SUPPORT',
-                worldview: "Gentleness isn't weakness — it's the strength to hold the storm.",
-                avatar: '✨',
-                decisionStyle: "Settle the feelings first, then choose: take small steps until life feels bearable again.",
-                lifeContext: [
-                    { period: "Learning to hold myself", detail: "In the low point, I learned not to deny what I feel: soothe first, then act." },
-                    { period: "Warming the days", detail: "Repair and rebuild slowly through small, certain moments of comfort." }
-                ],
-                voice: "Let's slow down and give you a hug first. Then we'll break this into the first step you can do today."
-            },
-            {
-                id: 'architect',
-                name: 'The Entrepreneur',
-                role: 'FOUNDER / OPERATOR',
-                category: 'RATIONAL',
-                worldview: "Pressure isn't the problem — vagueness is. Break reality down and find the leverage.",
-                avatar: '📐',
-                decisionStyle: "Calm under pressure: name the key constraints and pursue the fastest feedback loop.",
-                lifeContext: [
-                    { period: "Operator Mode", detail: "Make decisions amid uncertainty: use data, cadence, and retrospectives to withstand pressure." }
-                ],
-                voice: "I'll be direct: you don't lack answers — you lack a testable hypothesis and the next step. Let's make this real."
-            },
-            {
-                id: 'rebel',
-                name: 'The Outlier',
-                role: 'DISRUPTIVE VOICE',
-                category: 'RATIONAL',
-                worldview: 'Status quo is the enemy of the soul.',
-                avatar: '🔥',
-                voice: "If it doesn't hurt a little, you're probably lying to yourself."
-            },
-            {
-                id: 'caretaker',
-                name: 'The Positive Psychologist',
-                role: 'POSITIVE PSYCHOLOGIST',
-                category: 'SUPPORT',
-                worldview: 'Warmth plus evidence turns confusion into direction.',
-                avatar: '🕯️',
-                voice: "First, steady the emotions; then look at the facts and options. You've been trying hard — we can break the confusion into smaller, doable pieces."
-            },
-            {
                 id: 'audrey-hepburn',
                 name: 'AUDREY HEPBURN',
                 role: 'ELEGANT MUSE',
@@ -1330,16 +1285,10 @@
         };
 
         // ── Persona Recommendation Modal ──────────────────────────────────────────
-        const PERSONA_KEYWORDS_MAP = { 'buffett': ['invest','money','offer','salary','cash','compensation','stock','value','financial','wealth'], 'munger': ['decision','choice','choose','weigh','invert','mistake','bias','tradeoff','offer','compare'], 'drucker': ['career','job','work','first job','offer','manage','skill','strength','contribute','role','position','effectiveness'], 'welch': ['company','boss','leader','team','performance','hire','culture','candor','win','execute','job','promotion'], 'architect': ['startup','founder','build','product','series','seed','venture','equity','stage','business','bd'], 'shannon': ['engineer','tech','software','data','signal','information','noise','algorithm'], 'turing': ['code','software','ai','algorithm','machine','program','computer'], 'vonneumann': ['game','strategy','optimize','rational','theory','model','math'], 'serene': ['empty','lonely','sad','hurt','feel','lost','confused','alone','hollow','numb','depressed'], 'caretaker': ['anxious','worry','stress','burnout','tired','overwhelm','pressure','scared','afraid','exhausted'], 'rebel': ['stuck','trapped','break','quit','leave','escape','change','disrupt','unconventional','beijing','stay or leave'], 'audrey-hepburn': ['relationship','love','crush','partner','romance','dating','heart','confess'], 'krishnamurti': ['meaning','why','purpose','philosophy','life','question','freedom','who am i','truth'], 'lacan': ['desire','unconscious','identity','self','pattern','repeat','why do i'], 'tarot-master': ['uncertain','unknown','crossroads','torn','sign','fate','future','destiny'] };
-        const PERIOD_BONUSES_MAP = { 'My first job': ['drucker','welch','buffett','architect'], 'Career transition': ['drucker','welch','rebel','munger'], 'First year after graduation': ['drucker','caretaker','serene','rebel'], 'Relationship turning point': ['audrey-hepburn','serene','caretaker','krishnamurti'], 'Around 30 — feeling stuck': ['rebel','krishnamurti','lacan','caretaker'], 'Early career confusion': ['drucker','caretaker','serene','welch'], 'Creative burnout': ['rebel','krishnamurti','serene','audrey-hepburn'], 'Major failure or loss': ['serene','caretaker','krishnamurti','munger'], 'Starting over in a new city': ['rebel','serene','caretaker','drucker'], 'Becoming independent': ['rebel','drucker','welch','buffett'], 'First time studying abroad': ['serene','caretaker','rebel','audrey-hepburn'] };
-        const scoreAndRecommend = (situation, periods, allPersonas) => {
-            const text = (situation + ' ' + (periods||[]).join(' ')).toLowerCase();
-            const scores = {};
-            for (const [id, kws] of Object.entries(PERSONA_KEYWORDS_MAP)) { scores[id] = kws.reduce((a, kw) => a + (text.includes(kw) ? 1 : 0), 0); }
-            for (const period of (periods||[])) { for (const id of (PERIOD_BONUSES_MAP[period]||[])) { scores[id] = (scores[id]||0) + 2; } }
-            const ranked = Object.entries(scores).filter(([,s]) => s > 0).sort(([,a],[,b]) => b-a).map(([id]) => id);
-            const ids = ranked.length >= 2 ? ranked : [...new Set([...ranked, 'munger','caretaker','rebel'])];
-            return ids.slice(0,4).map(id => allPersonas.find(p => p.id === id)).filter(Boolean);
+        const randomPicks = (arr, n) => {
+            const pool = (arr || []).filter(p => p && p.id);
+            for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+            return pool.slice(0, n);
         };
         const PersonaRecommendModal = ({ isOpen, onClose, situation, periods, personas, selectedIds, onConfirm }) => {
             const [picks, setPicks] = useState([]);
@@ -1351,8 +1300,12 @@
                 const applyRecs = (recs) => { setRecommended(recs); setPicks(recs.map(p => p.id)); setLoading(false); };
                 fetch('/recommend-personas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ situation, periods: periods||[], persona_ids: personas.map(p => p.id) }) })
                     .then(r => r.json())
-                    .then(data => { const ids = Array.isArray(data.ids) && data.ids.length >= 2 ? data.ids : null; const recs = ids ? ids.map(id => personas.find(p => p.id === id)).filter(Boolean).slice(0,4) : scoreAndRecommend(situation, periods, personas); applyRecs(recs); })
-                    .catch(() => applyRecs(scoreAndRecommend(situation, periods, personas)));
+                    .then(data => {
+                        const ids = Array.isArray(data.ids) ? data.ids : [];
+                        const recs = ids.map(id => personas.find(p => p.id === id)).filter(Boolean).slice(0, 4);
+                        applyRecs(recs.length > 0 ? recs : randomPicks(personas, 2));
+                    })
+                    .catch(() => applyRecs(randomPicks(personas, 2)));
             }, [isOpen]);
             if (!isOpen) return null;
             const toggle = (id) => setPicks(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);

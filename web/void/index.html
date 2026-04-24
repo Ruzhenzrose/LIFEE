@@ -2399,7 +2399,6 @@
                                             <div class="flex flex-col justify-between h-full min-h-[300px] p-6">
                                                 <div class="flex items-start justify-between">
                                                     <p class="text-[9px] text-on-surface-variant/70 uppercase tracking-[0.3em] font-bold">${label}</p>
-                                                    <span class="text-2xl opacity-80">${featured.avatar || '☁️'}</span>
                                                 </div>
                                                 <div>
                                                     <p class="text-[10px] text-primary/80 uppercase tracking-widest font-bold mb-2">${featured.role}</p>
@@ -3628,7 +3627,7 @@
             useLocale();
             const [view, setView] = useState('home');
             const [context, setContext] = useState({ situation: '', landingPeriods: [] });
-            const _NO_KNOWLEDGE = new Set(['serene', 'architect', 'rebel', 'caretaker', 'tarot-master']);
+            const _NO_KNOWLEDGE = new Set();
             const [personas, setPersonas] = useState(INITIAL_PERSONAS.filter(p => !_NO_KNOWLEDGE.has(p.id)));
             const [selectedIds, setSelectedIds] = useState([]);
             // Hydrate from the Supabase token already sitting in localStorage so

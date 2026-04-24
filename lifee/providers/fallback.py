@@ -43,11 +43,12 @@ class FallbackProvider(LLMProvider):
         """当前使用的 Provider"""
         return self._providers[self._current_index]
 
-    def _switch_to_next(self, failed_provider: LLMProvider) -> bool:
+    def _switch_to_next(self, failed_provider: LLMProvider, error: Optional[Exception] = None) -> bool:
         """切换到下一个可用的 Provider
 
         Args:
             failed_provider: 刚失败的 Provider
+            error: 触发切换的异常（用于诊断日志）
 
         Returns:
             True 如果成功切换，False 如果没有更多 Provider
@@ -57,7 +58,8 @@ class FallbackProvider(LLMProvider):
         if current_idx < len(self._providers) - 1:
             self._current_index = current_idx + 1
             next_provider = self._providers[self._current_index]
-            print(f"[{failed_provider.name} 不可用，切换到 {next_provider.name}]")
+            err_desc = f" ({type(error).__name__}: {error})" if error is not None else ""
+            print(f"[{failed_provider.name} 不可用{err_desc}，切换到 {next_provider.name}]")
             return True
         return False
 
@@ -84,7 +86,7 @@ class FallbackProvider(LLMProvider):
                 )
             except RetryableError as e:
                 last_error = e
-                if self._switch_to_next(provider):
+                if self._switch_to_next(provider, e):
                     continue
                 else:
                     # 没有更多 Provider 了
@@ -124,7 +126,7 @@ class FallbackProvider(LLMProvider):
                 return  # 成功完成
             except RetryableError as e:
                 last_error = e
-                if self._switch_to_next(provider):
+                if self._switch_to_next(provider, e):
                     continue
                 else:
                     # 没有更多 Provider 了

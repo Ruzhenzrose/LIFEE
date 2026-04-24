@@ -170,24 +170,6 @@ _SB_HEADERS = {
     "Prefer": "return=representation",
 }
 
-# Shared httpx client for Supabase REST. Keeping the TLS connection warm
-# between requests turns 2-4 s cold calls into ~200 ms once the pool is
-# primed. Created lazily on first use so tests that don't touch the network
-# still import cleanly.
-_sb_client = None
-
-def _sb() -> "httpx.AsyncClient":
-    global _sb_client
-    if _sb_client is None:
-        import httpx as _hx
-        _sb_client = _hx.AsyncClient(
-            timeout=_hx.Timeout(10.0, connect=5.0),
-            limits=_hx.Limits(max_connections=20, max_keepalive_connections=10),
-            http2=False,
-        )
-    return _sb_client
-
-
 async def _get_balance(uid: str) -> int:
     """获取余额，新用户自动创建并给免费额度。任何外部错误都降级成初始额度，
     保证 /credits 永不 500——UI 只需要一个数字就能显示。"""
@@ -216,8 +198,8 @@ async def _get_balance(uid: str) -> int:
             except Exception:
                 pass
             return initial
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[_get_balance] {uid}: {type(e).__name__}: {e}")
     return initial
 
 
@@ -1469,7 +1451,7 @@ async def recommend_personas(req: RecommendPersonasRequest):
         "Select exactly 2 persona IDs that would resonate most with this user's situation. "
         "Prioritise emotional fit first, then intellectual fit. "
         "Only use IDs from the available list. "
-        'Reply ONLY with a JSON array of exactly 2 items, e.g. ["buffett","serene"]'
+        'Reply ONLY with a JSON array of exactly 2 items, e.g. ["buffett","krishnamurti"]'
     )
 
     try:
@@ -1839,7 +1821,7 @@ async def _handle_decision(req: DecisionRequest, request: Request):
     _need_set_cookie = not request.cookies.get(_COOKIE_NAME)
     if _need_set_cookie:
         _new_cookie_uid = str(uuid4())
-    speakers = len([p for p in req.personas if p.id != "tarot-master"])
+    speakers = len(req.personas)
     balance = await _get_balance(uid)
     if balance < speakers:
         return {

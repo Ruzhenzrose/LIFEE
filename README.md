@@ -22,7 +22,7 @@ A standalone single-page app — no server required, just open `index.html`.
 ### Features
 
 - **Multi-persona debate**: Select 2+ AI personas to discuss your question from different perspectives
-- **8+ built-in personas**: Krishnamurti, Lacan, Audrey Hepburn, The Entrepreneur, The Positive Psychologist, etc.
+- **Real-person personas**: Buffett, Munger, Drucker, Welch, Shannon, Turing, Von Neumann, Krishnamurti, Lacan, Simone de Beauvoir, Audrey Hepburn, etc.
 - **Custom personas**: Create your own advisors with custom avatars and personality
 - **Chat history**: Auto-saved, exportable, shareable to community
 - **Community**: Browse shared conversations and personas

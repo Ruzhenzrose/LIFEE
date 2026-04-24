@@ -2,35 +2,14 @@
     const { useState, useEffect, useRef } = React;
     const html = htm.bind(window.__voidH || React.createElement);
 
-    // ── Keyword fallback (mirrors old UI; used when /recommend-personas returns empty) ──
-    const PERSONA_KEYWORDS = {
-        'buffett':        ['invest', 'money', 'offer', 'salary', 'cash', 'compensation', 'stock', 'value', 'financial', 'wealth', 'return', 'long-term'],
-        'munger':         ['decision', 'choice', 'choose', 'weigh', 'invert', 'mistake', 'bias', 'tradeoff', 'pros and cons', 'offer', 'compare'],
-        'drucker':        ['career', 'job', 'work', 'first job', 'offer', 'manage', 'skill', 'strength', 'contribute', 'role', 'position', 'hired', 'effectiveness'],
-        'welch':          ['company', 'boss', 'leader', 'team', 'performance', 'hire', 'culture', 'candor', 'win', 'execute', 'job', 'promotion'],
-        'architect':      ['startup', 'founder', 'build', 'product', 'series', 'seed', 'venture', 'equity', 'stage', 'business', 'bd', 'operations'],
-        'shannon':        ['engineer', 'tech', 'software', 'data', 'signal', 'information', 'noise', 'algorithm'],
-        'turing':         ['code', 'software', 'ai', 'algorithm', 'machine', 'program', 'computer', 'automate'],
-        'vonneumann':     ['game', 'strategy', 'optimize', 'rational', 'theory', 'model', 'math'],
-        'serene':         ['empty', 'lonely', 'sad', 'hurt', 'feel', 'lost', 'confused', 'alone', 'hollow', 'numb'],
-        'caretaker':      ['anxious', 'worry', 'stress', 'burnout', 'tired', 'overwhelm', 'pressure', 'scared', 'afraid', 'exhausted'],
-        'rebel':          ['stuck', 'trapped', 'break', 'quit', 'leave', 'escape', 'change', 'disrupt', 'unconventional'],
-        'audrey-hepburn': ['relationship', 'love', 'crush', 'partner', 'romance', 'dating', 'heart', 'feelings'],
-        'krishnamurti':   ['meaning', 'why', 'purpose', 'philosophy', 'life', 'question', 'freedom', 'who am i', 'truth'],
-        'lacan':          ['desire', 'unconscious', 'identity', 'self', 'pattern', 'repeat'],
-        'tarot-master':   ['uncertain', 'unknown', 'crossroads', 'torn', 'sign', 'fate', 'future', 'destiny'],
-    };
-    const FALLBACK_IDS = ['munger', 'caretaker', 'rebel'];
-
-    function scorePersonas(situation, allPersonas) {
-        const text = String(situation || '').toLowerCase();
-        const scores = {};
-        for (const [id, keywords] of Object.entries(PERSONA_KEYWORDS)) {
-            scores[id] = keywords.reduce((acc, kw) => acc + (text.includes(kw) ? 1 : 0), 0);
+    // 随便抽 N 个 persona（LLM 推荐失败时的兜底）
+    function randomPicks(personas, n = 2) {
+        const pool = (personas || []).filter(p => p && p.id);
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
         }
-        const ranked = Object.entries(scores).filter(([, s]) => s > 0).sort(([, a], [, b]) => b - a).map(([id]) => id);
-        const ids = ranked.length >= 2 ? ranked : [...new Set([...ranked, ...FALLBACK_IDS])];
-        return ids.slice(0, 2).map(id => (allPersonas || []).find(p => p.id === id)).filter(Boolean);
+        return pool.slice(0, n);
     }
 
     // ── Skeleton card ──
@@ -129,10 +108,9 @@
             .then(r => r.json())
             .then(data => {
                 if (signal.aborted) return [];
-                const ids = Array.isArray(data.ids) && data.ids.length >= 1 ? data.ids : null;
-                const recs = ids
-                    ? ids.map(id => (personas || []).find(p => p.id === id)).filter(Boolean).slice(0, 2)
-                    : scorePersonas(situation, personas || []);
+                const ids = Array.isArray(data.ids) ? data.ids : [];
+                let recs = ids.map(id => (personas || []).find(p => p.id === id)).filter(Boolean).slice(0, 2);
+                if (recs.length === 0) recs = randomPicks(personas, 2);
                 setRecommended(recs);
                 setPicks(recs.map(p => p.id));
                 setLoading(false);
@@ -140,7 +118,7 @@
             })
             .catch(() => {
                 if (signal.aborted) return [];
-                const recs = scorePersonas(situation, personas || []);
+                const recs = randomPicks(personas, 2);
                 setRecommended(recs);
                 setPicks(recs.map(p => p.id));
                 setLoading(false);

@@ -262,8 +262,6 @@ STRINGS = {
     "role_buffett": {"zh": "沃伦·巴菲特", "en": "Warren Buffett"},
     "role_munger": {"zh": "查理·芒格", "en": "Charlie Munger"},
     "role_lacan": {"zh": "拉康", "en": "Lacan"},
-    "role_enterprise": {"zh": "企业家", "en": "Entrepreneur"},
-    "role_positive_psychologist": {"zh": "积极心理学家", "en": "Positive Psychologist"},
     "role_Simone de Beauvoir": {"zh": "西蒙娜·德·波伏娃", "en": "Simone de Beauvoir"},
 }
 

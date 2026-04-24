@@ -42,6 +42,9 @@ data/
 # 忽略数据库（知识库会自动构建）
 *.db
 
+# Persona profile embedding 缓存（与 embedding provider 绑定，会自动重算）
+lifee/roles/*/profile_embedding.json
+
 # Node / Frontend
 node_modules/
 **/node_modules/

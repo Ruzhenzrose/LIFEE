@@ -1203,6 +1203,9 @@ async def debate_loop(
             moderator.user_memory_context = user_memory.get_context()
 
             async for participant, chunk, is_skip in moderator.run(user_input, max_turns=_turns, media=media or None, mentioned_only=mentioned_only):
+                # 跳过 moderator 发给前端的状态信号（kb_search / picked:xxx）——CLI 不展示
+                if participant is None:
+                    continue
                 if is_skip:
                     # 清除当前角色之前输出的内容
                     if current_output_chars > 0:
