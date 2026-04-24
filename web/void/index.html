@@ -2222,7 +2222,6 @@
                         velocity = 0;
                         startScroll = row.scrollLeft;
                         row.style.cursor = 'grabbing';
-                        row.style.userSelect = 'none';
                     };
                     const onMove = (e) => {
                         if (!dragging) return;
@@ -2244,7 +2243,6 @@
                         if (!dragging) return;
                         dragging = false;
                         row.style.cursor = '';
-                        row.style.userSelect = '';
                         // Decay velocity if last sample was stale (finger paused before release)
                         if (performance.now() - lastTime > 80) velocity = 0;
                         if (Math.abs(velocity) > 0.1) {
@@ -2320,7 +2318,7 @@
                     </div>
 
                     <!-- Hero: split layout (input left, featured right) -->
-                    <section class="w-full max-w-6xl mx-auto px-8 pt-8 pb-16 grid grid-cols-1 md:grid-cols-5 gap-10">
+                    <section class="w-full max-w-6xl mx-auto px-8 pt-6 pb-8 grid grid-cols-1 md:grid-cols-5 gap-10">
                         <!-- Left: input area -->
                         <div class="md:col-span-3 flex flex-col justify-center gap-5">
                             <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em]">${t('home.todaysQuestion')}</p>
@@ -2424,12 +2422,12 @@
                     </section>
 
                     <!-- Domain sections (editorial list style) -->
-                    <section class="w-full max-w-6xl mx-auto px-8 pb-20">
+                    <section class="w-full max-w-6xl mx-auto px-8 pb-8">
                         <!-- Mode selector (replaces The Council divider) -->
-                        <div class="mb-4 pt-6">
+                        <div class="mb-3 pt-2">
                             <p class="text-xs text-on-surface/90 uppercase tracking-[0.3em] font-bold">${t('home.questionType')}</p>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             ${[
                                 { id: 'ab',       icon: 'balance' },
                                 { id: 'values',   icon: 'diamond' },
@@ -2456,7 +2454,7 @@
                         </div>
 
                         <!-- Domain directory — sticky above the carousel (moved from bottom) -->
-                        <div class="sticky top-0 z-10 flex items-center justify-start flex-wrap gap-x-8 gap-y-3 mb-6 -mx-8 px-8 py-3.5 bg-surface/90 backdrop-blur-xl">
+                        <div class="sticky top-0 z-10 flex items-center justify-start flex-wrap gap-x-8 gap-y-3 mb-0 -mx-8 px-8 pt-3.5 pb-2 bg-surface/90 backdrop-blur-xl">
                             ${activeDomains.map((domain, dIdx) => {
                                 const isActive = dIdx === activeDomainIdx;
                                 return html`
@@ -2510,7 +2508,7 @@
                                                             if (previewId === p.id) toggleSelect(p.id);
                                                             else setPreviewId(p.id);
                                                         }}
-                                                        class=${`group shrink-0 cursor-pointer w-60 h-60 rounded-xl overflow-hidden relative transition-all
+                                                        class=${`group shrink-0 cursor-pointer select-none w-60 h-60 rounded-xl overflow-hidden relative transition-all
                                                             ${isSel
                                                                 ? 'ring-2 ring-primary shadow-lg shadow-primary/20'
                                                                 : isPreview
