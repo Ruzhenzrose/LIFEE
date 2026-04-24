@@ -68,6 +68,18 @@
         const turnstileRef = useRef(null);
         const widgetIdRef  = useRef(null);
 
+        // 每次打开 modal 先重置到登录视图。否则登出再开会停在上次的 OTP 步。
+        useEffect(() => {
+            if (isOpen) {
+                setMode('login');
+                setOtpSent(false);
+                setOtpCode('');
+                setPassword('');
+                setMessage('');
+                setLoading(false);
+            }
+        }, [isOpen]);
+
         // Render Turnstile widget
         useEffect(() => {
             if (!isOpen || humanVerified) return;

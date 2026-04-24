@@ -12,6 +12,18 @@ const AuthModal = ({ isOpen, onClose, onAuthed, onGuest }) => {
     const turnstileRef = useRef(null);
     const widgetIdRef = useRef(null);
 
+    // 每次打开先重置到登录视图
+    useEffect(() => {
+        if (isOpen) {
+            setMode('login');
+            setOtpSent(false);
+            setOtpCode('');
+            setPassword('');
+            setMessage('');
+            setLoading(false);
+        }
+    }, [isOpen]);
+
     // 渲染 Turnstile widget
     useEffect(() => {
         if (!isOpen || humanVerified) return;
