@@ -1,7 +1,147 @@
-// --- Supabase ---
-var SUPABASE_URL = "https://ncoqeewtbmzrfizoxomi.supabase.co";
-var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jb3FlZXd0Ym16cmZpem94b21pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwODc2OTMsImV4cCI6MjA4NTY2MzY5M30.rfG9Ei63zEi82hbwk6ulZ-tFrAHkuBht8HbSexPZb9g";
-var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// --- Auth shim: 本地 LIFEE API 冒充 supabase-js 接口，让旧组件零改动切换 ---
+// 所有 `supabaseClient.auth.*` 和部分 `supabaseClient.from('profiles').*` 会路由到
+// /auth/* /user/* 端点。未覆盖到的 from(table) 调用返回空数据（降级）。
+var supabaseClient = (function () {
+    var listeners = [];
+    function _emit(event, session) {
+        try { listeners.forEach(function (cb) { cb(event, session); }); } catch (_) {}
+    }
+    async function _json(url, opts) {
+        opts = opts || {};
+        opts.credentials = 'include';
+        opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+        if (opts.body && typeof opts.body !== 'string') opts.body = JSON.stringify(opts.body);
+        try {
+            var r = await fetch(url, opts);
+            if (!r.ok && r.status !== 200 && r.status !== 400) {
+                return { __err: r.status };
+            }
+            return await r.json();
+        } catch (e) {
+            return { __err: e.message || String(e) };
+        }
+    }
+    function _userShape(u) {
+        if (!u || !u.id) return null;
+        return {
+            id: u.id,
+            email: u.email,
+            user_metadata: u.user_metadata || {},
+            app_metadata: u.app_metadata || {},
+        };
+    }
+
+    var auth = {
+        async signInWithPassword(arg) {
+            var data = await _json('/auth/login', { method: 'POST', body: { email: arg.email, password: arg.password } });
+            if (!data.ok) return { data: null, error: { message: data.message || 'Login failed', needs_verify: !!data.needs_verify } };
+            var user = _userShape(data.user);
+            _emit('SIGNED_IN', { user: user });
+            return { data: { user: user, session: { user: user } }, error: null };
+        },
+        async signUp(arg) {
+            var data = await _json('/auth/signup', { method: 'POST', body: { email: arg.email, password: arg.password } });
+            if (!data.ok) return { data: null, error: { message: data.message || 'Signup failed' } };
+            // 我们的流程是先发 OTP，用户再 verifyOtp。这里返回一个占位 user 让 UI 切到 OTP 步。
+            return { data: { user: null, session: null, needs_otp: true }, error: null };
+        },
+        async verifyOtp(arg) {
+            var data = await _json('/auth/verify-otp', { method: 'POST', body: { email: arg.email, code: arg.token } });
+            if (!data.ok) return { data: null, error: { message: data.message || 'Invalid code' } };
+            var user = _userShape(data.user);
+            _emit('SIGNED_IN', { user: user });
+            return { data: { user: user, session: { user: user } }, error: null };
+        },
+        async getSession() {
+            var data = await _json('/auth/me');
+            if (!data.user) return { data: { session: null }, error: null };
+            var user = _userShape(data.user);
+            return { data: { session: { user: user } }, error: null };
+        },
+        async getUser() {
+            var r = await this.getSession();
+            return { data: { user: r.data.session ? r.data.session.user : null }, error: r.error };
+        },
+        async signOut() {
+            await _json('/auth/logout', { method: 'POST' });
+            _emit('SIGNED_OUT', null);
+            return { error: null };
+        },
+        onAuthStateChange(cb) {
+            listeners.push(cb);
+            return { data: { subscription: { unsubscribe: function () {
+                var i = listeners.indexOf(cb); if (i >= 0) listeners.splice(i, 1);
+            } } } };
+        },
+        async updateUser(arg) {
+            // 目前不支持改名/改密。保留接口不报错，UI 该显示的 badge 还能正常走 local state。
+            console.warn('[auth-shim] updateUser is a no-op until /user endpoints are extended');
+            return { data: { user: null }, error: null };
+        },
+        async resetPasswordForEmail(email, _opts) {
+            return { data: null, error: { message: 'Password reset not supported yet. Re-sign up if needed.' } };
+        },
+    };
+
+    // 伪 PostgREST 链式调用：仅覆盖实际被 UI 用到的几条，其他返回空。
+    function from(table) {
+        var state = { table: table, filters: {}, limit: null };
+        var chain = {
+            select: function (_cols) { return chain; },
+            eq: function (col, val) { state.filters[col] = val; return chain; },
+            order: function () { return chain; },
+            limit: function (n) { state.limit = n; return chain; },
+            maybeSingle: function () { return chain._single(true); },
+            single: function () { return chain._single(false); },
+            _single: async function (nullable) {
+                if (table === 'profiles') {
+                    var r = await _json('/user/profile');
+                    if (!r.user) return { data: nullable ? null : null, error: nullable ? null : { message: 'not logged in' } };
+                    return { data: { id: r.user.id, user_memory: r.user_memory || '' }, error: null };
+                }
+                return { data: nullable ? null : null, error: null };
+            },
+            insert: async function (_rows) { return { data: null, error: null }; },
+            upsert: async function (row) {
+                if (table === 'profiles' && row && typeof row.user_memory === 'string') {
+                    await _json('/user/memory', { method: 'PATCH', body: { user_memory: row.user_memory } });
+                }
+                return { data: null, error: null };
+            },
+            update: async function (row) {
+                if (table === 'profiles' && row && typeof row.user_memory === 'string') {
+                    await _json('/user/memory', { method: 'PATCH', body: { user_memory: row.user_memory } });
+                }
+                return { data: null, error: null };
+            },
+            delete: async function () { return { data: null, error: null }; },
+            // `.select()` 在链末被 await 时直接走这里（Supabase 允许 await chain）
+            then: async function (resolve, reject) {
+                if (table === 'profiles') {
+                    var r = await _json('/user/profile');
+                    if (!r.user) return resolve({ data: [], error: null });
+                    return resolve({ data: [{ id: r.user.id, user_memory: r.user_memory || '' }], error: null });
+                }
+                return resolve({ data: [], error: null });
+            },
+        };
+        return chain;
+    }
+
+    // Realtime 已经没了。返回 no-op channel 避免 ChatArena/其他组件 crash。
+    function channel(_name) {
+        var ch = {
+            on: function () { return ch; },
+            subscribe: function () { return ch; },
+            unsubscribe: function () {},
+        };
+        return ch;
+    }
+    function removeChannel(_ch) { /* no-op */ }
+
+    return { auth: auth, from: from, channel: channel, removeChannel: removeChannel };
+})();
+window.supabaseClient = supabaseClient;
 var ADMIN_EMAIL = "hackathon@lifee.com";
 
 var SUMMARY_EVERY_DEFAULT = 15;

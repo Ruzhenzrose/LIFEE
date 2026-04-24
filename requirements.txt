@@ -28,3 +28,7 @@ yfinance>=0.2.36       # 实时股票数据（美股/港股/A股）
 # API
 fastapi>=0.100.0       # Web 框架
 uvicorn[standard]>=0.23.0  # ASGI 服务器
+
+# Auth（替换 Supabase Auth）
+bcrypt>=4.0.0          # 密码哈希
+PyJWT>=2.8.0           # JWT 签发/解析

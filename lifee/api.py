@@ -33,25 +33,6 @@ _knowledge_paths: dict = {}     # role_name → (db_path, knowledge_lang)
 _knowledge_embedding = None     # shared embedding provider
 _km_initialized = False
 
-# 共享的 Supabase httpx client —— 避免每次请求都付 TCP+TLS 握手成本
-# 对国内网络 → Cloudflare (Supabase) 很关键，每次新建 client 经常 >10s 超时
-_sb_client = None  # type: ignore
-
-
-def _sb():
-    """获取共享 Supabase httpx client（懒初始化）。调用者不要用 async with 包它。"""
-    global _sb_client
-    import httpx
-    if _sb_client is None or _sb_client.is_closed:
-        # AsyncHTTPTransport(retries=2): 建立连接失败时自动重试 2 次
-        # 你这个网络环境到 Cloudflare 首次握手偶尔抽风，内建重试比上层加 try/except 干净
-        _sb_client = httpx.AsyncClient(
-            timeout=httpx.Timeout(20.0, connect=15.0),
-            limits=httpx.Limits(max_connections=10, max_keepalive_connections=10, keepalive_expiry=60.0),
-            transport=httpx.AsyncHTTPTransport(retries=2),
-        )
-    return _sb_client
-
 # 会话缓存：session_id → (Session, Moderator, participants, last_access_time)
 _sessions: dict = {}
 _SESSION_TTL = 3600  # 1小时过期
@@ -156,157 +137,55 @@ async def _observer_stream(sid: str):
     finally:
         state.unsubscribe(q)
 
-# ---- Credits 系统（Supabase 持久化） ----
+# ---- Credits 系统（本地 SQLite 持久化，见 lifee/store.py） ----
 GUEST_CREDITS = 6
 REGISTER_BONUS = 7   # 注册奖励（叠加在 Guest 剩余余额上）
 REDEEM_CREDITS = 100
 
-_SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip('"')
-_SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip('"')
-_SB_HEADERS = {
-    "apikey": _SUPABASE_KEY,
-    "Authorization": f"Bearer {_SUPABASE_KEY}",
-    "Content-Type": "application/json",
-    "Prefer": "return=representation",
-}
+# store 模块下方通过 _store 引用（见 /auth/* 端点块）
+
+
+def _initial_balance(uid: str) -> int:
+    return REGISTER_BONUS if uid.startswith("user:") else GUEST_CREDITS
+
 
 async def _get_balance(uid: str) -> int:
-    """获取余额，新用户自动创建并给免费额度。任何外部错误都降级成初始额度，
-    保证 /credits 永不 500——UI 只需要一个数字就能显示。"""
-    initial = REGISTER_BONUS if uid.startswith("user:") else GUEST_CREDITS
-    if not _SUPABASE_URL:
-        return initial
-    import httpx
+    """获取余额，新用户按初始额度建档。SQLite 本地读写几乎不可能失败。"""
+    from lifee import store as _s
     try:
-        c = _sb()
-        r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}&select=balance",
-            headers=_SB_HEADERS,
-        )
-        rows = r.json() if r.status_code < 400 else None
-        # PostgREST 正常返回 list，错误时返回 dict — 只相信 list。
-        if isinstance(rows, list):
-            if rows:
-                return int(rows[0].get("balance", initial))
-            # 新 uid → 插入（幂等失败不致命）
-            try:
-                await c.post(
-                    f"{_SUPABASE_URL}/rest/v1/user_credits",
-                    headers=_SB_HEADERS,
-                    json={"uid": uid, "balance": initial},
-                )
-            except Exception:
-                pass
-            return initial
+        return await asyncio.to_thread(_s.credits_ensure, uid, _initial_balance(uid))
     except Exception as e:
         print(f"[_get_balance] {uid}: {type(e).__name__}: {e}")
-    return initial
+        return _initial_balance(uid)
 
 
 async def _migrate_balance(from_uid: str, to_uid: str):
-    """把 from_uid 的余额迁移到 to_uid（IP → cookie 迁移用）。失败静默，不阻断请求。"""
-    if not _SUPABASE_URL or not from_uid:
+    """把 from_uid 的余额合并到 to_uid（IP → cookie / guest → user 迁移）。失败静默。"""
+    if not from_uid or from_uid == to_uid:
         return
-    import httpx
+    from lifee import store as _s
     try:
-        c = _sb()
-        r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{from_uid}&select=balance",
-            headers=_SB_HEADERS,
-        )
-        rows = r.json() if r.status_code < 400 else None
-        if not isinstance(rows, list) or not rows:
-            return  # 没记录 / 错误响应 → 不迁移
-        balance = int(rows[0].get("balance", 0))
-        await c.post(
-            f"{_SUPABASE_URL}/rest/v1/user_credits",
-            headers=_SB_HEADERS,
-            json={"uid": to_uid, "balance": balance},
-        )
+        await asyncio.to_thread(_s.credits_migrate, from_uid, to_uid)
     except Exception:
         return
 
 
 async def _deduct(uid: str, amount: int = 1) -> bool:
-    """扣 1 credit，返回是否成功"""
-    if not _SUPABASE_URL:
-        return True
-    import httpx
-    from datetime import datetime, timezone
-    bal = await _get_balance(uid)
-    if bal < amount:
-        return False
-    c = _sb()
-    await c.patch(
-        f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}",
-        headers=_SB_HEADERS,
-        json={"balance": bal - amount, "updated_at": datetime.now(timezone.utc).isoformat()},
-    )
-    return True
+    from lifee import store as _s
+    return await asyncio.to_thread(_s.credits_debit, uid, amount, "chat")
 
 
 async def _redeem(uid: str, code: str) -> tuple[bool, str]:
-    """兑换码充值"""
-    if not _SUPABASE_URL:
-        return False, "no database"
-    import httpx
-    c = _sb()
-    # 查找未使用的兑换码
-    r = await c.get(
-        f"{_SUPABASE_URL}/rest/v1/redeem_codes?code=eq.{code}&used_by=is.null&select=credits",
-        headers=_SB_HEADERS,
-    )
-    rows = r.json()
-    if not rows:
-        return False, "invalid code"
-    credits = rows[0]["credits"]
-
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc).isoformat()
-
-    # 标记已使用
-    await c.patch(
-        f"{_SUPABASE_URL}/rest/v1/redeem_codes?code=eq.{code}",
-        headers=_SB_HEADERS,
-        json={"used_by": uid, "used_at": now},
-    )
-
-    # 增加余额
-    bal = await _get_balance(uid)
-    await c.patch(
-        f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}",
-        headers=_SB_HEADERS,
-        json={"balance": bal + credits, "updated_at": now},
-    )
-
-    # 记录交易
-    await c.post(
-        f"{_SUPABASE_URL}/rest/v1/credit_transactions",
-        headers=_SB_HEADERS,
-        json={"uid": uid, "amount": credits, "reason": f"redeem:{code}"},
-    )
-
-    return True, f"+{credits} credits"
+    from lifee import store as _s
+    ok, msg, _ = await asyncio.to_thread(_s.redeem_use, code, uid)
+    return ok, msg
 
 
 async def _generate_redeem_codes(n: int = 10, credits_each: int = 100) -> list[str]:
-    """生成 n 个兑换码并存入数据库"""
     import secrets
-    codes = []
-    rows = []
-    for _ in range(n):
-        code = secrets.token_hex(4).upper()
-        codes.append(code)
-        rows.append({"code": code, "credits": credits_each})
-
-    if _SUPABASE_URL:
-        import httpx
-        c = _sb()
-        await c.post(
-            f"{_SUPABASE_URL}/rest/v1/redeem_codes",
-            headers=_SB_HEADERS,
-            json=rows,
-        )
+    codes = [secrets.token_hex(4).upper() for _ in range(n)]
+    from lifee import store as _s
+    await asyncio.to_thread(_s.redeem_codes_bulk_insert, [(c, credits_each) for c in codes])
     return codes
 
 
@@ -471,25 +350,18 @@ def _get_knowledge_manager(role_name: str):
 @app.on_event("startup")
 async def startup():
     await _init_knowledge()
-    # 预热一个 Supabase 连接，前端第一批请求直接复用（省一次 TCP+TLS 握手）
-    if _SUPABASE_URL:
-        try:
-            c = _sb()
-            await c.get(f"{_SUPABASE_URL}/rest/v1/", headers=_SB_HEADERS)
-            print("[supabase] warmup OK")
-        except Exception as e:
-            print(f"[supabase] warmup failed (non-fatal): {type(e).__name__}")
+    # 本地 SQLite 热身，建表 / 打开 WAL
+    try:
+        from lifee import store as _s
+        await asyncio.to_thread(_s.warmup)
+        print(f"[store] ready ({_s.db_path()})")
+    except Exception as e:
+        print(f"[store] warmup failed: {type(e).__name__}: {e}")
 
 
 @app.on_event("shutdown")
 async def shutdown():
-    global _sb_client
-    if _sb_client is not None and not _sb_client.is_closed:
-        try:
-            await _sb_client.aclose()
-        except Exception:
-            pass
-        _sb_client = None
+    pass
 
 # CORS
 app.add_middleware(
@@ -511,27 +383,16 @@ def _get_ip_uid(request: Request) -> str:
 
 
 async def _resolve_uid(request: Request) -> str:
-    """解析真实 uid：cookie 有效 → 用 cookie，否则打回 IP 池。
-    伪造不存在的 cookie 不会拿到新额度。任何 Supabase 异常都降级为 IP 池。"""
+    """解析真实 uid：cookie 有效（有对应 user_credits 行）→ 用 cookie，否则打回 IP 池。"""
     cookie_uid = request.cookies.get(_COOKIE_NAME, "")
-    if cookie_uid and _SUPABASE_URL:
-        # 验证 cookie uid 在数据库里是否存在
-        import httpx
+    if cookie_uid:
+        from lifee import store as _s
         try:
-            c = _sb()
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{cookie_uid}&select=uid",
-                headers=_SB_HEADERS,
-            )
-            rows = r.json() if r.status_code < 400 else None
-            if isinstance(rows, list) and rows:
-                return cookie_uid  # 合法 cookie
+            bal = await asyncio.to_thread(_s.credits_get, cookie_uid)
+            if bal is not None:
+                return cookie_uid
         except Exception:
-            # 网络/DB 故障 → 信任 cookie，避免把已登录用户打回 IP 池
             return cookie_uid
-        # cookie uid 不在数据库 → 伪造的，打回 IP
-    elif cookie_uid:
-        return cookie_uid  # 无 Supabase 时信任 cookie
     return _get_ip_uid(request)
 
 
@@ -651,17 +512,15 @@ async def debug_env():
     import sys
     key = os.getenv("GOOGLE_API_KEY", "NOT SET")
     provider = os.getenv("LLM_PROVIDER", "NOT SET")
-    has_asyncio_timeout = hasattr(__import__("asyncio"), "timeout")
-    sb_url = os.getenv("SUPABASE_URL", "NOT SET")
+    from lifee import store as _s
     return {
         "GOOGLE_API_KEY": key[:10] + "..." if key != "NOT SET" else key,
         "LLM_PROVIDER": provider,
         "API_LLM_PROVIDER": os.getenv("API_LLM_PROVIDER", "NOT SET"),
-        "SUPABASE_URL": sb_url,
-        "SUPABASE_URL_len": len(sb_url),
-        "SUPABASE_URL_starts_with_quote": sb_url.startswith('"'),
+        "DB_PATH": _s.db_path(),
+        "RESEND_CONFIGURED": bool(os.getenv("RESEND_API_KEY", "")),
+        "JWT_CONFIGURED": bool(os.getenv("JWT_SECRET", "")),
         "python_version": sys.version,
-        "has_asyncio_timeout": has_asyncio_timeout,
     }
 
 
@@ -695,6 +554,171 @@ async def verify_human(req: TurnstileRequest, request: Request, response: Respon
         response.set_cookie("lifee_verified", "1", max_age=365 * 24 * 3600, httponly=True, samesite="lax")
         return {"ok": True}
     return {"ok": False, "error": result.get("error-codes", [])}
+
+
+# ---- Auth API（自家 email+password+OTP，替换 Supabase Auth）----
+from lifee import store as _store
+from lifee import auth as _auth
+
+
+def _current_user(request: Request) -> dict | None:
+    """从 JWT cookie 解析当前用户。返回 {id, email} 或 None。"""
+    token = request.cookies.get(_auth.cookie_name(), "")
+    if not token:
+        return None
+    payload = _auth.decode_token(token)
+    if not payload:
+        return None
+    return {"id": payload.get("sub"), "email": payload.get("email")}
+
+
+def _set_auth_cookie(response: Response, user_id: str, email: str):
+    response.set_cookie(
+        _auth.cookie_name(),
+        _auth.make_token(user_id, email),
+        max_age=_auth.cookie_max_age(),
+        httponly=True,
+        samesite="lax",
+    )
+
+
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+
+
+class VerifyOtpRequest(BaseModel):
+    email: str
+    code: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class ResendOtpRequest(BaseModel):
+    email: str
+
+
+def _normalize_email(e: str) -> str:
+    return (e or "").strip().lower()
+
+
+@app.post("/auth/signup")
+async def auth_signup(req: SignupRequest):
+    """注册：先建号（未验证）→ 生成 OTP → 发邮件。客户端随后调 /auth/verify-otp 完成。"""
+    email = _normalize_email(req.email)
+    if not email or "@" not in email:
+        return {"ok": False, "message": "Invalid email"}
+    if len(req.password) < 6:
+        return {"ok": False, "message": "Password must be at least 6 characters"}
+
+    try:
+        existing = await asyncio.to_thread(_store.user_by_email, email)
+        if existing:
+            if existing.get("email_verified"):
+                return {"ok": False, "message": "Email already registered"}
+            # 未验证的旧号：更新密码，重新发 OTP（允许"没收到第一封"的用户重试）
+            await asyncio.to_thread(_store.user_set_password, existing["id"], _auth.hash_password(req.password))
+            user_id = existing["id"]
+        else:
+            user_id = await asyncio.to_thread(_store.user_create, email, _auth.hash_password(req.password))
+    except ValueError as e:
+        return {"ok": False, "message": str(e)}
+    except Exception as e:
+        print(f"[/auth/signup] {type(e).__name__}: {e}")
+        return {"ok": False, "message": "Signup failed, please retry"}
+
+    code = await asyncio.to_thread(_store.otp_create, email, "signup", 600)
+    await _auth.send_otp_email(email, code, "signup")
+    return {"ok": True, "message": "Verification code sent", "user_id": user_id}
+
+
+@app.post("/auth/verify-otp")
+async def auth_verify_otp(req: VerifyOtpRequest, response: Response):
+    """校验 OTP 完成注册 → 发 JWT cookie。"""
+    email = _normalize_email(req.email)
+    code = (req.code or "").strip()
+    ok = await asyncio.to_thread(_store.otp_consume, email, code, "signup")
+    if not ok:
+        return {"ok": False, "message": "Invalid or expired code"}
+    user = await asyncio.to_thread(_store.user_by_email, email)
+    if not user:
+        return {"ok": False, "message": "User not found"}
+    await asyncio.to_thread(_store.user_set_verified, user["id"])
+    _set_auth_cookie(response, user["id"], email)
+    return {"ok": True, "user": {"id": user["id"], "email": email}}
+
+
+@app.post("/auth/resend-otp")
+async def auth_resend_otp(req: ResendOtpRequest):
+    email = _normalize_email(req.email)
+    if not email:
+        return {"ok": False, "message": "Invalid email"}
+    user = await asyncio.to_thread(_store.user_by_email, email)
+    if not user or user.get("email_verified"):
+        # 不暴露用户是否存在
+        return {"ok": True, "message": "Verification code sent (if needed)"}
+    code = await asyncio.to_thread(_store.otp_create, email, "signup", 600)
+    await _auth.send_otp_email(email, code, "signup")
+    return {"ok": True, "message": "Verification code sent"}
+
+
+@app.post("/auth/login")
+async def auth_login(req: LoginRequest, response: Response):
+    email = _normalize_email(req.email)
+    user = await asyncio.to_thread(_store.user_by_email, email)
+    if not user:
+        return {"ok": False, "message": "Invalid email or password"}
+    if not await asyncio.to_thread(_auth.verify_password, req.password, user["password_hash"]):
+        return {"ok": False, "message": "Invalid email or password"}
+    if not user.get("email_verified"):
+        # 未验证：重新发 OTP，让客户端走验证流程
+        code = await asyncio.to_thread(_store.otp_create, email, "signup", 600)
+        await _auth.send_otp_email(email, code, "signup")
+        return {"ok": False, "message": "Email not verified", "needs_verify": True}
+    _set_auth_cookie(response, user["id"], email)
+    return {"ok": True, "user": {"id": user["id"], "email": email}}
+
+
+@app.post("/auth/logout")
+async def auth_logout(response: Response):
+    response.delete_cookie(_auth.cookie_name())
+    return {"ok": True}
+
+
+@app.get("/auth/me")
+async def auth_me(request: Request):
+    u = _current_user(request)
+    if not u:
+        return {"user": None}
+    return {"user": u}
+
+
+# ---- User profile（替换原 supabase.profiles）----
+
+
+@app.get("/user/profile")
+async def user_profile_get(request: Request):
+    u = _current_user(request)
+    if not u:
+        return {"user": None}
+    mem = await asyncio.to_thread(_store.user_get_memory, u["id"])
+    return {"user": {"id": u["id"], "email": u["email"]}, "user_memory": mem}
+
+
+class UserMemoryRequest(BaseModel):
+    user_memory: str
+
+
+@app.patch("/user/memory")
+async def user_memory_set(req: UserMemoryRequest, request: Request):
+    u = _current_user(request)
+    if not u:
+        return {"ok": False, "message": "not logged in"}
+    await asyncio.to_thread(_store.user_set_memory, u["id"], req.user_memory)
+    return {"ok": True}
 
 
 @app.get("/test-llm")
@@ -759,124 +783,79 @@ async def gen_codes(n: int = 10, credits: int = 100):
 # ---- 会话存档 API ----
 
 async def _save_message(session_id: str, user_id: str, role: str, content: str, persona_id: str = "", seq: int = 0):
-    """存一条消息到 Supabase（仅登录用户存完整记录）"""
-    if not _SUPABASE_URL or not content.strip():
+    """存一条消息到 SQLite。空内容跳过。"""
+    if not content.strip():
         return
     try:
-        import httpx
-        c = _sb()
-        await c.post(
-            f"{_SUPABASE_URL}/rest/v1/chat_messages",
-            headers=_SB_HEADERS,
-            json={"session_id": session_id, "user_id": user_id, "role": role,
-                  "content": content, "persona_id": persona_id, "seq": seq},
+        from lifee import store as _s
+        await asyncio.to_thread(
+            _s.msg_save, session_id, role, content,
+            seq=(seq if seq else None), persona_id=(persona_id or None),
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[_save_message] {type(e).__name__}: {e}")
 
 
 async def _insert_message_stub(session_id: str, user_id: str, role: str, persona_id: str, seq: int):
-    """Insert an empty assistant message row at the start of a persona's turn.
-
-    Subsequent chunks PATCH this row's content. Enables Supabase Realtime clients
-    (and DB refetch on reconnect) to see progressive output even if the generator
-    session outlives the original SSE connection.
-    """
-    if not _SUPABASE_URL:
-        return
+    """Insert an empty assistant message row at the start of a persona's turn。
+    后续 chunks 用相同 (session_id, seq) 覆盖 content。"""
     try:
-        import httpx
-        c = _sb()
-        await c.post(
-            f"{_SUPABASE_URL}/rest/v1/chat_messages",
-            headers=_SB_HEADERS,
-            json={"session_id": session_id, "user_id": user_id, "role": role,
-                  "content": "", "persona_id": persona_id, "seq": seq},
+        from lifee import store as _s
+        await asyncio.to_thread(
+            _s.msg_save, session_id, role, "",
+            seq=seq, persona_id=(persona_id or None),
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[_insert_message_stub] {type(e).__name__}: {e}")
 
 
 async def _patch_message_content(session_id: str, seq: int, content: str):
     """Update the content of an in-flight message row keyed by (session_id, seq)."""
-    if not _SUPABASE_URL:
-        return
     try:
-        import httpx
-        c = _sb()
-        await c.patch(
-            f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&seq=eq.{seq}",
-            headers={**_SB_HEADERS, "Prefer": "return=minimal"},
-            json={"content": content},
-        )
+        from lifee import store as _s
+        await asyncio.to_thread(_s.msg_save, session_id, "assistant", content, seq=seq)
     except Exception:
         pass
 
 
 async def _log_conversation(uid: str, role: str, persona_id: str, content_preview: str):
-    """简易对话日志（所有用户包括 Guest，存到 credit_transactions）"""
-    if not _SUPABASE_URL:
-        return
-    import httpx
+    """对话日志（Guest 也记）。amount=0 不影响余额。"""
     preview = content_preview[:100].replace('\n', ' ')
     try:
-        # 确保 uid 存在于 user_credits（外键约束）
-        await _get_balance(uid)
-        c = _sb()
-        await c.post(
-            f"{_SUPABASE_URL}/rest/v1/credit_transactions",
-            headers=_SB_HEADERS,
-            json={"uid": uid, "amount": 0, "reason": f"msg:{role}:{persona_id}:{preview}"},
-        )
+        from lifee import store as _s
+        await asyncio.to_thread(_s.credits_ensure, uid, _initial_balance(uid))
+        await asyncio.to_thread(_s.credits_log, uid, 0, f"msg:{role}:{persona_id}:{preview}")
     except Exception:
-        pass  # 日志失败不影响对话
+        pass
 
 
 async def _ensure_chat_session(session_id: str, user_id: str, title: str = "New Chat", personas: list = None):
-    """确保 chat_session 存在，不存在则创建"""
-    if not _SUPABASE_URL:
-        return
+    """确保 chat_session 存在；存在就 touch updated_at。"""
     try:
-        import httpx
-        c = _sb()
-        r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&deleted=eq.false&select=id",
-            headers=_SB_HEADERS,
+        from lifee import store as _s
+        created = await asyncio.to_thread(
+            _s.session_ensure, session_id, user_id, title=title, personas=personas or [],
         )
-        if not r.json():
-            await c.post(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions",
-                headers=_SB_HEADERS,
-                json={"id": session_id, "user_id": user_id, "title": title,
-                      "personas": personas or []},
-            )
-        else:
-            from datetime import datetime, timezone
-            await c.patch(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
-                headers=_SB_HEADERS,
-                json={"updated_at": datetime.now(timezone.utc).isoformat()},
-            )
+        if not created:
+            await asyncio.to_thread(_s.session_update, session_id)
     except Exception:
         pass
 
 
 @app.get("/sessions")
 async def list_sessions(request: Request, userId: str = ""):
-    """列出用户的会话"""
-    if not _SUPABASE_URL or not userId:
+    """列出用户的会话（已去掉没消息的空 session）"""
+    if not userId:
         return {"sessions": []}
-    c = _sb()
-    # 获取有消息的 session（通过 inner join chat_messages）
-    r = await c.get(
-        f"{_SUPABASE_URL}/rest/v1/chat_sessions?user_id=eq.{userId}&deleted=eq.false&select=id,title,personas,starred,updated_at,chat_messages(id)&order=updated_at.desc&limit=20",
-        headers=_SB_HEADERS,
-    )
-    sessions = r.json()
-    # 过滤掉没有消息的空 session
-    sessions = [s for s in sessions if isinstance(s, dict) and s.get("chat_messages")]
-    for s in sessions:
-        s.pop("chat_messages", None)
+    try:
+        from lifee import store as _s
+        rows = await asyncio.to_thread(_s.session_list, userId, 20)
+    except Exception as e:
+        print(f"[/sessions] {type(e).__name__}: {e}")
+        return {"sessions": []}
+    sessions = [r for r in rows if r.get("message_count", 0) > 0]
+    for r in sessions:
+        r.pop("message_count", None)
     return {"sessions": sessions}
 
 
@@ -945,28 +924,16 @@ async def submit_feedback(req: FeedbackRequest, request: Request):
         return {"ok": False, "message": "empty feedback"}
     if len(content) > 5000:
         return {"ok": False, "message": "feedback too long (max 5000 chars)"}
-    if not _SUPABASE_URL:
-        return {"ok": False, "message": "storage not configured"}
-    import httpx
-    payload = {
-        "content": content,
-        "email": (req.email or "").strip()[:200] or None,
-        "url": (req.url or "").strip()[:500] or None,
-    }
-    if req.userId:
-        payload["user_id"] = req.userId
+    # 把 email/url 附带在 content 里留档（feedback 表只有 user_id+content）
+    extras = []
+    if req.email:
+        extras.append(f"email={req.email.strip()[:200]}")
+    if req.url:
+        extras.append(f"url={req.url.strip()[:500]}")
+    full = content + ("\n---\n" + " ".join(extras) if extras else "")
     try:
-        c = _sb()
-        r = await c.post(
-            f"{_SUPABASE_URL}/rest/v1/feedback",
-            headers=_SB_HEADERS,
-            json=payload,
-        )
-        if r.status_code not in (200, 201, 204):
-            # Surface the Supabase error so the frontend can show something
-            # actionable (missing table, RLS, etc).
-            body = r.text[:300] if r.text else ""
-            return {"ok": False, "message": f"store failed: {r.status_code} {body}"}
+        from lifee import store as _s
+        await asyncio.to_thread(_s.feedback_add, req.userId or None, full)
     except Exception as e:
         return {"ok": False, "message": str(e)[:200]}
     return {"ok": True}
@@ -980,45 +947,34 @@ async def hot_personas(days: int = 7, limit: int = 8):
     Each session counts once per persona (so heavy single-session users
     don't dominate the ranking the way /chat_messages would).
     """
-    if not _SUPABASE_URL:
-        return {"hot": []}
-    from datetime import datetime, timedelta, timezone
-    from urllib.parse import quote
-    # URL-encode so the `+00:00` offset isn't decoded as a space → PostgREST
-    # returns 400 "invalid datetime" otherwise.
-    cutoff = quote((datetime.now(timezone.utc) - timedelta(days=days)).isoformat(), safe="")
-    import httpx
+    import time as _time
+    cutoff_ts = int(_time.time()) - days * 86400
     counts: dict[str, int] = {}
-    c = _sb()
-    # Paginate through all sessions in window. Supabase default limit is 1000
-    # per page; we bump via range headers.
-    offset = 0
-    page_size = 1000
-    while True:
-        # Note: we intentionally include deleted sessions. "Hot" is about
-        # which persona people picked, not which conversations they kept.
-        r = await c.get(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions"
-            f"?updated_at=gte.{cutoff}&select=personas",
-            headers={
-                **_SB_HEADERS,
-                "Range": f"{offset}-{offset + page_size - 1}",
-                "Range-Unit": "items",
-                "Prefer": "count=exact",
-            },
-        )
-        if r.status_code not in (200, 206):
-            break
-        rows = r.json() if r.content else []
-        for row in rows:
-            for raw in (row.get("personas") or []):
-                if not raw or raw in ("user", "system", "lifee-followup"):
-                    continue
-                canonical = _canonical_persona_id(raw)
-                counts[canonical] = counts.get(canonical, 0) + 1
-        if len(rows) < page_size:
-            break
-        offset += page_size
+    try:
+        from lifee import store as _s
+        import json as _json
+        def _scan() -> dict[str, int]:
+            conn = _s._get_conn()
+            rows = conn.execute(
+                "SELECT personas FROM chat_sessions WHERE updated_at >= ?",
+                (cutoff_ts,),
+            ).fetchall()
+            c: dict[str, int] = {}
+            for r in rows:
+                try:
+                    arr = _json.loads(r["personas"] or "[]")
+                except Exception:
+                    arr = []
+                for raw in arr:
+                    if not raw or raw in ("user", "system", "lifee-followup"):
+                        continue
+                    k = _canonical_persona_id(raw)
+                    c[k] = c.get(k, 0) + 1
+            return c
+        counts = await asyncio.to_thread(_scan)
+    except Exception as e:
+        print(f"[/personas/hot] {type(e).__name__}: {e}")
+        return {"hot": []}
     ranked = sorted(counts.items(), key=lambda kv: -kv[1])[:max(1, limit)]
     return {"hot": [{"id": pid, "count": n} for pid, n in ranked]}
 
@@ -1072,33 +1028,19 @@ async def cancel_generation(session_id: str):
 
 @app.get("/sessions/{session_id}/messages")
 async def get_session_messages(session_id: str):
-    """获取会话消息 + 最新 follow-up options。
-    Supabase REST 偶发 5xx / 超时时降级为 200 + 空列表，别让前端 JSON.parse 炸。"""
-    if not _SUPABASE_URL:
-        return {"messages": [], "options": []}
+    """获取会话消息 + 最新 follow-up options。"""
     import traceback
     try:
-        c = _sb()
-        m, s = await _asyncio.gather(
-            c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=role,content,persona_id,seq,created_at&order=seq.asc",
-                headers=_SB_HEADERS,
-            ),
-            c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}&select=last_options",
-                headers=_SB_HEADERS,
-            ),
-        )
-        messages = m.json() if m.status_code == 200 else []
-        if not isinstance(messages, list):
-            messages = []
-        options = []
-        try:
-            rows = s.json() if s.status_code == 200 else []
-            if rows and isinstance(rows[0].get("last_options"), list):
-                options = rows[0]["last_options"]
-        except Exception:
-            pass
+        from lifee import store as _s
+        def _load():
+            msgs = _s.msg_list(session_id)
+            sess = _s.session_get(session_id)
+            opts = sess.get("last_options") if sess else {}
+            if not isinstance(opts, list):
+                # last_options 历史上是 list，但 session_get 会 json.loads 成 dict 时返回 {}，这里兼容
+                opts = opts.get("options", []) if isinstance(opts, dict) else []
+            return msgs, opts
+        messages, options = await asyncio.to_thread(_load)
         return {"messages": messages, "options": options}
     except Exception as e:
         print(f"[sessions/{session_id}/messages] failed: {type(e).__name__}: {e}")
@@ -1114,39 +1056,33 @@ class SessionUpdateRequest(BaseModel):
 @app.patch("/sessions/{session_id}")
 async def update_session(session_id: str, req: SessionUpdateRequest):
     """更新会话（重命名/Star）"""
-    if not _SUPABASE_URL:
-        return {"ok": False}
+    updates = {}
+    if req.title:
+        updates["title"] = req.title
+    if req.starred is not None:
+        updates["starred"] = req.starred
+    if not updates:
+        return {"ok": False, "message": "nothing to update"}
     try:
-        updates = {}
-        if req.title:
-            updates["title"] = req.title
-        if req.starred is not None:
-            updates["starred"] = req.starred
-        if not updates:
-            return {"ok": False, "message": "nothing to update"}
-        c = _sb()
-        await c.patch(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
-            headers=_SB_HEADERS, json=updates,
-        )
+        from lifee import store as _s
+        await asyncio.to_thread(lambda: _s.session_update(session_id, **updates))
         return {"ok": True}
     except Exception:
         return {"ok": False}
 
 
 @app.delete("/sessions/{session_id}")
-async def delete_session(session_id: str):
-    """软删除会话（标记 deleted=true，数据保留）"""
-    if not _SUPABASE_URL:
-        return {"ok": False}
+async def delete_session(session_id: str, request: Request, userId: str = ""):
+    """软删除会话（标记 deleted=1，数据保留）。必须传 userId 防止误删他人的。"""
+    if not userId:
+        u = _current_user(request)
+        if not u:
+            return {"ok": False, "message": "not logged in"}
+        userId = u["id"]
     try:
-        c = _sb()
-        await c.patch(
-            f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
-            headers=_SB_HEADERS,
-            json={"deleted": True},
-        )
-        return {"ok": True}
+        from lifee import store as _s
+        ok = await asyncio.to_thread(_s.session_soft_delete, session_id, userId)
+        return {"ok": bool(ok)}
     except Exception:
         return {"ok": False}
 
@@ -1164,16 +1100,11 @@ async def summarize_debate(req: SummarizeRequest):
     """总结每个角色的核心观点"""
     # 优先从 Supabase 加载消息（避免大 POST body）
     msgs = req.messages
-    if req.sessionId and _SUPABASE_URL and not msgs:
+    if req.sessionId and not msgs:
         try:
-            import httpx
-            c = _sb()
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
-                headers=_SB_HEADERS,
-            )
-            db_msgs = r.json() or []
-            msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
+            from lifee import store as _s
+            db_msgs = await asyncio.to_thread(_s.msg_list, req.sessionId)
+            msgs = [{"personaId": m.get("persona_id") or "", "text": m.get("content", "")} for m in db_msgs]
         except Exception:
             pass
 
@@ -1240,16 +1171,11 @@ class TimelineRequest(BaseModel):
 async def generate_timeline(req: TimelineRequest):
     """为A/B辩论生成两条人生时间线"""
     msgs = req.messages
-    if req.sessionId and _SUPABASE_URL and not msgs:
+    if req.sessionId and not msgs:
         try:
-            import httpx
-            c = _sb()
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
-                headers=_SB_HEADERS,
-            )
-            db_msgs = r.json() or []
-            msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
+            from lifee import store as _s
+            db_msgs = await asyncio.to_thread(_s.msg_list, req.sessionId)
+            msgs = [{"personaId": m.get("persona_id") or "", "text": m.get("content", "")} for m in db_msgs]
         except Exception:
             pass
 
@@ -1341,16 +1267,11 @@ class PlanRequest(BaseModel):
 async def plan_30_days(req: PlanRequest):
     """生成前30天的周行动计划"""
     msgs = req.messages
-    if req.sessionId and _SUPABASE_URL and not msgs:
+    if req.sessionId and not msgs:
         try:
-            import httpx
-            c = _sb()
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&select=role,content,persona_id&order=seq.asc",
-                headers=_SB_HEADERS,
-            )
-            db_msgs = r.json() or []
-            msgs = [{"personaId": m.get("persona_id", ""), "text": m.get("content", "")} for m in db_msgs]
+            from lifee import store as _s
+            db_msgs = await asyncio.to_thread(_s.msg_list, req.sessionId)
+            msgs = [{"personaId": m.get("persona_id") or "", "text": m.get("content", "")} for m in db_msgs]
         except Exception:
             pass
 
@@ -1644,30 +1565,14 @@ async def extract_memory(req: ExtractMemoryRequest):
 
     # 查上次提取到的 seq
     last_seq = 0
-    if req.sessionId and _SUPABASE_URL:
-        try:
-            import httpx
-            c = _sb()
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{req.sessionId}&select=last_extract_msg_count",
-                headers=_SB_HEADERS,
-            )
-            rows = r.json() or []
-            if rows:
-                last_seq = rows[0].get("last_extract_msg_count", 0) or 0
-        except Exception:
-            pass
-
-    # 只加载上次提取之后的新消息
     msgs = []
-    if req.sessionId and _SUPABASE_URL:
+    if req.sessionId:
         try:
-            c = _sb()
-            r = await c.get(
-                f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{req.sessionId}&seq=gt.{last_seq}&select=role,content,persona_id,seq&order=seq.asc",
-                headers=_SB_HEADERS,
-            )
-            msgs = r.json() or []
+            from lifee import store as _s
+            sess = await asyncio.to_thread(_s.session_get, req.sessionId)
+            if sess:
+                last_seq = int(sess.get("last_extract_msg_count") or 0)
+            msgs = await asyncio.to_thread(_s.msg_list_after_seq, req.sessionId, last_seq)
         except Exception:
             pass
 
@@ -1709,28 +1614,21 @@ async def extract_memory(req: ExtractMemoryRequest):
         if not updated or updated == current_content.strip():
             return {"updated": False}
 
-        # 写回 Supabase profiles
-        if _SUPABASE_URL:
+        # 写回 users.user_memory
+        if req.userId:
             try:
-                import httpx
-                c = _sb()
-                await c.patch(
-                    f"{_SUPABASE_URL}/rest/v1/profiles?id=eq.{req.userId}",
-                    headers=_SB_HEADERS,
-                    json={"user_memory": updated},
-                )
+                from lifee import store as _s
+                await asyncio.to_thread(_s.user_set_memory, req.userId, updated)
             except Exception:
                 pass
 
         # 更新 session 的最后提取 seq
-        if req.sessionId and _SUPABASE_URL and msgs:
+        if req.sessionId and msgs:
             try:
                 max_seq = max(m.get("seq", 0) for m in msgs)
-                c = _sb()
-                await c.patch(
-                    f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{req.sessionId}",
-                    headers=_SB_HEADERS,
-                    json={"last_extract_msg_count": max_seq},
+                from lifee import store as _s
+                await asyncio.to_thread(
+                    lambda: _s.session_update(req.sessionId, last_extract_msg_count=max_seq)
                 )
             except Exception:
                 pass
@@ -1807,15 +1705,14 @@ async def _handle_decision(req: DecisionRequest, request: Request):
     if req.userId:
         uid = f"user:{req.userId}"  # 登录用户
         # Guest→注册 余额合并：首次以注册身份登录时，把 Guest 剩余余额加到注册 bonus 上
-        if _SUPABASE_URL:
-            import httpx
-            c = _sb()
-            r = await c.get(f"{_SUPABASE_URL}/rest/v1/user_credits?uid=eq.{uid}&select=balance", headers=_SB_HEADERS)
-            if not r.json():
-                # user:xxx 不存在 → 首次注册，合并 Guest 余额
+        try:
+            from lifee import store as _s
+            if await asyncio.to_thread(_s.credits_get, uid) is None:
                 guest_bal = await _get_balance(guest_uid)
                 merged = guest_bal + REGISTER_BONUS
-                await c.post(f"{_SUPABASE_URL}/rest/v1/user_credits", headers=_SB_HEADERS, json={"uid": uid, "balance": merged})
+                await asyncio.to_thread(_s.credits_set, uid, merged)
+        except Exception:
+            pass
     else:
         uid = guest_uid
     _need_set_cookie = not request.cookies.get(_COOKIE_NAME)
@@ -1892,17 +1789,13 @@ async def _handle_decision(req: DecisionRequest, request: Request):
             session = Session()
             all_participants = [p for _, p in participants]
 
-            # 恢复对话：从 Supabase 加载历史消息到 Session
-            if sid and _SUPABASE_URL and req.userId:
+            # 恢复对话：从 SQLite 加载历史消息到 Session
+            if sid and req.userId:
                 try:
-                    import httpx
                     from lifee.providers.base import MessageRole
-                    _c = _sb()
-                    _r = await _c.get(
-                        f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{sid}&select=role,content,persona_id&order=seq.asc",
-                        headers=_SB_HEADERS,
-                    )
-                    for m in _r.json() or []:
+                    from lifee import store as _s
+                    db_msgs = await asyncio.to_thread(_s.msg_list, sid)
+                    for m in db_msgs:
                         role = MessageRole.USER if m["role"] == "user" else MessageRole.ASSISTANT
                         name = m.get("persona_id") or None
                         session.add_message(role, m["content"], name=name)
@@ -1913,17 +1806,10 @@ async def _handle_decision(req: DecisionRequest, request: Request):
 
             # 加载用户档案（user_memory）
             user_memory_context = ""
-            if req.userId and _SUPABASE_URL:
+            if req.userId:
                 try:
-                    import httpx
-                    _c = _sb()
-                    _r = await _c.get(
-                        f"{_SUPABASE_URL}/rest/v1/profiles?id=eq.{req.userId}&select=user_memory",
-                        headers=_SB_HEADERS,
-                    )
-                    rows = _r.json() or []
-                    if rows and rows[0].get("user_memory"):
-                        user_memory_context = rows[0]["user_memory"]
+                    from lifee import store as _s
+                    user_memory_context = await asyncio.to_thread(_s.user_get_memory, req.userId) or ""
                 except Exception:
                     pass
 
@@ -2054,17 +1940,11 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
       current_text = ""  # 收集当前角色的完整回复
       # 从数据库获取当前最大 seq，避免多轮对话 seq 重复
       seq = 0
-      if chat_user_id and session_id and _SUPABASE_URL:
+      if chat_user_id and session_id:
           try:
-              import httpx
-              _c = _sb()
-              _r = await _c.get(
-                  f"{_SUPABASE_URL}/rest/v1/chat_messages?session_id=eq.{session_id}&select=seq&order=seq.desc&limit=1",
-                  headers=_SB_HEADERS,
-              )
-              _rows = _r.json()
-              if _rows and isinstance(_rows, list) and len(_rows) > 0:
-                  seq = _rows[0].get("seq", 0)
+              from lifee import store as _s
+              next_seq = await asyncio.to_thread(_s.msg_next_seq, session_id)
+              seq = max(0, next_seq - 1)
           except Exception:
               pass
 
@@ -2149,15 +2029,12 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
           options = await _generate_options(provider, session)
 
       # Persist options on the session so restoring it later shows the same pills
-      if chat_user_id and _SUPABASE_URL:
+      if chat_user_id:
           async def _save_options():
               try:
-                  import httpx as _hx
-                  _c = _sb()
-                  await _c.patch(
-                      f"{_SUPABASE_URL}/rest/v1/chat_sessions?id=eq.{session_id}",
-                      headers={**_SB_HEADERS, "Prefer": "return=minimal"},
-                      json={"last_options": options},
+                  from lifee import store as _s
+                  await asyncio.to_thread(
+                      lambda: _s.session_update(session_id, last_options=options)
                   )
               except Exception:
                   pass
