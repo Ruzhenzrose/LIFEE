@@ -105,13 +105,14 @@ async function _drainLifeeSSE(res, handlers, resetIdle) {
                 try { await onStatus?.(data.stage); } catch (_) {}
             }
         } else if (eventName === "messageStart") {
-            // Don't clear the warming-up status here — the bubble is still
-            // empty. Clear on the first real messageChunk instead.
+            // 只记录当前流式 persona/seq；不立刻 onMessage 创建空气泡。
+            // 后端在前一个 persona 还在打字时就会推下一个的 messageStart，
+            // 立刻创建空气泡会让"第二个对话框先出现"。让第一个 chunk 通过
+            // throttle 创建气泡，气泡顺序天然对齐打字机进度。
             if (data?.personaId) {
                 streamPid = data.personaId;
                 streamSeq = (typeof data.seq === 'number' && data.seq > 0) ? data.seq : null;
                 streamText = "";
-                await onMessage?.({ personaId: data.personaId, text: "", seq: streamSeq });
             }
         } else if (eventName === "messageChunk") {
             if (data?.chunk && streamPid) {

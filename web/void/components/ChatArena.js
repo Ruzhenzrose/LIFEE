@@ -755,7 +755,13 @@
             const cleanInput = (userInput ?? inputValue ?? '').toString().trim();
 
             if (cleanInput) {
-                setHistory(prev => [...prev, { personaId: 'user', text: cleanInput }]);
+                // 给乐观插入的用户消息一个 seq —— 否则带 seq 的 assistant 消息排序时
+                // 会把没有 seq 的用户消息挤到列表末尾。用 (max existing seq + 1)，
+                // 后端真实的 seq 大概率也是这个值；即使对不上，相对顺序还是对的。
+                setHistory(prev => {
+                    const maxSeq = prev.reduce((m, x) => (typeof x.seq === 'number' && x.seq > m ? x.seq : m), 0);
+                    return [...prev, { personaId: 'user', text: cleanInput, seq: maxSeq + 1 }];
+                });
                 setInputValue('');
                 // Reset textarea height
                 if (inputFieldRef.current) {
