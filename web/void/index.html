@@ -320,6 +320,10 @@
         .hover-warm-icon { transition: color 0.25s ease; }
         .hover-warm-icon:hover { color: #f0b860; }
 
+        /* ── 头像 object-position 微调 ── */
+        /* 拉康原图人脸偏上，默认 cover 居中会裁到胸口；推上去把脸放回圆心。 */
+        img[src*="/personas/lacan.webp"] { object-position: 50% 25%; }
+
         /* ── Ghost button ── */
         .btn-ghost {
             background: transparent;
@@ -739,7 +743,7 @@
             'persona.turing.role':               { en: 'FATHER OF COMPUTER SCIENCE', zh: '计算机科学之父' },
             'persona.turing.worldview':          { en: 'A machine can think if it can fool you into believing it thinks. The question is not what is real, but what is computable.', zh: '机器若能骗你相信它在思考，它就在思考。问题不是什么是真实的，而是什么是可计算的。' },
             'persona.vonneumann.name':           { en: 'John von Neumann',  zh: '冯·诺依曼' },
-            'persona.vonneumann.role':           { en: 'POLYMATH',          zh: '通才' },
+            'persona.vonneumann.role':           { en: 'POLYMATH',          zh: '博学家' },
             'persona.vonneumann.worldview':      { en: 'Mathematics is the language of reality. Game theory, quantum mechanics, computers — they are all the same structure seen from different angles.', zh: '数学是现实的语言。博弈论、量子力学、计算机——都是同一结构从不同角度的映射。' },
 
             // Persona detail UI chrome
@@ -988,14 +992,18 @@
         }
 
         // ── AvatarDisplay ──
-        function AvatarDisplay({ avatar, className = '', size = 40 }) {
+        // objectPosition: 可选 CSS object-position 字符串（如 '50% 25%'），用于
+        // 横版照片裁圆头像时把脸推到圆心（默认 center 经常切到胸口/肩膀）。
+        function AvatarDisplay({ avatar, className = '', size = 40, objectPosition }) {
             if (!avatar) {
                 return html`<div class=${'flex items-center justify-center bg-surface-container-high rounded-full ' + className} style=${{ width: size, height: size }}>
                     <${Icon} name="User" size=${Math.floor(size * 0.5)} className="text-on-surface-variant" />
                 </div>`;
             }
             if (typeof avatar === 'string' && (avatar.startsWith('http') || avatar.startsWith('data:') || avatar.startsWith('/'))) {
-                return html`<img src=${avatar} class=${'object-cover rounded-full ' + className} style=${{ width: size, height: size }} loading="lazy" alt="" />`;
+                const imgStyle = { width: size, height: size };
+                if (objectPosition) imgStyle.objectPosition = objectPosition;
+                return html`<img src=${avatar} class=${'object-cover rounded-full ' + className} style=${imgStyle} loading="lazy" alt="" />`;
             }
             return html`<div class=${'flex items-center justify-center rounded-full ' + className} style=${{ width: size, height: size, fontSize: Math.floor(size * 0.5) }}>${avatar}</div>`;
         }
@@ -3476,7 +3484,7 @@
                                 <div key=${p.id} class="persona-card group glass-card rounded-2xl p-4 flex flex-col gap-2 relative">
                                     <div class="flex items-start justify-between">
                                         <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-xl">
-                                            <${AvatarDisplay} avatar=${p.avatar} size=${40} />
+                                            <${AvatarDisplay} avatar=${p.avatar} size=${40} objectPosition=${p.avatar_position} />
                                         </div>
                                         <button
                                             onClick=${() => toggleFavoritePersona(p)}
@@ -4268,7 +4276,7 @@
                                         ${isSel && html`<${Icon} name="Check" size=${10} className="text-on-primary" />`}
                                     </div>
                                     <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-xl overflow-hidden">
-                                        <${AvatarDisplay} avatar=${p.avatar} size=${40} />
+                                        <${AvatarDisplay} avatar=${p.avatar} size=${40} objectPosition=${p.avatar_position} />
                                     </div>
                                     <div>
                                         <p class="text-xs font-bold text-on-surface uppercase tracking-tight">${p.name}</p>
