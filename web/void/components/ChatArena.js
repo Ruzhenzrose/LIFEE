@@ -1635,7 +1635,7 @@
             const Row = ({ label, desc, icon, active, color, onToggle }) => html`
                 <button
                     onClick=${onToggle}
-                    class=${'w-full flex items-start gap-3 px-4 py-3 transition-colors text-left ' + (active ? 'bg-white/[0.04]' : 'hover:bg-white/[0.03]')}
+                    class=${'no-shine w-full flex items-start gap-3 px-4 py-3 transition-colors text-left ' + (active ? 'bg-white/[0.04]' : 'hover:bg-white/[0.03]')}
                 >
                     <span class=${'material-symbols-outlined shrink-0 mt-0.5 ' + (active ? color : 'text-on-surface-variant/50')}>${icon}</span>
                     <div class="flex-1 min-w-0">
