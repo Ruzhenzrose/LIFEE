@@ -132,9 +132,48 @@ def _cosine(a: list[float], b: list[float]) -> float:
 
 
 def _profile_text(participant) -> str:
-    """取角色的 profile 文本。优先 IDENTITY.md 的 Role 字段，fallback 到 display_name。"""
+    """取角色的 profile 文本，用作 embedding 输入。
+
+    优先级：SOUL.md 头部（标题 + 引言段 + 第一个 ## Core 段）→ IDENTITY.md
+    的 Role 字段 → display_name → role_name。
+
+    SOUL 头部最有区分度：包含人物本质 + 角色专属关键词（"moats" /
+    "Imitation Game" / "signifier"），让具体话题查询能命中正确角色。
+    Role tag（如"Actress / Humanitarian / Muse"）太泛、所有人生话题
+    都能勉强匹上，是赫本永远先开口的根因。
+    """
     if getattr(participant, "_custom_soul", None):
         return getattr(participant, "_custom_display_name", "") or ""
+
+    # 优先读 SOUL.md 头部
+    roles_dir = getattr(getattr(participant, "role_manager", None), "roles_dir", None)
+    if roles_dir is not None:
+        role_dir = Path(roles_dir) / participant.role_name
+        if role_dir.exists():
+            for soul_name in ("SOUL.md", "soul.md", "Soul.md"):
+                soul_path = role_dir / soul_name
+                if soul_path.exists():
+                    try:
+                        full = soul_path.read_text(encoding="utf-8")
+                    except Exception:
+                        full = ""
+                    if full:
+                        # 切到第二个 "## " 标题之前（保留 # 标题 + 引言 + 第一个 ## 段）
+                        lines = full.split("\n")
+                        h2_count = 0
+                        kept: list[str] = []
+                        for line in lines:
+                            if line.lstrip().startswith("## "):
+                                h2_count += 1
+                                if h2_count >= 2:
+                                    break
+                            kept.append(line)
+                        head = "\n".join(kept).strip()
+                        if head:
+                            return head
+                    break  # 找到 SOUL 文件就停（无论解析成功与否）
+
+    # Fallback：原本的 Role tag / display_name
     try:
         info = participant.role_manager.get_role_info(participant.role_name)
     except Exception:
