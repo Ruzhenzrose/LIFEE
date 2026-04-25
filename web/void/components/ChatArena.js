@@ -1307,20 +1307,46 @@
                 });
                 setScale(newScale);
             };
-            const reset = () => {
-                setPan({ x: 0, y: 0 });
-                setScale(1.0);
-                // Also reset every card back to its slot position so user can
-                // recover from a messy drag session.
-                const fresh = {};
-                voices.forEach((v, i) => {
-                    const s = CANVAS_CARD_POSITIONS[i % CANVAS_CARD_POSITIONS.length];
-                    fresh[v.id] = { x: s.x, y: s.y, rotate: s.rotate };
+            // Fit-to-view: 把所有卡片的 bbox 居中并缩放到画布大小，保留用户拖动后的
+            // 位置（不重置卡片到默认槽位）。卡片宽 255px、高估算 320px（头+三条最近消息）；
+            // transform 里有 +40px 偏移要算进 pan 反推。
+            const fitToView = () => {
+                const rect = canvasRef.current?.getBoundingClientRect();
+                if (!rect) return;
+                const ids = [...voices.map(v => v.id), '__user'];
+                const positions = ids.map(id => cardPos[id]).filter(Boolean);
+                if (!positions.length) {
+                    setPan({ x: 0, y: 0 });
+                    setScale(1.0);
+                    return;
+                }
+                const CARD_W = 255;
+                const CARD_H = 320;
+                const PAD = 40;       // px breathing inside viewport
+                const OFFSET = 40;    // matches translate(+40, +40) in transform
+
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for (const p of positions) {
+                    minX = Math.min(minX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxX = Math.max(maxX, p.x + CARD_W);
+                    maxY = Math.max(maxY, p.y + CARD_H);
+                }
+                const contentW = Math.max(1, maxX - minX);
+                const contentH = Math.max(1, maxY - minY);
+                const viewW = Math.max(100, rect.width - 2 * PAD);
+                const viewH = Math.max(100, rect.height - 2 * PAD);
+                const newScale = Math.min(2, Math.max(0.3, Math.min(viewW / contentW, viewH / contentH)));
+
+                const cx = (minX + maxX) / 2;
+                const cy = (minY + maxY) / 2;
+                setPan({
+                    x: rect.width / 2 - OFFSET - cx * newScale,
+                    y: rect.height / 2 - OFFSET - cy * newScale,
                 });
-                const userSlot = CANVAS_CARD_POSITIONS[voices.length % CANVAS_CARD_POSITIONS.length];
-                fresh['__user'] = { x: userSlot.x, y: userSlot.y, rotate: userSlot.rotate };
-                setCardPos(fresh);
+                setScale(newScale);
             };
+            const reset = fitToView;
 
             return html`
                 <aside class="h-full flex flex-col border-l border-white/5 bg-surface-dim/40 shrink-0" style=${{ width: Math.min(mapWidth, mapMaxWidth()) + 'px' }}>
@@ -1345,7 +1371,7 @@
                             </button>
                             <button onClick=${reset}
                                 class="no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider"
-                                title="Reset view"
+                                title="Fit all cards into view"
                             ><span>${t('chat.reset')}</span></button>
                             <span class="text-[9px] font-bold text-on-surface-variant/40 w-9 text-center">${Math.round(scale * 100)}%</span>
                             <button onClick=${() => setShowVoiceMap(false)}
