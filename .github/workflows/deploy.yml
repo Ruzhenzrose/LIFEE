@@ -1,0 +1,62 @@
+name: Deploy to Aliyun
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # 也允许手动触发
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false  # 串行执行，避免两个 push 同时 git pull 打架
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd /opt/lifee
+
+            # 记录改动的文件列表，决定要不要 pip install / restart
+            BEFORE=$(git rev-parse HEAD)
+            git pull --ff-only
+            AFTER=$(git rev-parse HEAD)
+            if [ "$BEFORE" = "$AFTER" ]; then
+              echo "No new commits, nothing to do."
+              exit 0
+            fi
+
+            CHANGED=$(git diff --name-only "$BEFORE" "$AFTER")
+            echo "Changed files:"
+            echo "$CHANGED"
+
+            # requirements.txt 改了就 pip install
+            if echo "$CHANGED" | grep -q '^requirements.txt$'; then
+              echo "[deploy] requirements.txt changed — pip install"
+              /opt/lifee/venv/bin/pip install -q -r requirements.txt
+            fi
+
+            # 后端 Python 或依赖改了就 restart；纯前端不重启
+            if echo "$CHANGED" | grep -qE '^(lifee/|requirements\.txt$)'; then
+              echo "[deploy] backend changed — restarting lifee service"
+              systemctl restart lifee
+              sleep 2
+              if systemctl is-active --quiet lifee; then
+                echo "[deploy] lifee is active"
+              else
+                echo "[deploy] !! lifee failed to start — recent log:"
+                journalctl -u lifee -n 30 --no-pager 2>/dev/null || tail -30 /var/log/lifee.log
+                exit 1
+              fi
+            else
+              echo "[deploy] frontend-only change — no restart needed"
+            fi
+
+            echo "[deploy] $AFTER deployed"
