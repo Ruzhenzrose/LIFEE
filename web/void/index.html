@@ -1125,6 +1125,11 @@
                                     disabled=${loading || !otpCode}
                                     class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
                                 >${loading ? t('auth.verifying') : t('auth.verifyBtn')}</button>
+                                <p class="text-center text-xs text-on-surface-variant pt-1">
+                                    <button onClick=${() => { setOtpSent(false); setOtpCode(''); setMessage(''); setMode('login'); }} class="text-primary hover:underline">${t('auth.signInBtn')}</button>
+                                    <span class="mx-2">·</span>
+                                    <button onClick=${() => { onGuest(); }} class="text-on-surface-variant hover:underline">${t('auth.guest')}</button>
+                                </p>
                             </div>
                         ` : html`
                             <div class="space-y-3">
