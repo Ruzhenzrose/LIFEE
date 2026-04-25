@@ -31,7 +31,7 @@
     // ringWidth: ring border width in px (default 2)
     const AvatarDisplay = ({ avatar, className = '', ringColor = null, ringWidth = 2 }) => {
         const isImage = typeof avatar === 'string' &&
-            (avatar.startsWith('data:image') || avatar.startsWith('http'));
+            (avatar.startsWith('data:image') || avatar.startsWith('http') || avatar.startsWith('/'));
 
         const ringStyle = ringColor
             ? {
