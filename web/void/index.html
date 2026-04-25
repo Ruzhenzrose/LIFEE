@@ -493,7 +493,7 @@
             // Home view
             'home.begin':        { en: 'Begin',         zh: '开始' },
             'home.pickVoice':    { en: 'Pick at least one voice from the Council below.', zh: '请从下方角色列表里至少选择一位。' },
-            'home.describe':     { en: 'What\'s on your mind?', zh: '心里有什么事？' },
+            'home.describe':     { en: 'What\'s on your mind?', zh: '有什么想聊的？' },
             'home.placeholder':  { en: 'Describe your situation...', zh: '描述一下你的处境……' },
             'home.featured':     { en: 'Featured',      zh: '今日推荐' },
             'home.inConversation': { en: 'In conversation', zh: '已加入对话' },
@@ -502,7 +502,7 @@
             'home.vol':          { en: 'Vol. I',         zh: '第一卷' },
             'home.theCouncil':   { en: 'The Council',    zh: '议会' },
             'home.todaysQuestion':{ en: 'Today\'s question', zh: '今日议题' },
-            'home.onYourMind':   { en: 'What\'s on<br/>your mind?', zh: '心里有<br/>什么事？' },
+            'home.onYourMind':   { en: 'What\'s on<br/>your mind?', zh: '有什么想聊的？' },
             'home.selectVoices': { en: '→ Select voices below to begin.', zh: '→ 从下方选角色开始。' },
             'home.voices':       { en: 'voices',         zh: '位成员' },
             'home.worldview':    { en: 'Worldview',      zh: '世界观' },
@@ -2341,7 +2341,11 @@
                         <!-- Left: input area -->
                         <div class="md:col-span-3 flex flex-col justify-center gap-5">
                             <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em]">${t('home.todaysQuestion')}</p>
-                            <h1 class=${`font-headline text-4xl md:text-5xl font-bold text-on-surface ${window.__lifeeLocale === 'zh' ? 'leading-[1.5] tracking-[0.18em]' : 'leading-[1.1]'}`} dangerouslySetInnerHTML=${{ __html: t('home.onYourMind') }}></h1>
+                            <h1
+                                class="font-headline text-4xl md:text-5xl font-bold text-on-surface"
+                                style=${{ lineHeight: window.__lifeeLocale === 'zh' ? 1.35 : 1.1 }}
+                                dangerouslySetInnerHTML=${{ __html: t('home.onYourMind') }}
+                            ></h1>
                             <div class="flex items-end gap-3 mt-4">
                                 <div class="flex-1 flex items-center bg-surface-container border border-white/25 rounded-2xl px-5 py-4 focus-within:border-primary/50 transition-colors">
                                     <textarea
