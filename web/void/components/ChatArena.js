@@ -801,10 +801,34 @@
                 if (res?.error) {
                     setSummaryData({ _error: res.error });
                 } else if (res?.summaries && Object.keys(res.summaries).length > 0) {
-                    setSummaryData(res.summaries);
+                    // 后端 /summarize 返一次性 JSON——前端做 typewriter 让文字
+                    // 逐字流入卡片，纯视觉效果。saveSummaryEntry 存全文，刷新
+                    // 后从 cache 读到的也是全文（cache 命中时不再走动画分支）。
+                    const full = res.summaries;
                     summaryAtCountRef.current = history.length;
-                    saveSummaryEntry(sessionIdRef.current || sessionId, res.summaries, history.length);
+                    saveSummaryEntry(sessionIdRef.current || sessionId, full, history.length);
+                    const keys = Object.keys(full);
+                    const partial = Object.fromEntries(keys.map(k => [k, '']));
+                    const idx = Object.fromEntries(keys.map(k => [k, 0]));
+                    setSummaryData(partial);
                     setShowVoiceMap(true);
+                    const FPS = 30;
+                    const STEP = 2;       // ~60 chars/sec
+                    const tick = () => {
+                        let done = true;
+                        const next = { ...partial };
+                        for (const k of keys) {
+                            if (idx[k] < full[k].length) {
+                                idx[k] = Math.min(full[k].length, idx[k] + STEP);
+                                partial[k] = full[k].slice(0, idx[k]);
+                                next[k] = partial[k];
+                                done = false;
+                            }
+                        }
+                        setSummaryData(next);
+                        if (!done) setTimeout(tick, 1000 / FPS);
+                    };
+                    tick();
                 } else {
                     setSummaryData({ _error: 'No summary returned' });
                 }
