@@ -74,9 +74,14 @@ var supabaseClient = (function () {
             } } } };
         },
         async updateUser(arg) {
-            // 目前不支持改名/改密。保留接口不报错，UI 该显示的 badge 还能正常走 local state。
-            console.warn('[auth-shim] updateUser is a no-op until /user endpoints are extended');
-            return { data: { user: null }, error: null };
+            // 只支持改名（data.name），其他字段忽略。改密码以后再做单独端点。
+            const name = (arg && arg.data && typeof arg.data.name !== 'undefined') ? (arg.data.name || '') : null;
+            if (name === null) return { data: { user: null }, error: null };
+            const r = await _json('/user/name', { method: 'PATCH', body: { name } });
+            if (r.__err) return { data: null, error: { message: 'Update failed' } };
+            const user = _userShape(r.user);
+            _emit('USER_UPDATED', { user: user });
+            return { data: { user: user }, error: null };
         },
         async resetPasswordForEmail(email, _opts) {
             return { data: null, error: { message: 'Password reset not supported yet. Re-sign up if needed.' } };

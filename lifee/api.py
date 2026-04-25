@@ -688,12 +688,26 @@ async def auth_logout(response: Response):
     return {"ok": True}
 
 
+def _user_payload(u: dict) -> dict:
+    """返回前端期望的 supabase-style user 形状（带 user_metadata.name）。"""
+    name = ""
+    try:
+        name = _store.user_get_name(u["id"])
+    except Exception:
+        pass
+    return {
+        "id": u["id"],
+        "email": u["email"],
+        "user_metadata": {"name": name} if name else {},
+    }
+
+
 @app.get("/auth/me")
 async def auth_me(request: Request):
     u = _current_user(request)
     if not u:
         return {"user": None}
-    return {"user": u}
+    return {"user": await asyncio.to_thread(_user_payload, u)}
 
 
 # ---- User profile（替换原 supabase.profiles）----
@@ -704,8 +718,14 @@ async def user_profile_get(request: Request):
     u = _current_user(request)
     if not u:
         return {"user": None}
-    mem = await asyncio.to_thread(_store.user_get_memory, u["id"])
-    return {"user": {"id": u["id"], "email": u["email"]}, "user_memory": mem}
+    def _load():
+        return _store.user_get_memory(u["id"]), _store.user_get_name(u["id"])
+    mem, name = await asyncio.to_thread(_load)
+    return {
+        "user": {"id": u["id"], "email": u["email"], "user_metadata": {"name": name} if name else {}},
+        "user_memory": mem,
+        "display_name": name,
+    }
 
 
 class UserMemoryRequest(BaseModel):
@@ -719,6 +739,19 @@ async def user_memory_set(req: UserMemoryRequest, request: Request):
         return {"ok": False, "message": "not logged in"}
     await asyncio.to_thread(_store.user_set_memory, u["id"], req.user_memory)
     return {"ok": True}
+
+
+class UserNameRequest(BaseModel):
+    name: str = ""
+
+
+@app.patch("/user/name")
+async def user_name_set(req: UserNameRequest, request: Request):
+    u = _current_user(request)
+    if not u:
+        return {"ok": False, "message": "not logged in"}
+    await asyncio.to_thread(_store.user_set_name, u["id"], req.name or "")
+    return {"ok": True, "user": await asyncio.to_thread(_user_payload, u)}
 
 
 @app.get("/test-llm")

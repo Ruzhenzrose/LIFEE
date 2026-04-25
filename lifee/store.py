@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     email_verified INTEGER NOT NULL DEFAULT 0,
     user_memory TEXT NOT NULL DEFAULT '',
+    display_name TEXT NOT NULL DEFAULT '',
     created_at INTEGER NOT NULL
 );
 
@@ -141,6 +142,10 @@ CREATE TABLE IF NOT EXISTS feedback (
 
 def _init_schema(c: sqlite3.Connection) -> None:
     c.executescript(_SCHEMA)
+    # 迁移：老 db 没有 display_name 列时补上
+    cols = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
+    if "display_name" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN display_name TEXT NOT NULL DEFAULT ''")
 
 
 def now() -> int:
@@ -190,6 +195,15 @@ def user_get_memory(user_id: str) -> str:
 
 def user_set_memory(user_id: str, memory: str) -> None:
     _get_conn().execute("UPDATE users SET user_memory=? WHERE id=?", (memory, user_id))
+
+
+def user_get_name(user_id: str) -> str:
+    r = _get_conn().execute("SELECT display_name FROM users WHERE id=?", (user_id,)).fetchone()
+    return (r["display_name"] if r else "") or ""
+
+
+def user_set_name(user_id: str, name: str) -> None:
+    _get_conn().execute("UPDATE users SET display_name=? WHERE id=?", ((name or "")[:80], user_id))
 
 
 # --------------------------------------------------------------------------- #
