@@ -1995,6 +1995,12 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
       current_seq = 0               # seq of the in-flight persona row
       last_db_write = 0.0           # monotonic timestamp of last PATCH
       DB_THROTTLE_SEC = 0.3         # fire a PATCH at most every 300ms
+      # Server-side emit pacing: cap visible reveal at ~30 chars/sec so the
+      # frontend doesn't have to throttle. Eliminates the multi-bubble race
+      # caused by frontend FIFO typewriter lagging behind backend stream.
+      EMIT_CPS = 30                 # chars per second
+      emit_start_ts = None          # monotonic ts when current persona started emitting
+      emitted_chars = 0             # chars yielded so far for current persona
       # Fire-and-forget DB writes: never block the token stream on HTTP to Supabase.
       def _bg(coro):
           t = _asyncio.create_task(coro)
@@ -2030,6 +2036,8 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
             has_content = False
             current_text = ""
             last_db_write = 0.0
+            emit_start_ts = None
+            emitted_chars = 0
             if chat_user_id:
                 seq += 1
                 current_seq = seq
@@ -2040,6 +2048,16 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
         if chunk and chunk.strip():
             has_content = True
         current_text += chunk
+        # Pace the emit: target = (now - start) * EMIT_CPS chars cumulative
+        if chunk:
+            now_mono = _time.monotonic()
+            if emit_start_ts is None:
+                emit_start_ts = now_mono
+            target_t = emit_start_ts + (emitted_chars + len(chunk)) / EMIT_CPS
+            sleep_for = target_t - now_mono
+            if sleep_for > 0:
+                await asyncio.sleep(sleep_for)
+            emitted_chars += len(chunk)
         yield f"event: messageChunk\ndata: {json.dumps({'personaId': pid, 'seq': current_seq, 'chunk': chunk}, ensure_ascii=False)}\n\n"
         if chat_user_id and current_seq and has_content:
             now = _time.monotonic()

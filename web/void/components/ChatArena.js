@@ -366,30 +366,9 @@
                 return next;
             });
         };
-        // 选项缓存：后端 yield options 严格晚于所有 messageChunk，但前端打字机
-        // 限速到 30 字/秒，上一个角色还没打完字时选项就到了。延迟到 throttle 队列
-        // 清空后再渲染，用户视觉上就是"最后一个角色说完话才出选项"。
-        const pendingOptionsRef      = useRef(null);
-        const pendingOptionsRoundRef = useRef(0);
-
-        const maybeFlushOptions = () => {
-            if (pendingOptionsRef.current === null) return;
-            if (pendingOptionsRoundRef.current !== roundIdRef.current) {
-                pendingOptionsRef.current = null;
-                return;
-            }
-            if (throttleQueueRef.current.length > 0 || throttleRafRef.current) return;
-            const opts = pendingOptionsRef.current;
-            pendingOptionsRef.current = null;
-            setOptions(opts);
-        };
-
         const commitOptions = (opts, origin, myRound) => {
             if (!canApply(origin, myRound)) return;
-            const safe = Array.isArray(opts) ? opts : [];
-            pendingOptionsRef.current = safe;
-            pendingOptionsRoundRef.current = myRound;
-            maybeFlushOptions();
+            setOptions(Array.isArray(opts) ? opts : []);
         };
         const commitSession = (sid, origin, myRound) => {
             if (!canApply(origin, myRound)) return;
@@ -397,106 +376,14 @@
             try { onSessionCreated?.(sid); } catch (_) {}
         };
 
-        // ── Typewriter throttle (strict sequential FIFO) ───────────────────
-        // Fast providers (DeepSeek, Groq) push 150+ chars/sec which looks
-        // frantic on CJK. Cap visual reveal to ~30 chars/sec, one persona at
-        // a time. If Lacan is still typewriting when Krishnamurti starts
-        // streaming, Krishnamurti queues. Lacan catches up, then Krishnamurti
-        // takes over. Bounded rAF cost; avoids "parallel typewriters feel
-        // jittery" effect.
-        const throttleQueueRef = useRef([]);            // FIFO pids with pending chars
-        const throttleStatesRef = useRef(new Map());    // pid → { target, shown, lastTick, prevShown, myRound }
-        const throttleRafRef = useRef(null);
-        const throttleActiveRef = useRef(null);
-
-        const kickThrottle = () => {
-            if (throttleRafRef.current) return;
-            const key = throttleQueueRef.current[0];
-            if (!key) return;
-            const s = throttleStatesRef.current.get(key);
-            if (!s) { throttleQueueRef.current.shift(); kickThrottle(); return; }
-            throttleActiveRef.current = key;
-            s.lastTick = performance.now();
-
-            const tick = () => {
-                if (s.myRound !== roundIdRef.current) {
-                    throttleRafRef.current = null;
-                    throttleActiveRef.current = null;
-                    return;
-                }
-                const now = performance.now();
-                const dt = Math.min(now - s.lastTick, 100);
-                s.lastTick = now;
-                s.shown = Math.min(s.target.length, s.shown + dt * 0.03);  // 30 chars/sec
-                const shownLen = Math.floor(s.shown);
-                if (shownLen !== s.prevShown) {
-                    s.prevShown = shownLen;
-                    commitMessage({ personaId: s.pid, text: s.target.slice(0, shownLen), seq: s.seq }, 'sse', s.myRound);
-                }
-                if (shownLen < s.target.length) {
-                    throttleRafRef.current = requestAnimationFrame(tick);
-                } else {
-                    const hasNext = throttleQueueRef.current.length > 1;
-                    throttleRafRef.current = null;
-                    throttleActiveRef.current = null;
-                    if (hasNext) {
-                        throttleQueueRef.current.shift();
-                        kickThrottle();
-                    } else {
-                        // 队列彻底空了 → 把被暂缓的 options 释放出去
-                        throttleQueueRef.current = [];
-                        maybeFlushOptions();
-                    }
-                }
-            };
-            throttleRafRef.current = requestAnimationFrame(tick);
-        };
-
-        const queueThrottled = (incoming, myRound) => {
-            if (myRound !== roundIdRef.current) return;
-            const pid = incoming.personaId || incoming.persona_id || incoming.role;
-            const nextText = incoming.text || incoming.content || '';
-            const nextSeq  = incoming.seq;
-            if (!pid) return;
-            // Key by `pid@seq`，避免同一个 persona 第二次说话时被并到上一轮的气泡里。
-            const key = nextSeq != null ? `${pid}@${nextSeq}` : pid;
-            let s = throttleStatesRef.current.get(key);
-            if (!s) {
-                s = { pid, seq: nextSeq, target: '', shown: 0, prevShown: 0, lastTick: 0, myRound };
-                throttleStatesRef.current.set(key, s);
-            }
-            s.target = nextText;
-            s.seq = nextSeq;
-            s.myRound = myRound;
-            if (!throttleQueueRef.current.includes(key)) {
-                throttleQueueRef.current.push(key);
-            }
-            kickThrottle();
-        };
-
-        const flushThrottle = () => {
-            if (throttleRafRef.current) {
-                cancelAnimationFrame(throttleRafRef.current);
-                throttleRafRef.current = null;
-            }
-            throttleActiveRef.current = null;
-            throttleStatesRef.current.forEach((s, _key) => {
-                if (s.target && s.shown < s.target.length) {
-                    commitMessage({ personaId: s.pid, text: s.target, seq: s.seq }, 'sse', s.myRound);
-                }
-            });
-            throttleStatesRef.current.clear();
-            throttleQueueRef.current = [];
-            // 队列清空 → 尝试释放暂缓的 options
-            maybeFlushOptions();
-        };
+        // 显示节流已经搬到后端（lifee/api.py，按 ~30 字/秒分发 SSE）。
+        // 前端只负责把 chunk 拼起来塞给 commitMessage，零节流、零 race。
+        const flushThrottle = () => {};   // 兼容旧 callsite，noop
 
         const makeSseHandlers = (myRound) => ({
             onSession:       (sid) => commitSession(sid, 'sse', myRound),
-            // messageStart creates an empty stub — no text to throttle.
             onMessage:       (msg) => commitMessage(msg, 'sse', myRound),
-            // messageChunk brings new text — route through throttle.
-            onMessageUpdate: (msg) => queueThrottled(msg, myRound),
+            onMessageUpdate: (msg) => commitMessage(msg, 'sse', myRound),
             onOptions:       (opts) => commitOptions(opts, 'sse', myRound),
             onStatus:        (stage) => {
                 if (roundIdRef.current !== myRound) return;
