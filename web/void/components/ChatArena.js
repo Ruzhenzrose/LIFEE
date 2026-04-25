@@ -242,6 +242,8 @@
         initialMode = null,
         onSessionCreated,
         onOpenShare,
+        debateSettings,
+        setDebateSettings,
     }) => {
         // ── State ─────────────────────────────────────────────────────────────
         const [history, setHistory]             = useState(initialMessages);
@@ -252,15 +254,32 @@
         const [credits, setCredits]             = useState(null);
         const [showPaywall, setShowPaywall]     = useState(false);
         const [redeemCode, setRedeemCode]       = useState('');
-        const [followUpMode, setFollowUpMode]   = useState(false);
+        // 4 个共享设置从 props 派生（提到 App 顶层 + localStorage 持久化），
+        // 让 home 输入框旁的 + 工具菜单和 chat 内的设置面板共享同一份 state。
+        // setter 包装成支持函数式更新（v => !v 之类）以兼容现有调用。
+        const _ds = debateSettings || { followUpMode: false, webSearchMode: false, maxSpeakers: 0, language: '' };
+        const followUpMode = !!_ds.followUpMode;
+        const webSearchMode = !!_ds.webSearchMode;
+        const maxSpeakers = Number(_ds.maxSpeakers) || 0;
+        const language = typeof _ds.language === 'string' ? _ds.language : '';
+        const _patchDS = (key, next) => {
+            if (typeof setDebateSettings !== 'function') return;
+            setDebateSettings(prev => {
+                const base = prev || {};
+                const cur = base[key];
+                const resolved = typeof next === 'function' ? next(cur) : next;
+                return { ...base, [key]: resolved };
+            });
+        };
+        const setFollowUpMode  = (v) => _patchDS('followUpMode', v);
+        const setWebSearchMode = (v) => _patchDS('webSearchMode', v);
+        const setMaxSpeakers   = (v) => _patchDS('maxSpeakers', v);
+        const setLanguage      = (v) => _patchDS('language', v);
         // Pending answers for the latest unanswered follow-up card:
         //   { [questionIdx]: selectedOptionText }
         // Answered follow-ups derive their state from the next user message in history,
         // so this only holds the in-flight form.
         const [followupAnswers, setFollowupAnswers] = useState({});
-        const [webSearchMode, setWebSearchMode] = useState(false);
-        const [maxSpeakers, setMaxSpeakers]     = useState(0);
-        const [language, setLanguage]           = useState(() => localStorage.getItem('lifee_lang') || '');
         const [extractStatus, setExtractStatus] = useState(''); // '' | 'extracting' | 'done'
         const [summaryData, setSummaryData]     = useState({});
         // Warming-up stage from SSE `event: status`. Values: null (idle or
@@ -1640,7 +1659,7 @@
                         desc=${t('chat.webSearchDesc')}
                         icon="travel_explore"
                         active=${webSearchMode}
-                        color="text-secondary"
+                        color="text-primary"
                         onToggle=${() => setWebSearchMode(v => !v)}
                     />
                     <div class="h-px bg-white/5"></div>

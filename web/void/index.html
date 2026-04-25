@@ -542,7 +542,7 @@
             'chat.reset':        { en: 'Fit',           zh: '适配' },
             'chat.close':        { en: 'Close',         zh: '关闭' },
             'chat.webSearch':    { en: 'Web Search',    zh: '联网搜索' },
-            'chat.webSearchDesc': { en: 'Ground answers in live web results (via Gemini)', zh: '基于实时网络搜索结果（Gemini 驱动）' },
+            'chat.webSearchDesc': { en: 'Ground answers in live web results', zh: '基于实时网络搜索结果' },
             'chat.followUp':     { en: 'Follow-up Questions', zh: '追问' },
             'chat.inputPlaceholder': { en: 'Type a transmission...', zh: '输入你想说的话……' },
             'warmup.convening':  { en: 'Taking seats',                   zh: '正在落座圆桌' },
@@ -553,6 +553,7 @@
             'chat.followUpCustom':{ en: 'Or write your own…', zh: '或自己填…' },
             'chat.followUpDesc': { en: 'After each reply, suggest tap-to-ask options', zh: '每次回复后给出可一键提问的选项' },
             'chat.maxSpeakers':  { en: 'Max Speakers',  zh: '最多发言人数' },
+            'chat.maxSpeakersHint':{ en: 'Add at least 2 voices to limit', zh: '至少加 2 位才能限制' },
             'chat.all':          { en: 'All',           zh: '全部' },
             'chat.waiting':      { en: 'Waiting to speak…', zh: '等待发言…' },
             'chat.silent':       { en: 'You haven\'t spoken yet.', zh: '你还没发言。' },
@@ -1850,7 +1851,7 @@
         // ══════════════════════════════════════════════
         //  HOME VIEW
         // ══════════════════════════════════════════════
-        function HomeView({ context, setContext, setView, personas, selectedIds, setSelectedIds, setPersonas, startFreshDebate, chatSessions }) {
+        function HomeView({ context, setContext, setView, personas, selectedIds, setSelectedIds, setPersonas, startFreshDebate, chatSessions, debateSettings, setDebateSettings }) {
             // Domain classification by persona id
             const DOMAIN_MAP = {
                 'krishnamurti': 'Philosophy', 'lacan': 'Philosophy', 'Simone de Beauvoir': 'Philosophy',
@@ -2038,6 +2039,136 @@
                 }
                 // Other modes / no mode: go straight to chat.
                 (startFreshDebate || (() => setView('debate')))(null);
+            };
+
+            // ── Home tools menu（输入框左侧的 + 按钮，控制联网/追问/最多发言/语言）
+            // debateSettings 提到 App 顶层 + localStorage 持久化，跟 chat 内的设置
+            // 同步——home 改了 chat 也改了，反之亦然。
+            const [showToolsMenu, setShowToolsMenu] = useState(false);
+            const toolsMenuRef = useRef(null);
+            const _ds = debateSettings || {};
+            const followUpMode = !!_ds.followUpMode;
+            const webSearchMode = !!_ds.webSearchMode;
+            const maxSpeakers = Number(_ds.maxSpeakers) || 0;
+            const language = typeof _ds.language === 'string' ? _ds.language : '';
+            const maxSpeakersDisabled = selectedIds.length <= 1;
+            const updateDebateSetting = (key, next) => {
+                if (typeof setDebateSettings !== 'function') return;
+                setDebateSettings(prev => {
+                    const base = prev || {};
+                    const cur = base[key];
+                    const resolved = typeof next === 'function' ? next(cur) : next;
+                    return { ...base, [key]: resolved };
+                });
+            };
+            useEffect(() => {
+                if (!showToolsMenu) return;
+                const handler = (e) => {
+                    if (toolsMenuRef.current && !toolsMenuRef.current.contains(e.target)) {
+                        setShowToolsMenu(false);
+                    }
+                };
+                document.addEventListener('mousedown', handler);
+                return () => document.removeEventListener('mousedown', handler);
+            }, [showToolsMenu]);
+
+            const HomeToolsMenu = () => {
+                if (!showToolsMenu) return null;
+                const Row = ({ label, desc, icon, active, color, onToggle }) => html`
+                    <button
+                        onClick=${onToggle}
+                        class=${'w-full flex items-start gap-3 px-4 py-3 transition-colors text-left ' + (active ? 'bg-white/[0.04]' : 'hover:bg-white/[0.03]')}
+                    >
+                        <span class=${'material-symbols-outlined shrink-0 mt-0.5 ' + (active ? color : 'text-on-surface-variant/50')}>${icon}</span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class=${'text-xs font-semibold ' + (active ? 'text-on-surface' : 'text-on-surface/80')}>${label}</span>
+                                <span class=${'w-8 h-4 rounded-full relative transition-colors ' + (active ? color.replace('text-', 'bg-') : 'bg-surface-container-highest')}>
+                                    <span class=${'absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ' + (active ? 'left-[18px]' : 'left-0.5')}></span>
+                                </span>
+                            </div>
+                            <p class="text-[10px] text-on-surface-variant/50 mt-0.5 leading-snug">${desc}</p>
+                        </div>
+                    </button>
+                `;
+                return html`
+                    <div
+                        ref=${toolsMenuRef}
+                        class="absolute left-0 top-full mt-2 w-72 bg-surface-container/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
+                    >
+                        <${Row}
+                            label=${t('chat.webSearch')}
+                            desc=${t('chat.webSearchDesc')}
+                            icon="travel_explore"
+                            active=${webSearchMode}
+                            color="text-primary"
+                            onToggle=${() => updateDebateSetting('webSearchMode', v => !v)}
+                        />
+                        <div class="h-px bg-white/5"></div>
+                        <${Row}
+                            label=${t('chat.followUp')}
+                            desc=${t('chat.followUpDesc')}
+                            icon="quick_reference_all"
+                            active=${followUpMode}
+                            color="text-primary"
+                            onToggle=${() => updateDebateSetting('followUpMode', v => !v)}
+                        />
+                        <div class="h-px bg-white/5"></div>
+                        <div class="px-4 py-3 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <span class=${'block text-xs font-semibold ' + (maxSpeakersDisabled ? 'text-on-surface-variant/50' : 'text-on-surface')}>${t('chat.maxSpeakers')}</span>
+                                ${maxSpeakersDisabled ? html`
+                                    <p class="text-[10px] text-on-surface-variant/40 mt-0.5 leading-snug">${t('chat.maxSpeakersHint')}</p>
+                                ` : null}
+                            </div>
+                            <select
+                                value=${maxSpeakersDisabled ? 0 : maxSpeakers}
+                                disabled=${maxSpeakersDisabled}
+                                onChange=${(e) => updateDebateSetting('maxSpeakers', Number(e.target.value))}
+                                class=${'text-xs bg-surface-container-high border border-white/10 rounded-lg px-2 py-1 ' +
+                                    (maxSpeakersDisabled
+                                        ? 'text-on-surface-variant/40 opacity-60 cursor-not-allowed'
+                                        : 'text-on-surface')}
+                            >
+                                <option value="0">${t('chat.all')}</option>
+                                ${Array.from({ length: Math.max(0, selectedIds.length - 1) }, (_, i) =>
+                                    html`<option key=${i + 1} value=${i + 1}>${i + 1}</option>`
+                                )}
+                            </select>
+                        </div>
+                        <div class="h-px bg-white/5"></div>
+                        <div class="px-4 py-3 flex items-center justify-between gap-3">
+                            <span class="text-xs text-on-surface font-semibold">${t('nav.language')}</span>
+                            <select
+                                value=${language}
+                                onChange=${(e) => { updateDebateSetting('language', e.target.value); try { localStorage.setItem('lifee_lang', e.target.value); } catch(_) {} }}
+                                class="text-xs text-on-surface bg-surface-container-high border border-white/10 rounded-lg px-2 py-1"
+                            >
+                                <option value="">Auto</option>
+                                <option value="Chinese">中文</option>
+                                <option value="English">English</option>
+                                <optgroup label="Other">
+                                    <option value="Japanese">日本語</option>
+                                    <option value="Korean">한국어</option>
+                                    <option value="French">Français</option>
+                                    <option value="German">Deutsch</option>
+                                    <option value="Spanish">Español</option>
+                                    <option value="Portuguese">Português</option>
+                                    <option value="Russian">Русский</option>
+                                    <option value="Arabic">العربية</option>
+                                    <option value="Italian">Italiano</option>
+                                    <option value="Dutch">Nederlands</option>
+                                    <option value="Polish">Polski</option>
+                                    <option value="Turkish">Türkçe</option>
+                                    <option value="Thai">ไทย</option>
+                                    <option value="Vietnamese">Tiếng Việt</option>
+                                    <option value="Indonesian">Bahasa Indonesia</option>
+                                    <option value="Hindi">हिन्दी</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+                `;
             };
 
             // Preload persona cover images in parallel so first click is instant
@@ -2351,35 +2482,47 @@
                                 style=${{ lineHeight: window.__lifeeLocale === 'zh' ? 1.35 : 1.1 }}
                                 dangerouslySetInnerHTML=${{ __html: t('home.onYourMind') }}
                             ></h1>
-                            <div class="flex items-end gap-3 mt-4">
-                                <div class="flex-1 flex items-center bg-surface-container border border-white/25 rounded-2xl px-5 py-4 focus-within:border-primary/50 transition-colors">
-                                    <textarea
-                                        rows="1"
-                                        class="flex-1 bg-transparent text-on-surface placeholder-on-surface-variant/30 text-sm focus:outline-none resize-none leading-relaxed overflow-y-auto"
-                                        placeholder=${t('home.placeholder')}
-                                        style=${{ maxHeight: '180px' }}
-                                        value=${context.situation}
-                                        onInput=${e => {
-                                            setContext(c => ({ ...c, situation: e.target.value }));
-                                            e.target.style.height = 'auto';
-                                            e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px';
-                                        }}
-                                        onKeyDown=${e => {
-                                            // Enter → send; Shift+Enter → newline (default)
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                e.preventDefault();
-                                                trySubmit();
-                                            }
-                                        }}
-                                    ></textarea>
+                            <div class="flex items-center bg-surface-container border border-white/25 rounded-2xl px-2 py-2 mt-4 focus-within:border-primary/50 transition-colors">
+                                <!-- + 工具菜单按钮：联网 / 追问 / 最多发言 / 语言 -->
+                                <div class="relative shrink-0">
+                                    <button
+                                        onClick=${() => setShowToolsMenu(v => !v)}
+                                        title="Tools"
+                                        class=${'no-shine w-9 h-9 rounded-lg flex items-center justify-center transition-colors ' +
+                                            (showToolsMenu || webSearchMode || followUpMode || maxSpeakers > 0 || !!language
+                                                ? 'bg-primary/15 text-primary'
+                                                : 'text-on-surface-variant/50 hover:text-primary hover:bg-white/5')}
+                                    >
+                                        <span class="material-symbols-outlined" style=${{ fontSize: '20px' }}>add</span>
+                                    </button>
+                                    <${HomeToolsMenu} />
                                 </div>
+                                <textarea
+                                    rows="1"
+                                    class="flex-1 bg-transparent text-on-surface placeholder-on-surface-variant/30 text-sm focus:outline-none resize-none leading-relaxed overflow-y-auto px-3 py-2"
+                                    placeholder=${t('home.placeholder')}
+                                    style=${{ maxHeight: '180px', scrollbarWidth: 'none' }}
+                                    value=${context.situation}
+                                    onInput=${e => {
+                                        setContext(c => ({ ...c, situation: e.target.value }));
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px';
+                                    }}
+                                    onKeyDown=${e => {
+                                        // Enter → send; Shift+Enter → newline (default)
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            trySubmit();
+                                        }
+                                    }}
+                                ></textarea>
                                 <button
                                     disabled=${!context.situation?.trim()}
                                     onClick=${trySubmit}
-                                    class="btn-gradient w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 disabled:opacity-20 disabled:cursor-not-allowed"
+                                    class="btn-gradient w-11 h-11 rounded-xl flex items-center justify-center shrink-0 disabled:opacity-20 disabled:cursor-not-allowed"
                                     title=${t('chat.send')}
                                 >
-                                    <span class="material-symbols-outlined" style=${{ fontSize: '22px' }}>arrow_forward</span>
+                                    <span class="material-symbols-outlined" style=${{ fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>send</span>
                                 </button>
                             </div>
                             ${toastMsg ? html`
@@ -3692,6 +3835,27 @@
             const [sessionMessages, setSessionMessages] = useState([]);
             const [sessionOptions, setSessionOptions] = useState([]);
             const [sessionSummaries, setSessionSummaries] = useState([]);
+            // Debate 设置（联网搜索/追问/最多发言/语言）。提到 App 顶层，让 home
+            // 输入框旁的工具菜单和 chat 内的设置共用同一份 state，互相同步。
+            // 持久化到 localStorage，刷新后保留用户偏好。
+            const DEBATE_SETTINGS_KEY = 'lifee_debate_settings';
+            const [debateSettings, setDebateSettings] = useState(() => {
+                try {
+                    const raw = window.localStorage.getItem(DEBATE_SETTINGS_KEY);
+                    const parsed = raw ? JSON.parse(raw) : {};
+                    return {
+                        followUpMode: !!parsed?.followUpMode,
+                        webSearchMode: !!parsed?.webSearchMode,
+                        maxSpeakers: Number(parsed?.maxSpeakers) || 0,
+                        language: typeof parsed?.language === 'string' ? parsed.language : (window.localStorage.getItem('lifee_lang') || ''),
+                    };
+                } catch (_) {
+                    return { followUpMode: false, webSearchMode: false, maxSpeakers: 0, language: '' };
+                }
+            });
+            useEffect(() => {
+                try { window.localStorage.setItem(DEBATE_SETTINGS_KEY, JSON.stringify(debateSettings)); } catch (_) {}
+            }, [debateSettings]);
             // Hydrate sidebar instantly from localStorage; /sessions fetch
             // refreshes in the background. Keyed by userId so a signed-out
             // visit doesn't reveal a previous user's sessions.
@@ -4027,6 +4191,8 @@
                         refreshChatSessions();
                     },
                     onOpenShare: openShare,
+                    debateSettings,
+                    setDebateSettings,
                 });
             };
 
@@ -4118,6 +4284,8 @@
                     setPersonas=${setPersonas}
                     startFreshDebate=${startFreshDebate}
                     chatSessions=${chatSessions}
+                    debateSettings=${debateSettings}
+                    setDebateSettings=${setDebateSettings}
                 />`;
             };
 
