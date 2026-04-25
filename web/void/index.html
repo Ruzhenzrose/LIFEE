@@ -2518,8 +2518,10 @@
                                             </div>
                                         </div>
 
-                                        <!-- Persona row — square cards, single row, horizontal scroll on overflow -->
-                                        <div class="flex-1 min-h-0 flex flex-nowrap items-start gap-x-5 overflow-x-auto no-scrollbar">
+                                        <!-- Persona row — square cards, single row, horizontal scroll on overflow.
+                                             py-2 px-1 给选中态的 ring + shadow 留出渲染空间，不会被两层 overflow 裁掉。
+                                             卡片缩到 w-56 h-56 (224px) 配合 ROW_H=260，约 18px 上下给光晕。 -->
+                                        <div class="flex-1 min-h-0 flex flex-nowrap items-start gap-x-5 overflow-x-auto no-scrollbar py-2 px-1">
                                             ${items.map(p => {
                                                 const isSel = selectedIds.includes(p.id);
                                                 const isPreview = previewId === p.id;
@@ -2530,7 +2532,7 @@
                                                             if (previewId === p.id) toggleSelect(p.id);
                                                             else setPreviewId(p.id);
                                                         }}
-                                                        class=${`group shrink-0 cursor-pointer select-none w-60 h-60 rounded-xl overflow-hidden relative transition-all
+                                                        class=${`group shrink-0 cursor-pointer select-none w-56 h-56 rounded-xl overflow-hidden relative transition-all
                                                             ${isSel
                                                                 ? 'ring-2 ring-primary shadow-lg shadow-primary/20'
                                                                 : isPreview
