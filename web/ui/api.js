@@ -77,6 +77,7 @@ async function _drainLifeeSSE(res, handlers, resetIdle) {
     let done = false;
     let streamPid = null;       // local: current persona id within THIS stream
     let streamText = "";        // local: accumulated text within THIS stream
+    let streamSeq = null;       // local: current row seq within THIS stream (for frontend dedup across retries)
 
     const flushEventBlock = async (block) => {
         if (!block || block.startsWith(":")) return;
@@ -108,20 +109,24 @@ async function _drainLifeeSSE(res, handlers, resetIdle) {
             // empty. Clear on the first real messageChunk instead.
             if (data?.personaId) {
                 streamPid = data.personaId;
+                streamSeq = (typeof data.seq === 'number' && data.seq > 0) ? data.seq : null;
                 streamText = "";
-                await onMessage?.({ personaId: data.personaId, text: "" });
+                await onMessage?.({ personaId: data.personaId, text: "", seq: streamSeq });
             }
         } else if (eventName === "messageChunk") {
             if (data?.chunk && streamPid) {
                 const wasEmpty = streamText.length === 0;
                 streamText += data.chunk;
+                // 同一 seq 的后续 chunk 用 server 给的，避免被前端 throttle 误用上一轮的 seq
+                if (typeof data.seq === 'number' && data.seq > 0) streamSeq = data.seq;
                 if (wasEmpty) {
                     try { await onStatus?.(null); } catch (_) {}
                 }
-                await onMessageUpdate?.({ personaId: streamPid, text: streamText });
+                await onMessageUpdate?.({ personaId: streamPid, text: streamText, seq: streamSeq });
             }
         } else if (eventName === "messageEnd") {
             streamPid = null;
+            streamSeq = null;
         } else if (eventName === "message") {
             if (data && typeof data === "object") await onMessage?.(data);
         } else if (eventName === "options") {

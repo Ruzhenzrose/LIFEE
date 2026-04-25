@@ -2003,11 +2003,11 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
                 _bg(_insert_message_stub(session_id, chat_user_id, "assistant", pid, current_seq))
             else:
                 current_seq = 0
-            yield f"event: messageStart\ndata: {json.dumps({'personaId': pid})}\n\n"
+            yield f"event: messageStart\ndata: {json.dumps({'personaId': pid, 'seq': current_seq})}\n\n"
         if chunk and chunk.strip():
             has_content = True
         current_text += chunk
-        yield f"event: messageChunk\ndata: {json.dumps({'personaId': pid, 'chunk': chunk}, ensure_ascii=False)}\n\n"
+        yield f"event: messageChunk\ndata: {json.dumps({'personaId': pid, 'seq': current_seq, 'chunk': chunk}, ensure_ascii=False)}\n\n"
         if chat_user_id and current_seq and has_content:
             now = _time.monotonic()
             if now - last_db_write >= DB_THROTTLE_SEC:

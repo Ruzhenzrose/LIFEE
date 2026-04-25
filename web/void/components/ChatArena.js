@@ -366,9 +366,30 @@
                 return next;
             });
         };
+        // 选项缓存：后端 yield options 严格晚于所有 messageChunk，但前端打字机
+        // 限速到 30 字/秒，上一个角色还没打完字时选项就到了。延迟到 throttle 队列
+        // 清空后再渲染，用户视觉上就是"最后一个角色说完话才出选项"。
+        const pendingOptionsRef      = useRef(null);
+        const pendingOptionsRoundRef = useRef(0);
+
+        const maybeFlushOptions = () => {
+            if (pendingOptionsRef.current === null) return;
+            if (pendingOptionsRoundRef.current !== roundIdRef.current) {
+                pendingOptionsRef.current = null;
+                return;
+            }
+            if (throttleQueueRef.current.length > 0 || throttleRafRef.current) return;
+            const opts = pendingOptionsRef.current;
+            pendingOptionsRef.current = null;
+            setOptions(opts);
+        };
+
         const commitOptions = (opts, origin, myRound) => {
             if (!canApply(origin, myRound)) return;
-            setOptions(Array.isArray(opts) ? opts : []);
+            const safe = Array.isArray(opts) ? opts : [];
+            pendingOptionsRef.current = safe;
+            pendingOptionsRoundRef.current = myRound;
+            maybeFlushOptions();
         };
         const commitSession = (sid, origin, myRound) => {
             if (!canApply(origin, myRound)) return;
@@ -390,11 +411,11 @@
 
         const kickThrottle = () => {
             if (throttleRafRef.current) return;
-            const pid = throttleQueueRef.current[0];
-            if (!pid) return;
-            const s = throttleStatesRef.current.get(pid);
+            const key = throttleQueueRef.current[0];
+            if (!key) return;
+            const s = throttleStatesRef.current.get(key);
             if (!s) { throttleQueueRef.current.shift(); kickThrottle(); return; }
-            throttleActiveRef.current = pid;
+            throttleActiveRef.current = key;
             s.lastTick = performance.now();
 
             const tick = () => {
@@ -410,7 +431,7 @@
                 const shownLen = Math.floor(s.shown);
                 if (shownLen !== s.prevShown) {
                     s.prevShown = shownLen;
-                    commitMessage({ personaId: pid, text: s.target.slice(0, shownLen) }, 'sse', s.myRound);
+                    commitMessage({ personaId: s.pid, text: s.target.slice(0, shownLen), seq: s.seq }, 'sse', s.myRound);
                 }
                 if (shownLen < s.target.length) {
                     throttleRafRef.current = requestAnimationFrame(tick);
@@ -421,6 +442,10 @@
                     if (hasNext) {
                         throttleQueueRef.current.shift();
                         kickThrottle();
+                    } else {
+                        // 队列彻底空了 → 把被暂缓的 options 释放出去
+                        throttleQueueRef.current = [];
+                        maybeFlushOptions();
                     }
                 }
             };
@@ -431,16 +456,20 @@
             if (myRound !== roundIdRef.current) return;
             const pid = incoming.personaId || incoming.persona_id || incoming.role;
             const nextText = incoming.text || incoming.content || '';
+            const nextSeq  = incoming.seq;
             if (!pid) return;
-            let s = throttleStatesRef.current.get(pid);
+            // Key by `pid@seq`，避免同一个 persona 第二次说话时被并到上一轮的气泡里。
+            const key = nextSeq != null ? `${pid}@${nextSeq}` : pid;
+            let s = throttleStatesRef.current.get(key);
             if (!s) {
-                s = { target: '', shown: 0, prevShown: 0, lastTick: 0, myRound };
-                throttleStatesRef.current.set(pid, s);
+                s = { pid, seq: nextSeq, target: '', shown: 0, prevShown: 0, lastTick: 0, myRound };
+                throttleStatesRef.current.set(key, s);
             }
             s.target = nextText;
+            s.seq = nextSeq;
             s.myRound = myRound;
-            if (!throttleQueueRef.current.includes(pid)) {
-                throttleQueueRef.current.push(pid);
+            if (!throttleQueueRef.current.includes(key)) {
+                throttleQueueRef.current.push(key);
             }
             kickThrottle();
         };
@@ -451,13 +480,15 @@
                 throttleRafRef.current = null;
             }
             throttleActiveRef.current = null;
-            throttleStatesRef.current.forEach((s, pid) => {
+            throttleStatesRef.current.forEach((s, _key) => {
                 if (s.target && s.shown < s.target.length) {
-                    commitMessage({ personaId: pid, text: s.target }, 'sse', s.myRound);
+                    commitMessage({ personaId: s.pid, text: s.target, seq: s.seq }, 'sse', s.myRound);
                 }
             });
             throttleStatesRef.current.clear();
             throttleQueueRef.current = [];
+            // 队列清空 → 尝试释放暂缓的 options
+            maybeFlushOptions();
         };
 
         const makeSseHandlers = (myRound) => ({
@@ -718,6 +749,9 @@
             setIsDebating(true);
             setWarmupStage(null);
             setFollowupAnswers({});
+            // 清空上一轮的 options。否则新一轮还在 streaming 时，旧选项会顶在
+            // 第一个角色后面、第二个角色前面，看上去像"选项跑前面了"。
+            setOptions([]);
             const cleanInput = (userInput ?? inputValue ?? '').toString().trim();
 
             if (cleanInput) {

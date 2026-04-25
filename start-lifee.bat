@@ -12,6 +12,15 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8000 " ^| findstr "LISTENIN
     taskkill /F /PID %%a >nul 2>&1
 )
 
+echo [LIFEE] Pulling latest DB from server (SSH key auth, no password prompt)...
+if not exist data mkdir data >nul 2>&1
+scp -o ConnectTimeout=5 -o BatchMode=yes root@47.83.184.82:/opt/lifee/data/lifee.db data\lifee.db
+if errorlevel 1 (
+    echo [LIFEE] WARNING: scp failed — using existing local DB instead.
+) else (
+    echo [LIFEE] DB synced from production.
+)
+
 echo [LIFEE] Starting backend in a new window (uvicorn with --reload)...
 REM --reload: safe because watchfiles is NOT installed; uvicorn falls back to
 REM StatReload (stat-based polling) which does not segfault on Python 3.13.
