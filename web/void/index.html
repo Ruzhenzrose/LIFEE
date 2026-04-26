@@ -2024,18 +2024,13 @@
 
             const trySubmit = () => {
                 if (!context.situation?.trim()) return;
-                // "A or B" mode: the recommend modal will supply voices, so an
-                // empty selection is fine here — user may not know who to ask yet.
+                // A or B 模式：先 3 轮追问问出 A/B 是什么，再开推荐 modal。
                 if (mode === 'ab') {
                     startFollowupFlow();
                     return;
                 }
-                if (selectedIds.length === 0) {
-                    setToastMsg(t('home.pickVoice'));
-                    return;
-                }
-                // Other modes / no mode: go straight to chat.
-                (startFreshDebate || (() => setView('debate')))(null);
+                // 其他模式 / 没选模式：直接开推荐 modal 让 LLM 帮挑角色。
+                setRecommendOpen(true);
             };
 
             // ── Home tools menu（输入框左侧的 + 按钮，控制联网/追问/最多发言/语言）
