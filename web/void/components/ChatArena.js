@@ -302,6 +302,14 @@
             } catch (_) {}
         };
         const [summaryLoading, setSummaryLoading] = useState(false);
+        // Timeline (A/B 对比) 和 30 天 plan 状态——只在 A/B 模式（2 角色或 2 选项）下可触发。
+        const [timelineData, setTimelineData]     = useState(null);
+        const [timelineLoading, setTimelineLoading] = useState(false);
+        const [timelineError, setTimelineError]   = useState('');
+        const [showPlanModal, setShowPlanModal]   = useState(false);
+        const [planData, setPlanData]             = useState(null);
+        const [planLoading, setPlanLoading]       = useState(false);
+        const [planWeek, setPlanWeek]             = useState(0);
         const [showMoreMenu, setShowMoreMenu]   = useState(false);
         const [showToolsMenu, setShowToolsMenu] = useState(false);
         const [showVoiceMap, setShowVoiceMap]   = useState(false);
@@ -864,6 +872,85 @@
             }
         };
 
+        // ── A/B Timeline + 30 天 Plan ────────────────────────────────────────
+        // 仅在 A/B 模式（2 角色或恰好 2 个 option）触发。后端 /timeline 返回
+        // {option_a, option_b}，每个含 phases[]；/plan-30-days 返回 plan.weeks[]。
+        const isABDebate = (selectedPersonas?.length === 2) || (options?.length === 2);
+
+        const generateTimeline = async () => {
+            if (timelineLoading) return;
+            setTimelineLoading(true);
+            setTimelineData(null);
+            setTimelineError('');
+            try {
+                const payload = sessionId
+                    ? JSON.stringify({ sessionId, language: language || 'Chinese', situation: context?.situation || '' })
+                    : JSON.stringify({
+                        messages: history
+                            .filter(m => m.personaId !== 'system' && m.personaId !== 'lifee-followup')
+                            .slice(-12)
+                            .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 200) })),
+                        language: language || 'Chinese',
+                        situation: context?.situation || '',
+                    });
+                const r = await window.fetch('/timeline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload,
+                });
+                if (!r.ok) {
+                    const txt = await r.text();
+                    throw new Error(`Server ${r.status}: ${txt.slice(0, 100)}`);
+                }
+                const res = await r.json();
+                if (res?.error) throw new Error(res.error);
+                const tl = res?.timelines || res;
+                if (tl?.option_a || tl?.option_b) {
+                    setTimelineData(tl);
+                    setShowVoiceMap(true);
+                } else {
+                    throw new Error('No timeline data returned');
+                }
+            } catch (e) {
+                setTimelineError(e?.message || 'Timeline generation failed');
+                setTimeout(() => setTimelineError(''), 4000);
+            } finally {
+                setTimelineLoading(false);
+            }
+        };
+
+        const generatePlan = async (chosenOption = '') => {
+            if (planLoading) return;
+            setPlanLoading(true);
+            setPlanData(null);
+            setPlanWeek(0);
+            setShowPlanModal(true);
+            try {
+                const payload = sessionId
+                    ? JSON.stringify({ sessionId, language: language || 'Chinese', situation: context?.situation || '', chosenOption })
+                    : JSON.stringify({
+                        messages: history
+                            .filter(m => m.personaId !== 'system' && m.personaId !== 'lifee-followup')
+                            .slice(-10)
+                            .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 200) })),
+                        language: language || 'Chinese',
+                        situation: context?.situation || '',
+                        chosenOption,
+                    });
+                const r = await window.fetch('/plan-30-days', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload,
+                });
+                const res = await r.json();
+                if (res?.plan?.weeks) setPlanData(res.plan);
+            } catch (_) {
+                /* swallow — modal shows fallback */
+            } finally {
+                setPlanLoading(false);
+            }
+        };
+
         // ── Clipboard ─────────────────────────────────────────────────────────
         const copyText = (text) => { copyToClipboard(text); };
 
@@ -1394,6 +1481,20 @@
                                 }
                                 <span>${t('chat.summary')}</span>
                             </button>
+                            ${isABDebate && history.length >= 2 ? html`
+                                <button
+                                    onClick=${generateTimeline}
+                                    disabled=${timelineLoading}
+                                    class=${`no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider flex items-center gap-1 disabled:opacity-30 ${timelineData ? 'text-secondary' : ''}`}
+                                    title="Generate two scenario timelines"
+                                >
+                                    ${timelineLoading
+                                        ? html`<span class="material-symbols-outlined animate-spin" style=${{ fontSize: '12px' }}>progress_activity</span>`
+                                        : html`<span class="material-symbols-outlined" style=${{ fontSize: '12px' }}>fork_right</span>`
+                                    }
+                                    <span>${t('chat.timelines') || 'Timelines'}</span>
+                                </button>
+                            ` : null}
                             <button onClick=${reset}
                                 class="no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider"
                                 title="Fit all cards into view"
@@ -1548,6 +1649,80 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- ── A/B Timeline overlay ── -->
+                        ${timelineData && (timelineData.option_a || timelineData.option_b) ? html`
+                            <div
+                                class="absolute left-0 right-0 bottom-0 z-10 overflow-y-auto no-scrollbar bg-surface-container/95 backdrop-blur-xl border-t border-white/10 px-4 py-3"
+                                style=${{ maxHeight: '58%' }}
+                                onMouseDown=${(e) => e.stopPropagation()}
+                                onWheel=${(e) => e.stopPropagation()}
+                            >
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-[8px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60">${t('chat.timelinesHeader') || 'Scenario Timelines'}</span>
+                                    <div class="flex items-center gap-1.5">
+                                        <button
+                                            onClick=${() => generatePlan(timelineData.option_a?.label || '')}
+                                            class="no-shine text-[8px] font-black uppercase tracking-[0.12em] px-3 py-1 rounded-full border border-primary/60 text-primary hover:bg-primary/10 transition-all"
+                                        >${t('chat.plan30Btn') || 'Plan my first 30 days'}</button>
+                                        <button
+                                            onClick=${() => setTimelineData(null)}
+                                            class="w-5 h-5 rounded-full border border-white/15 text-on-surface-variant/50 hover:text-on-surface text-[11px] flex items-center justify-center"
+                                            title="Close"
+                                        >✕</button>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    ${['option_a', 'option_b'].map((key, ki) => {
+                                        const opt = timelineData[key];
+                                        if (!opt) return null;
+                                        // 静态分支——Tailwind JIT 不能展开 bg-${var}/N 形式的动态类
+                                        const headerBg   = ki === 0 ? 'bg-primary/10'   : 'bg-secondary/10';
+                                        const labelText  = ki === 0 ? 'text-primary'    : 'text-secondary';
+                                        const labelBdr   = ki === 0 ? 'border-primary/60' : 'border-secondary/60';
+                                        const labelHover = ki === 0 ? 'hover:bg-primary/10' : 'hover:bg-secondary/10';
+                                        const dot        = ki === 0 ? 'bg-primary'       : 'bg-secondary';
+                                        const dotRing    = ki === 0 ? 'ring-primary/30'  : 'ring-secondary/30';
+                                        const periodText = ki === 0 ? 'text-primary/70'  : 'text-secondary/70';
+                                        return html`
+                                            <div key=${key} class="rounded-xl bg-surface-container-high/60 border border-white/10 overflow-hidden">
+                                                <div class=${`px-3 py-2 border-b border-white/10 flex items-center justify-between ${headerBg}`}>
+                                                    <span class=${`text-[9px] font-black uppercase tracking-[0.2em] ${labelText}`}>
+                                                        ${String.fromCharCode(65 + ki)}. ${opt.label || key}
+                                                    </span>
+                                                    <button
+                                                        onClick=${() => generatePlan(opt.label || '')}
+                                                        class=${`no-shine text-[7px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full border ${labelBdr} ${labelText} ${labelHover} transition-all whitespace-nowrap`}
+                                                    >Plan →</button>
+                                                </div>
+                                                <div class="py-2">
+                                                    ${(opt.phases || []).map((phase, pi) => html`
+                                                        <div key=${pi} class=${`flex gap-2 px-3 py-1.5 ${pi < opt.phases.length - 1 ? 'border-b border-white/5' : ''}`}>
+                                                            <div class="flex flex-col items-center shrink-0 pt-0.5">
+                                                                <div class=${`w-1.5 h-1.5 rounded-full ${dot} ring-2 ${dotRing}`}></div>
+                                                                ${pi < opt.phases.length - 1 ? html`<div class="w-px flex-1 bg-white/10 mt-1"></div>` : null}
+                                                            </div>
+                                                            <div class="min-w-0 pb-1">
+                                                                <div class=${`text-[7px] font-bold uppercase tracking-[0.1em] ${periodText} mb-0.5`}>${phase.period || ''}</div>
+                                                                <div class="text-[9px] font-black text-on-surface leading-snug mb-0.5">${phase.title || ''}</div>
+                                                                <div class="text-[8px] text-on-surface-variant/65 leading-relaxed mb-1">${phase.description || ''}</div>
+                                                                ${(phase.tags || []).length > 0 ? html`
+                                                                    <div class="flex flex-wrap gap-1">
+                                                                        ${(phase.tags || []).map((tag, ti) => html`
+                                                                            <span key=${ti} class=${`text-[7px] px-1.5 py-px rounded-full font-bold ${ti % 2 === 0 ? 'bg-primary/15 text-primary' : 'bg-secondary/15 text-secondary'}`}>${tag}</span>
+                                                                        `)}
+                                                                    </div>
+                                                                ` : null}
+                                                            </div>
+                                                        </div>
+                                                    `)}
+                                                </div>
+                                            </div>
+                                        `;
+                                    })}
+                                </div>
+                            </div>
+                        ` : null}
                     </div>
                 </aside>
             `;
@@ -1991,6 +2166,108 @@
                     <div class="fixed top-24 right-4 z-50 text-xs text-rose-300 bg-rose-900/80 border border-rose-500/30 px-4 py-3 rounded-2xl shadow-lg backdrop-blur-md">
                         ${summaryData._error}
                         <button onClick=${() => setSummaryData({})} class="ml-2 opacity-50 hover:opacity-100">✕</button>
+                    </div>
+                ` : null}
+
+                <!-- ── Timeline error toast ── -->
+                ${timelineError ? html`
+                    <div class="fixed top-24 right-4 z-50 text-xs text-rose-300 bg-rose-900/80 border border-rose-500/30 px-4 py-3 rounded-2xl shadow-lg backdrop-blur-md">
+                        Timeline: ${timelineError}
+                        <button onClick=${() => setTimelineError('')} class="ml-2 opacity-50 hover:opacity-100">✕</button>
+                    </div>
+                ` : null}
+
+                <!-- ── 30-Day Plan modal ── -->
+                ${showPlanModal ? html`
+                    <div
+                        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+                        onClick=${() => setShowPlanModal(false)}
+                    >
+                        <div
+                            class="bg-surface-container/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
+                            onClick=${(e) => e.stopPropagation()}
+                        >
+                            <div class="px-6 py-5 border-b border-white/10 flex items-center justify-between shrink-0">
+                                <div>
+                                    <div class="text-[9px] font-black uppercase tracking-[0.3em] text-primary mb-1">${t('chat.actionPlan') || 'Action Plan'}</div>
+                                    <div class="text-lg font-headline italic font-bold text-on-surface">${t('chat.first30Days') || 'My First 30 Days'}</div>
+                                </div>
+                                <button
+                                    onClick=${() => setShowPlanModal(false)}
+                                    class="w-8 h-8 rounded-full border border-white/15 text-on-surface-variant/60 hover:text-on-surface flex items-center justify-center"
+                                >✕</button>
+                            </div>
+
+                            ${planLoading ? html`
+                                <div class="flex-1 flex items-center justify-center gap-3 p-10">
+                                    <span class="material-symbols-outlined animate-spin text-primary/60" style=${{ fontSize: '20px' }}>progress_activity</span>
+                                    <span class="text-xs text-on-surface-variant/60">${t('chat.planCrafting') || 'Crafting your 30-day plan…'}</span>
+                                </div>
+                            ` : null}
+
+                            ${!planLoading && planData?.weeks ? html`
+                                <div class="px-6 py-3 border-b border-white/10 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+                                    ${planData.weeks.map((week, wi) => html`
+                                        <button
+                                            key=${week.id || wi}
+                                            onClick=${() => setPlanWeek(wi)}
+                                            class=${`shrink-0 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border ${
+                                                planWeek === wi
+                                                    ? 'bg-on-surface text-surface border-on-surface'
+                                                    : 'bg-surface-container-high/40 text-on-surface-variant/70 border-white/10 hover:border-white/25'
+                                            }`}
+                                        >${week.label || `Week ${wi + 1}`}</button>
+                                    `)}
+                                </div>
+                                ${(() => {
+                                    const week = planData.weeks[planWeek];
+                                    if (!week) return null;
+                                    return html`
+                                        <div class="flex-1 overflow-y-auto no-scrollbar px-6 py-4">
+                                            ${week.goal ? html`
+                                                <div class="bg-surface-container-high/50 border border-white/10 rounded-xl px-4 py-3 mb-4 text-xs text-on-surface-variant/80 leading-relaxed">
+                                                    <span class="font-black text-on-surface">Week ${planWeek + 1}：</span>${week.goal}
+                                                </div>
+                                            ` : null}
+                                            <div class="flex flex-col gap-2.5">
+                                                ${(week.tasks || []).map((task, ti) => html`
+                                                    <div key=${ti} class="bg-surface-container-high/40 border border-white/10 rounded-xl px-4 py-3 flex gap-3 items-start">
+                                                        <div class="w-[18px] h-[18px] rounded-full border border-white/30 shrink-0 mt-0.5"></div>
+                                                        <div class="min-w-0 flex-1">
+                                                            <div class="text-[13px] font-black text-on-surface mb-1">${task.title || ''}</div>
+                                                            <div class="text-[11px] text-on-surface-variant/65 leading-relaxed mb-2">${task.description || ''}</div>
+                                                            ${(task.tags || []).length > 0 ? html`
+                                                                <div class="flex flex-wrap gap-1">
+                                                                    ${(task.tags || []).map((tag, tgi) => {
+                                                                        const palettes = ['bg-primary/15 text-primary', 'bg-secondary/15 text-secondary', 'bg-tertiary/15 text-tertiary', 'bg-amber-500/15 text-amber-300'];
+                                                                        return html`<span key=${tgi} class=${`text-[9px] px-2 py-0.5 rounded-full font-bold ${palettes[tgi % palettes.length]}`}>${tag}</span>`;
+                                                                    })}
+                                                                </div>
+                                                            ` : null}
+                                                        </div>
+                                                    </div>
+                                                `)}
+                                            </div>
+                                            ${planWeek < planData.weeks.length - 1 ? html`
+                                                <div class="flex justify-center mt-4">
+                                                    <button
+                                                        onClick=${() => setPlanWeek(w => w + 1)}
+                                                        class="w-8 h-8 rounded-full border border-white/15 hover:border-white/40 text-on-surface-variant/60 hover:text-on-surface flex items-center justify-center"
+                                                        title="Next week"
+                                                    ><span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>expand_more</span></button>
+                                                </div>
+                                            ` : null}
+                                        </div>
+                                    `;
+                                })()}
+                            ` : null}
+
+                            ${!planLoading && !planData?.weeks ? html`
+                                <div class="flex-1 flex items-center justify-center p-10 text-xs text-on-surface-variant/50">
+                                    ${t('chat.planFailed') || 'Failed to generate plan. Try again.'}
+                                </div>
+                            ` : null}
+                        </div>
                     </div>
                 ` : null}
 
