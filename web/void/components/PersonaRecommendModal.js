@@ -183,9 +183,9 @@
                     </button>
 
                     <div class="shrink-0 px-8 pt-8 pb-4">
-                        <p class="text-[9px] uppercase tracking-[0.3em] font-bold text-primary/70 mb-2">✦ Just for you</p>
-                        <h2 class="text-2xl font-headline italic font-bold text-on-surface leading-snug pr-8">These voices might resonate</h2>
-                        <p class="text-[10px] text-on-surface-variant/60 mt-1.5">Based on what you shared · tap to select or deselect</p>
+                        <p class="text-[9px] uppercase tracking-[0.3em] font-bold text-primary/70 mb-2">${window.t?.('recommend.eyebrow') || '✦ Just for you'}</p>
+                        <h2 class="text-2xl font-headline italic font-bold text-on-surface leading-snug pr-8">${window.t?.('recommend.title') || 'These voices might resonate'}</h2>
+                        <p class="text-[10px] text-on-surface-variant/60 mt-1.5">${window.t?.('recommend.subtitle') || 'Based on what you shared · tap to select or deselect'}</p>
                     </div>
 
                     <div class="flex-1 overflow-y-auto no-scrollbar px-8 pb-4 space-y-5">
@@ -209,7 +209,7 @@
                             <div>
                                 <p class="text-[9px] uppercase tracking-[0.3em] font-bold text-secondary/80 mb-2 flex items-center gap-1.5">
                                     <span class="inline-block w-3 h-3 border-2 border-secondary/60 border-t-transparent rounded-full animate-spin"></span>
-                                    Creating new voices just for you…
+                                    ${window.t?.('recommend.generating') || 'Creating new voices just for you…'}
                                 </p>
                                 <div class="grid grid-cols-2 gap-3">
                                     <${SkeletonCard} /><${SkeletonCard} />
@@ -219,7 +219,7 @@
 
                         ${!generating && generated.length > 0 ? html`
                             <div>
-                                <p class="text-[9px] uppercase tracking-[0.3em] font-bold text-secondary/80 mb-2">✦ Voices created for you</p>
+                                <p class="text-[9px] uppercase tracking-[0.3em] font-bold text-secondary/80 mb-2">${window.t?.('recommend.generatedHeader') || '✦ Voices created for you'}</p>
                                 <div class="grid grid-cols-2 gap-3">
                                     ${generated.slice(0, 2).map(p => html`<${PersonaCard}
                                         key=${p.id}
@@ -238,11 +238,11 @@
                             onClick=${handleConfirm}
                             disabled=${picks.length === 0 || loading}
                             class="no-shine w-full py-3.5 bg-primary text-on-primary rounded-full font-bold uppercase tracking-[0.2em] text-[11px] shadow-lg hover:bg-primary/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                        >Add to My Panel & Continue</button>
+                        >${window.t?.('recommend.confirm') || 'Add to My Panel & Continue'}</button>
                         <button
                             onClick=${handleSkip}
                             class="no-shine w-full py-2 text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface/40 hover:text-on-surface/70 transition-colors"
-                        >Skip — I'll choose my own</button>
+                        >${window.t?.('recommend.skip') || "Skip — I'll choose my own"}</button>
                     </div>
                 </div>
             </div>
