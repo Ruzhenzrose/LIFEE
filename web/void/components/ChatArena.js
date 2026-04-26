@@ -1046,7 +1046,7 @@
                                                 ? 'bg-surface-container-high/40 text-on-surface/30 cursor-not-allowed'
                                                 : 'bg-primary text-on-primary hover:bg-primary/90'
                                         }`}
-                                    >${t('chat.submitAnswers') || 'Send'} ${answeredCount > 0 ? `· ${answeredCount}/${qs.length}` : ''}</button>
+                                    >${t('chat.submitAnswers') || 'Send'}</button>
                                 </div>
                             ` : null}
                         </div>
