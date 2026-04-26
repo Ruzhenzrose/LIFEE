@@ -646,16 +646,29 @@ def _user_payload(u: dict) -> dict:
         avatar = _store.user_get_avatar(u["id"])
     except Exception:
         pass
+    # /auth/me 走的是 jwt，u 里只有 {id, email}——createdAt 要回查 row。
+    # /auth/login、/auth/verify-otp 已经传了完整行，直接读字段省一次查。
+    created_at = u.get("created_at")
+    if created_at is None:
+        try:
+            row = _store.user_by_id(u["id"])
+            if row:
+                created_at = row.get("created_at")
+        except Exception:
+            pass
     meta: dict = {}
     if name:
         meta["name"] = name
     if avatar:
         meta["avatar_url"] = avatar
-    return {
+    payload = {
         "id": u["id"],
         "email": u["email"],
         "user_metadata": meta,
     }
+    if created_at is not None:
+        payload["created_at"] = created_at  # Unix 秒
+    return payload
 
 
 @app.get("/auth/me")
