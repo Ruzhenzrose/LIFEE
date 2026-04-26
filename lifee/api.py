@@ -441,10 +441,9 @@ def _match_role(persona_id: str, persona_name: str) -> Optional[str]:
 
 
 
-@app.get("/")
-async def root():
-    """根 URL 直接重定向到 /void/——旧的 web/ui 还有 guest 模式残留，
-    走 /void/ 才是当前生产入口。"""
+@app.get("/void")
+async def void_redirect():
+    """Redirect /void to /void/ (trailing slash required by StaticFiles)."""
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/void/", status_code=307)
 

@@ -11,6 +11,10 @@
 两边都能用同一套 email+password 登录。
 """
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from lifee import store, auth
 
 
@@ -34,7 +38,9 @@ def main():
         store.user_set_verified(uid)
         print(f"[create] {email}; id={uid}")
 
-    store.credits_set(uid, credits)
+    # API stores credits under "user:{uid}" prefix — must match here
+    credits_uid = f"user:{uid}"
+    store.credits_set(credits_uid, credits)
     print(f"[credits] {email}: balance={credits}")
 
 
