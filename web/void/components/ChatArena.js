@@ -873,9 +873,9 @@
         };
 
         // ── A/B Timeline + 30 天 Plan ────────────────────────────────────────
-        // 仅在 A/B 模式（2 角色或恰好 2 个 option）触发。后端 /timeline 返回
-        // {option_a, option_b}，每个含 phases[]；/plan-30-days 返回 plan.weeks[]。
-        const isABDebate = (selectedPersonas?.length === 2) || (options?.length === 2);
+        // 后端 /timeline 把对话解读成 2 条 path（不要求严格 2 角色），所以
+        // 只要有像样的对话就能跑——按 history 长度判定即可。
+        // /plan-30-days 同理。
 
         const generateTimeline = async () => {
             if (timelineLoading) return;
@@ -1481,20 +1481,18 @@
                                 }
                                 <span>${t('chat.summary')}</span>
                             </button>
-                            ${isABDebate && history.length >= 2 ? html`
-                                <button
-                                    onClick=${generateTimeline}
-                                    disabled=${timelineLoading}
-                                    class=${`no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider flex items-center gap-1 disabled:opacity-30 ${timelineData ? 'text-secondary' : ''}`}
-                                    title="Generate two scenario timelines"
-                                >
-                                    ${timelineLoading
-                                        ? html`<span class="material-symbols-outlined animate-spin" style=${{ fontSize: '12px' }}>progress_activity</span>`
-                                        : html`<span class="material-symbols-outlined" style=${{ fontSize: '12px' }}>fork_right</span>`
-                                    }
-                                    <span>${t('chat.timelines') || 'Timelines'}</span>
-                                </button>
-                            ` : null}
+                            <button
+                                onClick=${generateTimeline}
+                                disabled=${history.length < 2 || timelineLoading}
+                                class=${`no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider flex items-center gap-1 disabled:opacity-30 ${timelineData ? 'text-secondary' : ''}`}
+                                title="Generate two scenario timelines"
+                            >
+                                ${timelineLoading
+                                    ? html`<span class="material-symbols-outlined animate-spin" style=${{ fontSize: '12px' }}>progress_activity</span>`
+                                    : html`<span class="material-symbols-outlined" style=${{ fontSize: '12px' }}>fork_right</span>`
+                                }
+                                <span>${t('chat.timelines') || 'Timelines'}</span>
+                            </button>
                             <button onClick=${reset}
                                 class="no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider"
                                 title="Fit all cards into view"
