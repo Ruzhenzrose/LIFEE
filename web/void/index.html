@@ -1311,26 +1311,15 @@
                     return;
                 }
                 let cancelled = false;
-                (async () => {
-                    try {
-                        // Prefer the pre-fired fetch from <head> on first load.
-                        const pre = window.__lifeePreload?.credits;
-                        let data = null;
-                        if (pre) {
-                            window.__lifeePreload.credits = null;
-                            data = await pre;
-                        }
-                        if (!data) {
-                            const url = user?.id
-                                ? `/credits?userId=${encodeURIComponent(user.id)}`
-                                : '/credits';
-                            const res = await fetch(url, { credentials: 'include' });
-                            if (!res.ok) return;   // keep cached value
-                            data = await res.json();
-                        }
-                        if (!cancelled && typeof data?.balance === 'number') applyBalance(data.balance);
-                    } catch (_) { /* keep cached value */ }
-                })();
+                // 直接 fetch /credits，不再用 __lifeePreload/localStorage 这套
+                // stale-while-revalidate——之前的多层缓存在登出再登的流程里有时
+                // 会卡住（preload 已被消费 + localStorage 旧 uid，导致 setUserCredits
+                // 不更新）。chat 页右上角同 endpoint 用单层 fetch 一直 OK，照搬。
+                const url = user?.id ? `/credits?userId=${encodeURIComponent(user.id)}` : '/credits';
+                fetch(url, { credentials: 'include' })
+                    .then(r => r.ok ? r.json() : null)
+                    .then(d => { if (!cancelled && d && typeof d.balance === 'number') applyBalance(d.balance); })
+                    .catch(() => {});
                 const onBalance = (e) => {
                     if (typeof e?.detail === 'number') applyBalance(e.detail);
                 };
