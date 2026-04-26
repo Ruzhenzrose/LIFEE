@@ -55,7 +55,7 @@
     // -------------------------------------------------------------------------
     // AuthModal
     // -------------------------------------------------------------------------
-    const AuthModal = ({ isOpen, onClose, onAuthed, onGuest }) => {
+    const AuthModal = ({ isOpen, onClose, onAuthed }) => {
         const [mode, setMode]               = useState('login');
         const [email, setEmail]             = useState('');
         const [password, setPassword]       = useState('');
@@ -242,22 +242,6 @@
                     mode === 'login'
                         ? "Don't have an account? Sign up"
                         : 'Already have an account? Sign in'
-                ),
-                // Divider
-                React.createElement(
-                    'div',
-                    { className: 'flex items-center gap-3 my-2' },
-                    React.createElement('div', { className: 'flex-1 h-px bg-white/10' }),
-                    React.createElement('span', { className: 'text-[10px] uppercase tracking-widest text-on-surface/30' }, 'or'),
-                    React.createElement('div', { className: 'flex-1 h-px bg-white/10' })
-                ),
-                React.createElement(
-                    'button',
-                    {
-                        onClick: () => onGuest?.(),
-                        className: CLS_BTN_GHOST + ' border border-white/10',
-                    },
-                    'Continue as Guest'
                 )
             );
 

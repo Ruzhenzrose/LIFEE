@@ -138,36 +138,20 @@ async def _observer_stream(sid: str):
         state.unsubscribe(q)
 
 # ---- Credits 系统（本地 SQLite 持久化，见 lifee/store.py） ----
-GUEST_CREDITS = 6
-REGISTER_BONUS = 7   # 注册奖励（叠加在 Guest 剩余余额上）
+SIGNUP_CREDITS = 7   # 注册即送
 REDEEM_CREDITS = 100
 
 # store 模块下方通过 _store 引用（见 /auth/* 端点块）
 
 
-def _initial_balance(uid: str) -> int:
-    return REGISTER_BONUS if uid.startswith("user:") else GUEST_CREDITS
-
-
 async def _get_balance(uid: str) -> int:
-    """获取余额，新用户按初始额度建档。SQLite 本地读写几乎不可能失败。"""
+    """获取余额。新用户按初始额度建档。SQLite 本地读写几乎不可能失败。"""
     from lifee import store as _s
     try:
-        return await asyncio.to_thread(_s.credits_ensure, uid, _initial_balance(uid))
+        return await asyncio.to_thread(_s.credits_ensure, uid, SIGNUP_CREDITS)
     except Exception as e:
         print(f"[_get_balance] {uid}: {type(e).__name__}: {e}")
-        return _initial_balance(uid)
-
-
-async def _migrate_balance(from_uid: str, to_uid: str):
-    """把 from_uid 的余额合并到 to_uid（IP → cookie / guest → user 迁移）。失败静默。"""
-    if not from_uid or from_uid == to_uid:
-        return
-    from lifee import store as _s
-    try:
-        await asyncio.to_thread(_s.credits_migrate, from_uid, to_uid)
-    except Exception:
-        return
+        return SIGNUP_CREDITS
 
 
 async def _deduct(uid: str, amount: int = 1) -> bool:
@@ -372,40 +356,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_COOKIE_NAME = "lifee_uid"
-_COOKIE_MAX_AGE = 365 * 24 * 3600  # 1 年
-
-
-def _get_ip_uid(request: Request) -> str:
-    """从 IP 生成 uid"""
-    ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or request.client.host
-    return f"ip:{ip}"
-
-
-async def _resolve_uid(request: Request) -> str:
-    """解析真实 uid：cookie 有效（有对应 user_credits 行）→ 用 cookie，否则打回 IP 池。"""
-    cookie_uid = request.cookies.get(_COOKIE_NAME, "")
-    if cookie_uid:
-        from lifee import store as _s
-        try:
-            bal = await asyncio.to_thread(_s.credits_get, cookie_uid)
-            if bal is not None:
-                return cookie_uid
-        except Exception:
-            return cookie_uid
-    return _get_ip_uid(request)
-
-
-def _set_uid_cookie(response: Response, uid: str):
-    """种 httponly cookie"""
-    response.set_cookie(
-        _COOKIE_NAME, uid,
-        max_age=_COOKIE_MAX_AGE,
-        httponly=True,
-        samesite="lax",
-    )
-
-
 class PersonaInput(BaseModel):
     id: str
     name: str
@@ -492,18 +442,11 @@ def _match_role(persona_id: str, persona_name: str) -> Optional[str]:
 
 
 @app.get("/")
-async def root(request: Request):
-    index = Path(__file__).parent.parent / "web" / "ui" / "index.html"
-    if index.exists():
-        resp = FileResponse(index)
-        if not request.cookies.get(_COOKIE_NAME):
-            # 新用户：种 cookie，把 IP 余额迁移到 cookie uid
-            new_uid = str(uuid4())
-            ip_uid = _get_ip_uid(request)  # "ip:x.x.x.x"
-            await _migrate_balance(ip_uid, new_uid)
-            _set_uid_cookie(resp, new_uid)
-        return resp
-    return {"status": "ok", "service": "LIFEE API"}
+async def root():
+    """根 URL 直接重定向到 /void/——旧的 web/ui 还有 guest 模式残留，
+    走 /void/ 才是当前生产入口。"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/void/", status_code=307)
 
 
 @app.get("/debug-env")
@@ -635,22 +578,8 @@ async def auth_signup(req: SignupRequest):
     return {"ok": True, "message": "Verification code sent", "user_id": user_id}
 
 
-async def _migrate_guest_to_user(request: Request, user_id: str) -> None:
-    """注册/登录后把 guest cookie 名下的 sessions 迁到 user 账号。
-    跨多次登录幂等——session.user_id 已经是 user_id 时再次迁移会迁 0 条。
-    余额合并由 _handle_decision 第一次写入 user 凭据时另外处理。"""
-    try:
-        guest_uid = await _resolve_uid(request)
-        if not guest_uid or guest_uid.startswith("user:"):
-            return
-        new_uid = f"user:{user_id}"
-        await asyncio.to_thread(_store.sessions_migrate_user, guest_uid, new_uid)
-    except Exception as e:
-        print(f"[auth] guest→user session migration failed: {e}")
-
-
 @app.post("/auth/verify-otp")
-async def auth_verify_otp(req: VerifyOtpRequest, request: Request, response: Response):
+async def auth_verify_otp(req: VerifyOtpRequest, response: Response):
     """校验 OTP 完成注册 → 发 JWT cookie。"""
     email = _normalize_email(req.email)
     code = (req.code or "").strip()
@@ -661,7 +590,6 @@ async def auth_verify_otp(req: VerifyOtpRequest, request: Request, response: Res
     if not user:
         return {"ok": False, "message": "User not found"}
     await asyncio.to_thread(_store.user_set_verified, user["id"])
-    await _migrate_guest_to_user(request, user["id"])
     _set_auth_cookie(response, user["id"], email)
     # 返完整 _user_payload 让前端拿到 user_metadata.name（从 users.display_name 列）。
     # 之前只返 {id, email}，导致重登/OTP 验证后侧栏显示 email 前缀而不是用户保存的昵称。
@@ -683,7 +611,7 @@ async def auth_resend_otp(req: ResendOtpRequest):
 
 
 @app.post("/auth/login")
-async def auth_login(req: LoginRequest, request: Request, response: Response):
+async def auth_login(req: LoginRequest, response: Response):
     email = _normalize_email(req.email)
     user = await asyncio.to_thread(_store.user_by_email, email)
     if not user:
@@ -695,7 +623,6 @@ async def auth_login(req: LoginRequest, request: Request, response: Response):
         code = await asyncio.to_thread(_store.otp_create, email, "signup", 600)
         await _auth.send_otp_email(email, code, "signup")
         return {"ok": False, "message": "Email not verified", "needs_verify": True}
-    await _migrate_guest_to_user(request, user["id"])
     _set_auth_cookie(response, user["id"], email)
     # 返完整 _user_payload 让前端拿到 user_metadata.name（从 users.display_name 列）。
     # 之前只返 {id, email}，导致重登/OTP 验证后侧栏显示 email 前缀而不是用户保存的昵称。
@@ -818,17 +745,15 @@ async def test_llm():
 # ---- Credits API ----
 
 @app.get("/credits")
-async def get_credits(request: Request, response: Response, userId: str = ""):
-    """查询余额（登录用户 → cookie → IP）"""
+async def get_credits(request: Request, userId: str = ""):
+    """查询余额。必须登录——userId 直接传或者从 auth cookie 解析。"""
     if userId:
         uid = f"user:{userId}"
     else:
-        uid = await _resolve_uid(request)
-        if not request.cookies.get(_COOKIE_NAME):
-            new_uid = str(uuid4())
-            await _migrate_balance(uid, new_uid)
-            _set_uid_cookie(response, new_uid)
-            uid = new_uid
+        u = _current_user(request)
+        if not u:
+            return {"balance": 0, "needsLogin": True}
+        uid = f"user:{u['id']}"
     return {"balance": await _get_balance(uid)}
 
 
@@ -839,15 +764,12 @@ class RedeemRequest(BaseModel):
 
 @app.post("/credits/redeem")
 async def redeem(req: RedeemRequest, request: Request):
-    """兑换码充值。Guest 不允许使用——cookie/IP 太脆弱，丢了找不回，
-    强制要求先注册（账号绑邮箱才安全）。"""
+    """兑换码充值。必须登录。"""
     if not req.userId:
-        return {
-            "ok": False,
-            "message": "Sign up first — guest credits are tied to this browser and may be lost.",
-            "needsSignup": True,
-            "balance": 0,
-        }
+        u = _current_user(request)
+        if not u:
+            return {"ok": False, "message": "Not signed in", "needsLogin": True, "balance": 0}
+        req.userId = u["id"]
     uid = f"user:{req.userId}"
     ok, msg = await _redeem(uid, req.code.strip().upper())
     return {"ok": ok, "message": msg, "balance": await _get_balance(uid)}
@@ -900,11 +822,11 @@ async def _patch_message_content(session_id: str, seq: int, content: str):
 
 
 async def _log_conversation(uid: str, role: str, persona_id: str, content_preview: str):
-    """对话日志（Guest 也记）。amount=0 不影响余额。"""
+    """对话日志。amount=0 不影响余额。"""
     preview = content_preview[:100].replace('\n', ' ')
     try:
         from lifee import store as _s
-        await asyncio.to_thread(_s.credits_ensure, uid, _initial_balance(uid))
+        await asyncio.to_thread(_s.credits_ensure, uid, SIGNUP_CREDITS)
         await asyncio.to_thread(_s.credits_log, uid, 0, f"msg:{role}:{persona_id}:{preview}")
     except Exception:
         pass
@@ -1874,24 +1796,18 @@ async def _handle_decision(req: DecisionRequest, request: Request):
     rm = RoleManager()
     provider = _get_provider()
 
-    # ---- Credits 检查（登录用户 → cookie → IP） ----
-    guest_uid = await _resolve_uid(request)  # Guest 的 cookie/IP uid
-    if req.userId:
-        uid = f"user:{req.userId}"  # 登录用户
-        # Guest→注册 余额合并：首次以注册身份登录时，把 Guest 剩余余额加到注册 bonus 上
-        try:
-            from lifee import store as _s
-            if await asyncio.to_thread(_s.credits_get, uid) is None:
-                guest_bal = await _get_balance(guest_uid)
-                merged = guest_bal + REGISTER_BONUS
-                await asyncio.to_thread(_s.credits_set, uid, merged)
-        except Exception:
-            pass
-    else:
-        uid = guest_uid
-    _need_set_cookie = not request.cookies.get(_COOKIE_NAME)
-    if _need_set_cookie:
-        _new_cookie_uid = str(uuid4())
+    # ---- 必须登录 ----
+    if not req.userId:
+        u = _current_user(request)
+        if not u:
+            return {
+                "messages": [{"personaId": "system", "text": "请先注册再开始对话。"}],
+                "options": [],
+                "needsLogin": True,
+            }
+        req.userId = u["id"]
+    uid = f"user:{req.userId}"
+
     speakers = len(req.personas)
     balance = await _get_balance(uid)
     if balance < speakers:
@@ -2018,7 +1934,7 @@ async def _handle_decision(req: DecisionRequest, request: Request):
 
             # SSE response only observes the task's broadcast — client disconnect
             # won't cancel the task.
-            resp = StreamingResponse(
+            return StreamingResponse(
                 _observer_stream(sid),
                 media_type="text/event-stream",
                 headers={
@@ -2026,10 +1942,6 @@ async def _handle_decision(req: DecisionRequest, request: Request):
                     "X-Accel-Buffering": "no",
                 },
             )
-            if _need_set_cookie:
-                await _migrate_balance(uid, _new_cookie_uid)
-                _set_uid_cookie(resp, _new_cookie_uid)
-            return resp
         else:
             # 非流式：收集所有回复后返回 JSON
             messages = []
@@ -2073,11 +1985,7 @@ async def _handle_decision(req: DecisionRequest, request: Request):
                         await _save_message(sid, chat_user_id, "assistant", msg["text"], persona_id=msg["personaId"], seq=seq)
 
             data = {"messages": messages, "options": options, "sessionId": sid, "balance": await _get_balance(uid)}
-            resp = JSONResponse(data)
-            if _need_set_cookie:
-                await _migrate_balance(uid, _new_cookie_uid)
-                _set_uid_cookie(resp, _new_cookie_uid)
-            return resp
+            return JSONResponse(data)
 
     finally:
         mod_module.SPEAKER_DELAY = original_delay

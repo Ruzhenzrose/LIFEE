@@ -488,7 +488,6 @@
             'nav.signIn':        { en: 'Sign In',       zh: '登录' },
             'nav.signOut':       { en: 'Log out',       zh: '登出' },
             'nav.credits':       { en: 'Credits',       zh: '额度' },
-            'nav.guest':         { en: 'Guest',         zh: '访客' },
             'nav.notSignedIn':   { en: 'Not signed in', zh: '未登录' },
             'nav.subtitle':      { en: 'Your Life Coach & Friend', zh: '人生导师与挚友' },
 
@@ -641,7 +640,6 @@
             'auth.verifying':    { en: 'Verifying…',     zh: '验证中…' },
             'auth.pleaseWait':   { en: 'Please wait…',   zh: '请稍候…' },
             'auth.or':           { en: 'or',             zh: '或' },
-            'auth.guest':        { en: 'Continue as Guest', zh: '以访客身份继续' },
             'auth.noAccount':    { en: 'No account?',    zh: '没有账户？' },
             'auth.signUp':       { en: 'Sign up',        zh: '注册' },
             'auth.haveAccount':  { en: 'Already have one?', zh: '已有账户？' },
@@ -1011,7 +1009,7 @@
         // ══════════════════════════════════════════════
         //  AUTH MODAL
         // ══════════════════════════════════════════════
-        function AuthModal({ isOpen, onClose, onAuthed, onGuest }) {
+        function AuthModal({ isOpen, onClose, onAuthed }) {
             const [mode, setMode] = useState('login');
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
@@ -1196,16 +1194,7 @@
                                 >${loading
                                     ? t('auth.pleaseWait')
                                     : mode === 'login' ? t('auth.signInBtn') : t('auth.verifyBtn')}</button>
-                                <div class="flex items-center gap-2 pt-1">
-                                    <div class="flex-1 h-px bg-outline/20"></div>
-                                    <span class="text-xs text-on-surface-variant">or</span>
-                                    <div class="flex-1 h-px bg-outline/20"></div>
-                                </div>
-                                <button
-                                    onClick=${() => { onGuest(); }}
-                                    class="w-full btn-ghost rounded-xl py-3 text-sm"
-                                >${t('auth.guest')}</button>
-                                <p class="text-center text-xs text-on-surface-variant pt-1">
+                                <p class="text-center text-xs text-on-surface-variant pt-3">
                                     ${mode === 'login'
                                         ? html`${t('auth.noAccount')} <button onClick=${() => { setMode('signup'); setMessage(''); setOtpSent(false); setOtpCode(''); }} class="text-primary hover:underline">${t('auth.signUp')}</button>`
                                         : html`${t('auth.haveAccount')} <button onClick=${() => { setMode('login'); setMessage(''); setOtpSent(false); setOtpCode(''); }} class="text-primary hover:underline">${t('auth.signInBtn')}</button>`}
@@ -1221,7 +1210,7 @@
         //  SIDEBAR
         // ══════════════════════════════════════════════
         function Sidebar({
-            view, setView, user, isGuest, onNewSession, chatSessions,
+            view, setView, user, onNewSession, chatSessions,
             setChatSessions, setSessionMessages, setSessionOptions,
             sessionId, setSessionId, setSelectedIds,
             personas, onLogin, onSignOut, userAvatar,
@@ -1311,9 +1300,9 @@
                 }
             };
 
-            const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || (isGuest ? 'Guest' : 'User');
+            const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
             const userInitial = (displayName || 'U')[0].toUpperCase();
-            const userEmail = user?.email || (isGuest ? 'guest@lifee.app' : 'user@example.com');
+            const userEmail = user?.email || 'user@example.com';
             // Credits — stale-while-revalidate. Boot from in-memory / localStorage
             // so the card shows a number on first paint; revalidate in background.
             const balanceCacheKey = (uid) => `lifee_balance_cache_${uid || 'anon'}`;
@@ -1339,17 +1328,12 @@
             }, [user?.id]);
 
             useEffect(() => {
-                if (!user && !isGuest) {
+                if (!user) {
                     setUserCredits('—');
                     return;
                 }
                 let cancelled = false;
-                // 直接 fetch /credits，不再用 __lifeePreload/localStorage 这套
-                // stale-while-revalidate——之前的多层缓存在登出再登的流程里有时
-                // 会卡住（preload 已被消费 + localStorage 旧 uid，导致 setUserCredits
-                // 不更新）。chat 页右上角同 endpoint 用单层 fetch 一直 OK，照搬。
-                const url = user?.id ? `/credits?userId=${encodeURIComponent(user.id)}` : '/credits';
-                fetch(url, { credentials: 'include' })
+                fetch(`/credits?userId=${encodeURIComponent(user.id)}`, { credentials: 'include' })
                     .then(r => r.ok ? r.json() : null)
                     .then(d => { if (!cancelled && d && typeof d.balance === 'number') applyBalance(d.balance); })
                     .catch(() => {});
@@ -1361,7 +1345,7 @@
                     cancelled = true;
                     window.removeEventListener('lifee:balance', onBalance);
                 };
-            }, [user?.id, isGuest, applyBalance]);
+            }, [user?.id, applyBalance]);
 
             // Collapsed rail (Claude-style): icons only — structure mirrors expanded sidebar so
             // every icon stays on the same horizontal line as its expanded counterpart.
@@ -1622,7 +1606,7 @@
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-bold text-white truncate">${displayName}</p>
                                 <p class="text-[10px] uppercase tracking-wider text-on-surface-variant/70">
-                                    ${(isGuest || user) ? t('nav.credits') + ': ' + userCredits : t('nav.notSignedIn')}
+                                    ${user ? t('nav.credits') + ': ' + userCredits : t('nav.notSignedIn')}
                                 </p>
                             </div>
                             <span
@@ -3840,7 +3824,6 @@
             // the first paint knows the user is signed in — skipping the flash
             // of "Not signed in" while supabase.auth.getSession() resolves.
             const [user, setUser] = useState(() => window.__lifeePreload?.user || null);
-            const [isGuest, setIsGuest] = useState(false);
             const [authOpen, setAuthOpen] = useState(false);
             const [redeemOpen, setRedeemOpen] = useState(false);
             const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -3988,7 +3971,6 @@
                 })();
                 const { data: sub } = supabaseClient.auth.onAuthStateChange((_event, session) => {
                     setUser(session?.user || null);
-                    if (session?.user) setIsGuest(false);
                 });
                 // In-app fast path: AccountModal fires this after auth.updateUser
                 // so the sidebar reflects the new display name without waiting
@@ -4172,7 +4154,6 @@
             const handleSignOut = useCallback(async () => {
                 await supabaseClient.auth.signOut();
                 setUser(null);
-                setIsGuest(false);
                 setView('home');
                 setAuthOpen(true);
             }, []);
@@ -4230,7 +4211,6 @@
                     buildContextBlock,
                     userAvatar,
                     user,
-                    isGuest,
                     onLogin: () => setAuthOpen(true),
                     initialMessages: sessionMessages,
                     initialOptions: sessionOptions,
@@ -4358,7 +4338,6 @@
                         view=${view}
                         setView=${setView}
                         user=${user}
-                        isGuest=${isGuest}
                         onNewSession=${handleNewSession}
                         chatSessions=${chatSessions}
                         setChatSessions=${setChatSessions}
@@ -4384,43 +4363,22 @@
                         <main class="flex-1 min-h-0 overflow-hidden flex flex-col">
                             <!-- Persistent ChatArena (stays mounted once activated) -->
                             <div class=${`flex-1 min-h-0 flex flex-col overflow-hidden ${view === 'debate' ? '' : 'hidden'}`}>
-                                ${(user || isGuest) && hasEnteredDebate ? renderChatArena() : null}
+                                ${user && hasEnteredDebate ? renderChatArena() : null}
                             </div>
                             <!-- Non-debate views -->
                             <div class=${`flex-1 min-h-0 overflow-y-auto no-scrollbar ${view !== 'debate' ? '' : 'hidden'}`}>
                               <div class="w-full max-w-[1400px] mx-auto h-full">
-                                ${(user || isGuest) ? renderContent() : html`
-                                    <div class="flex flex-col items-center justify-center min-h-[80vh] gap-8 animate-in px-4 text-center">
-                                        <div>
-                                            <h1 class="font-headline text-5xl font-bold wordmark mb-3">LIFEE</h1>
-                                            <p class="text-sm text-on-surface-variant">Your life coach and friend.</p>
-                                        </div>
-                                        <div class="glass-card iridescent-border rounded-3xl p-8 max-w-sm w-full">
-                                            <p class="text-sm text-on-surface-variant/70 mb-6 leading-relaxed">
-                                                Sign in to save sessions, manage personas, and unlock the full LIFEE experience.
-                                            </p>
-                                            <button
-                                                onClick=${() => setAuthOpen(true)}
-                                                class="w-full btn-gradient rounded-xl py-3 text-sm font-bold mb-3"
-                                            >Sign In / Sign Up</button>
-                                            <button
-                                                onClick=${() => setIsGuest(true)}
-                                                class="w-full btn-ghost rounded-xl py-3 text-sm"
-                                            >${t('auth.guest')}</button>
-                                        </div>
-                                    </div>
-                                `}
+                                ${user ? renderContent() : null}
                               </div>
                             </div>
                         </main>
                     </div>
 
-                    <!-- Auth modal -->
+                    <!-- Auth modal —— 没登录就强制打开，关不掉 -->
                     <${AuthModal}
-                        isOpen=${authOpen || (!user && !isGuest)}
+                        isOpen=${authOpen || !user}
                         onClose=${() => setAuthOpen(false)}
-                        onAuthed=${(u) => { setUser(u); setIsGuest(false); setAuthOpen(false); }}
-                        onGuest=${() => { setIsGuest(true); setAuthOpen(false); }}
+                        onAuthed=${(u) => { setUser(u); setAuthOpen(false); }}
                     />
 
                     <!-- Redeem modal (app-level so any view can trigger it) -->

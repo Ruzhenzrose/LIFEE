@@ -494,21 +494,6 @@ def session_soft_delete(session_id: str, user_id: str) -> bool:
     return c.total_changes > 0
 
 
-def sessions_migrate_user(old_uid: str, new_uid: str) -> int:
-    """把 old_uid 名下的所有 sessions 迁到 new_uid。返回迁移条数。
-    用于 guest → 注册 时把对话历史带过去。
-    chat_messages 是按 session_id 关联的，session 迁了就跟着走，不用单独动。
-    """
-    if not old_uid or not new_uid or old_uid == new_uid:
-        return 0
-    c = _get_conn()
-    with c:
-        cur = c.execute(
-            "UPDATE chat_sessions SET user_id=? WHERE user_id=?",
-            (new_uid, old_uid),
-        )
-        return cur.rowcount or 0
-
 
 # --------------------------------------------------------------------------- #
 # Chat messages
