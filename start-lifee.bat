@@ -1,14 +1,11 @@
 @echo off
-REM LIFEE one-click launcher (Windows)
-REM Double-click to start the FastAPI backend and open the web UI.
-REM Safe to re-run — kills any stale process on port 8000 first.
 setlocal
 cd /d "%~dp0"
 
 echo [LIFEE] Checking port 8000...
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8000 " ^| findstr "LISTENING"') do (
-    echo [LIFEE] Killing stale PID %%a holding port 8000
-    taskkill /F /PID %%a >/dev/null 2>&1
+    echo [LIFEE] Killing stale PID %%a
+    taskkill /F /PID %%a >nul 2>&1
 )
 
 if not exist data mkdir data >/dev/null 2>&1
@@ -34,13 +31,11 @@ REM --reload 用 StatReload 轮询，watchfiles 在 Python 3.13 上会段错误�
 start "LIFEE backend" cmd /k "cd /d %~dp0 && uvicorn lifee.api:app --host 127.0.0.1 --port 8000 --reload"
 
 echo [LIFEE] Waiting 3s for server to boot...
-timeout /t 3 /nobreak >/dev/null
+timeout /t 3 /nobreak >nul
 
 echo [LIFEE] Opening browser at http://localhost:8000/void/
 start "" "http://localhost:8000/void/"
 
-echo.
-echo [LIFEE] Running. Leave the backend window open while you use the site.
-echo [LIFEE] To shut down: close the backend window, or run stop-lifee.bat.
-timeout /t 2 /nobreak >/dev/null
+echo [LIFEE] Done. Close the backend window to stop.
+timeout /t 2 /nobreak >nul
 endlocal
