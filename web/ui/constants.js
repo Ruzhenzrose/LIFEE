@@ -74,12 +74,24 @@ var supabaseClient = (function () {
             } } } };
         },
         async updateUser(arg) {
-            // 只支持改名（data.name），其他字段忽略。改密码以后再做单独端点。
-            const name = (arg && arg.data && typeof arg.data.name !== 'undefined') ? (arg.data.name || '') : null;
-            if (name === null) return { data: { user: null }, error: null };
-            const r = await _json('/user/name', { method: 'PATCH', body: { name } });
-            if (r.__err) return { data: null, error: { message: 'Update failed' } };
-            const user = _userShape(r.user);
+            // 支持改名（data.name）和头像（data.avatar_url）。两者可单独或同时更新。
+            // 改密码以后再做单独端点。
+            const data = (arg && arg.data) || {};
+            const hasName   = typeof data.name !== 'undefined';
+            const hasAvatar = typeof data.avatar_url !== 'undefined';
+            if (!hasName && !hasAvatar) return { data: { user: null }, error: null };
+            let last = null;
+            if (hasName) {
+                const r = await _json('/user/name', { method: 'PATCH', body: { name: data.name || '' } });
+                if (r.__err) return { data: null, error: { message: 'Update failed' } };
+                last = r.user;
+            }
+            if (hasAvatar) {
+                const r = await _json('/user/avatar', { method: 'PATCH', body: { avatar_url: data.avatar_url || '' } });
+                if (r.__err) return { data: null, error: { message: 'Update failed' } };
+                last = r.user;
+            }
+            const user = _userShape(last);
             _emit('USER_UPDATED', { user: user });
             return { data: { user: user }, error: null };
         },

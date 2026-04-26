@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS users (
     email_verified INTEGER NOT NULL DEFAULT 0,
     user_memory TEXT NOT NULL DEFAULT '',
     display_name TEXT NOT NULL DEFAULT '',
+    avatar_url TEXT NOT NULL DEFAULT '',
     created_at INTEGER NOT NULL
 );
 
@@ -142,10 +143,12 @@ CREATE TABLE IF NOT EXISTS feedback (
 
 def _init_schema(c: sqlite3.Connection) -> None:
     c.executescript(_SCHEMA)
-    # 迁移：老 db 没有 display_name 列时补上
+    # 迁移：老 db 没有 display_name / avatar_url 列时补上
     cols = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
     if "display_name" not in cols:
         c.execute("ALTER TABLE users ADD COLUMN display_name TEXT NOT NULL DEFAULT ''")
+    if "avatar_url" not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''")
 
 
 def now() -> int:
@@ -204,6 +207,16 @@ def user_get_name(user_id: str) -> str:
 
 def user_set_name(user_id: str, name: str) -> None:
     _get_conn().execute("UPDATE users SET display_name=? WHERE id=?", ((name or "")[:80], user_id))
+
+
+def user_get_avatar(user_id: str) -> str:
+    r = _get_conn().execute("SELECT avatar_url FROM users WHERE id=?", (user_id,)).fetchone()
+    return (r["avatar_url"] if r else "") or ""
+
+
+def user_set_avatar(user_id: str, avatar_url: str) -> None:
+    # data:image base64 头像可能超大，截到 ~200KB（够 256x256 webp 高质量）
+    _get_conn().execute("UPDATE users SET avatar_url=? WHERE id=?", ((avatar_url or "")[:200_000], user_id))
 
 
 # --------------------------------------------------------------------------- #

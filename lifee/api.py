@@ -693,16 +693,26 @@ async def auth_logout(response: Response):
 
 
 def _user_payload(u: dict) -> dict:
-    """返回前端期望的 supabase-style user 形状（带 user_metadata.name）。"""
+    """返回前端期望的 supabase-style user 形状（带 user_metadata.name + avatar_url）。"""
     name = ""
+    avatar = ""
     try:
         name = _store.user_get_name(u["id"])
     except Exception:
         pass
+    try:
+        avatar = _store.user_get_avatar(u["id"])
+    except Exception:
+        pass
+    meta: dict = {}
+    if name:
+        meta["name"] = name
+    if avatar:
+        meta["avatar_url"] = avatar
     return {
         "id": u["id"],
         "email": u["email"],
-        "user_metadata": {"name": name} if name else {},
+        "user_metadata": meta,
     }
 
 
@@ -755,6 +765,20 @@ async def user_name_set(req: UserNameRequest, request: Request):
     if not u:
         return {"ok": False, "message": "not logged in"}
     await asyncio.to_thread(_store.user_set_name, u["id"], req.name or "")
+    return {"ok": True, "user": await asyncio.to_thread(_user_payload, u)}
+
+
+class UserAvatarRequest(BaseModel):
+    avatar_url: str = ""
+
+
+@app.patch("/user/avatar")
+async def user_avatar_set(req: UserAvatarRequest, request: Request):
+    """保存头像（data:image/* base64 或 URL）。空字符串表示清除。"""
+    u = _current_user(request)
+    if not u:
+        return {"ok": False, "message": "not logged in"}
+    await asyncio.to_thread(_store.user_set_avatar, u["id"], req.avatar_url or "")
     return {"ok": True, "user": await asyncio.to_thread(_user_payload, u)}
 
 

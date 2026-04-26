@@ -3137,8 +3137,13 @@
                 setStatus('');
                 try {
                     const url = await fileToDataURL(file);
+                    // 先即时更新 UI（localStorage 当即时缓存 + state 立即生效）
                     window.saveUserAvatar?.(url);
                     onUserAvatarChange?.(url);
+                    // 再写后端，跨设备同步
+                    try {
+                        await supabaseClient.auth.updateUser({ data: { avatar_url: url } });
+                    } catch (_) {}
                     setStatus('Avatar updated');
                 } catch (err) { setStatus(err?.message || 'Upload failed'); }
                 finally { e.target.value = ''; }
@@ -3149,6 +3154,8 @@
                 window.saveUserAvatar?.(null);
                 const next = window.rotateUserDefaultAvatar?.() || '✨';
                 onUserAvatarChange?.(next);
+                // 后端清空 avatar（next 是 emoji，不当照片存）
+                try { supabaseClient.auth.updateUser({ data: { avatar_url: '' } }); } catch (_) {}
                 setStatus('Switched to a random default icon');
             };
 
@@ -3820,6 +3827,14 @@
             const [userAvatar, setUserAvatar] = useState(() => {
                 try { return window.localStorage.getItem('lifee_user_avatar') || null; } catch (_) { return null; }
             });
+            // 用户登录/切换后，把后端 user_metadata.avatar_url 同步到 React state +
+            // localStorage 缓存。这样跨设备/跨 origin 第一次登录就能拿到头像。
+            useEffect(() => {
+                const remote = user?.user_metadata?.avatar_url || '';
+                if (remote && remote !== userAvatar) {
+                    setUserAvatar(remote);
+                }
+            }, [user?.id, user?.user_metadata?.avatar_url]);
             const [sessionId, setSessionId] = useState(null);
             const [sidebarOpen, setSidebarOpen] = useState(true);
             const [hasEnteredDebate, setHasEnteredDebate] = useState(false);
