@@ -441,11 +441,11 @@ def _match_role(persona_id: str, persona_name: str) -> Optional[str]:
 
 
 
-@app.get("/void")
-async def void_redirect():
-    """Redirect /void to /void/ (trailing slash required by StaticFiles)."""
+@app.get("/")
+async def root():
+    """Root redirects to /ui/ (blue-white UI). Use /void/ for the new UI."""
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/void/", status_code=307)
+    return RedirectResponse(url="/ui/", status_code=307)
 
 
 @app.get("/debug-env")
