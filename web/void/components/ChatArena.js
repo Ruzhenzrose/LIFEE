@@ -236,6 +236,8 @@
         setView,
         userAvatar,
         user,
+        isGuest,
+        onLogin,
         initialMessages = [],
         initialOptions = [],
         parentSessionId = "",
@@ -1999,36 +2001,50 @@
                         <div class="bg-surface-container border border-white/10 rounded-2xl p-8 max-w-sm mx-4 shadow-2xl text-center">
                             <div class="text-4xl mb-4">🔒</div>
                             <h3 class="text-lg font-bold mb-2 text-on-surface">Credits Used Up</h3>
-                            <p class="text-sm text-on-surface-variant/60 mb-6">Enter a redeem code to continue the conversation.</p>
-                            <input
-                                type="text"
-                                placeholder="Enter redeem code"
-                                value=${redeemCode}
-                                onChange=${(e) => setRedeemCode(e.target.value)}
-                                class="w-full px-4 py-3 bg-surface-container-high border border-white/10 rounded-xl mb-4 text-center text-lg tracking-widest uppercase text-on-surface focus:outline-none focus:border-primary/40"
-                            />
-                            <button
-                                onClick=${async () => {
-                                    const res = await fetch('/credits/redeem', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        credentials: 'include',
-                                        body: JSON.stringify({ code: redeemCode, userId: user?.id || '' }),
-                                    }).then(r => r.json());
-                                    if (res.ok) {
-                                        setCredits(res.balance);
-                                        setShowPaywall(false);
-                                        setRedeemCode('');
-                                    } else {
-                                        alert(res.message || 'Invalid code');
-                                    }
-                                }}
-                                class="w-full py-3 btn-gradient rounded-xl font-bold"
-                            >Redeem</button>
-                            <button
-                                onClick=${() => setShowPaywall(false)}
-                                class="mt-3 text-sm text-on-surface-variant/50 hover:text-primary transition-colors"
-                            >Cancel</button>
+                            ${isGuest && !user ? html`
+                                <p class="text-sm text-on-surface-variant/60 mb-6">
+                                    Sign up to keep this conversation, get free credits, and never lose your history.
+                                </p>
+                                <button
+                                    onClick=${() => { setShowPaywall(false); onLogin?.(); }}
+                                    class="w-full py-3 btn-gradient rounded-xl font-bold"
+                                >Sign up — get free credits</button>
+                                <button
+                                    onClick=${() => setShowPaywall(false)}
+                                    class="mt-3 text-sm text-on-surface-variant/50 hover:text-primary transition-colors"
+                                >Maybe later</button>
+                            ` : html`
+                                <p class="text-sm text-on-surface-variant/60 mb-6">Enter a redeem code to continue the conversation.</p>
+                                <input
+                                    type="text"
+                                    placeholder="Enter redeem code"
+                                    value=${redeemCode}
+                                    onChange=${(e) => setRedeemCode(e.target.value)}
+                                    class="w-full px-4 py-3 bg-surface-container-high border border-white/10 rounded-xl mb-4 text-center text-lg tracking-widest uppercase text-on-surface focus:outline-none focus:border-primary/40"
+                                />
+                                <button
+                                    onClick=${async () => {
+                                        const res = await fetch('/credits/redeem', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            credentials: 'include',
+                                            body: JSON.stringify({ code: redeemCode, userId: user?.id || '' }),
+                                        }).then(r => r.json());
+                                        if (res.ok) {
+                                            setCredits(res.balance);
+                                            setShowPaywall(false);
+                                            setRedeemCode('');
+                                        } else {
+                                            alert(res.message || 'Invalid code');
+                                        }
+                                    }}
+                                    class="w-full py-3 btn-gradient rounded-xl font-bold"
+                                >Redeem</button>
+                                <button
+                                    onClick=${() => setShowPaywall(false)}
+                                    class="mt-3 text-sm text-on-surface-variant/50 hover:text-primary transition-colors"
+                                >Cancel</button>
+                            `}
                         </div>
                     </div>
                 ` : null}

@@ -635,8 +635,22 @@ async def auth_signup(req: SignupRequest):
     return {"ok": True, "message": "Verification code sent", "user_id": user_id}
 
 
+async def _migrate_guest_to_user(request: Request, user_id: str) -> None:
+    """注册/登录后把 guest cookie 名下的 sessions 迁到 user 账号。
+    跨多次登录幂等——session.user_id 已经是 user_id 时再次迁移会迁 0 条。
+    余额合并由 _handle_decision 第一次写入 user 凭据时另外处理。"""
+    try:
+        guest_uid = await _resolve_uid(request)
+        if not guest_uid or guest_uid.startswith("user:"):
+            return
+        new_uid = f"user:{user_id}"
+        await asyncio.to_thread(_store.sessions_migrate_user, guest_uid, new_uid)
+    except Exception as e:
+        print(f"[auth] guest→user session migration failed: {e}")
+
+
 @app.post("/auth/verify-otp")
-async def auth_verify_otp(req: VerifyOtpRequest, response: Response):
+async def auth_verify_otp(req: VerifyOtpRequest, request: Request, response: Response):
     """校验 OTP 完成注册 → 发 JWT cookie。"""
     email = _normalize_email(req.email)
     code = (req.code or "").strip()
@@ -647,6 +661,7 @@ async def auth_verify_otp(req: VerifyOtpRequest, response: Response):
     if not user:
         return {"ok": False, "message": "User not found"}
     await asyncio.to_thread(_store.user_set_verified, user["id"])
+    await _migrate_guest_to_user(request, user["id"])
     _set_auth_cookie(response, user["id"], email)
     # 返完整 _user_payload 让前端拿到 user_metadata.name（从 users.display_name 列）。
     # 之前只返 {id, email}，导致重登/OTP 验证后侧栏显示 email 前缀而不是用户保存的昵称。
@@ -668,7 +683,7 @@ async def auth_resend_otp(req: ResendOtpRequest):
 
 
 @app.post("/auth/login")
-async def auth_login(req: LoginRequest, response: Response):
+async def auth_login(req: LoginRequest, request: Request, response: Response):
     email = _normalize_email(req.email)
     user = await asyncio.to_thread(_store.user_by_email, email)
     if not user:
@@ -680,6 +695,7 @@ async def auth_login(req: LoginRequest, response: Response):
         code = await asyncio.to_thread(_store.otp_create, email, "signup", 600)
         await _auth.send_otp_email(email, code, "signup")
         return {"ok": False, "message": "Email not verified", "needs_verify": True}
+    await _migrate_guest_to_user(request, user["id"])
     _set_auth_cookie(response, user["id"], email)
     # 返完整 _user_payload 让前端拿到 user_metadata.name（从 users.display_name 列）。
     # 之前只返 {id, email}，导致重登/OTP 验证后侧栏显示 email 前缀而不是用户保存的昵称。
@@ -823,13 +839,16 @@ class RedeemRequest(BaseModel):
 
 @app.post("/credits/redeem")
 async def redeem(req: RedeemRequest, request: Request):
-    """兑换码充值"""
-    if req.userId:
-        uid = f"user:{req.userId}"
-    else:
-        uid = await _resolve_uid(request)
-        if not uid:
-            return {"ok": False, "message": "no session", "balance": 0}
+    """兑换码充值。Guest 不允许使用——cookie/IP 太脆弱，丢了找不回，
+    强制要求先注册（账号绑邮箱才安全）。"""
+    if not req.userId:
+        return {
+            "ok": False,
+            "message": "Sign up first — guest credits are tied to this browser and may be lost.",
+            "needsSignup": True,
+            "balance": 0,
+        }
+    uid = f"user:{req.userId}"
     ok, msg = await _redeem(uid, req.code.strip().upper())
     return {"ok": ok, "message": msg, "balance": await _get_balance(uid)}
 

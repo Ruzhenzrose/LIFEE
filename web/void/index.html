@@ -634,7 +634,8 @@
             'auth.emailPh':      { en: 'Email address',  zh: '邮箱' },
             'auth.passwordPh':   { en: 'Password',       zh: '密码' },
             'auth.signInBtn':    { en: 'Sign In',        zh: '登录' },
-            'auth.sendCode':     { en: 'Send Verification Code', zh: '发送验证码' },
+            'auth.sendCode':     { en: 'Send Code',     zh: '发送验证码' },
+            'auth.resendIn':     { en: 'Resend in {s}s', zh: '{s} 秒后重发' },
             'auth.otpPh':        { en: '6-digit code',   zh: '6 位验证码' },
             'auth.verifyBtn':    { en: 'Verify & Sign Up', zh: '验证并注册' },
             'auth.verifying':    { en: 'Verifying…',     zh: '验证中…' },
@@ -1018,6 +1019,7 @@
             const [message, setMessage] = useState('');
             const [otpSent, setOtpSent] = useState(false);
             const [otpCode, setOtpCode] = useState('');
+            const [resendCooldown, setResendCooldown] = useState(0); // 发送验证码后的 60s 倒计时
             // Turnstile 已移除：humanVerified 默认 true，跳过验证码 UI 直接进入
             // 邮箱/密码表单。下面那个 widget useEffect 因为 humanVerified=true 早退出。
             const [humanVerified, setHumanVerified] = useState(true);
@@ -1033,8 +1035,15 @@
                     setPassword('');
                     setMessage('');
                     setLoading(false);
+                    setResendCooldown(0);
                 }
             }, [isOpen]);
+
+            useEffect(() => {
+                if (resendCooldown <= 0) return;
+                const t = setTimeout(() => setResendCooldown(s => s - 1), 1000);
+                return () => clearTimeout(t);
+            }, [resendCooldown]);
 
             useEffect(() => {
                 if (!isOpen || humanVerified) return;
@@ -1080,18 +1089,32 @@
                         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                         if (error) throw error;
                         if (data?.user) onAuthed(data.user);
-                    } else if (otpSent) {
+                    } else {
+                        // 注册：必须先点过"发送验证码"，OTP 才能被填
                         const { data, error } = await supabaseClient.auth.verifyOtp({ email, token: otpCode, type: 'signup' });
                         if (error) throw error;
                         if (data?.user) onAuthed(data.user);
-                    } else {
-                        const { error } = await supabaseClient.auth.signUp({ email, password });
-                        if (error) throw error;
-                        setOtpSent(true);
-                        setMessage('Verification code sent to your email.');
                     }
                 } catch (err) {
                     setMessage(err?.message || 'Operation failed. Please try again.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleSendCode = async () => {
+                setLoading(true);
+                setMessage('');
+                try {
+                    const { error } = await supabaseClient.auth.signUp({ email, password });
+                    if (error) throw error;
+                    setOtpSent(true);
+                    setResendCooldown(60);
+                    setMessage(window.__lifeeLocale === 'zh'
+                        ? '验证码已发送到邮箱'
+                        : 'Verification code sent to your email.');
+                } catch (err) {
+                    setMessage(err?.message || 'Failed to send code.');
                 } finally {
                     setLoading(false);
                 }
@@ -1119,50 +1142,60 @@
                                 <div ref=${turnstileRef}></div>
                                 ${message && html`<p class="text-xs text-tertiary/80 text-center">${message}</p>`}
                             </div>
-                        ` : otpSent ? html`
-                            <div class="space-y-4">
-                                <p class="text-sm text-on-surface-variant">${message || 'Enter the verification code sent to your email.'}</p>
-                                <input
-                                    type="text"
-                                    placeholder=${t('auth.otpPh')}
-                                    value=${otpCode}
-                                    onInput=${e => setOtpCode(e.target.value)}
-                                    class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
-                                />
-                                <button
-                                    onClick=${handleAuth}
-                                    disabled=${loading || !otpCode}
-                                    class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
-                                >${loading ? t('auth.verifying') : t('auth.verifyBtn')}</button>
-                                <p class="text-center text-xs text-on-surface-variant pt-1">
-                                    <button onClick=${() => { setOtpSent(false); setOtpCode(''); setMessage(''); setMode('login'); }} class="text-primary hover:underline">${t('auth.signInBtn')}</button>
-                                    <span class="mx-2">·</span>
-                                    <button onClick=${() => { onGuest(); }} class="text-on-surface-variant hover:underline">${t('auth.guest')}</button>
-                                </p>
-                            </div>
                         ` : html`
                             <div class="space-y-3">
-                                <input
-                                    type="email"
-                                    placeholder=${t('auth.emailPh')}
-                                    value=${email}
-                                    onInput=${e => setEmail(e.target.value)}
-                                    class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
-                                />
+                                ${mode === 'signup' ? html`
+                                    <div class="flex gap-2">
+                                        <input
+                                            type="email"
+                                            placeholder=${t('auth.emailPh')}
+                                            value=${email}
+                                            onInput=${e => setEmail(e.target.value)}
+                                            class="flex-1 min-w-0 bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
+                                        />
+                                        <button
+                                            onClick=${handleSendCode}
+                                            disabled=${loading || !email || !password || resendCooldown > 0}
+                                            class="shrink-0 px-3 rounded-xl btn-ghost text-xs whitespace-nowrap disabled:opacity-40"
+                                        >${resendCooldown > 0
+                                            ? t('auth.resendIn').replace('{s}', resendCooldown)
+                                            : t('auth.sendCode')}</button>
+                                    </div>
+                                ` : html`
+                                    <input
+                                        type="email"
+                                        placeholder=${t('auth.emailPh')}
+                                        value=${email}
+                                        onInput=${e => setEmail(e.target.value)}
+                                        class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
+                                    />
+                                `}
                                 <input
                                     type="password"
                                     placeholder=${t('auth.passwordPh')}
                                     value=${password}
                                     onInput=${e => setPassword(e.target.value)}
-                                    onKeyDown=${e => { if (e.key === 'Enter') handleAuth(); }}
+                                    onKeyDown=${e => { if (e.key === 'Enter' && mode === 'login') handleAuth(); }}
                                     class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
                                 />
+                                ${mode === 'signup' ? html`
+                                    <input
+                                        type="text"
+                                        placeholder=${t('auth.otpPh')}
+                                        value=${otpCode}
+                                        onInput=${e => setOtpCode(e.target.value)}
+                                        onKeyDown=${e => { if (e.key === 'Enter' && otpCode) handleAuth(); }}
+                                        class="w-full bg-surface-container border border-outline/30 text-on-surface rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 void-textarea"
+                                    />
+                                ` : null}
                                 ${message && html`<p class="text-xs text-tertiary/80">${message}</p>`}
                                 <button
                                     onClick=${handleAuth}
-                                    disabled=${loading || !email || !password}
+                                    disabled=${loading || !email || !password || (mode === 'signup' && !otpCode)}
                                     class="w-full btn-gradient rounded-xl py-3 text-sm disabled:opacity-40"
-                                >${loading ? t('auth.pleaseWait') : mode === 'login' ? t('auth.signInBtn') : t('auth.sendCode')}</button>
+                                >${loading
+                                    ? t('auth.pleaseWait')
+                                    : mode === 'login' ? t('auth.signInBtn') : t('auth.verifyBtn')}</button>
                                 <div class="flex items-center gap-2 pt-1">
                                     <div class="flex-1 h-px bg-outline/20"></div>
                                     <span class="text-xs text-on-surface-variant">or</span>
@@ -1174,8 +1207,8 @@
                                 >${t('auth.guest')}</button>
                                 <p class="text-center text-xs text-on-surface-variant pt-1">
                                     ${mode === 'login'
-                                        ? html`${t('auth.noAccount')} <button onClick=${() => { setMode('signup'); setMessage(''); }} class="text-primary hover:underline">${t('auth.signUp')}</button>`
-                                        : html`${t('auth.haveAccount')} <button onClick=${() => { setMode('login'); setMessage(''); setOtpSent(false); }} class="text-primary hover:underline">${t('auth.signInBtn')}</button>`}
+                                        ? html`${t('auth.noAccount')} <button onClick=${() => { setMode('signup'); setMessage(''); setOtpSent(false); setOtpCode(''); }} class="text-primary hover:underline">${t('auth.signUp')}</button>`
+                                        : html`${t('auth.haveAccount')} <button onClick=${() => { setMode('login'); setMessage(''); setOtpSent(false); setOtpCode(''); }} class="text-primary hover:underline">${t('auth.signInBtn')}</button>`}
                                 </p>
                             </div>
                         `}
@@ -1589,7 +1622,7 @@
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-bold text-white truncate">${displayName}</p>
                                 <p class="text-[10px] uppercase tracking-wider text-on-surface-variant/70">
-                                    ${isGuest ? t('nav.guest') : (user ? t('nav.credits') + ': ' + userCredits : t('nav.notSignedIn'))}
+                                    ${(isGuest || user) ? t('nav.credits') + ': ' + userCredits : t('nav.notSignedIn')}
                                 </p>
                             </div>
                             <span
@@ -2725,8 +2758,11 @@
                                     name: p.name || 'New Voice',
                                     role: p.role || 'GUIDE',
                                     category: 'CUSTOM',
-                                    avatar: p.avatar || '',          // 后端已不再返回 emoji
-                                    cover_url: p.cover_url || '',    // Wikipedia 真人照（找不到则空）
+                                    // Wikipedia 真人照同时塞进 avatar / cover_url，让 chat / sidebar
+                                    // 直接用 AvatarDisplay 渲染（http URL 走 <img> 分支）；
+                                    // 没找到照片就保持空白（AvatarDisplay 会画 User 占位）。
+                                    avatar: p.cover_url || '',
+                                    cover_url: p.cover_url || '',
                                     voice: typeof p.voice === 'string' ? p.voice : '',
                                     worldview: typeof p.voice === 'string' ? p.voice : '',
                                     soul: p.soul || '',
@@ -3892,7 +3928,14 @@
             });
             const [personaCatalogKnowledge, setPersonaCatalogKnowledge] = useState({});
             const [customPersonas, setCustomPersonas] = useState(() => {
-                try { return JSON.parse(window.localStorage.getItem('lifee_custom_personas') || '[]'); } catch (_) { return []; }
+                try {
+                    const raw = JSON.parse(window.localStorage.getItem('lifee_custom_personas') || '[]');
+                    // 老版本写入时 avatar 留空（emoji 已废），现在让它回填 cover_url，
+                    // 这样设置页 / 边栏 / 聊天都能看到 Wikipedia 真人图。
+                    return Array.isArray(raw) ? raw.map(p => (
+                        (!p.avatar && p.cover_url) ? { ...p, avatar: p.cover_url } : p
+                    )) : [];
+                } catch (_) { return []; }
             });
             useEffect(() => {
                 try { window.localStorage.setItem('lifee_custom_personas', JSON.stringify(customPersonas || [])); } catch (_) {}
@@ -4187,6 +4230,8 @@
                     buildContextBlock,
                     userAvatar,
                     user,
+                    isGuest,
+                    onLogin: () => setAuthOpen(true),
                     initialMessages: sessionMessages,
                     initialOptions: sessionOptions,
                     parentSessionId: sessionId,
