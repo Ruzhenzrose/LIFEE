@@ -2201,7 +2201,9 @@
             // Domain carousel — single row of square cards, horizontal scroll on overflow
             const activeDomains = DOMAIN_ORDER.filter(d => grouped[d].length > 0);
             const HEADER_H = 70;   // domain header row + gap + buffer
-            const ROW_H = 260;     // one row of 240px square cards + buffer
+            // 手机端卡片缩到 w-40 (160px)，正好能并排两张；ROW_H 同步压到 180。
+            const _isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+            const ROW_H = _isMobile ? 180 : 260;
             const sectionHFor = () => HEADER_H + ROW_H;
             const sectionHeights = activeDomains.map(() => sectionHFor());
 
@@ -2636,15 +2638,15 @@
                                     <button
                                         key=${m.id}
                                         onClick=${() => setMode(isActive ? null : m.id)}
-                                        class=${`text-left p-3 md:p-5 rounded-2xl border transition-all ${
+                                        class=${`text-left md:text-left text-center p-2 md:p-5 rounded-xl md:rounded-2xl border transition-all ${
                                             isActive
                                                 ? 'border-primary/70 bg-primary/5 shadow-sm shadow-primary/10'
                                                 : 'border-white/25 bg-surface-container/50 hover:border-white/40 hover:bg-surface-container'
                                         }`}
                                     >
-                                        <span class=${`material-symbols-outlined block mb-1.5 md:mb-3 transition-colors ${isActive ? 'text-primary' : 'text-on-surface/70'}`}
-                                              style=${{ fontSize: '20px' }}>${m.icon}</span>
-                                        <h3 class=${`font-headline text-sm md:text-lg font-bold mb-0 md:mb-1 leading-tight transition-colors ${isActive ? 'text-primary' : 'text-on-surface'}`}>${t('home.mode.' + m.id + '.title')}</h3>
+                                        <span class=${`material-symbols-outlined block mb-0.5 md:mb-3 transition-colors ${isActive ? 'text-primary' : 'text-on-surface/70'}`}
+                                              style=${{ fontSize: '16px' }}>${m.icon}</span>
+                                        <h3 class=${`font-headline text-[11px] md:text-lg font-bold mb-0 md:mb-1 leading-tight transition-colors ${isActive ? 'text-primary' : 'text-on-surface'}`}>${t('home.mode.' + m.id + '.title')}</h3>
                                         <p class="hidden md:block text-xs text-on-surface-variant/60 leading-relaxed">${t('home.mode.' + m.id + '.desc')}</p>
                                     </button>
                                 `;
@@ -2708,7 +2710,7 @@
                                                             if (previewId === p.id) toggleSelect(p.id);
                                                             else setPreviewId(p.id);
                                                         }}
-                                                        class=${`group shrink-0 cursor-pointer select-none w-56 h-56 rounded-xl overflow-hidden relative transition-all
+                                                        class=${`group shrink-0 cursor-pointer select-none w-40 h-40 md:w-56 md:h-56 rounded-xl overflow-hidden relative transition-all
                                                             ${isSel
                                                                 ? 'ring-2 ring-primary shadow-lg shadow-primary/20'
                                                                 : isPreview
