@@ -1843,7 +1843,7 @@
         // ══════════════════════════════════════════════
         //  HOME VIEW
         // ══════════════════════════════════════════════
-        function HomeView({ context, setContext, setView, personas, selectedIds, setSelectedIds, setPersonas, startFreshDebate, chatSessions, debateSettings, setDebateSettings }) {
+        function HomeView({ context, setContext, setView, personas, customPersonas, selectedIds, setSelectedIds, setPersonas, upsertCustomPersona, startFreshDebate, chatSessions, debateSettings, setDebateSettings }) {
             // Domain classification by persona id
             const DOMAIN_MAP = {
                 'krishnamurti': 'Philosophy', 'lacan': 'Philosophy', 'Simone de Beauvoir': 'Philosophy',
@@ -2713,17 +2713,18 @@
                         isOpen=${true}
                         onClose=${() => setRecommendOpen(false)}
                         situation=${stagedSituation || context.situation}
-                        personas=${personas}
+                        personas=${[...personas, ...((customPersonas || []).map(p => ({ ...p, isCustom: true })))]}
                         selectedIds=${selectedIds}
                         onConfirm=${({ ids, generatedPersonas: genP }) => {
-                            // Merge any AI-generated personas into the App-level personas
-                            // list so they render in the chat + sidebar consistently.
-                            if (genP && genP.length > 0 && typeof setPersonas === 'function') {
+                            // 选中的 AI 生成角色 → 持久化到 customPersonas（localStorage）
+                            // 这样下一次 /generate-personas 调用会把他们也带进 roster，
+                            // LLM 自然不会再次推荐同一个人。
+                            if (genP && genP.length > 0) {
                                 const normalized = genP.map(p => ({
                                     id: p.id || `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
                                     name: p.name || 'New Voice',
                                     role: p.role || 'GUIDE',
-                                    category: 'CREATIVE',
+                                    category: 'CUSTOM',
                                     avatar: p.avatar || '✨',
                                     voice: typeof p.voice === 'string' ? p.voice : '',
                                     worldview: typeof p.voice === 'string' ? p.voice : '',
@@ -2733,11 +2734,7 @@
                                     lifeContext: [],
                                     isGenerated: true,
                                 }));
-                                setPersonas(prev => {
-                                    const existing = new Set(prev.map(p => p.id));
-                                    const add = normalized.filter(p => !existing.has(p.id));
-                                    return add.length ? [...prev, ...add] : prev;
-                                });
+                                normalized.forEach(p => upsertCustomPersona?.(p));
                             }
                             setSelectedIds(Array.isArray(ids) ? ids : []);
                             setRecommendOpen(false);
@@ -4285,10 +4282,12 @@
                     context=${context}
                     setContext=${setContext}
                     setView=${setView}
-                    personas=${displayPersonas}
+                    personas=${displayPersonas.filter(p => !p.isCustom)}
+                    customPersonas=${customPersonas}
                     selectedIds=${selectedIds}
                     setSelectedIds=${setSelectedIds}
                     setPersonas=${setPersonas}
+                    upsertCustomPersona=${upsertCustomPersona}
                     startFreshDebate=${startFreshDebate}
                     chatSessions=${chatSessions}
                     debateSettings=${debateSettings}

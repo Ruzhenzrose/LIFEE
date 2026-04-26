@@ -1415,25 +1415,43 @@ class RecommendPersonasRequest(BaseModel):
     situation: str = ""
     periods: list = []
     persona_ids: list = []
+    personas: list = []  # 可选：[{id, name}]，比 persona_ids 给 LLM 提供更多信号
 
 
 @app.post("/recommend-personas")
 async def recommend_personas(req: RecommendPersonasRequest):
-    """根据用户情境，用 LLM 推荐最相关的 4 个角色 ID"""
+    """根据用户情境，用 LLM 推荐最相关的 2 个角色 ID"""
     if not req.situation.strip():
         return {"ids": []}
 
-    ids_list = ", ".join(req.persona_ids) if req.persona_ids else "(none)"
+    # 优先用 personas（带 name），退回到 persona_ids
+    valid_id_set: set
+    if req.personas:
+        pairs = []
+        seen_ids = []
+        for p in req.personas:
+            pid = str(p.get("id", "")).strip() if isinstance(p, dict) else ""
+            pname = str(p.get("name", "")).strip() if isinstance(p, dict) else ""
+            if not pid:
+                continue
+            seen_ids.append(pid)
+            pairs.append(f"- {pid} ({pname})" if pname else f"- {pid}")
+        listing = "\n".join(pairs) if pairs else "(none)"
+        valid_id_set = set(seen_ids)
+    else:
+        listing = "\n".join(f"- {pid}" for pid in req.persona_ids) if req.persona_ids else "(none)"
+        valid_id_set = set(req.persona_ids)
+
     periods_str = ", ".join(req.periods) if req.periods else "none"
 
     prompt = (
         "You are a persona recommendation engine for a life-coaching debate app.\n\n"
         f"User's situation:\n{req.situation.strip()}\n\n"
         f"Life context tags: {periods_str}\n\n"
-        f"Available persona IDs: {ids_list}\n\n"
+        f"Available personas (id and full name):\n{listing}\n\n"
         "Select exactly 2 persona IDs that would resonate most with this user's situation. "
         "Prioritise emotional fit first, then intellectual fit. "
-        "Only use IDs from the available list. "
+        "Only use IDs from the list above. "
         'Reply ONLY with a JSON array of exactly 2 items, e.g. ["buffett","krishnamurti"]'
     )
 
@@ -1451,7 +1469,7 @@ async def recommend_personas(req: RecommendPersonasRequest):
         if not isinstance(ids, list):
             raise ValueError("not a list")
         # keep only valid ids and cap at 2
-        valid = [i for i in ids if i in req.persona_ids][:2]
+        valid = [i for i in ids if i in valid_id_set][:2]
         return {"ids": valid}
     except Exception as e:
         print(f"[recommend-personas] failed: {e}")
@@ -1464,6 +1482,33 @@ class GeneratePersonasRequest(BaseModel):
     situation: str = ""
     periods: list = []
     existing_ids: list = []   # IDs already in the recommend list (avoid duplicates)
+    roster: list = []         # Full roster: [{id, name, role}] — to differentiate angles
+    use_web_search: bool = False  # 调用对话用的 web_search tool 取上下文（gemini-2.5-flash + googleSearch）
+
+
+async def _fetch_wikipedia_thumbnail(name: str) -> str:
+    """拉 Wikipedia REST summary 取人物缩略图。
+    没找到 / disambiguation / 网络错误 → 返回空字符串。
+    """
+    if not name or not name.strip():
+        return ""
+    try:
+        import httpx
+        import urllib.parse
+        title = urllib.parse.quote(name.strip().replace(" ", "_"))
+        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{title}"
+        async with httpx.AsyncClient(timeout=4.0, follow_redirects=True) as c:
+            r = await c.get(url, headers={"User-Agent": "LIFEE/1.0 (https://lifee.world)"})
+            if r.status_code != 200:
+                return ""
+            data = r.json()
+            # 跳过 disambiguation 页
+            if data.get("type") == "disambiguation":
+                return ""
+            thumb = (data.get("originalimage") or data.get("thumbnail") or {}).get("source", "")
+            return thumb or ""
+    except Exception:
+        return ""
 
 
 async def _gemini_grounding_search(query: str) -> str:
@@ -1528,16 +1573,52 @@ async def generate_new_personas(req: GeneratePersonasRequest):
     if not req.situation.strip():
         return {"personas": []}
 
-    # Optional web search context via Gemini Grounding (uses GOOGLE_SEARCH_API_KEY or GOOGLE_API_KEY)
+    # 复用对话里的 web_search tool（gemini-2.5-flash + googleSearch grounding）
     search_ctx = ""
-    google_key = os.getenv("GOOGLE_SEARCH_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip()
-    if google_key:
-        search_query = f"Who are the most insightful historical figures, thinkers or archetypes for someone dealing with: {req.situation[:120]}"
-        search_ctx = await _gemini_grounding_search(search_query)
+    if req.use_web_search:
+        try:
+            from lifee.tools import web_search as _ws
+            search_query = (
+                "Which real historical or public figures (philosophers, scientists, "
+                "writers, leaders, artists, etc.) are most relevant to someone dealing "
+                f"with the following situation? Briefly explain why each is relevant.\n\n"
+                f"Situation: {req.situation[:200]}"
+            )
+            search_ctx = await _ws.execute({"query": search_query})
+            # 截断，避免 prompt 过长
+            if len(search_ctx) > 1500:
+                search_ctx = search_ctx[:1500] + "..."
+        except Exception as e:
+            print(f"[generate-personas] web_search failed: {e}")
+            search_ctx = ""
 
     periods_str = ", ".join(req.periods) if req.periods else "none"
     existing_str = ", ".join(req.existing_ids) if req.existing_ids else "(none)"
     search_section = f"\n\nWeb search context:\n{search_ctx}" if search_ctx else ""
+
+    # Existing roster — let the LLM see what angles are already covered
+    if req.roster:
+        roster_lines = []
+        for r in req.roster:
+            if not isinstance(r, dict):
+                continue
+            rid = str(r.get("id", "")).strip()
+            rname = str(r.get("name", "")).strip()
+            rrole = str(r.get("role", "")).strip()
+            if not rid:
+                continue
+            if rname and rrole:
+                roster_lines.append(f"- {rid}: {rname} ({rrole})")
+            elif rname:
+                roster_lines.append(f"- {rid}: {rname}")
+            else:
+                roster_lines.append(f"- {rid}")
+        roster_section = (
+            "\n\nExisting roster (already available to the user — do NOT pick any of these people):\n"
+            + "\n".join(roster_lines)
+        ) if roster_lines else ""
+    else:
+        roster_section = ""
 
     prompt = (
         "You are a persona-generation engine for a life-coaching app called LIFEE. "
@@ -1545,28 +1626,28 @@ async def generate_new_personas(req: GeneratePersonasRequest):
         f"User situation: {req.situation.strip()}\n"
         f"Life context tags: {periods_str}\n"
         f"Already-recommended persona IDs (do NOT duplicate): {existing_str}"
+        f"{roster_section}"
         f"{search_section}\n\n"
-        "Generate exactly 2 persona definitions based on REAL, FAMOUS historical figures or well-known public figures "
+        "Generate exactly 2 persona definitions based on REAL historical figures or public figures "
         "(NOT fictional or archetypal characters). "
-        "Choose real people — philosophers, scientists, entrepreneurs, artists, writers, leaders, athletes — "
-        "whose actual life experience and known worldview would genuinely illuminate this situation. "
-        "Pick people who are somewhat surprising and non-obvious for this context, not the first cliché that comes to mind. "
+        "Pick the people whose actual life experience and known worldview would MOST genuinely "
+        "illuminate this user's situation — fame is irrelevant, fit is everything. "
+        "Do NOT pick anyone already in the existing roster above. "
         "Do NOT invent fictional archetypes. Every persona must be a real person with a verifiable life story.\n\n"
         "For each persona output:\n"
         "- id: slug like 'gen-firstname-lastname' (lowercase, hyphens, must start with 'gen-')\n"
         "- name: their real full name or most recognised name (max 25 chars)\n"
         "- role: a SHORT label in CAPS describing their identity/legacy (max 30 chars), "
         "e.g. 'STOIC EMPEROR', 'RENAISSANCE GENIUS', 'JAZZ INNOVATOR'\n"
-        "- avatar: single emoji that fits their essence\n"
         "- voice: one sentence written in their authentic voice, capturing how they actually spoke/wrote (max 120 chars)\n"
         "- soul: a 200-300 word system prompt. Start with 'You are [Name].' "
         "Describe their real biography highlights, core beliefs, signature thinking style, "
         "how they would approach the user's situation, and their speech mannerisms. "
         "Write in second person. Make them feel like the real person, not a caricature. "
         "They should respond in the same language as the user.\n\n"
-        'Reply ONLY with a JSON array of 2 objects with keys: id, name, role, avatar, voice, soul.\n'
+        'Reply ONLY with a JSON array of 2 objects with keys: id, name, role, voice, soul.\n'
         'Example: [{"id":"gen-simone-de-beauvoir","name":"Simone de Beauvoir","role":"EXISTENTIALIST WRITER",'
-        '"avatar":"✒️","voice":"One is not born a woman, but becomes one.","soul":"You are Simone de Beauvoir..."}]'
+        '"voice":"One is not born a woman, but becomes one.","soul":"You are Simone de Beauvoir..."}]'
     )
 
     try:
@@ -1601,10 +1682,22 @@ async def generate_new_personas(req: GeneratePersonasRequest):
                 "id": pid,
                 "name": str(p.get("name", pid))[:40],
                 "role": str(p.get("role", ""))[:40].upper(),
-                "avatar": str(p.get("avatar", "✨"))[:4],
+                "avatar": "",   # 不留 emoji，前端拿不到 cover_url 时显示空白
                 "voice": str(p.get("voice", ""))[:160],
                 "soul": soul,
+                "cover_url": "",
             })
+
+        # 并行查 Wikipedia 缩略图，找到就塞进 cover_url，找不到保持空白
+        if valid:
+            thumbs = await asyncio.gather(
+                *[_fetch_wikipedia_thumbnail(p["name"]) for p in valid],
+                return_exceptions=True,
+            )
+            for p, thumb in zip(valid, thumbs):
+                if isinstance(thumb, str) and thumb:
+                    p["cover_url"] = thumb
+
         return {"personas": valid}
     except Exception as e:
         import traceback; traceback.print_exc()

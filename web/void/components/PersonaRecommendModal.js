@@ -50,8 +50,10 @@
                         class="w-10 h-10 rounded-full bg-surface-container overflow-hidden shrink-0"
                         style=${{ backgroundImage: `url(${persona.cover_url})`, backgroundSize: 'cover', backgroundPosition: persona.cover_position || '50% 30%' }}
                     ></div>
+                ` : isGenerated ? html`
+                    <div class="w-10 h-10 rounded-full bg-secondary/15 shrink-0"></div>
                 ` : html`
-                    <div class=${`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${isGenerated ? 'bg-secondary/15' : 'bg-surface-container'}`}>
+                    <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-xl shrink-0">
                         ${persona.avatar || '?'}
                     </div>
                 `}
@@ -103,6 +105,7 @@
                     situation,
                     periods: [],
                     persona_ids: (personas || []).map(p => p.id),
+                    personas: (personas || []).map(p => ({ id: p.id, name: p.name || '' })),
                 })
             })
             .then(r => r.json())
@@ -128,12 +131,13 @@
             recPromise.then(recs => {
                 if (signal.aborted) return;
                 const existingIds = (recs || []).map(p => p.id);
+                const roster = (personas || []).map(p => ({ id: p.id, name: p.name || '', role: p.role || '' }));
                 return fetch('/generate-personas', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     signal,
-                    body: JSON.stringify({ situation, periods: [], existing_ids: existingIds }),
+                    body: JSON.stringify({ situation, periods: [], existing_ids: existingIds, roster }),
                 });
             })
             .then(r => r && !signal.aborted ? r.json() : null)
