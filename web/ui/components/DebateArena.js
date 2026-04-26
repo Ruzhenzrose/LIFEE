@@ -699,81 +699,81 @@ const DebateArena = ({
                             </div>
                         );
                     })()}
-                </div>
-
-                {/* Timeline overlay – appears when generated */}
-                {timelineData && (timelineData.option_a || timelineData.option_b) && (
-                    <div
-                        style={{
-                            position: 'absolute',
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            background: 'rgba(253,251,247,0.97)',
-                            borderTop: '1px solid #F0EDEA',
-                            overflowY: 'auto',
-                            maxHeight: '58%',
-                            padding: '16px',
-                            zIndex: 10,
-                            pointerEvents: 'auto',
-                        }}
-                        onMouseDown={e => e.stopPropagation()}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                            <span style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#1A1A1A', opacity: 0.4 }}>SCENARIO TIMELINES</span>
-                            <div style={{ display: 'flex', gap: 6 }}>
-                                <button
-                                    onClick={() => generatePlan(timelineData.option_a?.label || '')}
-                                    style={{ fontSize: 8, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '4px 10px', borderRadius: 99, border: '1px solid #98A6D4', color: '#98A6D4', background: 'white', cursor: 'pointer' }}
-                                >
-                                    Plan my first 30 days
-                                </button>
-                                <button onClick={() => setTimelineData(null)} style={{ width: 20, height: 20, borderRadius: '50%', border: '1px solid #E8E6E0', background: 'white', cursor: 'pointer', fontSize: 11, color: '#5D576B', opacity: 0.4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-                            </div>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                            {['option_a', 'option_b'].map((key, ki) => {
-                                const opt = timelineData[key];
-                                if (!opt) return null;
-                                const accentColors = ['#98A6D4', '#C6A6C1'];
-                                const bgColors = ['#F0F2FF', '#FBF0FF'];
-                                return (
-                                    <div key={key} style={{ background: 'white', borderRadius: 12, border: '1px solid #F0EDEA', overflow: 'hidden' }}>
-                                        <div style={{ padding: '8px 12px', background: bgColors[ki], borderBottom: '1px solid #F0EDEA', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', color: accentColors[ki] }}>
-                                                {String.fromCharCode(65 + ki)}. {opt.label || key}
-                                            </span>
-                                            <button
-                                                onClick={() => generatePlan(opt.label || '')}
-                                                style={{ fontSize: 7, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 99, border: `1px solid ${accentColors[ki]}`, color: accentColors[ki], background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                                            >Plan →</button>
-                                        </div>
-                                        <div style={{ padding: '8px 0' }}>
-                                            {(opt.phases || []).map((phase, pi) => (
-                                                <div key={pi} style={{ display: 'flex', gap: 8, padding: '5px 12px', borderBottom: pi < opt.phases.length - 1 ? '1px solid #F5F4F0' : 'none' }}>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                                                        <div style={{ width: 7, height: 7, borderRadius: '50%', background: pi === 0 ? accentColors[ki] : '#E8E6E0', border: `1.5px solid ${accentColors[ki]}`, marginTop: 2 }} />
-                                                        {pi < opt.phases.length - 1 && <div style={{ width: 1, flex: 1, background: '#E8E6E0', marginTop: 2 }} />}
-                                                    </div>
-                                                    <div style={{ minWidth: 0, paddingBottom: 4 }}>
-                                                        <div style={{ fontSize: 7, fontWeight: 700, color: accentColors[ki], letterSpacing: '0.1em', opacity: 0.7, marginBottom: 1 }}>{phase.period}</div>
-                                                        <div style={{ fontSize: 9, fontWeight: 900, color: '#1A1A1A', lineHeight: 1.4, marginBottom: 3 }}>{phase.title}</div>
-                                                        <div style={{ fontSize: 8, color: '#1A1A1A', opacity: 0.55, lineHeight: 1.5, marginBottom: 4 }}>{phase.description}</div>
-                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                                                            {(phase.tags || []).map((tag, ti) => (
-                                                                <span key={ti} style={{ fontSize: 7, padding: '1px 6px', borderRadius: 99, background: ti % 2 === 0 ? '#EBF0FF' : '#FFF0E8', color: ti % 2 === 0 ? '#6878D4' : '#C4824A', fontWeight: 700 }}>{tag}</span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
+                    {/* Timeline canvas cards – generated by /timeline and draggable on the board */}
+                    {timelineData && (timelineData.option_a || timelineData.option_b) && ['option_a', 'option_b'].map((key, ki) => {
+                        const opt = timelineData[key];
+                        if (!opt) return null;
+                        const cardId = ki === 0 ? '__timeline_a' : '__timeline_b';
+                        const fallback = ki === 0 ? { x: 18, y: 430, rotate: 0 } : { x: 288, y: 430, rotate: 0 };
+                        const pos = cardPositions[cardId] || fallback;
+                        const isDraggingTl = draggingCardId === cardId;
+                        const accentColors = ['#98A6D4', '#C6A6C1'];
+                        const bgColors = ['#F0F2FF', '#FBF0FF'];
+                        return (
+                            <div
+                                key={key}
+                                onMouseDown={(e) => handleCardMouseDown(e, cardId, pos.x, pos.y, pos.rotate || 0)}
+                                style={{
+                                    position: 'absolute',
+                                    left: pos.x,
+                                    top: pos.y,
+                                    width: 255,
+                                    borderRadius: 20,
+                                    background: '#FDFBF7',
+                                    border: `1px solid ${isDraggingTl ? accentColors[ki] : '#F0EDEA'}`,
+                                    boxShadow: isDraggingTl
+                                        ? '0 20px 60px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.10)'
+                                        : '0 8px 32px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
+                                    overflow: 'hidden',
+                                    pointerEvents: 'auto',
+                                    cursor: isDraggingTl ? 'grabbing' : 'grab',
+                                    zIndex: isDraggingTl ? 100 : 1,
+                                    userSelect: 'none',
+                                    transition: isDraggingTl ? 'box-shadow 0.1s, border-color 0.1s' : 'box-shadow 0.2s',
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderBottom: '1px solid #F0EDEA' }}>
+                                    <span style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#1A1A1A', opacity: 0.4 }}>SCENARIO TIMELINES</span>
+                                    <button
+                                        onMouseDown={e => e.stopPropagation()}
+                                        onClick={() => setTimelineData(null)}
+                                        style={{ width: 20, height: 20, borderRadius: '50%', border: '1px solid #E8E6E0', background: 'white', cursor: 'pointer', fontSize: 11, color: '#5D576B', opacity: 0.4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >✕</button>
+                                </div>
+                                <div style={{ padding: '8px 12px', background: bgColors[ki], borderBottom: '1px solid #F0EDEA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                    <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', color: accentColors[ki], overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {String.fromCharCode(65 + ki)}. {opt.label || key}
+                                    </span>
+                                    <button
+                                        onMouseDown={e => e.stopPropagation()}
+                                        onClick={() => generatePlan(opt.label || '')}
+                                        style={{ fontSize: 7, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 99, border: `1px solid ${accentColors[ki]}`, color: accentColors[ki], background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                    >Plan →</button>
+                                </div>
+                                <div style={{ padding: '8px 0' }}>
+                                    {(opt.phases || []).map((phase, pi) => (
+                                        <div key={pi} style={{ display: 'flex', gap: 8, padding: '5px 12px', borderBottom: pi < opt.phases.length - 1 ? '1px solid #F5F4F0' : 'none' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                                                <div style={{ width: 7, height: 7, borderRadius: '50%', background: pi === 0 ? accentColors[ki] : '#E8E6E0', border: `1.5px solid ${accentColors[ki]}`, marginTop: 2 }} />
+                                                {pi < opt.phases.length - 1 && <div style={{ width: 1, flex: 1, background: '#E8E6E0', marginTop: 2 }} />}
+                                            </div>
+                                            <div style={{ minWidth: 0, paddingBottom: 4 }}>
+                                                <div style={{ fontSize: 7, fontWeight: 700, color: accentColors[ki], letterSpacing: '0.1em', opacity: 0.7, marginBottom: 1 }}>{phase.period}</div>
+                                                <div style={{ fontSize: 9, fontWeight: 900, color: '#1A1A1A', lineHeight: 1.4, marginBottom: 3 }}>{phase.title}</div>
+                                                <div style={{ fontSize: 8, color: '#1A1A1A', opacity: 0.55, lineHeight: 1.5, marginBottom: 4 }}>{phase.description}</div>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                                                    {(phase.tags || []).map((tag, ti) => (
+                                                        <span key={ti} style={{ fontSize: 7, padding: '1px 6px', borderRadius: 99, background: ti % 2 === 0 ? '#EBF0FF' : '#FFF0E8', color: ti % 2 === 0 ? '#6878D4' : '#C4824A', fontWeight: 700 }}>{tag}</span>
+                                                    ))}
                                                 </div>
-                                            ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
 
                 {/* Empty hint */}
                 {history.length === 0 && (
