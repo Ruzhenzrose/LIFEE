@@ -696,7 +696,12 @@
                 const payload = {
                     situation: situation || (history.length > 0 ? '' : 'Start the internal debate.'),
                     userInput: cleanInput,
-                    personas: (selectedPersonas || []).map(p => ({ id: p.id, name: p.name })),
+                    personas: (selectedPersonas || []).map(p => ({
+                        id: p.id, name: p.name,
+                        soul: p.soul || '',           // gen-* 角色必须把 soul 带过去后端才能拼 system prompt
+                        knowledge: p.knowledge || '',
+                        emoji: p.avatar || '✨',
+                    })),
                     sessionId: sessionId,
                     userId: user?.id || '',
                     language: lang,

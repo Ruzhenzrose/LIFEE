@@ -1962,7 +1962,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         userInput: '',  // transcript already carries the last line
-                        personas: selectedPersonas.map(p => ({ id: p.id, name: p.name })),
+                        personas: selectedPersonas.map(p => ({
+                            id: p.id, name: p.name,
+                            soul: p.soul || '',
+                            knowledge: p.knowledge || '',
+                            emoji: p.avatar || '✨',
+                        })),
                         history,
                     }),
                 });
@@ -2725,7 +2730,8 @@
                                     name: p.name || 'New Voice',
                                     role: p.role || 'GUIDE',
                                     category: 'CUSTOM',
-                                    avatar: p.avatar || '✨',
+                                    avatar: p.avatar || '',          // 后端已不再返回 emoji
+                                    cover_url: p.cover_url || '',    // Wikipedia 真人照（找不到则空）
                                     voice: typeof p.voice === 'string' ? p.voice : '',
                                     worldview: typeof p.voice === 'string' ? p.voice : '',
                                     soul: p.soul || '',
