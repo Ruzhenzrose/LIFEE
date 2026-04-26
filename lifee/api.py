@@ -2154,6 +2154,8 @@ if _web_void_dir.exists():
 
 _web_ui_dir = Path(__file__).parent.parent / "web" / "ui"
 if _web_ui_dir.exists():
+    # 显式 /ui/ 路径，避免 / 重定向把 web/ui/ 给挡了——队友在 web/ui/ 上做的视觉改版可以直接预览。
+    app.mount("/ui", StaticFiles(directory=str(_web_ui_dir), html=True), name="ui-frontend")
     app.mount("/", StaticFiles(directory=str(_web_ui_dir), html=True), name="frontend")
 
 
