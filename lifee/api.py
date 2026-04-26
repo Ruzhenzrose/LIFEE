@@ -648,7 +648,9 @@ async def auth_verify_otp(req: VerifyOtpRequest, response: Response):
         return {"ok": False, "message": "User not found"}
     await asyncio.to_thread(_store.user_set_verified, user["id"])
     _set_auth_cookie(response, user["id"], email)
-    return {"ok": True, "user": {"id": user["id"], "email": email}}
+    # 返完整 _user_payload 让前端拿到 user_metadata.name（从 users.display_name 列）。
+    # 之前只返 {id, email}，导致重登/OTP 验证后侧栏显示 email 前缀而不是用户保存的昵称。
+    return {"ok": True, "user": _user_payload(user)}
 
 
 @app.post("/auth/resend-otp")
@@ -679,7 +681,9 @@ async def auth_login(req: LoginRequest, response: Response):
         await _auth.send_otp_email(email, code, "signup")
         return {"ok": False, "message": "Email not verified", "needs_verify": True}
     _set_auth_cookie(response, user["id"], email)
-    return {"ok": True, "user": {"id": user["id"], "email": email}}
+    # 返完整 _user_payload 让前端拿到 user_metadata.name（从 users.display_name 列）。
+    # 之前只返 {id, email}，导致重登/OTP 验证后侧栏显示 email 前缀而不是用户保存的昵称。
+    return {"ok": True, "user": _user_payload(user)}
 
 
 @app.post("/auth/logout")
