@@ -1362,6 +1362,9 @@
                     const userSlot = CANVAS_CARD_POSITIONS[voices.length % CANVAS_CARD_POSITIONS.length];
                     out['__user'] = { x: userSlot.x, y: userSlot.y, rotate: userSlot.rotate };
                 }
+                if (!out['__timeline']) {
+                    out['__timeline'] = { x: 18, y: 660 };
+                }
                 return out;
             });
             // Persist view changes (debounced naturally by React batching)
@@ -1648,81 +1651,88 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- ── A/B Timeline overlay ── -->
-                        ${timelineData && (timelineData.option_a || timelineData.option_b) ? html`
-                            <div
-                                class="absolute left-0 right-0 bottom-0 z-10 overflow-y-auto no-scrollbar bg-surface-container/95 backdrop-blur-xl border-t border-white/10 px-4 py-3"
-                                style=${{ maxHeight: '58%' }}
-                                onMouseDown=${(e) => e.stopPropagation()}
-                                onWheel=${(e) => e.stopPropagation()}
-                            >
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="text-[8px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60">${t('chat.timelinesHeader') || 'Scenario Timelines'}</span>
-                                    <div class="flex items-center gap-1.5">
-                                        <button
-                                            onClick=${() => generatePlan(timelineData.option_a?.label || '')}
-                                            class="no-shine text-[8px] font-black uppercase tracking-[0.12em] px-3 py-1 rounded-full border border-primary/60 text-primary hover:bg-primary/10 transition-all"
-                                        >${t('chat.plan30Btn') || 'Plan my first 30 days'}</button>
-                                        <button
-                                            onClick=${() => setTimelineData(null)}
-                                            class="w-5 h-5 rounded-full border border-white/15 text-on-surface-variant/50 hover:text-on-surface text-[11px] flex items-center justify-center"
-                                            title="Close"
-                                        >✕</button>
+                            <!-- ── A/B Timeline canvas card ── -->
+                            ${timelineData && (timelineData.option_a || timelineData.option_b) ? html`
+                                <div
+                                    class="absolute cursor-grab active:cursor-grabbing select-none"
+                                    style=${{
+                                        left: (cardPos['__timeline']?.x || 18) + 'px',
+                                        top: (cardPos['__timeline']?.y || 660) + 'px',
+                                        width: '542px',
+                                    }}
+                                    onMouseDown=${(e) => startCardDrag(e, '__timeline')}
+                                >
+                                    <div class="rounded-[20px] bg-surface-container border border-outline/15 shadow-xl shadow-black/40 overflow-hidden">
+                                        <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
+                                            <span class="text-[8px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60">${t('chat.timelinesHeader') || 'Scenario Timelines'}</span>
+                                            <div class="flex items-center gap-1.5">
+                                                <button
+                                                    onClick=${() => generatePlan(timelineData.option_a?.label || '')}
+                                                    onMouseDown=${(e) => e.stopPropagation()}
+                                                    class="no-shine text-[8px] font-black uppercase tracking-[0.12em] px-3 py-1 rounded-full border border-primary/60 text-primary hover:bg-primary/10 transition-all"
+                                                >${t('chat.plan30Btn') || 'Plan my first 30 days'}</button>
+                                                <button
+                                                    onClick=${() => setTimelineData(null)}
+                                                    onMouseDown=${(e) => e.stopPropagation()}
+                                                    class="w-5 h-5 rounded-full border border-white/15 text-on-surface-variant/50 hover:text-on-surface text-[11px] flex items-center justify-center"
+                                                    title="Close"
+                                                >✕</button>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-3 p-3">
+                                            ${['option_a', 'option_b'].map((key, ki) => {
+                                                const opt = timelineData[key];
+                                                if (!opt) return null;
+                                                const headerBg   = ki === 0 ? 'bg-primary/10'   : 'bg-secondary/10';
+                                                const labelText  = ki === 0 ? 'text-primary'    : 'text-secondary';
+                                                const labelBdr   = ki === 0 ? 'border-primary/60' : 'border-secondary/60';
+                                                const labelHover = ki === 0 ? 'hover:bg-primary/10' : 'hover:bg-secondary/10';
+                                                const dot        = ki === 0 ? 'bg-primary'       : 'bg-secondary';
+                                                const dotRing    = ki === 0 ? 'ring-primary/30'  : 'ring-secondary/30';
+                                                const periodText = ki === 0 ? 'text-primary/70'  : 'text-secondary/70';
+                                                return html`
+                                                    <div key=${key} class="rounded-xl bg-surface-container-high/60 border border-white/10 overflow-hidden">
+                                                        <div class=${`px-3 py-2 border-b border-white/10 flex items-center justify-between ${headerBg}`}>
+                                                            <span class=${`text-[9px] font-black uppercase tracking-[0.2em] ${labelText}`}>
+                                                                ${String.fromCharCode(65 + ki)}. ${opt.label || key}
+                                                            </span>
+                                                            <button
+                                                                onClick=${() => generatePlan(opt.label || '')}
+                                                                onMouseDown=${(e) => e.stopPropagation()}
+                                                                class=${`no-shine text-[7px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full border ${labelBdr} ${labelText} ${labelHover} transition-all whitespace-nowrap`}
+                                                            >Plan →</button>
+                                                        </div>
+                                                        <div class="py-2">
+                                                            ${(opt.phases || []).map((phase, pi) => html`
+                                                                <div key=${pi} class=${`flex gap-2 px-3 py-1.5 ${pi < opt.phases.length - 1 ? 'border-b border-white/5' : ''}`}>
+                                                                    <div class="flex flex-col items-center shrink-0 pt-0.5">
+                                                                        <div class=${`w-1.5 h-1.5 rounded-full ${dot} ring-2 ${dotRing}`}></div>
+                                                                        ${pi < opt.phases.length - 1 ? html`<div class="w-px flex-1 bg-white/10 mt-1"></div>` : null}
+                                                                    </div>
+                                                                    <div class="min-w-0 pb-1">
+                                                                        <div class=${`text-[7px] font-bold uppercase tracking-[0.1em] ${periodText} mb-0.5`}>${phase.period || ''}</div>
+                                                                        <div class="text-[9px] font-black text-on-surface leading-snug mb-0.5">${phase.title || ''}</div>
+                                                                        <div class="text-[8px] text-on-surface-variant/65 leading-relaxed mb-1">${phase.description || ''}</div>
+                                                                        ${(phase.tags || []).length > 0 ? html`
+                                                                            <div class="flex flex-wrap gap-1">
+                                                                                ${(phase.tags || []).map((tag, ti) => html`
+                                                                                    <span key=${ti} class=${`text-[7px] px-1.5 py-px rounded-full font-bold ${ti % 2 === 0 ? 'bg-primary/15 text-primary' : 'bg-secondary/15 text-secondary'}`}>${tag}</span>
+                                                                                `)}
+                                                                            </div>
+                                                                        ` : null}
+                                                                    </div>
+                                                                </div>
+                                                            `)}
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-2 gap-3">
-                                    ${['option_a', 'option_b'].map((key, ki) => {
-                                        const opt = timelineData[key];
-                                        if (!opt) return null;
-                                        // 静态分支——Tailwind JIT 不能展开 bg-${var}/N 形式的动态类
-                                        const headerBg   = ki === 0 ? 'bg-primary/10'   : 'bg-secondary/10';
-                                        const labelText  = ki === 0 ? 'text-primary'    : 'text-secondary';
-                                        const labelBdr   = ki === 0 ? 'border-primary/60' : 'border-secondary/60';
-                                        const labelHover = ki === 0 ? 'hover:bg-primary/10' : 'hover:bg-secondary/10';
-                                        const dot        = ki === 0 ? 'bg-primary'       : 'bg-secondary';
-                                        const dotRing    = ki === 0 ? 'ring-primary/30'  : 'ring-secondary/30';
-                                        const periodText = ki === 0 ? 'text-primary/70'  : 'text-secondary/70';
-                                        return html`
-                                            <div key=${key} class="rounded-xl bg-surface-container-high/60 border border-white/10 overflow-hidden">
-                                                <div class=${`px-3 py-2 border-b border-white/10 flex items-center justify-between ${headerBg}`}>
-                                                    <span class=${`text-[9px] font-black uppercase tracking-[0.2em] ${labelText}`}>
-                                                        ${String.fromCharCode(65 + ki)}. ${opt.label || key}
-                                                    </span>
-                                                    <button
-                                                        onClick=${() => generatePlan(opt.label || '')}
-                                                        class=${`no-shine text-[7px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full border ${labelBdr} ${labelText} ${labelHover} transition-all whitespace-nowrap`}
-                                                    >Plan →</button>
-                                                </div>
-                                                <div class="py-2">
-                                                    ${(opt.phases || []).map((phase, pi) => html`
-                                                        <div key=${pi} class=${`flex gap-2 px-3 py-1.5 ${pi < opt.phases.length - 1 ? 'border-b border-white/5' : ''}`}>
-                                                            <div class="flex flex-col items-center shrink-0 pt-0.5">
-                                                                <div class=${`w-1.5 h-1.5 rounded-full ${dot} ring-2 ${dotRing}`}></div>
-                                                                ${pi < opt.phases.length - 1 ? html`<div class="w-px flex-1 bg-white/10 mt-1"></div>` : null}
-                                                            </div>
-                                                            <div class="min-w-0 pb-1">
-                                                                <div class=${`text-[7px] font-bold uppercase tracking-[0.1em] ${periodText} mb-0.5`}>${phase.period || ''}</div>
-                                                                <div class="text-[9px] font-black text-on-surface leading-snug mb-0.5">${phase.title || ''}</div>
-                                                                <div class="text-[8px] text-on-surface-variant/65 leading-relaxed mb-1">${phase.description || ''}</div>
-                                                                ${(phase.tags || []).length > 0 ? html`
-                                                                    <div class="flex flex-wrap gap-1">
-                                                                        ${(phase.tags || []).map((tag, ti) => html`
-                                                                            <span key=${ti} class=${`text-[7px] px-1.5 py-px rounded-full font-bold ${ti % 2 === 0 ? 'bg-primary/15 text-primary' : 'bg-secondary/15 text-secondary'}`}>${tag}</span>
-                                                                        `)}
-                                                                    </div>
-                                                                ` : null}
-                                                            </div>
-                                                        </div>
-                                                    `)}
-                                                </div>
-                                            </div>
-                                        `;
-                                    })}
-                                </div>
-                            </div>
-                        ` : null}
+                            ` : null}
+                        </div>
                     </div>
                 </aside>
             `;
