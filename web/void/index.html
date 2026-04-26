@@ -1350,7 +1350,7 @@
                          same Material Symbols set so icon shapes match the expanded view -->
                     <nav class="flex-1 w-full flex flex-col items-center gap-2 mt-2">
                         <button
-                            onClick=${() => setView('home')}
+                            onClick=${() => onNewSession?.()}
                             class=${`w-9 h-9 rounded-lg flex items-center justify-center hover-warm-icon ${view === 'home' ? 'text-primary' : 'text-on-surface-variant/60'}`}
                             title=${t('nav.home')}
                         ><span class="material-symbols-outlined" style=${{ fontSize: '18px' }}>home</span></button>
@@ -1409,7 +1409,7 @@
                             ].map(item => html`
                                 <button
                                     key=${item.view}
-                                    onClick=${() => setView(item.view)}
+                                    onClick=${() => item.view === 'home' ? onNewSession?.() : setView(item.view)}
                                     class=${`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left
                                         ${view === item.view ? 'bg-primary/10 text-primary' : 'text-on-surface-variant/80 hover-warm'}`}
                                 >
