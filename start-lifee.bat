@@ -11,9 +11,23 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8000 " ^| findstr "LISTENIN
     taskkill /F /PID %%a >/dev/null 2>&1
 )
 
-REM 第一次启动会自动建空 DB（schema 在 lifee/store.py，首次连接时自建）。
-REM 想拉生产数据快照需要 SSH 权限，单独跑 sync-prod-db.bat（仅 admin 用）。
 if not exist data mkdir data >/dev/null 2>&1
+
+REM 尝试从生产拉一份最新快照；连不上就用本地 data\lifee.db（队友已手动放进去的）。
+REM 第一次且 data\lifee.db 也不存在时，FastAPI 会自动建空表，但此时没账号可登录。
+echo [LIFEE] Trying to sync prod DB (5s timeout)...
+ssh -o ConnectTimeout=5 -o BatchMode=yes root@47.83.184.82 "sqlite3 /opt/lifee/data/lifee.db \".backup /tmp/lifee_snapshot.db\"" >/dev/null 2>&1
+if errorlevel 1 (
+    echo [LIFEE] SSH unavailable, using existing data\lifee.db.
+) else (
+    del /q data\lifee.db-wal data\lifee.db-shm >/dev/null 2>&1
+    scp -o ConnectTimeout=10 -o BatchMode=yes root@47.83.184.82:/tmp/lifee_snapshot.db data\lifee.db >/dev/null 2>&1
+    if errorlevel 1 (
+        echo [LIFEE] scp failed, using existing data\lifee.db.
+    ) else (
+        echo [LIFEE] Synced fresh prod snapshot.
+    )
+)
 
 echo [LIFEE] Starting backend in a new window (uvicorn with --reload)...
 REM --reload 用 StatReload 轮询，watchfiles 在 Python 3.13 上会段错误，别 pip install。
