@@ -8,7 +8,8 @@ const AuthModal = ({ isOpen, onClose, onAuthed, onGuest }) => {
     const [message, setMessage] = useState('');
     const [otpSent, setOtpSent] = useState(false);
     const [otpCode, setOtpCode] = useState('');
-    const [humanVerified, setHumanVerified] = useState(false);
+    // Turnstile 已移除：默认 true，UI 直接进入登录/注册表单
+    const [humanVerified, setHumanVerified] = useState(true);
     const turnstileRef = useRef(null);
     const widgetIdRef = useRef(null);
 

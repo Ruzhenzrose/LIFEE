@@ -178,8 +178,9 @@
         window.dispatchEvent(new Event('pretext-ready'));
     </script>
 
-    <!-- Turnstile CAPTCHA -->
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+    <!-- Turnstile CAPTCHA 移除：challenges.cloudflare.com 在国内偶发不可达，
+         国内用户加载不出 widget 直接卡在登录页。注册流程已有邮箱 OTP，bot
+         需要拿到真实邮箱并完成验证码 - 重复防护意义不大。 -->
 
     <!-- Shared modules from web/ui/ -->
     <script src="/constants.js"></script>
@@ -1017,7 +1018,9 @@
             const [message, setMessage] = useState('');
             const [otpSent, setOtpSent] = useState(false);
             const [otpCode, setOtpCode] = useState('');
-            const [humanVerified, setHumanVerified] = useState(false);
+            // Turnstile 已移除：humanVerified 默认 true，跳过验证码 UI 直接进入
+            // 邮箱/密码表单。下面那个 widget useEffect 因为 humanVerified=true 早退出。
+            const [humanVerified, setHumanVerified] = useState(true);
             const turnstileRef = useRef(null);
             const widgetIdRef = useRef(null);
 
