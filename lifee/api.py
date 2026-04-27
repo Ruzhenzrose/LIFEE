@@ -1182,6 +1182,95 @@ class TimelineRequest(BaseModel):
     situation: str = ""
 
 
+class TimelineNodeRequest(BaseModel):
+    sessionId: str = ""
+    messages: list = []
+    language: str = "Chinese"
+    situation: str = ""
+    choice: str = ""
+    branch: str = "A"
+    branchLabel: str = ""
+    step: int = 1
+    timeline: list = []
+
+
+@app.post("/timeline-node")
+async def generate_timeline_node(req: TimelineNodeRequest):
+    """根据用户本轮 A/B 选择生成一个时间节点。"""
+    choice = (req.choice or "").strip()
+    if not choice:
+        return {"node": {}, "error": "choice is required"}
+
+    msgs = req.messages
+    if req.sessionId and not msgs:
+        try:
+            from lifee import store as _s
+            db_msgs = await asyncio.to_thread(_s.msg_list, req.sessionId)
+            msgs = [{"personaId": m.get("persona_id") or "", "text": m.get("content", "")} for m in db_msgs]
+        except Exception:
+            pass
+
+    history = []
+    for m in (msgs or [])[-14:]:
+        pid = m.get("personaId", "")
+        txt = (m.get("text", "") or "").strip()
+        if not txt or pid in ("system", "lifee-followup", "moderator"):
+            continue
+        history.append(f"{pid}: {txt[:280]}")
+
+    prior_nodes = []
+    for i, node in enumerate((req.timeline or [])[-6:], start=1):
+        prior_nodes.append(
+            f"{i}. Branch {node.get('branch', '')}: {node.get('choice', '')} -> {node.get('title', '')}: {node.get('description', '')}"
+        )
+
+    prompt = f"""You generate ONE timeline node for an interactive life-path conversation.
+
+The user is choosing between A/B options. After each answer, create only the next node for the branch they chose. Do not generate a full timeline.
+
+Situation: {req.situation or 'Major life decision'}
+Chosen branch: {req.branch}
+Branch label: {req.branchLabel or req.branch}
+User choice: {choice}
+Step number: {req.step}
+
+Recent conversation:
+{chr(10).join(history) or '(none)'}
+
+Existing timeline nodes:
+{chr(10).join(prior_nodes) or '(none)'}
+
+Return exactly one concrete node in {req.language}. Make it feel like a consequence of the user's latest choice and specific to the situation.
+
+Reply ONLY in this JSON format:
+{{
+  "period": "Node {req.step}",
+  "title": "Short node title",
+  "description": "One specific sentence about what happens next because of this choice.",
+  "tags": ["tag1", "tag2"]
+}}"""
+
+    try:
+        provider = _get_provider()
+        from lifee.providers.base import Message, MessageRole
+        messages_llm = [Message(role=MessageRole.USER, content=prompt)]
+        chunks = []
+        async for chunk in provider.stream(messages=messages_llm, max_tokens=500, temperature=0.35):
+            chunks.append(chunk)
+        text = "".join(chunks).strip()
+        import json as _json
+        if '```' in text:
+            text = text.split('```')[1].replace('json', '', 1).strip()
+        node = _json.loads(text)
+        if not isinstance(node.get("tags"), list):
+            node["tags"] = []
+        return {"node": node}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"node": {}, "error": str(e)}
+
+
 @app.post("/timeline")
 async def generate_timeline(req: TimelineRequest):
     """为A/B辩论生成两条人生时间线"""

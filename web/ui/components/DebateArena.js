@@ -39,15 +39,20 @@ const DebateArena = ({
     const [showPaywall, setShowPaywall] = useState(false);
     const [redeemCode, setRedeemCode] = useState('');
     const [followUpMode, setFollowUpMode] = useState(false);
+    const [followUpAnswers, setFollowUpAnswers] = useState({});
+    const [decisionNodes, setDecisionNodes] = useState([]);
     const [webSearchMode, setWebSearchMode] = useState(false);
     const [maxSpeakers, setMaxSpeakers] = useState(0);
     const [showSummaryPanel, setShowSummaryPanel] = useState(false);
     const [summaryData, setSummaryData] = useState({});
     const [summaryLoading, setSummaryLoading] = useState(false);
     const summaryAtCountRef = useRef(0);
-    const [timelineData, setTimelineData] = useState(null);
-    const [timelineLoading, setTimelineLoading] = useState(false);
     const [timelineError, setTimelineError] = useState('');
+    const [timelineMode, setTimelineMode] = useState(false);
+    const [timelineNodes, setTimelineNodes] = useState([]);
+    const [timelineBranchLabels, setTimelineBranchLabels] = useState({ A: '', B: '' });
+    const [timelineNodeLoading, setTimelineNodeLoading] = useState(false);
+    const [userNodeExpanded, setUserNodeExpanded] = useState(false);
     const [showPlanModal, setShowPlanModal] = useState(false);
     const [planData, setPlanData] = useState(null);
     const [planLoading, setPlanLoading] = useState(false);
@@ -168,6 +173,7 @@ const DebateArena = ({
         setHistory(initialMessages || []);
         setOptions([]);
         setSummaryData({});
+        setDecisionNodes([]);
         autoStartedRef.current = false;
     }, [parentSessionId]);
 
@@ -241,22 +247,220 @@ const DebateArena = ({
     // A/B debate detection: 2 personas OR binary options
     const isABDebate = debatePersonas.length === 2 || options.length === 2;
 
-    const generateTimeline = async () => {
-        if (timelineLoading) return;
-        setTimelineLoading(true);
-        setTimelineData(null);
+    const cleanBranchLabel = (text) => {
+        const cleaned = (text || '')
+            .replace(/^[\s"'“”‘’`]+|[\s"'“”‘’`]+$/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        return cleaned.length > 42 ? `${cleaned.slice(0, 39)}...` : cleaned;
+    };
+
+    const extractExplicitBranchLabels = (text) => {
+        const src = (text || '').replace(/\s+/g, ' ').trim();
+        if (!src) return null;
+        const patterns = [
+            /(?:between|choose between|torn between)\s+(.{2,70}?)\s+(?:and|or|vs\.?|versus)\s+(.{2,70}?)(?:[.?!,;，。！？；]|$)/i,
+            /(?:one is|one offer is|option a is)\s+(.{2,70}?)\s+(?:and|while|,?\s*the other is|option b is)\s+(.{2,70}?)(?:[.?!,;，。！？；]|$)/i,
+            /(?:在|纠结|选择|考虑)?\s*(.{2,50}?)\s*(?:还是|和|与|或|vs\.?|VS|versus)\s*(.{2,50}?)(?:[，。！？；,.?!;]|$)/
+        ];
+        for (const pattern of patterns) {
+            const match = src.match(pattern);
+            if (!match) continue;
+            const a = cleanBranchLabel(match[1]);
+            const b = cleanBranchLabel(match[2]);
+            if (a && b && a !== b) return { A: a, B: b };
+        }
+        return null;
+    };
+
+    const getInferredBranchLabels = () => {
+        if (options.length === 2) {
+            const a = cleanBranchLabel(options[0]);
+            const b = cleanBranchLabel(options[1]);
+            if (a && b) return { A: a, B: b };
+        }
+        const recentUserText = history
+            .filter(m => m.personaId === 'user')
+            .slice(-3)
+            .map(m => m.text || '')
+            .join(' ');
+        return extractExplicitBranchLabels(`${context.situation || ''} ${recentUserText}`) || { A: '', B: '' };
+    };
+
+    const ensureTimelineBranchLabels = () => {
+        const inferred = getInferredBranchLabels();
+        setTimelineBranchLabels(prev => ({
+            A: prev.A || inferred.A || '',
+            B: prev.B || inferred.B || ''
+        }));
+        return {
+            A: timelineBranchLabels.A || inferred.A || '',
+            B: timelineBranchLabels.B || inferred.B || ''
+        };
+    };
+
+    const isQuestionOption = (text) => {
+        const s = (text || '').trim();
+        if (!s) return false;
+        if (/[?？]\s*$/.test(s)) return true;
+        return /(为什么|为何|怎么|怎样|如何|哪个|哪一个|什么|多少|是否|是不是|能不能|可不可以|要不要|该不该|会不会|有没有|你觉得|你认为|你会|what|why|how|which|when|where|should|would|could|do you|are you|can you|is it)\b/i.test(s);
+    };
+
+    const inferDecisionIntent = (choiceText) => {
+        const s = (choiceText || '').trim();
+        const wants = [];
+        if (/(稳定|安全|保障|确定|可控|风险低|保底|踏实|成熟)/i.test(s)) wants.push('确定性和风险可控');
+        if (/(钱|收入|薪|现金|短期|回报|涨薪|待遇|预算)/i.test(s)) wants.push('更快看到现实回报');
+        if (/(成长|潜力|长期|未来|空间|上升|职业发展|履历)/i.test(s)) wants.push('长期成长空间');
+        if (/(团队|负责人|执行|落地|推进|协作|资源|组织)/i.test(s)) wants.push('可靠的团队与执行环境');
+        if (/(技术|数据|模型|产品|硬件|研发|壁垒|核心)/i.test(s)) wants.push('更硬的能力积累和护城河');
+        if (/(自由|自主|创业|主导|掌控|独立|创造)/i.test(s)) wants.push('更高的自主权和创造空间');
+        if (/(影响|意义|价值|使命|用户|医疗|公益|改变)/i.test(s)) wants.push('更强的意义感和外部影响');
+        if (/(学习|经验|见识|试错|探索|挑战)/i.test(s)) wants.push('学习密度和探索机会');
+
+        const unique = [...new Set(wants)].slice(0, 3);
+        if (unique.length === 0) return '这个选择显示你正在把模糊的偏好变成可行动的判断。';
+        return `这个选择显示你更想要：${unique.join('、')}。`;
+    };
+
+    const enterTimelineMode = () => {
+        ensureTimelineBranchLabels();
+        setTimelineMode(true);
+        setShowCanvas(true);
+        setTimelineError('');
+    };
+
+    const generateTimelineNode = async (choiceText, branchIndex = 0, labelOverride = null, timelineOverride = null) => {
+        if (timelineNodeLoading) return;
+        const cleanChoice = (choiceText || '').trim();
+        if (!cleanChoice) return;
+        setTimelineNodeLoading(true);
+        setTimelineError('');
+        const branch = branchIndex === 1 ? 'B' : 'A';
+        const branchLabels = labelOverride || ensureTimelineBranchLabels();
+        const timelineHistory = Array.isArray(timelineOverride) ? timelineOverride : timelineNodes;
+        try {
+            const payload = JSON.stringify({
+                sessionId,
+                messages: history
+                    .filter(m => m.personaId !== 'system' && m.personaId !== 'lifee-followup')
+                    .slice(-12)
+                    .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 240) })),
+                language: language || 'Chinese',
+                situation: context.situation || '',
+                choice: cleanChoice,
+                branch,
+                branchLabel: branchLabels[branch] || cleanChoice,
+                step: timelineHistory.length + 1,
+                timeline: timelineHistory.map(n => ({
+                    branch: n.branch,
+                    choice: n.choiceText,
+                    title: n.title,
+                    description: n.description
+                }))
+            });
+            const r = await window.fetch('/timeline-node', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload,
+            });
+            if (!r.ok) {
+                const txt = await r.text();
+                throw new Error(`Server ${r.status}: ${txt.slice(0, 100)}`);
+            }
+            const res = await r.json();
+            if (res?.error) throw new Error(res.error);
+            const node = res?.node || {};
+            setTimelineNodes(prev => ([
+                ...prev,
+                {
+                    id: `timeline-${Date.now()}-${prev.length}`,
+                    branch,
+                    branchLabel: branchLabels[branch] || '',
+                    choiceText: cleanChoice,
+                    period: node.period || `Node ${prev.length + 1}`,
+                    title: node.title || cleanChoice,
+                    description: node.description || `You chose: ${cleanChoice}`,
+                    tags: Array.isArray(node.tags) ? node.tags.slice(0, 3) : []
+                }
+            ]));
+        } catch (e) {
+            console.error('Timeline node error', e);
+            setTimelineNodes(prev => ([
+                ...prev,
+                {
+                    id: `timeline-${Date.now()}-${prev.length}`,
+                    branch,
+                    branchLabel: branchLabels[branch] || '',
+                    choiceText: cleanChoice,
+                    period: `Node ${prev.length + 1}`,
+                    title: cleanChoice,
+                    description: 'This choice has been added to your path.',
+                    tags: ['choice']
+                }
+            ]));
+            setTimelineError(e?.message || 'Timeline node generation failed');
+            setTimeout(() => setTimelineError(''), 4000);
+        } finally {
+            setTimelineNodeLoading(false);
+        }
+    };
+
+    const handleOptionChoice = async (opt, index = 0) => {
+        const cleanChoice = (opt || '').trim();
+        if (!cleanChoice) return;
+        if (isQuestionOption(cleanChoice)) {
+            await runRound(opt);
+            return;
+        }
+        const branch = index === 1 ? 'B' : 'A';
+        const labels = ensureTimelineBranchLabels();
+        const alternatives = options.filter((_, i) => i !== index).map(x => cleanBranchLabel(x)).filter(Boolean);
+        setDecisionNodes(prev => ([
+            ...prev,
+            {
+                id: `decision-${Date.now()}-${prev.length}`,
+                branch,
+                choice: cleanChoice,
+                branchLabel: labels[branch] || cleanChoice,
+                insight: inferDecisionIntent(cleanChoice),
+                alternatives,
+                createdAt: Date.now()
+            }
+        ]));
+        setShowCanvas(true);
+        await runRound(opt);
+    };
+
+    const generateDecisionTimeline = async (node) => {
+        if (!node?.choice || timelineNodeLoading) return;
+        const alternative = node.alternatives?.[0] || (node.branch === 'A' ? timelineBranchLabels.B : timelineBranchLabels.A) || 'Alternative path';
+        const labels = { A: node.choice, B: alternative };
+        setTimelineNodeLoading(true);
+        setTimelineBranchLabels(labels);
+        setTimelineNodes([]);
+        setTimelineMode(true);
+        setShowCanvas(true);
         setTimelineError('');
         try {
-            const payload = sessionId
-                ? JSON.stringify({ sessionId, language: language || 'Chinese', situation: context.situation || '' })
-                : JSON.stringify({
-                    messages: history
-                        .filter(m => m.personaId !== 'system' && m.personaId !== 'lifee-followup')
-                        .slice(-12)
-                        .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 200) })),
-                    language: language || 'Chinese',
-                    situation: context.situation || '',
-                });
+            const payload = JSON.stringify({
+                messages: [
+                    {
+                        personaId: 'option_a',
+                        text: [
+                            `Path A decision: ${node.choice}`,
+                            node.insight ? `What this suggests the user wants: ${node.insight}` : '',
+                            `Compare this against Path B: ${alternative}`
+                        ].filter(Boolean).join('\n')
+                    },
+                    {
+                        personaId: 'option_b',
+                        text: `Path B decision: ${alternative}\nThis is the counterfactual path to simulate against Path A.`
+                    }
+                ],
+                language: language || 'Chinese',
+                situation: `${context.situation || 'Major life decision'}\n\nGenerate two possible life paths after this decision node.`
+            });
             const r = await window.fetch('/timeline', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -269,18 +473,66 @@ const DebateArena = ({
             const res = await r.json();
             if (res?.error) throw new Error(res.error);
             const tl = res?.timelines || res;
-            if (tl?.option_a || tl?.option_b) {
-                setTimelineData(tl);
-                setShowCanvas(true);
-            } else {
-                throw new Error('No timeline data returned');
-            }
+            const optionA = tl?.option_a || {};
+            const optionB = tl?.option_b || {};
+            const stamp = Date.now();
+            const nextNodes = [
+                ...(optionA.phases || []).map((phase, idx) => ({
+                    id: `decision-timeline-a-${stamp}-${idx}`,
+                    branch: 'A',
+                    branchLabel: optionA.label || labels.A,
+                    choiceText: labels.A,
+                    period: phase.period || `A Node ${idx + 1}`,
+                    title: phase.title || labels.A,
+                    description: phase.description || '',
+                    tags: Array.isArray(phase.tags) ? phase.tags.slice(0, 3) : []
+                })),
+                ...(optionB.phases || []).map((phase, idx) => ({
+                    id: `decision-timeline-b-${stamp}-${idx}`,
+                    branch: 'B',
+                    branchLabel: optionB.label || labels.B,
+                    choiceText: labels.B,
+                    period: phase.period || `B Node ${idx + 1}`,
+                    title: phase.title || labels.B,
+                    description: phase.description || '',
+                    tags: Array.isArray(phase.tags) ? phase.tags.slice(0, 3) : []
+                }))
+            ];
+            if (!nextNodes.length) throw new Error('No timeline paths returned');
+            setTimelineBranchLabels({
+                A: optionA.label || labels.A,
+                B: optionB.label || labels.B
+            });
+            setTimelineNodes(nextNodes);
         } catch (e) {
-            console.error('Timeline error', e);
-            setTimelineError(e?.message || 'Timeline generation failed');
+            console.error('Decision timeline error', e);
+            setTimelineError(e?.message || 'Decision timeline generation failed');
+            const stamp = Date.now();
+            setTimelineNodes([
+                {
+                    id: `decision-timeline-a-${stamp}`,
+                    branch: 'A',
+                    branchLabel: labels.A,
+                    choiceText: labels.A,
+                    period: 'Node 1',
+                    title: labels.A,
+                    description: 'This path follows the decision you selected.',
+                    tags: ['selected path']
+                },
+                {
+                    id: `decision-timeline-b-${stamp}`,
+                    branch: 'B',
+                    branchLabel: labels.B,
+                    choiceText: labels.B,
+                    period: 'Node 1',
+                    title: labels.B,
+                    description: 'This path explores the alternative choice.',
+                    tags: ['alternative']
+                }
+            ]);
             setTimeout(() => setTimelineError(''), 4000);
         } finally {
-            setTimelineLoading(false);
+            setTimelineNodeLoading(false);
         }
     };
 
@@ -422,6 +674,30 @@ const DebateArena = ({
         inputFieldRef.current?.focus();
     };
 
+    const parseFollowUpEnvelope = (text) => {
+        if (!text || typeof text !== 'string') return null;
+        const trimmed = text.trim();
+        if (!trimmed.startsWith('{')) return null;
+        try {
+            const parsed = JSON.parse(trimmed);
+            const data = parsed && parsed.__lifee_followup__;
+            if (data && Array.isArray(data.questions)) return data;
+        } catch (_) {}
+        return null;
+    };
+
+    const parseSubmittedFollowUpAnswers = (text) => {
+        const out = {};
+        if (!text) return out;
+        String(text).split('\n').forEach(raw => {
+            const match = raw.trim().match(/^(\d+)\s*[\.、]\s*(.+)$/);
+            if (!match) return;
+            const qi = parseInt(match[1], 10) - 1;
+            if (qi >= 0) out[qi] = match[2].trim();
+        });
+        return out;
+    };
+
     const openTarotForDecision = (decision) => {
         setTarotDecision((decision || '').trim());
         setTarotModalOpen(true);
@@ -488,14 +764,14 @@ const DebateArena = ({
                 <div className="flex items-center gap-1.5">
                     {isABDebate && history.length >= 2 && (
                         <button
-                            onClick={generateTimeline}
-                            disabled={timelineLoading}
+                            onClick={enterTimelineMode}
+                            disabled={timelineNodeLoading}
                             className="flex items-center gap-1 text-[8px] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full border transition-all disabled:opacity-40"
-                            style={{ borderColor: '#C6D4C1', color: '#5D8A5E', background: timelineData ? '#F0F7EF' : 'white' }}
-                            title="Generate 2 scenario timelines"
+                            style={{ borderColor: '#C6D4C1', color: '#5D8A5E', background: timelineMode ? '#F0F7EF' : 'white' }}
+                            title="Enter timeline mode"
                         >
                             <Icon name="GitFork" size={9} />
-                            {timelineLoading ? '…' : 'TIMELINES'}
+                            {timelineNodeLoading ? '…' : 'TIMELINE'}
                         </button>
                     )}
                     <button
@@ -659,6 +935,7 @@ const DebateArena = ({
                             ? overridePos
                             : { x: basePos.x, y: basePos.y + 28, rotate: basePos.rotate };
                         const isDraggingThis = draggingCardId === 'user';
+                        const visibleUserMsgs = userNodeExpanded ? userMsgs : [lastMsg];
                         return (
                             <div
                                 key="user-node"
@@ -667,7 +944,7 @@ const DebateArena = ({
                                     position: 'absolute',
                                     left: pos.x,
                                     top: pos.y,
-                                    width: 220,
+                                    width: userNodeExpanded ? 270 : 220,
                                     transform: `rotate(${pos.rotate}deg)`,
                                     boxShadow: isDraggingThis
                                         ? '0 20px 60px rgba(152,166,212,0.45)'
@@ -686,23 +963,111 @@ const DebateArena = ({
                                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.3)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <AvatarDisplay avatar={userAvatar || '🙂'} className="w-full h-full text-base" />
                                     </div>
-                                    <div>
+                                    <div style={{ minWidth: 0, flex: 1 }}>
                                         <div style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#fff' }}>YOU</div>
                                         <div style={{ fontSize: 7.5, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em' }}>{userMsgs.length} messages</div>
                                     </div>
+                                    <button
+                                        type="button"
+                                        onMouseDown={e => e.stopPropagation()}
+                                        onClick={() => setUserNodeExpanded(v => !v)}
+                                        style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.18)', color: '#fff', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        title={userNodeExpanded ? 'Collapse answers' : 'Expand answers'}
+                                    >
+                                        {userNodeExpanded ? '−' : '+'}
+                                    </button>
                                 </div>
-                                <div style={{ padding: '12px 16px' }}>
-                                    <div style={{ fontSize: 9.5, fontStyle: 'italic', color: '#fff', opacity: 0.85, lineHeight: 1.6, borderLeft: '2px solid rgba(255,255,255,0.4)', paddingLeft: 8 }}>
-                                        {(lastMsg?.text || '').slice(0, 110)}{(lastMsg?.text || '').length > 110 ? '…' : ''}
-                                    </div>
+                                <div
+                                    onWheel={e => e.stopPropagation()}
+                                    style={{ padding: '12px 16px', maxHeight: userNodeExpanded ? 260 : 'none', overflowY: userNodeExpanded ? 'auto' : 'visible' }}
+                                >
+                                    {visibleUserMsgs.map((msg, mi) => {
+                                        const text = msg?.text || '';
+                                        const displayText = userNodeExpanded ? text : `${text.slice(0, 110)}${text.length > 110 ? '…' : ''}`;
+                                        return (
+                                            <div key={mi} style={{ fontSize: 9.5, fontStyle: 'italic', color: '#fff', opacity: userNodeExpanded ? 0.78 : 0.85, lineHeight: 1.6, borderLeft: '2px solid rgba(255,255,255,0.4)', paddingLeft: 8, marginBottom: mi < visibleUserMsgs.length - 1 ? 10 : 0 }}>
+                                                {userNodeExpanded && (
+                                                    <div style={{ fontSize: 7.5, fontStyle: 'normal', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>
+                                                        answer {mi + 1}
+                                                    </div>
+                                                )}
+                                                {displayText}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         );
                     })()}
-                    {/* Timeline canvas cards – generated by /timeline and draggable on the board */}
-                    {timelineData && (timelineData.option_a || timelineData.option_b) && ['option_a', 'option_b'].map((key, ki) => {
-                        const opt = timelineData[key];
-                        if (!opt) return null;
+                    {/* Decision node cards – user choices from the bottom option bar */}
+                    {decisionNodes.map((node, ni) => {
+                        const cardId = `__decision_${node.id}`;
+                        const fallback = {
+                            x: Math.max(18, (-canvasPan.x + 24) / canvasScale) + (ni % 2) * 270,
+                            y: Math.max(180, (-canvasPan.y + 360) / canvasScale) + Math.floor(ni / 2) * 150,
+                            rotate: ni % 2 === 0 ? -0.5 : 0.7
+                        };
+                        const pos = cardPositions[cardId] || fallback;
+                        const isDraggingDecision = draggingCardId === cardId;
+                        return (
+                            <div
+                                key={node.id}
+                                onMouseDown={(e) => handleCardMouseDown(e, cardId, pos.x, pos.y, pos.rotate || 0)}
+                                style={{
+                                    position: 'absolute',
+                                    left: pos.x,
+                                    top: pos.y,
+                                    width: 255,
+                                    transform: `rotate(${pos.rotate || 0}deg)`,
+                                    borderRadius: 20,
+                                    background: '#fff',
+                                    border: `1px solid ${isDraggingDecision ? '#98A6D4' : '#F0EDEA'}`,
+                                    boxShadow: isDraggingDecision
+                                        ? '0 20px 60px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.10)'
+                                        : '0 8px 32px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
+                                    overflow: 'hidden',
+                                    pointerEvents: 'auto',
+                                    cursor: isDraggingDecision ? 'grabbing' : 'grab',
+                                    zIndex: isDraggingDecision ? 100 : 2,
+                                    userSelect: 'none',
+                                    transition: isDraggingDecision ? 'box-shadow 0.1s, border-color 0.1s' : 'box-shadow 0.2s',
+                                }}
+                            >
+                                <div style={{ padding: '9px 12px', borderBottom: '1px solid #F0EDEA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: '#F7F8FF' }}>
+                                    <span style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.28em', color: '#98A6D4' }}>DECISION NODE</span>
+                                    <button
+                                        onMouseDown={e => e.stopPropagation()}
+                                        onClick={() => generateDecisionTimeline(node)}
+                                        disabled={timelineNodeLoading}
+                                        style={{ fontSize: 7, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 99, border: '1px solid #5D8A5E66', color: '#5D8A5E', background: 'white', cursor: 'pointer', whiteSpace: 'nowrap', opacity: timelineNodeLoading ? 0.45 : 1 }}
+                                    >Timeline →</button>
+                                </div>
+                                <div style={{ padding: '12px 14px' }}>
+                                    <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#98A6D4', marginBottom: 6 }}>
+                                        {node.branch || 'A'}
+                                    </div>
+                                    <div style={{ fontSize: 11, fontWeight: 900, color: '#1A1A1A', lineHeight: 1.45 }}>
+                                        {node.choice}
+                                    </div>
+                                    {node.insight && (
+                                        <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 12, background: '#F8F7FF', borderLeft: '2px solid #98A6D4', fontSize: 8.8, lineHeight: 1.55, color: '#1A1A1A', opacity: 0.66 }}>
+                                            {node.insight}
+                                        </div>
+                                    )}
+                                    {node.alternatives?.length > 0 && (
+                                        <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #F0EDEA', fontSize: 8.5, fontStyle: 'italic', lineHeight: 1.5, color: '#1A1A1A', opacity: 0.42 }}>
+                                            Alternative: {node.alternatives[0]}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {/* Timeline mode cards – nodes are appended after each A/B choice */}
+                    {timelineMode && ['A', 'B'].map((branch, ki) => {
+                        const branchNodes = timelineNodes.filter(n => n.branch === branch);
+                        const latestNodeLabel = [...branchNodes].reverse().find(n => n.branchLabel)?.branchLabel || '';
+                        const branchLabel = timelineBranchLabels[branch] || latestNodeLabel || '';
                         const cardId = ki === 0 ? '__timeline_a' : '__timeline_b';
                         const fallback = ki === 0 ? { x: 18, y: 430, rotate: 0 } : { x: 288, y: 430, rotate: 0 };
                         const pos = cardPositions[cardId] || fallback;
@@ -711,7 +1076,7 @@ const DebateArena = ({
                         const bgColors = ['#F0F2FF', '#FBF0FF'];
                         return (
                             <div
-                                key={key}
+                                key={`timeline-${branch}`}
                                 onMouseDown={(e) => handleCardMouseDown(e, cardId, pos.x, pos.y, pos.rotate || 0)}
                                 style={{
                                     position: 'absolute',
@@ -733,29 +1098,34 @@ const DebateArena = ({
                                 }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderBottom: '1px solid #F0EDEA' }}>
-                                    <span style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#1A1A1A', opacity: 0.4 }}>SCENARIO TIMELINES</span>
+                                    <span style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#1A1A1A', opacity: 0.4 }}>TIMELINE MODE</span>
                                     <button
                                         onMouseDown={e => e.stopPropagation()}
-                                        onClick={() => setTimelineData(null)}
+                                        onClick={() => setTimelineMode(false)}
                                         style={{ width: 20, height: 20, borderRadius: '50%', border: '1px solid #E8E6E0', background: 'white', cursor: 'pointer', fontSize: 11, color: '#5D576B', opacity: 0.4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                     >✕</button>
                                 </div>
                                 <div style={{ padding: '8px 12px', background: bgColors[ki], borderBottom: '1px solid #F0EDEA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                                     <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', color: accentColors[ki], overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {String.fromCharCode(65 + ki)}. {opt.label || key}
+                                        {branchLabel ? `${branch}. ${branchLabel}` : `Option ${branch}`}
                                     </span>
                                     <button
                                         onMouseDown={e => e.stopPropagation()}
-                                        onClick={() => generatePlan(opt.label || '')}
+                                        onClick={() => generatePlan(branchLabel || '')}
                                         style={{ fontSize: 7, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 99, border: `1px solid ${accentColors[ki]}`, color: accentColors[ki], background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}
                                     >Plan →</button>
                                 </div>
                                 <div style={{ padding: '8px 0' }}>
-                                    {(opt.phases || []).map((phase, pi) => (
-                                        <div key={pi} style={{ display: 'flex', gap: 8, padding: '5px 12px', borderBottom: pi < opt.phases.length - 1 ? '1px solid #F5F4F0' : 'none' }}>
+                                    {branchNodes.length === 0 && (
+                                        <div style={{ padding: '14px 12px', fontSize: 9, fontStyle: 'italic', color: '#1A1A1A', opacity: 0.28, lineHeight: 1.6 }}>
+                                            Choose this path in chat to reveal the next node.
+                                        </div>
+                                    )}
+                                    {branchNodes.map((phase, pi) => (
+                                        <div key={pi} style={{ display: 'flex', gap: 8, padding: '5px 12px', borderBottom: pi < branchNodes.length - 1 ? '1px solid #F5F4F0' : 'none' }}>
                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                                                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: pi === 0 ? accentColors[ki] : '#E8E6E0', border: `1.5px solid ${accentColors[ki]}`, marginTop: 2 }} />
-                                                {pi < opt.phases.length - 1 && <div style={{ width: 1, flex: 1, background: '#E8E6E0', marginTop: 2 }} />}
+                                                {pi < branchNodes.length - 1 && <div style={{ width: 1, flex: 1, background: '#E8E6E0', marginTop: 2 }} />}
                                             </div>
                                             <div style={{ minWidth: 0, paddingBottom: 4 }}>
                                                 <div style={{ fontSize: 7, fontWeight: 700, color: accentColors[ki], letterSpacing: '0.1em', opacity: 0.7, marginBottom: 1 }}>{phase.period}</div>
@@ -769,6 +1139,9 @@ const DebateArena = ({
                                             </div>
                                         </div>
                                     ))}
+                                    {timelineNodeLoading && ki === 0 && (
+                                        <div style={{ padding: '8px 12px', fontSize: 8, color: '#5D8A5E', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase' }}>generating node...</div>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -808,6 +1181,14 @@ const DebateArena = ({
                     >
                         <Icon name="LayoutDashboard" size={12} />
                         MAP
+                    </button>
+                    <button
+                        onClick={enterTimelineMode}
+                        disabled={timelineNodeLoading}
+                        className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all disabled:opacity-40 ${timelineMode ? 'bg-[#F0F7EF] text-[#5D8A5E] border-[#C6D4C1]' : 'border-[#E8E6E0] text-[#5D576B]/60'}`}
+                    >
+                        <Icon name="GitFork" size={12} />
+                        {timelineNodeLoading ? '...' : 'TIMELINE'}
                     </button>
                     <button
                         onClick={() => setView('summary')}
@@ -885,11 +1266,118 @@ const DebateArena = ({
                         {history.map((m, idx) => {
                             const isUser = m.personaId === 'user';
                             const isFollowUp = m.personaId === 'lifee-followup';
+                            const followUpEnvelope = isFollowUp ? parseFollowUpEnvelope(m.text) : null;
                             const p = isUser
                                 ? { name: 'YOU', avatar: (userAvatar || loadUserAvatar()) }
                                 : isFollowUp
                                 ? { name: 'LIFEE', avatar: '💬' }
                                 : (selectedPersonas.find(x => x.id === m.personaId) || (window.INITIAL_PERSONAS || []).find(x => x.id === m.personaId) || (m.personaId === "system" ? { name: "SYSTEM", avatar: "⚠️" } : { name: m.personaId || 'Voice', avatar: '☁️' }));
+                            if (isFollowUp && !followUpEnvelope && (m.text || '').trim().startsWith('{')) {
+                                return (
+                                    <div key={idx} className="animate-pulse flex gap-4">
+                                        <div className="w-10 h-10 bg-slate-200 rounded-full" />
+                                        <div className="h-14 w-56 bg-white border rounded-3xl flex items-center px-5 text-xs text-neutral-400">
+                                            正在生成追问...
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            if (followUpEnvelope) {
+                                const laterUserMsgs = history.slice(idx + 1).filter(x => x.personaId === 'user');
+                                const answerMsg = laterUserMsgs.find(x => {
+                                    const text = (x.text || '').trim();
+                                    return Object.keys(parseSubmittedFollowUpAnswers(text)).length > 0;
+                                });
+                                const isAnswered = !!answerMsg;
+                                const submittedAnswers = isAnswered ? parseSubmittedFollowUpAnswers(answerMsg.text) : {};
+                                const questions = followUpEnvelope.questions || [];
+                                const answeredCount = Object.keys(followUpAnswers).length;
+                                const getAnswer = (qi) => isAnswered ? (submittedAnswers[qi] || '') : (followUpAnswers[qi] || '');
+                                const sendAnswers = () => {
+                                    const message = questions
+                                        .map((q, qi) => followUpAnswers[qi] ? `${qi + 1}. ${followUpAnswers[qi]}` : null)
+                                        .filter(Boolean)
+                                        .join('\n');
+                                    if (!message) return;
+                                    setFollowUpAnswers({});
+                                    runRound(message);
+                                };
+
+                                return (
+                                    <div key={idx} className="w-full animate-in">
+                                        <div className={`rounded-[24px] border bg-white p-4 md:p-5 shadow-sm space-y-4 ${isAnswered ? 'opacity-70 border-[#F0EDEA]' : 'border-blue-brand/25'}`}>
+                                            {followUpEnvelope.intro && (
+                                                <p className="text-sm text-neutral-500 italic leading-relaxed">{followUpEnvelope.intro}</p>
+                                            )}
+                                            {questions.map((q, qi) => {
+                                                const current = getAnswer(qi);
+                                                const isOptionAnswer = (q.options || []).includes(current);
+                                                const customAnswer = isOptionAnswer ? '' : current;
+                                                return (
+                                                    <div key={qi} className="space-y-2">
+                                                        <p className="text-sm font-bold text-[#1A1A1A]">
+                                                            <span className="text-blue-brand/60 mr-2">Q{qi + 1}.</span>{q.q}
+                                                        </p>
+                                                        <div className="flex flex-wrap gap-2 pl-6">
+                                                            {(q.options || []).map((opt, oi) => {
+                                                                const selected = current === opt;
+                                                                return (
+                                                                    <button
+                                                                        key={oi}
+                                                                        type="button"
+                                                                        disabled={isAnswered}
+                                                                        onClick={() => setFollowUpAnswers(prev => {
+                                                                            if (prev[qi] === opt) {
+                                                                                const { [qi]: _, ...rest } = prev;
+                                                                                return rest;
+                                                                            }
+                                                                            return { ...prev, [qi]: opt };
+                                                                        })}
+                                                                        className={`text-xs px-3 py-1.5 rounded-full border transition-all ${selected ? 'bg-blue-brand text-white border-blue-brand' : 'bg-[#FDFBF7] text-neutral-600 border-[#E8E6E0] hover:border-blue-brand hover:text-blue-brand'} ${isAnswered ? 'cursor-default' : ''}`}
+                                                                    >
+                                                                        <span className={selected ? 'text-white/80 mr-1.5' : 'text-blue-brand/50 mr-1.5'}>{String.fromCharCode(65 + oi)}</span>{opt}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <div className="pl-6">
+                                                            <input
+                                                                type="text"
+                                                                value={customAnswer}
+                                                                readOnly={isAnswered}
+                                                                placeholder="或者写下你的具体情况..."
+                                                                onChange={(e) => {
+                                                                    const value = e.target.value;
+                                                                    setFollowUpAnswers(prev => {
+                                                                        if (!value.trim()) {
+                                                                            const { [qi]: _, ...rest } = prev;
+                                                                            return rest;
+                                                                        }
+                                                                        return { ...prev, [qi]: value };
+                                                                    });
+                                                                }}
+                                                                className="w-full text-xs px-3 py-2 rounded-xl bg-[#FDFBF7] border border-[#E8E6E0] focus:border-blue-brand focus:outline-none"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            {!isAnswered && (
+                                                <div className="flex justify-end pt-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={sendAnswers}
+                                                        disabled={answeredCount === 0}
+                                                        className="px-5 py-2 rounded-full text-xs font-bold bg-blue-brand text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    >
+                                                        发送
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            }
                             return (
                                 <div key={idx} className={`flex gap-4 md:gap-5 ${isUser ? 'flex-row-reverse' : 'items-start'} animate-in`}>
                                     <div className={`w-10 h-10 rounded-full border flex items-center justify-center shadow-sm shrink-0 bg-white overflow-hidden ${isUser ? 'border-blue-brand/30' : 'border-[#F0EDEA]'}`}>
@@ -922,7 +1410,7 @@ const DebateArena = ({
                                 <div className="flex flex-wrap justify-center gap-2 animate-in">
                                     {options.map((opt, i) => (
                                         <div key={i} className="flex items-center gap-2">
-                                            <button onClick={() => runRound(opt)} className="px-4 py-2 bg-white/90 border border-blue-brand/20 rounded-full text-xs font-bold hover:bg-blue-brand hover:text-white transition-all shadow-sm">{opt}</button>
+                                            <button disabled={timelineNodeLoading} onClick={() => handleOptionChoice(opt, i)} className="px-4 py-2 bg-white/90 border border-blue-brand/20 rounded-full text-xs font-bold hover:bg-blue-brand hover:text-white transition-all shadow-sm disabled:opacity-40">{opt}</button>
                                             {hasTarotMaster && (
                                                 <button type="button" onClick={() => openTarotForDecision(opt)} className="w-8 h-8 rounded-full bg-white border border-blue-brand/20 flex items-center justify-center text-blue-brand hover:bg-blue-brand hover:text-white transition-all shadow-sm" title="Draw tarot for this decision">
                                                     <Icon name="Moon" size={13} />
