@@ -8,17 +8,17 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8000 " ^| findstr "LISTENIN
     taskkill /F /PID %%a >nul 2>&1
 )
 
-if not exist data mkdir data >/dev/null 2>&1
+if not exist data mkdir data >nul 2>&1
 
-REM 尝试从生产拉一份最新快照；连不上就用本地 data\lifee.db（队友已手动放进去的）。
-REM 第一次且 data\lifee.db 也不存在时，FastAPI 会自动建空表，但此时没账号可登录。
+REM Try to pull latest DB from prod (5s timeout). If SSH fails, use local data\lifee.db.
+REM First-time users without a local DB: FastAPI will create an empty schema on startup.
 echo [LIFEE] Trying to sync prod DB (5s timeout)...
-ssh -o ConnectTimeout=5 -o BatchMode=yes root@47.83.184.82 "sqlite3 /opt/lifee/data/lifee.db \".backup /tmp/lifee_snapshot.db\"" >/dev/null 2>&1
+ssh -o ConnectTimeout=5 -o BatchMode=yes root@47.83.184.82 "sqlite3 /opt/lifee/data/lifee.db \".backup /tmp/lifee_snapshot.db\"" >nul 2>&1
 if errorlevel 1 (
     echo [LIFEE] SSH unavailable, using existing data\lifee.db.
 ) else (
-    del /q data\lifee.db-wal data\lifee.db-shm >/dev/null 2>&1
-    scp -o ConnectTimeout=10 -o BatchMode=yes root@47.83.184.82:/tmp/lifee_snapshot.db data\lifee.db >/dev/null 2>&1
+    del /q data\lifee.db-wal data\lifee.db-shm >nul 2>&1
+    scp -o ConnectTimeout=10 -o BatchMode=yes root@47.83.184.82:/tmp/lifee_snapshot.db data\lifee.db >nul 2>&1
     if errorlevel 1 (
         echo [LIFEE] scp failed, using existing data\lifee.db.
     ) else (
@@ -27,7 +27,7 @@ if errorlevel 1 (
 )
 
 echo [LIFEE] Starting backend in a new window (uvicorn with --reload)...
-REM --reload 用 StatReload 轮询，watchfiles 在 Python 3.13 上会段错误，别 pip install。
+REM StatReload polling is used; do NOT pip install watchfiles (segfaults on Python 3.13).
 start "LIFEE backend" cmd /k "cd /d %~dp0 && uvicorn lifee.api:app --host 127.0.0.1 --port 8000 --reload"
 
 echo [LIFEE] Waiting 3s for server to boot...
