@@ -576,7 +576,7 @@
         'use strict';
 
         const html = htm.bind(window.__voidH);
-        const { useState, useEffect, useLayoutEffect, useRef, useCallback } = React;
+        const { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } = React;
 
         // ══════════════════════════════════════════════
         //  i18n — minimal key-value runtime, en + zh
@@ -2085,6 +2085,13 @@
 
             // Preview: hovered/tapped persona in the right panel
             const [previewId, setPreviewId] = useState(null);
+            // Featured card carousel index
+            const [featuredIdx, setFeaturedIdx] = useState(0);
+            const featuredPool = useMemo(() => {
+                const hot = hotPersonas.filter(Boolean);
+                const rest = personas.filter(p => !hot.find(h => h.id === p.id));
+                return [...hot, ...rest];
+            }, [hotPersonas.length, personas.length]);
             // Conversation mode (null = default multi-voice council)
             const [mode, setMode] = useState(null);
             // Detail modal state (full persona profile)
@@ -2607,10 +2614,10 @@
             const lastSelected = selectedPersonas[selectedPersonas.length - 1];
             const featured =
                 (previewId && personas.find(p => p.id === previewId)) ||
-                lastSelected ||
-                (hotLoaded
-                    ? (hotPersonas[0] || personas.find(p => p.id === 'audrey-hepburn') || personas[0])
-                    : null);
+                (featuredPool.length > 0
+                    ? featuredPool[featuredIdx % featuredPool.length]
+                    : (hotLoaded ? (personas.find(p => p.id === 'audrey-hepburn') || personas[0]) : null));
+            const showFeaturedArrows = !previewId && featuredPool.length > 1;
 
             // Masthead date — locale-aware
             const today = new Date();
@@ -2717,6 +2724,8 @@
                         ${featured ? (() => {
                             const isSel = selectedIds.includes(featured.id);
                             const label = previewId ? t('home.preview') : (isSel ? t('home.inConversation') : t('home.featured'));
+                            const total = featuredPool.length;
+                            const cur = featuredIdx % Math.max(1, total);
                             return html`
                                 <div class="md:col-span-2 hidden md:block">
                                     <div
@@ -2735,18 +2744,50 @@
                                             <div class="flex flex-col justify-between h-full min-h-[300px] p-6">
                                                 <div class="flex items-start justify-between">
                                                     <p class="text-[9px] text-on-surface-variant/70 uppercase tracking-[0.3em] font-bold">${label}</p>
+                                                    ${showFeaturedArrows ? html`
+                                                        <div class="flex items-center gap-1" onClick=${e => e.stopPropagation()}>
+                                                            <button
+                                                                onClick=${() => setFeaturedIdx(i => (i - 1 + total) % total)}
+                                                                class=${`no-shine w-7 h-7 rounded-full flex items-center justify-center transition-all backdrop-blur-sm
+                                                                    ${featured.cover_url
+                                                                        ? 'bg-black/30 hover:bg-black/50 text-white/80 hover:text-white'
+                                                                        : 'bg-on-surface/10 hover:bg-on-surface/20 text-on-surface/70 hover:text-on-surface'}`}
+                                                            ><span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>chevron_left</span></button>
+                                                            <button
+                                                                onClick=${() => setFeaturedIdx(i => (i + 1) % total)}
+                                                                class=${`no-shine w-7 h-7 rounded-full flex items-center justify-center transition-all backdrop-blur-sm
+                                                                    ${featured.cover_url
+                                                                        ? 'bg-black/30 hover:bg-black/50 text-white/80 hover:text-white'
+                                                                        : 'bg-on-surface/10 hover:bg-on-surface/20 text-on-surface/70 hover:text-on-surface'}`}
+                                                            ><span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>chevron_right</span></button>
+                                                        </div>
+                                                    ` : null}
                                                 </div>
                                                 <div>
                                                     <p class="text-[10px] text-primary/80 uppercase tracking-widest font-bold mb-2">${featured.role}</p>
-                                                    <h3 class="font-headline text-3xl font-bold leading-tight text-white mb-3">${featured.name}</h3>
-                                                    <p class="text-xs italic text-white/70 leading-relaxed line-clamp-3 max-w-xs mb-4">"${featured.worldview}"</p>
-                                                    <button
-                                                        onClick=${(e) => { e.stopPropagation(); setDetailPersonaId(featured.id); }}
-                                                        class="inline-flex items-center gap-1.5 text-[10px] font-label uppercase tracking-[0.25em] text-white/60 hover:text-primary transition-colors"
-                                                    >
-                                                        <span>${t('home.readDossier')}</span>
-                                                        <span class="material-symbols-outlined" style=${{ fontSize: '12px' }}>arrow_outward</span>
-                                                    </button>
+                                                    <h3 class=${`font-headline text-3xl font-bold leading-tight mb-3 ${featured.cover_url ? 'text-white' : 'text-on-surface'}`}>${featured.name}</h3>
+                                                    <p class=${`text-xs italic leading-relaxed line-clamp-3 max-w-xs mb-4 ${featured.cover_url ? 'text-white/70' : 'text-on-surface-variant/70'}`}>"${featured.worldview}"</p>
+                                                    <div class="flex items-center justify-between">
+                                                        <button
+                                                            onClick=${(e) => { e.stopPropagation(); setDetailPersonaId(featured.id); }}
+                                                            class="inline-flex items-center gap-1.5 text-[10px] font-label uppercase tracking-[0.25em] text-white/60 hover:text-primary transition-colors"
+                                                        >
+                                                            <span>${t('home.readDossier')}</span>
+                                                            <span class="material-symbols-outlined" style=${{ fontSize: '12px' }}>arrow_outward</span>
+                                                        </button>
+                                                        ${showFeaturedArrows && total > 1 ? html`
+                                                            <div class="flex gap-1" onClick=${e => e.stopPropagation()}>
+                                                                ${Array.from({ length: Math.min(total, 8) }).map((_, i) => html`
+                                                                    <button
+                                                                        key=${i}
+                                                                        onClick=${() => setFeaturedIdx(i)}
+                                                                        class=${`no-shine w-1.5 h-1.5 rounded-full transition-all ${i === cur ? 'bg-primary scale-125' : 'bg-white/30 hover:bg-white/60'}`}
+                                                                    />
+                                                                `)}
+                                                                ${total > 8 ? html`<span class="text-[9px] text-white/40 ml-1">${cur + 1}/${total}</span>` : null}
+                                                            </div>
+                                                        ` : null}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
