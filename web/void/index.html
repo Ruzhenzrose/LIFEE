@@ -13,33 +13,33 @@
             theme: {
                 extend: {
                     colors: {
-                        'surface': '#12110f',
-                        'surface-dim': '#0e0d0b',
-                        'surface-bright': '#1a1815',
-                        'surface-container-lowest': '#100f0d',
-                        'surface-container-low': '#161410',
-                        'surface-container': '#1c1a16',
-                        'surface-container-high': '#232018',
-                        'surface-container-highest': '#2a2720',
-                        'surface-variant': '#1e1b16',
-                        'on-surface': '#ede8e0',
-                        'on-surface-variant': '#a09484',
-                        'primary': '#e8a84c',
-                        'on-primary': '#1a0e00',
-                        'on-primary-fixed': '#0f0800',
-                        'primary-container': '#7a4e1a',
-                        'on-primary-container': '#fde8c0',
-                        'secondary': '#8a9a6c',
-                        'secondary-dim': '#7a8a5e',
-                        'on-secondary': '#1a2008',
-                        'secondary-container': '#3a4a20',
-                        'on-secondary-container': '#d4e4b0',
-                        'tertiary': '#c47a6c',
-                        'on-tertiary': '#2a1010',
-                        'tertiary-container': '#6a2e28',
-                        'on-tertiary-container': '#f4d0c8',
-                        'outline': '#6b5e4e',
-                        'outline-variant': '#3a3028',
+                        'surface': 'rgb(var(--color-surface) / <alpha-value>)',
+                        'surface-dim': 'rgb(var(--color-surface-dim) / <alpha-value>)',
+                        'surface-bright': 'rgb(var(--color-surface-bright) / <alpha-value>)',
+                        'surface-container-lowest': 'rgb(var(--color-surface-container-lowest) / <alpha-value>)',
+                        'surface-container-low': 'rgb(var(--color-surface-container-low) / <alpha-value>)',
+                        'surface-container': 'rgb(var(--color-surface-container) / <alpha-value>)',
+                        'surface-container-high': 'rgb(var(--color-surface-container-high) / <alpha-value>)',
+                        'surface-container-highest': 'rgb(var(--color-surface-container-highest) / <alpha-value>)',
+                        'surface-variant': 'rgb(var(--color-surface-variant) / <alpha-value>)',
+                        'on-surface': 'rgb(var(--color-on-surface) / <alpha-value>)',
+                        'on-surface-variant': 'rgb(var(--color-on-surface-variant) / <alpha-value>)',
+                        'primary': 'rgb(var(--color-primary) / <alpha-value>)',
+                        'on-primary': 'rgb(var(--color-on-primary) / <alpha-value>)',
+                        'on-primary-fixed': 'rgb(var(--color-on-primary-fixed) / <alpha-value>)',
+                        'primary-container': 'rgb(var(--color-primary-container) / <alpha-value>)',
+                        'on-primary-container': 'rgb(var(--color-on-primary-container) / <alpha-value>)',
+                        'secondary': 'rgb(var(--color-secondary) / <alpha-value>)',
+                        'secondary-dim': 'rgb(var(--color-secondary-dim) / <alpha-value>)',
+                        'on-secondary': 'rgb(var(--color-on-secondary) / <alpha-value>)',
+                        'secondary-container': 'rgb(var(--color-secondary-container) / <alpha-value>)',
+                        'on-secondary-container': 'rgb(var(--color-on-secondary-container) / <alpha-value>)',
+                        'tertiary': 'rgb(var(--color-tertiary) / <alpha-value>)',
+                        'on-tertiary': 'rgb(var(--color-on-tertiary) / <alpha-value>)',
+                        'tertiary-container': 'rgb(var(--color-tertiary-container) / <alpha-value>)',
+                        'on-tertiary-container': 'rgb(var(--color-on-tertiary-container) / <alpha-value>)',
+                        'outline': 'rgb(var(--color-outline) / <alpha-value>)',
+                        'outline-variant': 'rgb(var(--color-outline-variant) / <alpha-value>)',
                     },
                     fontFamily: {
                         'headline': ['"Space Grotesk"', 'sans-serif'],
@@ -76,6 +76,18 @@
                 }
             }
         };
+    </script>
+
+    <script>
+        (function () {
+            var saved = 'dark';
+            try {
+                saved = window.localStorage.getItem('lifee_ui_theme') || 'dark';
+            } catch (_) {}
+            if (saved !== 'light') saved = 'dark';
+            window.__lifeeTheme = saved;
+            document.documentElement.setAttribute('data-lifee-theme', saved);
+        })();
     </script>
 
     <!-- Fonts -->
@@ -197,10 +209,106 @@
     <style>
         * { box-sizing: border-box; }
 
+        :root {
+            color-scheme: dark;
+            --color-surface: 18 17 15;
+            --color-surface-dim: 14 13 11;
+            --color-surface-bright: 26 24 21;
+            --color-surface-container-lowest: 16 15 13;
+            --color-surface-container-low: 22 20 16;
+            --color-surface-container: 28 26 22;
+            --color-surface-container-high: 35 32 24;
+            --color-surface-container-highest: 42 39 32;
+            --color-surface-variant: 30 27 22;
+            --color-on-surface: 237 232 224;
+            --color-on-surface-variant: 160 148 132;
+            --color-primary: 232 168 76;
+            --color-on-primary: 26 14 0;
+            --color-on-primary-fixed: 15 8 0;
+            --color-primary-container: 122 78 26;
+            --color-on-primary-container: 253 232 192;
+            --color-secondary: 138 154 108;
+            --color-secondary-dim: 122 138 94;
+            --color-on-secondary: 26 32 8;
+            --color-secondary-container: 58 74 32;
+            --color-on-secondary-container: 212 228 176;
+            --color-tertiary: 196 122 108;
+            --color-on-tertiary: 42 16 16;
+            --color-tertiary-container: 106 46 40;
+            --color-on-tertiary-container: 244 208 200;
+            --color-outline: 107 94 78;
+            --color-outline-variant: 58 48 40;
+            --theme-shadow-strong: 0 0 0;
+            --canvas-dot: rgba(255,255,255,0.07);
+            --card-shadow: 0 20px 40px rgba(0,0,0,0.45), 0 4px 12px rgba(0,0,0,0.3);
+            --msg-border-dim: rgba(255,255,255,0.06);
+        }
+
+        :root[data-lifee-theme="light"] {
+            color-scheme: light;
+            /* warm cream + lavender-blue palette, matching web/ui style.css */
+            --color-surface: 253 251 247;             /* #FDFBF7 warm ivory */
+            --color-surface-dim: 244 241 235;
+            --color-surface-bright: 255 255 255;
+            --color-surface-container-lowest: 255 255 255;
+            --color-surface-container-low: 250 248 244;
+            --color-surface-container: 245 243 238;
+            --color-surface-container-high: 241 239 233;
+            --color-surface-container-highest: 236 233 226;
+            --color-surface-variant: 241 239 234;
+            --color-on-surface: 93 87 107;            /* #5D576B muted purple-gray */
+            --color-on-surface-variant: 140 133 150;
+            --color-primary: 152 166 212;             /* #98A6D4 lavender-blue */
+            --color-on-primary: 255 255 255;
+            --color-on-primary-fixed: 255 255 255;
+            --color-primary-container: 226 231 245;
+            --color-on-primary-container: 60 70 110;
+            --color-secondary: 152 166 212;           /* #98A6D4 */
+            --color-secondary-dim: 130 144 192;
+            --color-on-secondary: 255 255 255;
+            --color-secondary-container: 232 236 248;
+            --color-on-secondary-container: 70 80 120;
+            --color-tertiary: 180 170 200;
+            --color-on-tertiary: 255 255 255;
+            --color-tertiary-container: 236 232 246;
+            --color-on-tertiary-container: 90 80 120;
+            --color-outline: 180 176 186;
+            --color-outline-variant: 232 230 224;     /* #E8E6E0 warm gray border */
+            --theme-shadow-strong: 152 147 167;
+            --canvas-dot: rgba(93,87,107,0.11);
+            --card-shadow: 0 8px 24px rgba(93,87,107,0.12), 0 2px 6px rgba(93,87,107,0.07);
+            --msg-border-dim: rgba(93,87,107,0.10);
+        }
+
+        /* Voice map canvas — dot grid + card shadows adapt to theme */
+        .voicemap-canvas {
+            background-image: radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px);
+            background-size: 18px 18px;
+        }
+        .voicemap-card { box-shadow: var(--card-shadow); }
+        /* Persona / path cards: dark = surface-container, light = pure white */
+        .voicemap-card-bg { background-color: rgb(var(--color-surface-container)); }
+        :root[data-lifee-theme="light"] .voicemap-card-bg { background-color: #ffffff; }
+        /* Message bubbles: white background in light mode */
+        :root[data-lifee-theme="light"] .msg-bubble-bg { background-color: rgba(255,255,255,0.95) !important; }
+        /* Scroll-to-bottom button shadow */
+        .scroll-btn { box-shadow: 0 8px 24px rgba(0,0,0,0.28), 0 2px 6px rgba(0,0,0,0.18); }
+        :root[data-lifee-theme="light"] .scroll-btn { box-shadow: 0 2px 8px rgba(93,87,107,0.12), 0 1px 3px rgba(93,87,107,0.08); }
+        /* Question-type cards: original bg, soft lavender border in light mode */
+        :root[data-lifee-theme="light"] .qtype-card { border-color: rgba(152,166,212,0.45); border-width: 2px; }
+        :root[data-lifee-theme="light"] .qtype-card:hover { border-color: rgba(152,166,212,0.70); }
+        :root[data-lifee-theme="light"] .qtype-card-active { border-color: rgba(152,166,212,0.80); border-width: 2px; }
+        /* Home input + button: lavender-blue in light mode */
+        :root[data-lifee-theme="light"] .home-tools-btn { color: #98A6D4; }
+        :root[data-lifee-theme="light"] .home-tools-btn:hover { color: #7a8ec4; background-color: rgba(152,166,212,0.12); }
+        /* Send / btn-gradient: solid lavender in light mode */
+        :root[data-lifee-theme="light"] .btn-gradient { background: #98A6D4; }
+        :root[data-lifee-theme="light"] .btn-gradient:hover { background: #8a99cc; box-shadow: 0 6px 18px rgba(152,166,212,0.40); }
+
         body {
             font-family: 'Manrope', sans-serif;
-            background-color: #12110f;
-            color: #ede8e0;
+            background-color: rgb(var(--color-surface));
+            color: rgb(var(--color-on-surface));
             margin: 0;
             overflow: hidden;
         }
@@ -208,27 +316,27 @@
         /* ── Scrollbar ── */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(232,168,76,0.2); border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(232,168,76,0.4); }
+        ::-webkit-scrollbar-thumb { background: rgb(var(--color-primary) / 0.22); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgb(var(--color-primary) / 0.42); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         /* ── Glass morphism ── */
         .glass {
-            background: rgba(18, 17, 15, 0.6);
+            background: rgb(var(--color-surface) / 0.6);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
         }
         .glass-light {
-            background: rgba(35, 32, 24, 0.5);
+            background: rgb(var(--color-surface-container-high) / 0.5);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(24px);
         }
         .glass-card {
-            background: rgba(28, 26, 22, 0.7);
+            background: rgb(var(--color-surface-container) / 0.72);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(232, 168, 76, 0.08);
+            border: 1px solid rgb(var(--color-primary) / 0.1);
         }
 
         /* ── Warm amber border ── */
@@ -241,10 +349,11 @@
             inset: 0;
             padding: 1px;
             border-radius: inherit;
-            background: linear-gradient(135deg, #e8a84c, #c47a6c, #8a9a6c, #e8a84c);
+            background: linear-gradient(135deg, rgb(var(--color-primary)), rgb(var(--color-tertiary)), rgb(var(--color-secondary)), rgb(var(--color-primary)));
             background-size: 300% 300%;
             animation: iridescentShift 4s linear infinite;
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
@@ -257,7 +366,7 @@
 
         /* ── Wordmark (solid, breathing opacity) ── */
         .wordmark {
-            color: #e8a84c;
+            color: rgb(var(--color-primary));
             letter-spacing: -0.02em;
             animation: wordmark-breath 4s ease-in-out infinite;
         }
@@ -268,15 +377,15 @@
 
         /* ── Gradient button ── */
         .btn-gradient {
-            background: linear-gradient(135deg, #e8a84c, #c47a6c);
-            color: #0f0800;
+            background: linear-gradient(135deg, rgb(var(--color-primary)), rgb(var(--color-tertiary)));
+            color: rgb(var(--color-on-primary-fixed));
             font-weight: 700;
             transition: all 0.25s ease;
         }
         .btn-gradient:hover {
-            background: linear-gradient(135deg, #f0b860, #d08878);
+            background: linear-gradient(135deg, rgb(var(--color-primary) / 0.92), rgb(var(--color-tertiary) / 0.92));
             transform: translateY(-1px);
-            box-shadow: 0 8px 24px rgba(232, 168, 76, 0.3);
+            box-shadow: 0 8px 24px rgb(var(--color-primary) / 0.3);
         }
         .btn-gradient:active { transform: translateY(0); }
 
@@ -302,11 +411,11 @@
                 110deg,
                 transparent 0%,
                 transparent 35%,
-                rgba(196, 122, 108, 0.35) 37%,
-                rgba(232, 168, 76, 1) 42%,
-                rgba(252, 227, 168, 1) 50%,
-                rgba(232, 168, 76, 1) 58%,
-                rgba(196, 122, 108, 0.35) 63%,
+                rgb(var(--color-tertiary) / 0.35) 37%,
+                rgb(var(--color-primary) / 1) 42%,
+                rgb(var(--color-on-primary-container) / 1) 50%,
+                rgb(var(--color-primary) / 1) 58%,
+                rgb(var(--color-tertiary) / 0.35) 63%,
                 transparent 65%,
                 transparent 100%
             ) !important;
@@ -321,19 +430,19 @@
         .hover-warm { transition: color 0.25s ease; }
         /* Icon-only buttons: animate color so material-symbols / svg icons also glow */
         .hover-warm-icon { transition: color 0.25s ease; }
-        .hover-warm-icon:hover { color: #f0b860; }
+        .hover-warm-icon:hover { color: rgb(var(--color-primary)); }
 
 
         /* ── Ghost button ── */
         .btn-ghost {
             background: transparent;
-            border: 1px solid rgba(232, 168, 76, 0.2);
-            color: #e8a84c;
+            border: 1px solid rgb(var(--color-primary) / 0.22);
+            color: rgb(var(--color-primary));
             transition: all 0.2s ease;
         }
         .btn-ghost:hover {
-            background: rgba(232, 168, 76, 0.08);
-            border-color: rgba(232, 168, 76, 0.4);
+            background: rgb(var(--color-primary) / 0.08);
+            border-color: rgb(var(--color-primary) / 0.42);
         }
 
         /* ── Sidebar transition ── */
@@ -347,8 +456,8 @@
         }
         .persona-card:hover {
             transform: translateY(-4px);
-            border-color: rgba(232, 168, 76, 0.3) !important;
-            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), 0 0 32px rgba(232, 168, 76, 0.12);
+            border-color: rgb(var(--color-primary) / 0.3) !important;
+            box-shadow: 0 20px 48px rgb(var(--theme-shadow-strong) / 0.18), 0 0 32px rgb(var(--color-primary) / 0.12);
         }
 
         /* ── Animate in ── */
@@ -370,20 +479,20 @@
             text-transform: uppercase;
             transition: all 0.2s ease;
             white-space: nowrap;
-            color: rgba(160, 148, 132, 0.6);
+            color: rgb(var(--color-on-surface-variant) / 0.6);
         }
-        .void-tab:hover { color: #e8a84c; }
+        .void-tab:hover { color: rgb(var(--color-primary)); }
         .void-tab.active {
-            background: linear-gradient(135deg, rgba(232,168,76,0.2), rgba(196,122,108,0.1));
-            color: #e8a84c;
-            border: 1px solid rgba(232, 168, 76, 0.3);
+            background: linear-gradient(135deg, rgb(var(--color-primary) / 0.2), rgb(var(--color-tertiary) / 0.1));
+            color: rgb(var(--color-primary));
+            border: 1px solid rgb(var(--color-primary) / 0.3);
         }
 
         /* ── Landing option pills ── */
         .void-opt {
-            border: 1px solid rgba(232, 168, 76, 0.15);
-            background: rgba(35, 32, 24, 0.4);
-            color: rgba(237, 232, 224, 0.6);
+            border: 1px solid rgb(var(--color-primary) / 0.15);
+            background: rgb(var(--color-surface-container-high) / 0.42);
+            color: rgb(var(--color-on-surface) / 0.62);
             border-radius: 9999px;
             padding: 9px 18px;
             font-size: 10px;
@@ -394,22 +503,22 @@
             cursor: pointer;
         }
         .void-opt:hover {
-            border-color: rgba(232, 168, 76, 0.4);
-            color: #e8a84c;
-            background: rgba(232, 168, 76, 0.08);
+            border-color: rgb(var(--color-primary) / 0.4);
+            color: rgb(var(--color-primary));
+            background: rgb(var(--color-primary) / 0.08);
         }
         .void-opt.selected {
-            background: linear-gradient(135deg, rgba(232,168,76,0.25), rgba(196,122,108,0.12));
-            color: #e8a84c;
-            border-color: rgba(232, 168, 76, 0.5);
-            box-shadow: 0 4px 16px rgba(232, 168, 76, 0.2);
+            background: linear-gradient(135deg, rgb(var(--color-primary) / 0.25), rgb(var(--color-tertiary) / 0.12));
+            color: rgb(var(--color-primary));
+            border-color: rgb(var(--color-primary) / 0.5);
+            box-shadow: 0 4px 16px rgb(var(--color-primary) / 0.2);
         }
 
         /* ── Textarea focus ── */
         .void-textarea:focus {
             outline: none;
-            border-color: rgba(232, 168, 76, 0.4) !important;
-            box-shadow: 0 0 0 3px rgba(232, 168, 76, 0.1), 0 0 24px rgba(232, 168, 76, 0.08);
+            border-color: rgb(var(--color-primary) / 0.4) !important;
+            box-shadow: 0 0 0 3px rgb(var(--color-primary) / 0.1), 0 0 24px rgb(var(--color-primary) / 0.08);
         }
 
         /* ── Session item hover actions ── */
@@ -433,21 +542,21 @@
             min-width: 100%;
         }
         .sq-pill {
-            background: rgba(28, 26, 22, 0.6);
-            border: 1px solid rgba(232, 168, 76, 0.12);
+            background: rgb(var(--color-surface-container) / 0.6);
+            border: 1px solid rgb(var(--color-primary) / 0.12);
             border-radius: 9999px;
             padding: 10px 18px;
             white-space: nowrap;
             font-size: 12px;
-            color: rgba(237, 232, 224, 0.7);
+            color: rgb(var(--color-on-surface) / 0.72);
             cursor: pointer;
             flex-shrink: 0;
             transition: all 0.2s ease;
         }
         .sq-pill:hover {
-            border-color: rgba(232, 168, 76, 0.35);
-            color: #e8a84c;
-            background: rgba(232, 168, 76, 0.06);
+            border-color: rgb(var(--color-primary) / 0.35);
+            color: rgb(var(--color-primary));
+            background: rgb(var(--color-primary) / 0.06);
         }
 
         /* ── Material Symbol sizing ── */
@@ -1067,7 +1176,7 @@
                                     setMessage(result.message || 'Verification failed. Please retry.');
                                 }
                             },
-                            theme: 'dark',
+                            theme: window.__lifeeTheme === 'light' ? 'light' : 'dark',
                         });
                     }
                 };
@@ -1225,6 +1334,7 @@
             personas, onLogin, onSignOut, userAvatar,
             sidebarOpen, setSidebarOpen,
             onOpenRedeem, onOpenFeedback,
+            themeMode, setThemeMode,
             openConfirm,
         }) {
             const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -1406,7 +1516,7 @@
 
             return html`
                 <aside
-                    class="sidebar-transition hidden md:flex flex-col h-full bg-surface-container-low/60 backdrop-blur-2xl border-r border-white/5 shrink-0 overflow-hidden"
+                    class="sidebar-transition hidden md:flex flex-col h-full bg-surface-container-low/60 backdrop-blur-2xl border-r border-outline/15 shrink-0 overflow-hidden"
                     style=${{ width: sidebarOpen ? '18rem' : '3.5rem' }}
                     id="void-sidebar"
                 >
@@ -1415,12 +1525,38 @@
                     <!-- Masthead block -->
                     <div class="pb-4 border-b border-on-surface/10 mb-8">
                         <div class="flex items-start justify-between gap-3">
-                            <h1 class="text-3xl font-headline font-bold tracking-tight text-white leading-none cursor-default">LIFEE</h1>
-                            <button
-                                onClick=${() => setSidebarOpen(false)}
-                                class="w-9 h-7 rounded flex items-center justify-center text-on-surface-variant/50 hover-warm-icon shrink-0 -mt-0.5"
-                                title="Collapse sidebar"
-                            ><${Icon} name="Sidebar" size=${16} style=${{ transform: 'scaleX(1.35)' }} /></button>
+                            <h1 class="text-3xl font-headline font-bold tracking-tight text-on-surface leading-none cursor-default">LIFEE</h1>
+                            <div class="flex items-center gap-1 shrink-0 -mt-1">
+                                <button
+                                    onClick=${() => setThemeMode?.('light')}
+                                    class=${`w-8 h-8 rounded-full flex items-center justify-center transition-all border shadow-sm ${
+                                        themeMode === 'light'
+                                            ? 'bg-primary text-on-primary border-primary shadow-primary/20'
+                                            : 'bg-surface-container-high/70 text-on-surface-variant border-outline/25 hover:text-primary hover:border-primary/35 hover:bg-primary/10'
+                                    }`}
+                                    title="Blue-white theme"
+                                    aria-label="Blue-white theme"
+                                >
+                                    <span class="material-symbols-outlined" style=${{ fontSize: '18px', fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>wb_sunny</span>
+                                </button>
+                                <button
+                                    onClick=${() => setThemeMode?.('dark')}
+                                    class=${`w-8 h-8 rounded-full flex items-center justify-center transition-all border shadow-sm ${
+                                        themeMode === 'dark'
+                                            ? 'bg-primary text-on-primary border-primary shadow-primary/20'
+                                            : 'bg-surface-container-high/70 text-on-surface-variant border-outline/25 hover:text-primary hover:border-primary/35 hover:bg-primary/10'
+                                    }`}
+                                    title="Black-gold theme"
+                                    aria-label="Black-gold theme"
+                                >
+                                    <span class="material-symbols-outlined" style=${{ fontSize: '18px', fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}>dark_mode</span>
+                                </button>
+                                <button
+                                    onClick=${() => setSidebarOpen(false)}
+                                    class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant/55 border border-outline/20 bg-surface-container-high/50 hover-warm-icon shrink-0"
+                                    title="Collapse sidebar"
+                                ><${Icon} name="Sidebar" size=${16} style=${{ transform: 'scaleX(1.35)' }} /></button>
+                            </div>
                         </div>
                         <p class="text-[10px] font-label uppercase tracking-[0.3em] text-on-surface-variant/60 mt-2">${t('nav.subtitle')}</p>
                     </div>
@@ -1537,7 +1673,7 @@
                             class="overflow-hidden transition-all duration-300 ease-out"
                             style=${{ maxHeight: userMenuOpen ? '300px' : '0' }}
                         >
-                            <div class="px-4 pt-3 pb-2 border-b border-white/5">
+                            <div class="px-4 pt-3 pb-2 border-b border-outline/15">
                                 <p class="text-xs text-on-surface-variant/50 truncate">${userEmail}</p>
                             </div>
                             <div class="px-2 py-1 space-y-0.5">
@@ -1581,7 +1717,7 @@
                                 ${user ? html`
                                     <button
                                         onClick=${() => { onSignOut(); setUserMenuOpen(false); }}
-                                        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 cursor-pointer text-red-400/70 hover:text-red-400 transition-colors"
+                                        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-tertiary/10 cursor-pointer text-red-400/70 hover:text-red-400 transition-colors"
                                     >
                                         <span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>logout</span>
                                         <span class="text-sm">${t('nav.signOut')}</span>
@@ -1589,7 +1725,7 @@
                                 ` : html`
                                     <button
                                         onClick=${() => { onLogin(); setUserMenuOpen(false); }}
-                                        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 cursor-pointer text-primary/70 hover:text-primary transition-colors"
+                                        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-primary/10 cursor-pointer text-primary/70 hover:text-primary transition-colors"
                                     >
                                         <span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>login</span>
                                         <span class="text-sm">${t('nav.signIn')}</span>
@@ -1600,7 +1736,7 @@
 
                         <!-- User bar (always visible) -->
                         <div
-                            class="flex items-center gap-4 cursor-pointer hover:bg-white/5 p-3 transition-colors"
+                            class="flex items-center gap-4 cursor-pointer hover:bg-primary/10 p-3 transition-colors"
                             onClick=${() => setUserMenuOpen(o => !o)}
                         >
                             <div class="relative flex-shrink-0">
@@ -1613,7 +1749,7 @@
                                 <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-surface-container"></div>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-white truncate">${displayName}</p>
+                                <p class="text-sm font-bold text-on-surface truncate">${displayName}</p>
                                 <p class="text-[10px] uppercase tracking-wider text-on-surface-variant/70">
                                     ${user ? t('nav.credits') + ': ' + userCredits : t('nav.notSignedIn')}
                                 </p>
@@ -2516,10 +2652,10 @@
                                     <button
                                         onClick=${() => setShowToolsMenu(v => !v)}
                                         title="Tools"
-                                        class=${'no-shine w-9 h-9 rounded-lg flex items-center justify-center transition-colors ' +
+                                        class=${'home-tools-btn no-shine w-9 h-9 rounded-lg flex items-center justify-center transition-colors ' +
                                             (showToolsMenu || webSearchMode || followUpMode || maxSpeakers > 0 || !!language
                                                 ? 'bg-primary/15 text-primary'
-                                                : 'text-on-surface-variant/50 hover:text-primary hover:bg-white/5')}
+                                                : 'text-on-surface-variant/50 hover:text-primary hover:bg-primary/10')}
                                     >
                                         <span class="material-symbols-outlined" style=${{ fontSize: '20px' }}>add</span>
                                     </button>
@@ -2640,8 +2776,8 @@
                                         onClick=${() => setMode(isActive ? null : m.id)}
                                         class=${`text-left md:text-left text-center p-2 md:p-5 rounded-xl md:rounded-2xl border transition-all ${
                                             isActive
-                                                ? 'border-primary/70 bg-primary/5 shadow-sm shadow-primary/10'
-                                                : 'border-white/25 bg-surface-container/50 hover:border-white/40 hover:bg-surface-container'
+                                                ? 'qtype-card-active border-primary/70 bg-primary/5 shadow-sm shadow-primary/10'
+                                                : 'qtype-card border-white/25 bg-surface-container/50 hover:border-white/40 hover:bg-surface-container'
                                         }`}
                                     >
                                         <span class=${`material-symbols-outlined block mb-0.5 md:mb-3 transition-colors ${isActive ? 'text-primary' : 'text-on-surface/70'}`}
@@ -3836,6 +3972,15 @@
             // Subscribe App to locale changes so every descendant re-renders
             // (and picks up fresh t() strings) on toggle.
             useLocale();
+            const [themeMode, setThemeMode] = useState(() => {
+                const saved = window.__lifeeTheme || 'dark';
+                return saved === 'light' ? 'light' : 'dark';
+            });
+            useEffect(() => {
+                document.documentElement.setAttribute('data-lifee-theme', themeMode);
+                window.__lifeeTheme = themeMode;
+                try { window.localStorage.setItem('lifee_ui_theme', themeMode); } catch (_) {}
+            }, [themeMode]);
             const [view, setView] = useState('home');
             const [context, setContext] = useState({ situation: '', landingPeriods: [] });
             const _NO_KNOWLEDGE = new Set();
@@ -4348,11 +4493,11 @@
                     <!-- Background ambient glow -->
                     <div class="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
                         <div class="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-[0.05]"
-                            style=${{ background: 'radial-gradient(circle, #e8a84c 0%, transparent 70%)' }}></div>
+                            style=${{ background: 'radial-gradient(circle, rgb(var(--color-primary)) 0%, transparent 70%)' }}></div>
                         <div class="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full opacity-[0.03]"
-                            style=${{ background: 'radial-gradient(circle, #8a9a6c 0%, transparent 70%)' }}></div>
+                            style=${{ background: 'radial-gradient(circle, rgb(var(--color-secondary)) 0%, transparent 70%)' }}></div>
                         <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full opacity-[0.03]"
-                            style=${{ background: 'radial-gradient(circle, #c47a6c 0%, transparent 70%)' }}></div>
+                            style=${{ background: 'radial-gradient(circle, rgb(var(--color-tertiary)) 0%, transparent 70%)' }}></div>
                     </div>
 
                     <!-- Sidebar -->
@@ -4376,6 +4521,8 @@
                         setSidebarOpen=${setSidebarOpen}
                         onOpenRedeem=${() => setRedeemOpen(true)}
                         onOpenFeedback=${() => setFeedbackOpen(true)}
+                        themeMode=${themeMode}
+                        setThemeMode=${setThemeMode}
                         openConfirm=${openConfirm}
                     />
 

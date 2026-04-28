@@ -1042,7 +1042,7 @@
                         <!-- Bubble -->
                         <div class="space-y-1.5 items-end flex flex-col flex-1 min-w-0">
                             <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60 mr-1">You</p>
-                            <div class="no-shine bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-xl rounded-tr-sm text-on-surface shadow-sm leading-relaxed border-r-2 border-on-surface-variant/20 text-sm max-w-full">
+                            <div class="msg-bubble-bg no-shine bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-xl rounded-tr-sm text-on-surface shadow-sm leading-relaxed border-r-2 border-on-surface-variant/20 text-sm max-w-full">
                                 <p class="whitespace-pre-wrap break-words">${m.text || ''}</p>
                             </div>
                             <div class="flex gap-3 px-1 flex-row-reverse">
@@ -1197,7 +1197,7 @@
                             ${persona.name}
                         </p>
                         <div
-                            class="no-shine bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-tl-none rounded-tr-xl rounded-br-xl rounded-bl-[2.5rem] text-on-surface shadow-sm leading-relaxed border-l-2 text-sm"
+                            class="msg-bubble-bg no-shine bg-surface-container/80 backdrop-blur-md px-5 py-4 rounded-tl-none rounded-tr-xl rounded-br-xl rounded-bl-[2.5rem] text-on-surface shadow-sm leading-relaxed border-l-2 text-sm"
                             style=${{ borderLeftColor: color.border }}
                         >
                             <${CharBlurText} text=${m.text || ''} />
@@ -1296,7 +1296,7 @@
                     <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${() => setShowMembersPanel(false)}></div>
                     <div class="relative w-full max-w-md mx-4 glass-card rounded-3xl animate-in iridescent-border flex flex-col" style=${{ maxHeight: '80vh' }}>
                         <!-- Header -->
-                        <div class="flex items-center justify-between px-6 py-4 border-b border-white/5 shrink-0">
+                        <div class="flex items-center justify-between px-6 py-4 border-b border-outline/15 shrink-0">
                             <div>
                                 <h2 class="font-headline text-lg font-bold text-on-surface">${t('members.title')}</h2>
                                 <p class="text-[10px] text-on-surface-variant/60 uppercase tracking-[0.2em] mt-0.5">${members.length} ${t('members.inSession')} · ${available.length} ${t('members.available')}</p>
@@ -1490,9 +1490,9 @@
             const reset = fitToView;
 
             return html`
-                <aside class="h-full flex flex-col border-l border-white/5 bg-surface-dim/40 shrink-0" style=${{ width: Math.min(mapWidth, mapMaxWidth()) + 'px' }}>
+                <aside class="h-full flex flex-col border-l border-outline/15 bg-surface-dim/40 shrink-0" style=${{ width: Math.min(mapWidth, mapMaxWidth()) + 'px' }}>
                     <!-- Archive header -->
-                    <div class="flex items-center justify-between px-6 h-14 border-b border-white/5 shrink-0">
+                    <div class="flex items-center justify-between px-6 h-14 border-b border-outline/15 shrink-0">
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-primary/60" style=${{ fontSize: '16px' }}>menu_book</span>
                             <span class="text-[10px] font-black uppercase tracking-[0.35em] text-on-surface-variant/70">${t('chat.voiceMap')}</span>
@@ -1537,11 +1537,8 @@
                     <!-- Canvas -->
                     <div
                         ref=${canvasRef}
-                        class="flex-1 relative overflow-hidden cursor-grab active:cursor-grabbing"
-                        style=${{
-                            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)',
-                            backgroundSize: '18px 18px',
-                        }}
+                        class="voicemap-canvas flex-1 relative overflow-hidden cursor-grab active:cursor-grabbing"
+                        style=${{}}
                         onMouseDown=${onCanvasMouseDown}
                         onMouseMove=${onMouseMove}
                         onMouseUp=${onMouseUp}
@@ -1628,7 +1625,7 @@
                                                     : html`<span>${ava}</span>`}
                                             </div>
                                             <!-- 悬停显示名字气泡 -->
-                                            <div class="absolute left-12 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-surface-container/95 border border-white/10 text-[9px] font-bold uppercase tracking-widest text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                            <div class="absolute left-12 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-surface-container/95 border border-outline/15 text-[9px] font-bold uppercase tracking-widest text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                                 ${v.name}
                                             </div>
                                         </div>
@@ -1641,7 +1638,7 @@
                                         style=${{ left: pos.x + 'px', top: pos.y + 'px', transform: `rotate(${pos.rotate}deg)`, transformOrigin: 'center center' }}
                                         onMouseDown=${(e) => startCardDrag(e, v.id)}
                                     >
-                                        <div class="rounded-[20px] bg-surface-container border border-outline/15 shadow-xl shadow-black/40 overflow-hidden">
+                                        <div class="voicemap-card voicemap-card-bg rounded-[20px] border border-outline/15 overflow-hidden">
                                             <!-- Header -->
                                             <div class="flex items-center gap-2.5 px-4 pt-3 pb-2.5 border-b border-outline/10">
                                                 <div
@@ -1689,7 +1686,7 @@
                                                             key=${i}
                                                             class=${'text-[10px] italic leading-snug pl-2 border-l-2 ' +
                                                                 (isLatest ? 'text-on-surface/75' : 'text-on-surface-variant/30')}
-                                                            style=${{ borderLeftColor: isLatest ? color.border : 'rgba(255,255,255,0.06)' }}
+                                                            style=${{ borderLeftColor: isLatest ? color.border : 'var(--msg-border-dim)' }}
                                                         >
                                                             <${ShinyLines}
                                                                 text=${msg || ''}
@@ -1723,7 +1720,7 @@
                                 }}
                                 onMouseDown=${(e) => startCardDrag(e, '__user')}
                             >
-                                <div class="rounded-[20px] bg-primary/10 border border-primary/25 shadow-xl shadow-black/40 overflow-hidden">
+                                <div class="voicemap-card rounded-[20px] bg-primary/10 border border-primary/25 overflow-hidden">
                                     <div class="flex items-center gap-2.5 px-4 pt-3 pb-2.5 border-b border-primary/20">
                                         <div class="w-8 h-8 rounded-full border border-primary/40 bg-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
                                             ${userAvatar && /^(https?:|\/|data:)/.test(userAvatar)
@@ -1773,9 +1770,9 @@
                                     { bg: 'bg-primary/10', text: 'text-primary', bdr: 'border-primary/60', hover: 'hover:bg-primary/10' },
                                     { bg: 'bg-secondary/10', text: 'text-secondary', bdr: 'border-secondary/60', hover: 'hover:bg-secondary/10' },
                                     { bg: 'bg-tertiary/10', text: 'text-tertiary', bdr: 'border-tertiary/60', hover: 'hover:bg-tertiary/10' },
-                                    { bg: 'bg-amber-500/10', text: 'text-amber-300', bdr: 'border-amber-500/60', hover: 'hover:bg-amber-500/10' },
-                                    { bg: 'bg-emerald-500/10', text: 'text-emerald-300', bdr: 'border-emerald-500/60', hover: 'hover:bg-emerald-500/10' },
-                                    { bg: 'bg-rose-500/10', text: 'text-rose-300', bdr: 'border-rose-500/60', hover: 'hover:bg-rose-500/10' },
+                                    { bg: 'bg-amber-500/10', text: 'text-amber-500', bdr: 'border-amber-500/60', hover: 'hover:bg-amber-500/10' },
+                                    { bg: 'bg-emerald-600/10', text: 'text-emerald-600', bdr: 'border-emerald-600/60', hover: 'hover:bg-emerald-600/10' },
+                                    { bg: 'bg-rose-500/10', text: 'text-rose-500', bdr: 'border-rose-500/60', hover: 'hover:bg-rose-500/10' },
                                 ];
                                 const c = palettes[pi % palettes.length];
                                 return html`
@@ -1785,8 +1782,8 @@
                                         style=${{ left: pos.x + 'px', top: pos.y + 'px' }}
                                         onMouseDown=${(e) => startCardDrag(e, id)}
                                     >
-                                        <div class="rounded-[20px] bg-surface-container border border-outline/15 shadow-xl shadow-black/40 overflow-hidden">
-                                            <div class=${`px-4 py-2.5 border-b border-white/10 flex items-center justify-between ${c.bg}`}>
+                                        <div class="voicemap-card voicemap-card-bg rounded-[20px] border border-outline/15 overflow-hidden">
+                                            <div class=${`px-4 py-2.5 border-b border-outline/15 flex items-center justify-between ${c.bg}`}>
                                                 <span class=${`text-[8px] font-black uppercase tracking-[0.28em] ${c.text}`}>PATH ${String.fromCharCode(65 + pi)}</span>
                                                 <button
                                                     onMouseDown=${(e) => e.stopPropagation()}
@@ -1815,7 +1812,7 @@
                                         class="absolute pointer-events-none"
                                         style=${{ left: (userPosL.x + 360) + 'px', top: (userPosL.y + 60) + 'px' }}
                                     >
-                                        <div class="px-4 py-3 rounded-2xl bg-surface-container/80 border border-white/10 backdrop-blur text-[10px] text-on-surface-variant/60 flex items-center gap-2">
+                                        <div class="px-4 py-3 rounded-2xl bg-surface-container/80 border border-outline/15 backdrop-blur text-[10px] text-on-surface-variant/60 flex items-center gap-2">
                                             <span class="material-symbols-outlined animate-spin" style=${{ fontSize: '14px' }}>progress_activity</span>
                                             <span>Sketching paths…</span>
                                         </div>
@@ -1861,7 +1858,7 @@
                 >
                     <!-- Max speakers select -->
                     ${(selectedPersonas || []).length > 1 ? html`
-                        <div class="px-4 py-3 border-b border-white/5 flex items-center justify-between gap-3">
+                        <div class="px-4 py-3 border-b border-outline/15 flex items-center justify-between gap-3">
                             <span class="text-xs text-on-surface font-semibold">${t('chat.maxSpeakers')}</span>
                             <select
                                 value=${maxSpeakers}
@@ -1962,7 +1959,7 @@
               <div class="h-full flex flex-col flex-1 min-w-0 overflow-hidden">
 
                 <!-- ── Header ── -->
-                <header class="flex justify-between items-center w-full px-8 h-20 bg-surface-dim/30 backdrop-blur-lg border-b border-white/5 z-10 shrink-0">
+                <header class="flex justify-between items-center w-full px-8 h-20 bg-surface-dim/30 backdrop-blur-lg border-b border-outline/15 z-10 shrink-0">
                     <div class="flex items-center gap-6">
                         <div>
                             <h2 class="text-xl md:text-2xl font-headline font-bold tracking-tight text-on-surface">${t('chat.council')}</h2>
@@ -2051,7 +2048,7 @@
                 <div
                     ref=${scrollRef}
                     class="flex-1 overflow-y-auto"
-                    style=${{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(232,168,76,0.35) transparent' }}
+                    style=${{ scrollbarWidth: 'thin', scrollbarColor: 'rgb(var(--color-primary) / 0.35) transparent' }}
                 >
                   <div class="max-w-5xl mx-auto w-full px-6 py-8 space-y-8">
                     ${history.length === 0 && !isDebating ? html`
@@ -2162,14 +2159,14 @@
                 </div>
 
                 <!-- ── Footer input area ── -->
-                <footer class="p-6 bg-surface-dim/40 backdrop-blur-2xl border-t border-white/5 shrink-0">
+                <footer class="p-6 bg-surface-dim/40 backdrop-blur-2xl border-t border-outline/15 shrink-0">
                     <div class="max-w-5xl mx-auto space-y-3">
                         ${showScrollToBottom ? html`
                             <div class="flex justify-center pointer-events-none">
                                 <button
                                     onClick=${scrollToBottom}
                                     title="Scroll to latest"
-                                    class="pointer-events-auto w-10 h-10 rounded-full border border-primary/25 bg-surface-container/85 text-primary/80 shadow-xl shadow-black/30 backdrop-blur-xl flex items-center justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/45 hover:scale-105 active:scale-95 transition-all"
+                                    class="scroll-btn pointer-events-auto w-10 h-10 rounded-full border border-primary/25 bg-surface-container/85 text-primary/80 backdrop-blur-xl flex items-center justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/45 hover:scale-105 active:scale-95 transition-all"
                                 >
                                     <span class="material-symbols-outlined" style=${{ fontSize: '22px', fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>keyboard_arrow_down</span>
                                 </button>
@@ -2177,7 +2174,7 @@
                         ` : null}
 
                         <!-- Main input row -->
-                        <div class="input-warm-focus flex items-center bg-surface-container-lowest border border-white/5 rounded-2xl p-2 transition-all duration-300">
+                        <div class="input-warm-focus flex items-center bg-surface-container-lowest border border-outline/15 rounded-2xl p-2 transition-all duration-300">
                             <!-- Tools (web search / follow-up) -->
                             <div class="relative shrink-0">
                                 <button
@@ -2186,7 +2183,7 @@
                                     class=${'w-9 h-9 rounded-lg flex items-center justify-center transition-colors ' +
                                         (showToolsMenu || webSearchMode || followUpMode
                                             ? 'bg-primary/15 text-primary'
-                                            : 'text-on-surface-variant/50 hover:text-primary hover:bg-white/5')}
+                                            : 'text-on-surface-variant/50 hover:text-primary hover:bg-primary/10')}
                                 >
                                     <span class="material-symbols-outlined" style=${{ fontSize: '20px' }}>add</span>
                                 </button>
@@ -2433,8 +2430,8 @@
 
                     /* Warm amber focus glow on input */
                     .input-warm-focus:focus-within {
-                        box-shadow: 0 0 0 2px rgba(232, 168, 76, 0.2), 0 0 20px rgba(232, 168, 76, 0.08);
-                        border-color: rgba(232, 168, 76, 0.25) !important;
+                        box-shadow: 0 0 0 2px rgb(var(--color-primary) / 0.2), 0 0 20px rgb(var(--color-primary) / 0.08);
+                        border-color: rgb(var(--color-primary) / 0.25) !important;
                     }
 
                     /* Smooth typing indicator — ease-out pulse instead of bounce */
@@ -2453,9 +2450,9 @@
                         letter-spacing: 0.04em;
                         background-image: linear-gradient(
                             90deg,
-                            rgba(232, 168, 76, 0.30) 0%,
-                            rgba(252, 227, 168, 1)   50%,
-                            rgba(232, 168, 76, 0.30) 100%
+                            rgb(var(--color-primary) / 0.30) 0%,
+                            rgb(var(--color-on-primary-container) / 1) 50%,
+                            rgb(var(--color-primary) / 0.30) 100%
                         );
                         background-size: 220% 100%;
                         -webkit-background-clip: text;

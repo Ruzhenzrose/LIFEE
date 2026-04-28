@@ -5,7 +5,7 @@
     // Shared Void input / button class strings
     // -------------------------------------------------------------------------
     const CLS_INPUT =
-        'w-full bg-surface-container-lowest border border-white/5 rounded-xl px-4 py-3 ' +
+        'w-full bg-surface-container-lowest border border-outline/15 rounded-xl px-4 py-3 ' +
         'text-on-surface placeholder-on-surface-variant/30 focus:outline-none focus:ring-2 ' +
         'focus:ring-primary/25 font-body transition-all';
 
@@ -340,7 +340,7 @@
                     'div',
                     {
                         className: 'flex flex-col items-center gap-1 px-8 py-5 rounded-2xl ' +
-                                   'bg-surface-container-lowest border border-white/5',
+                                   'bg-surface-container-lowest border border-outline/15',
                     },
                     React.createElement('span', { className: 'text-4xl font-bold text-on-surface' }, balance),
                     React.createElement('span', { className: 'text-xs text-on-surface/40 uppercase tracking-wider' }, 'credits remaining')
@@ -489,7 +489,7 @@
                 'div',
                 {
                     key: item.personaId || item.name,
-                    className: 'rounded-2xl bg-surface-container-lowest border border-white/5 p-5 space-y-2',
+                    className: 'rounded-2xl bg-surface-container-lowest border border-outline/15 p-5 space-y-2',
                     style: {
                         borderTop: `2px solid ${item.color || ACCENT_FALLBACK}`,
                     },
