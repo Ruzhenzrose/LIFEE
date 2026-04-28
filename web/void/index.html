@@ -2345,7 +2345,7 @@
 
             // Domain carousel — single row of square cards, horizontal scroll on overflow
             const activeDomains = DOMAIN_ORDER.filter(d => grouped[d].length > 0);
-            const HEADER_H = 44;   // domain header row + gap + buffer（去掉 N° 编号 + 标题 text-2xl→text-base 后，70 收紧到 44）
+            const HEADER_H = 56;   // domain header row + gap + buffer（44 基础 + section pt-3 给 nav→标题留 12px 喘息）
             // 手机端卡片缩到 w-40 (160px)，正好能并排两张；ROW_H 同步压到 180。
             const _isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
             const ROW_H = _isMobile ? 180 : 260;
@@ -2632,8 +2632,8 @@
             return html`
                 <div class="animate-in flex flex-col w-full h-full overflow-y-auto no-scrollbar">
                     <!-- Masthead -->
-                    <div class="w-full max-w-6xl mx-auto px-5 md:px-8 pt-6 md:pt-10 pb-3 md:pb-4">
-                        <div class="flex items-baseline justify-between border-b border-on-surface/10 pb-3 gap-3">
+                    <div class="w-full max-w-6xl mx-auto px-5 md:px-8 pt-6 md:pt-8 pb-1 md:pb-1">
+                        <div class="flex items-baseline justify-between border-b border-on-surface/10 pb-2 gap-3">
                             <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] font-bold whitespace-nowrap">${dayLabel}</p>
                             <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] whitespace-nowrap">${dateStr}</p>
                             <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] whitespace-nowrap">${t('home.theCouncil')}</p>
@@ -2641,7 +2641,7 @@
                     </div>
 
                     <!-- Hero: input area only (featured persona card 已移除) -->
-                    <section class="w-full max-w-6xl mx-auto px-5 md:px-8 pt-4 md:pt-6 pb-1">
+                    <section class="w-full max-w-6xl mx-auto px-5 md:px-8 pt-2 md:pt-3 pb-5">
                         <!-- 输入区——大头像删除后输入区独占整行；"今日议题" 小字省了腾空间 -->
                         <div class="flex flex-col justify-center gap-4">
                             <h1
@@ -2771,7 +2771,7 @@
                                 return html`
                                     <div key=${domain}
                                          ref=${(node) => { sectionRefs.current[dIdx] = node; }}
-                                         class="flex flex-col gap-5 pt-2 overflow-hidden"
+                                         class="flex flex-col gap-2 pt-3 overflow-hidden"
                                          style=${{ height: h + 'px' }}>
                                         <!-- Domain header（去掉 N° 编号，标题缩小给下方更多喘息） -->
                                         <div class="flex items-baseline justify-between">
