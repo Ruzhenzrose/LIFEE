@@ -318,10 +318,13 @@
         const [showMembersPanel, setShowMembersPanel] = useState(false);
         // Keep ~120px of chat visible so the user can always see there's a chat
         // on the left (and grab the resize handle to pull the map back).
-        // roadmap 模式下放开 120px 留白，允许真正全屏（思维导图横向铺得开）
+        // roadmap 模式下放开 120px 留白，允许真正全屏（思维导图横向铺得开）。
+        // 用 chatRootRef.offsetWidth 拿到的是「主 Sidebar 之后」的可用宽度，
+        // 比 window.innerWidth 更准——否则 aside 会撑出容器右边沿。
         const mapMaxWidth = () => {
-            const w = typeof window !== 'undefined' ? window.innerWidth : 1280;
-            return pathOptions.length > 0 ? w : Math.max(320, w - 120);
+            const fallback = typeof window !== 'undefined' ? window.innerWidth : 1280;
+            const containerW = chatRootRef.current?.offsetWidth || fallback;
+            return pathOptions.length > 0 ? containerW : Math.max(320, containerW - 120);
         };
         const [mapWidth, setMapWidth]           = useState(() => {
             try {
@@ -344,6 +347,9 @@
         // ── Refs ──────────────────────────────────────────────────────────────
         const scrollRef        = useRef(null);
         const inputFieldRef    = useRef(null);
+        // 整个 ChatArena 根容器（不含主 Sidebar）的实际宽度——voice map 全屏时
+        // 用这个而不是 window.innerWidth，避免 aside 撑出容器右侧让按钮跑屏外。
+        const chatRootRef      = useRef(null);
         const sessionIdRef     = useRef(sessionId);
         const extractTimerRef  = useRef(null);
         const summaryAtCountRef = useRef(0);
@@ -888,10 +894,10 @@
             setPathLoading(true);
             setPathError('');
             setShowVoiceMap(true);
-            // roadmap 模式下默认把 voice map 拉到全屏，便于看完整思维导图
-            if (typeof window !== 'undefined') {
-                setMapWidth(window.innerWidth);
-            }
+            // roadmap 模式下默认把 voice map 拉到全屏；用容器宽度而非视口宽度，
+            // 避免主 Sidebar 那段被错算进去导致按钮跑屏外。
+            const containerW = chatRootRef.current?.offsetWidth;
+            if (containerW) setMapWidth(containerW);
             try {
                 const payload = sessionId
                     ? JSON.stringify({ sessionId, language: language || 'Chinese', situation: context?.situation || '' })
@@ -1942,7 +1948,7 @@
 
         // ── Main render ───────────────────────────────────────────────────────
         return html`
-            <div class="h-full flex flex-row overflow-hidden bg-surface text-on-surface">
+            <div ref=${chatRootRef} class="h-full flex flex-row overflow-hidden bg-surface text-on-surface">
               <div class="h-full flex flex-col flex-1 min-w-0 overflow-hidden">
 
                 <!-- ── Header ── -->
