@@ -316,6 +316,7 @@
         const [showToolsMenu, setShowToolsMenu] = useState(false);
         const [showVoiceMap, setShowVoiceMap]   = useState(false);
         const [showMembersPanel, setShowMembersPanel] = useState(false);
+        const [showScrollToBottom, setShowScrollToBottom] = useState(false);
         // Keep ~120px of chat visible so the user can always see there's a chat
         // on the left (and grab the resize handle to pull the map back).
         // roadmap 模式下放开 120px 留白，允许真正全屏（思维导图横向铺得开）。
@@ -597,6 +598,7 @@
             const onScroll = () => {
                 const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
                 stickyBottomRef.current = nearBottom;
+                setShowScrollToBottom(!nearBottom && el.scrollHeight > el.clientHeight + 120);
             };
             el.addEventListener('scroll', onScroll, { passive: true });
             return () => el.removeEventListener('scroll', onScroll);
@@ -606,8 +608,16 @@
             if (!el) return;
             if (stickyBottomRef.current) {
                 el.scrollTop = el.scrollHeight;
+                setShowScrollToBottom(false);
             }
         }, [history]);
+        const scrollToBottom = () => {
+            const el = scrollRef.current;
+            if (!el) return;
+            stickyBottomRef.current = true;
+            el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+            setShowScrollToBottom(false);
+        };
 
         // ── Credits ───────────────────────────────────────────────────────────
         useEffect(() => {
@@ -2040,8 +2050,8 @@
                 <!-- ── Messages scroll area ── -->
                 <div
                     ref=${scrollRef}
-                    class="flex-1 overflow-y-auto no-scrollbar"
-                    style=${{ scrollbarWidth: 'none' }}
+                    class="flex-1 overflow-y-auto"
+                    style=${{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(232,168,76,0.35) transparent' }}
                 >
                   <div class="max-w-5xl mx-auto w-full px-6 py-8 space-y-8">
                     ${history.length === 0 && !isDebating ? html`
@@ -2154,6 +2164,17 @@
                 <!-- ── Footer input area ── -->
                 <footer class="p-6 bg-surface-dim/40 backdrop-blur-2xl border-t border-white/5 shrink-0">
                     <div class="max-w-5xl mx-auto space-y-3">
+                        ${showScrollToBottom ? html`
+                            <div class="flex justify-center pointer-events-none">
+                                <button
+                                    onClick=${scrollToBottom}
+                                    title="Scroll to latest"
+                                    class="pointer-events-auto w-10 h-10 rounded-full border border-primary/25 bg-surface-container/85 text-primary/80 shadow-xl shadow-black/30 backdrop-blur-xl flex items-center justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/45 hover:scale-105 active:scale-95 transition-all"
+                                >
+                                    <span class="material-symbols-outlined" style=${{ fontSize: '22px', fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>keyboard_arrow_down</span>
+                                </button>
+                            </div>
+                        ` : null}
 
                         <!-- Main input row -->
                         <div class="input-warm-focus flex items-center bg-surface-container-lowest border border-white/5 rounded-2xl p-2 transition-all duration-300">
