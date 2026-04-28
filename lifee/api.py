@@ -1182,25 +1182,17 @@ class TimelineRequest(BaseModel):
     situation: str = ""
 
 
-class TimelineNodeRequest(BaseModel):
+class PathOptionsRequest(BaseModel):
     sessionId: str = ""
     messages: list = []
     language: str = "Chinese"
     situation: str = ""
-    choice: str = ""
-    branch: str = "A"
-    branchLabel: str = ""
-    step: int = 1
-    timeline: list = []
 
 
-@app.post("/timeline-node")
-async def generate_timeline_node(req: TimelineNodeRequest):
-    """根据用户本轮 A/B 选择生成一个时间节点。"""
-    choice = (req.choice or "").strip()
-    if not choice:
-        return {"node": {}, "error": "choice is required"}
-
+@app.post("/path-options")
+async def generate_path_options(req: PathOptionsRequest):
+    """从对话里推出 3-6 条用户可能的人生路径——每条只一句话，
+    用作 roadmap 模式的起点选项。详细 plan 由前端再调 /plan-30-days。"""
     msgs = req.messages
     if req.sessionId and not msgs:
         try:
@@ -1218,57 +1210,58 @@ async def generate_timeline_node(req: TimelineNodeRequest):
             continue
         history.append(f"{pid}: {txt[:280]}")
 
-    prior_nodes = []
-    for i, node in enumerate((req.timeline or [])[-6:], start=1):
-        prior_nodes.append(
-            f"{i}. Branch {node.get('branch', '')}: {node.get('choice', '')} -> {node.get('title', '')}: {node.get('description', '')}"
-        )
-
-    prompt = f"""You generate ONE timeline node for an interactive life-path conversation.
-
-The user is choosing between A/B options. After each answer, create only the next node for the branch they chose. Do not generate a full timeline.
+    prompt = f"""Based on this conversation about a life decision, list 3-6 distinct possible paths the user could take. Don't be artificial — pick the number that genuinely reflects the choice space (3 if it's binary-ish, up to 6 if there's real variety).
 
 Situation: {req.situation or 'Major life decision'}
-Chosen branch: {req.branch}
-Branch label: {req.branchLabel or req.branch}
-User choice: {choice}
-Step number: {req.step}
 
 Recent conversation:
 {chr(10).join(history) or '(none)'}
 
-Existing timeline nodes:
-{chr(10).join(prior_nodes) or '(none)'}
+For each path, give:
+- A short label (3-8 words)
+- A one-sentence summary of what this path means
 
-Return exactly one concrete node in {req.language}. Make it feel like a consequence of the user's latest choice and specific to the situation.
-
-Reply ONLY in this JSON format:
+Reply ONLY in this JSON format ({req.language}):
 {{
-  "period": "Node {req.step}",
-  "title": "Short node title",
-  "description": "One specific sentence about what happens next because of this choice.",
-  "tags": ["tag1", "tag2"]
-}}"""
+  "paths": [
+    {{ "label": "短标签", "summary": "一句话说明这条路是什么" }},
+    ...
+  ]
+}}
+
+Make labels distinct and concrete (not "保守路线 / 激进路线" — use specific actions like "继续读博" / "去硅谷工作")."""
 
     try:
         provider = _get_provider()
         from lifee.providers.base import Message, MessageRole
         messages_llm = [Message(role=MessageRole.USER, content=prompt)]
         chunks = []
-        async for chunk in provider.stream(messages=messages_llm, max_tokens=500, temperature=0.35):
+        async for chunk in provider.stream(messages=messages_llm, max_tokens=600, temperature=0.5):
             chunks.append(chunk)
         text = "".join(chunks).strip()
         import json as _json
         if '```' in text:
             text = text.split('```')[1].replace('json', '', 1).strip()
-        node = _json.loads(text)
-        if not isinstance(node.get("tags"), list):
-            node["tags"] = []
-        return {"node": node}
+        data = _json.loads(text)
+        raw_paths = data.get("paths") if isinstance(data, dict) else None
+        if not isinstance(raw_paths, list) or not raw_paths:
+            return {"paths": [], "error": "no paths returned"}
+        paths = []
+        for i, p in enumerate(raw_paths[:6]):
+            if not isinstance(p, dict):
+                continue
+            label = (p.get("label") or "").strip()
+            summary = (p.get("summary") or "").strip()
+            if not label:
+                continue
+            paths.append({"id": f"p{i+1}", "label": label[:42], "summary": summary[:140]})
+        if len(paths) < 2:
+            return {"paths": paths, "error": "too few paths"}
+        return {"paths": paths}
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return {"node": {}, "error": str(e)}
+        return {"paths": [], "error": str(e)}
 
 
 @app.post("/timeline")
