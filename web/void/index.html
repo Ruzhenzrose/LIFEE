@@ -197,8 +197,11 @@
          需要拿到真实邮箱并完成验证码 - 重复防护意义不大。 -->
 
     <!-- Shared modules from web/ui/ -->
-    <script src="/constants.js"></script>
-    <script src="/api.js"></script>
+    <!-- 共享自 web/ui 的常量与 API helper（INITIAL_PERSONAS 等）。
+         /constants.js、/api.js 之前能取到是因为根 mount 指向 web/ui，
+         现在根换成 web/void 之后必须显式走 /ui/ 路径。 -->
+    <script src="/ui/constants.js"></script>
+    <script src="/ui/api.js"></script>
 
     <!-- Void-specific component files -->
     <script src="./components/ui.js"></script>
@@ -628,8 +631,8 @@
             'recommend.generatedHeader':{ en: '✦ Voices created for you',                    zh: '✦ 为你新建的角色' },
             'recommend.confirm':        { en: 'Add to My Panel & Continue',                  zh: '加入我的角色库并继续' },
             'recommend.skip':           { en: "Skip — I'll choose my own",                   zh: '跳过 · 我自己挑' },
-            'home.mode.ab.title':       { en: 'A or B',     zh: 'A 还是 B' },
-            'home.mode.ab.desc':        { en: "Tell me your offers. I'll ask the right questions.", zh: '说出你的选项，我来问对的问题。' },
+            'home.mode.ab.title':       { en: 'Real Life',  zh: '现实' },
+            'home.mode.ab.desc':        { en: "Real-world dilemmas. I'll ask the right questions before answering.", zh: '现实场景的纠结，我先追问几轮再回答。' },
             'home.mode.values.title':   { en: 'Values',     zh: '价值观' },
             'home.mode.values.desc':    { en: 'Rank what matters. See what that reveals.', zh: '为在意的事排序，看出自己真正在乎什么。' },
             'home.mode.mystical.title': { en: 'Mystical',   zh: '玄学' },
@@ -2062,18 +2065,25 @@
                 ))
                 .filter(Boolean);
 
-            const DOMAIN_ORDER_BASE = ['Philosophy', 'Business', 'Science', 'Arts'];
-            const DOMAIN_ORDER = hotPersonas.length > 0
-                ? ['Hot', ...DOMAIN_ORDER_BASE]
-                : DOMAIN_ORDER_BASE;
+            const DOMAIN_ORDER = ['Philosophy', 'Business', 'Science', 'Arts'];
+            // 热门角色不再单独占一个 domain（避免和原 domain 重复出现），
+            // 而是给原 domain 里的卡片打一个"热门"小标签。
+            const hotIdSet = new Set(hotPersonas.map(p => p.id));
 
-            // Group personas by domain (Hot is a special computed domain)
+            // Group personas by domain
             const grouped = {};
             DOMAIN_ORDER.forEach(d => grouped[d] = []);
-            if (hotPersonas.length > 0) grouped['Hot'] = hotPersonas;
             personas.forEach(p => {
                 const d = getDomain(p);
-                if (grouped[d] && d !== 'Hot') grouped[d].push(p);
+                if (grouped[d]) grouped[d].push(p);
+            });
+            // 热门角色在它所属 domain 内排到最前
+            DOMAIN_ORDER.forEach(d => {
+                grouped[d].sort((a, b) => {
+                    const aHot = hotIdSet.has(a.id) ? 1 : 0;
+                    const bHot = hotIdSet.has(b.id) ? 1 : 0;
+                    return bHot - aHot;
+                });
             });
 
             const toggleSelect = (id) => {
@@ -2084,15 +2094,6 @@
 
             const selectedPersonas = personas.filter(p => selectedIds.includes(p.id));
 
-            // Preview: hovered/tapped persona in the right panel
-            const [previewId, setPreviewId] = useState(null);
-            // Featured card carousel index
-            const [featuredIdx, setFeaturedIdx] = useState(0);
-            const featuredPool = useMemo(() => {
-                const hot = hotPersonas.filter(Boolean);
-                const rest = personas.filter(p => !hot.find(h => h.id === p.id));
-                return [...hot, ...rest];
-            }, [hotPersonas.length, personas.length]);
             // Conversation mode (null = default multi-voice council)
             const [mode, setMode] = useState(null);
             // Detail modal state (full persona profile)
@@ -2344,18 +2345,21 @@
 
             // Domain carousel — single row of square cards, horizontal scroll on overflow
             const activeDomains = DOMAIN_ORDER.filter(d => grouped[d].length > 0);
-            const HEADER_H = 70;   // domain header row + gap + buffer
+            const HEADER_H = 44;   // domain header row + gap + buffer（去掉 N° 编号 + 标题 text-2xl→text-base 后，70 收紧到 44）
             // 手机端卡片缩到 w-40 (160px)，正好能并排两张；ROW_H 同步压到 180。
             const _isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
             const ROW_H = _isMobile ? 180 : 260;
             const sectionHFor = () => HEADER_H + ROW_H;
             const sectionHeights = activeDomains.map(() => sectionHFor());
+            // 桌面端 carousel 高度 = 2 个 domain section 高度，让用户一眼能看到下一个 domain
+            // 的提示。手机屏太挤就不堆叠。
+            const VISIBLE_DOMAIN_COUNT = _isMobile ? 1 : 2;
 
             const carouselRef = useRef(null);
             const sectionRefs = useRef([]);
             const scrollLockRef = useRef(false);
             const [activeDomainIdx, setActiveDomainIdx] = useState(0);
-            const currentSectionH = sectionHeights[activeDomainIdx] ?? 300;
+            const currentSectionH = sectionHFor() * VISIBLE_DOMAIN_COUNT;
 
             // Read actual offsetTop of each section (avoids rounding drift from computed heights)
             const getOffsets = () => sectionRefs.current.map(el => el?.offsetTop ?? 0);
@@ -2411,10 +2415,13 @@
                     if (n <= 1) return;
                     const dir = e.deltaY > 0 ? 1 : -1;
                     const currentIdx = idxAtScroll(el.scrollTop);
-                    // Wrap around: past the last domain loops back to the first,
-                    // before the first loops to the last. Makes the carousel feel
-                    // like a continuous loop rather than dead-ending at boundaries.
-                    const nextIdx = (currentIdx + dir + n) % n;
+                    // Wrap around：考虑 VISIBLE_DOMAIN_COUNT > 1 时的最大可滚 idx——
+                    // 显示 2 个 section、共 n 个时，最末 topmost 是 n-2，所以
+                    // wrap 范围是 [0, n-VISIBLE_DOMAIN_COUNT]。否则向下永远卡在
+                    // n-2 不会回到 0。
+                    const maxIdx = Math.max(0, n - VISIBLE_DOMAIN_COUNT);
+                    const wrap = maxIdx + 1;
+                    const nextIdx = (currentIdx + dir + wrap) % wrap;
                     if (nextIdx === currentIdx) return;
                     wheelLock = true;
                     scrollLockRef.current = true;
@@ -2609,17 +2616,6 @@
             // asynchronously, which grows the list from 4 → 5).
             }, [personas.length, activeDomains.length]);
 
-            // Featured = preview > most recent selected > top Hot persona. Wait
-            // until Hot has resolved before falling back, so we don't flash
-            // Audrey then swap to Hot #1 mid-load.
-            const lastSelected = selectedPersonas[selectedPersonas.length - 1];
-            const featured =
-                (previewId && personas.find(p => p.id === previewId)) ||
-                (featuredPool.length > 0
-                    ? featuredPool[featuredIdx % featuredPool.length]
-                    : (hotLoaded ? (personas.find(p => p.id === 'audrey-hepburn') || personas[0]) : null));
-            const showFeaturedArrows = !previewId && featuredPool.length > 1;
-
             // Masthead date — locale-aware
             const today = new Date();
             const dateLocale = window.__lifeeLocale === 'zh' ? 'zh-CN' : 'en-US';
@@ -2644,13 +2640,12 @@
                         </div>
                     </div>
 
-                    <!-- Hero: split layout (input left, featured right) -->
-                    <section class="w-full max-w-6xl mx-auto px-5 md:px-8 pt-4 md:pt-6 pb-5 md:pb-8 grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-10">
-                        <!-- Left: input area -->
-                        <div class="md:col-span-3 flex flex-col justify-center gap-5">
-                            <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em]">${t('home.todaysQuestion')}</p>
+                    <!-- Hero: input area only (featured persona card 已移除) -->
+                    <section class="w-full max-w-6xl mx-auto px-5 md:px-8 pt-4 md:pt-6 pb-1">
+                        <!-- 输入区——大头像删除后输入区独占整行；"今日议题" 小字省了腾空间 -->
+                        <div class="flex flex-col justify-center gap-4">
                             <h1
-                                class="font-headline text-3xl md:text-5xl font-bold text-on-surface"
+                                class="font-headline text-3xl md:text-5xl font-bold text-on-surface min-h-[68px] md:min-h-[112px] flex items-end"
                                 style=${{ lineHeight: window.__lifeeLocale === 'zh' ? 1.35 : 1.1 }}
                                 dangerouslySetInnerHTML=${{ __html: t('home.onYourMind') }}
                             ></h1>
@@ -2697,15 +2692,36 @@
                                     <span class="material-symbols-outlined" style=${{ fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>send</span>
                                 </button>
                             </div>
-                            ${toastMsg ? html`
-                                <div class="text-xs text-primary/80 animate-in flex items-center gap-2">
-                                    <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>info</span>
-                                    ${toastMsg}
+                            <!-- 模式 pill（左）+ 已选角色 pill（右）合并到同一行，节约一行垂直空间。
+                                 英文标题 What's on your mind? 是两行需要这个 buffer。-->
+                            <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 -mt-1 px-1 min-h-[34px]">
+                                <!-- 模式 pill：靠左 -->
+                                <div class="flex flex-wrap items-center gap-2">
+                                    ${[
+                                        { id: 'ab',       icon: 'target' },
+                                        { id: 'values',   icon: 'diamond' },
+                                        { id: 'mystical', icon: 'auto_awesome' },
+                                    ].map(m => {
+                                        const isActive = mode === m.id;
+                                        return html`
+                                            <button
+                                                key=${m.id}
+                                                onClick=${() => setMode(isActive ? null : m.id)}
+                                                class=${`no-shine flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all border ${
+                                                    isActive
+                                                        ? 'border-primary/60 bg-primary/10 text-primary shadow-sm shadow-primary/10'
+                                                        : 'border-white/15 bg-transparent text-on-surface-variant/55 hover:border-white/30 hover:text-on-surface/85'
+                                                }`}
+                                            >
+                                                <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>${m.icon}</span>
+                                                <span>${t('home.mode.' + m.id + '.title')}</span>
+                                            </button>
+                                        `;
+                                    })}
                                 </div>
-                            ` : null}
-                            ${selectedIds.length > 0 ? html`
-                                <div class="flex flex-wrap gap-2">
-                                    ${selectedPersonas.map(p => html`
+                                <!-- 角色 pill：靠右；空时 div 仍占位但无 pill -->
+                                <div class="flex flex-wrap gap-2 justify-end">
+                                    ${(selectedPersonas || []).map(p => html`
                                         <span key=${p.id}
                                             class="inline-flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full bg-primary/8 border border-primary/15 text-xs text-primary/80">
                                             <${AvatarDisplay} avatar=${p.avatar || '☁️'} size=${20} />
@@ -2715,124 +2731,20 @@
                                         </span>
                                     `)}
                                 </div>
-                            ` : html`
-                                <p class="text-xs text-on-surface-variant/40 italic">${t('home.selectVoices')}</p>
-                            `}
-                        </div>
-
-                        <!-- Right: featured persona card (click to add to conversation) -->
-                        <!-- 手机端隐藏，首屏让位给输入 + 模式 + 角色行 -->
-                        ${featured ? (() => {
-                            const isSel = selectedIds.includes(featured.id);
-                            const label = previewId ? t('home.preview') : (isSel ? t('home.inConversation') : t('home.featured'));
-                            const total = featuredPool.length;
-                            const cur = featuredIdx % Math.max(1, total);
-                            return html`
-                                <div class="md:col-span-2 hidden md:block">
-                                    <div
-                                        onClick=${() => toggleSelect(featured.id)}
-                                        class=${`group relative h-full rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 min-h-[300px]
-                                            ${isSel
-                                                ? 'ring-2 ring-primary shadow-xl shadow-primary/30'
-                                                : 'ring-1 ring-outline-variant/20 hover:ring-primary/60 hover:shadow-xl hover:shadow-primary/20'}`}
-                                        style=${featured.cover_url ? {
-                                            backgroundImage: `linear-gradient(to bottom, rgba(18,17,15,0.2), rgba(18,17,15,0.95)), url(${featured.cover_url})`,
-                                            backgroundSize: 'cover',
-                                            backgroundPosition: featured.cover_position || 'center',
-                                        } : {}}
-                                    >
-                                        <div class=${featured.cover_url ? '' : 'bg-surface-container-high h-full'}>
-                                            <div class="flex flex-col justify-between h-full min-h-[300px] p-6">
-                                                <div class="flex items-start justify-between">
-                                                    <p class="text-[9px] text-on-surface-variant/70 uppercase tracking-[0.3em] font-bold">${label}</p>
-                                                    ${showFeaturedArrows ? html`
-                                                        <div class="flex items-center gap-1" onClick=${e => e.stopPropagation()}>
-                                                            <button
-                                                                onClick=${() => setFeaturedIdx(i => (i - 1 + total) % total)}
-                                                                class=${`no-shine w-7 h-7 rounded-full flex items-center justify-center transition-all backdrop-blur-sm
-                                                                    ${featured.cover_url
-                                                                        ? 'bg-black/30 hover:bg-black/50 text-white/80 hover:text-white'
-                                                                        : 'bg-on-surface/10 hover:bg-on-surface/20 text-on-surface/70 hover:text-on-surface'}`}
-                                                            ><span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>chevron_left</span></button>
-                                                            <button
-                                                                onClick=${() => setFeaturedIdx(i => (i + 1) % total)}
-                                                                class=${`no-shine w-7 h-7 rounded-full flex items-center justify-center transition-all backdrop-blur-sm
-                                                                    ${featured.cover_url
-                                                                        ? 'bg-black/30 hover:bg-black/50 text-white/80 hover:text-white'
-                                                                        : 'bg-on-surface/10 hover:bg-on-surface/20 text-on-surface/70 hover:text-on-surface'}`}
-                                                            ><span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>chevron_right</span></button>
-                                                        </div>
-                                                    ` : null}
-                                                </div>
-                                                <div>
-                                                    <p class="text-[10px] text-primary/80 uppercase tracking-widest font-bold mb-2">${featured.role}</p>
-                                                    <h3 class=${`font-headline text-3xl font-bold leading-tight mb-3 ${featured.cover_url ? 'text-white' : 'text-on-surface'}`}>${featured.name}</h3>
-                                                    <p class=${`text-xs italic leading-relaxed line-clamp-3 max-w-xs mb-4 ${featured.cover_url ? 'text-white/70' : 'text-on-surface-variant/70'}`}>"${featured.worldview}"</p>
-                                                    <div class="flex items-center justify-between">
-                                                        <button
-                                                            onClick=${(e) => { e.stopPropagation(); setDetailPersonaId(featured.id); }}
-                                                            class="inline-flex items-center gap-1.5 text-[10px] font-label uppercase tracking-[0.25em] text-white/60 hover:text-primary transition-colors"
-                                                        >
-                                                            <span>${t('home.readDossier')}</span>
-                                                            <span class="material-symbols-outlined" style=${{ fontSize: '12px' }}>arrow_outward</span>
-                                                        </button>
-                                                        ${showFeaturedArrows && total > 1 ? html`
-                                                            <div class="flex gap-1" onClick=${e => e.stopPropagation()}>
-                                                                ${Array.from({ length: Math.min(total, 8) }).map((_, i) => html`
-                                                                    <button
-                                                                        key=${i}
-                                                                        onClick=${() => setFeaturedIdx(i)}
-                                                                        class=${`no-shine w-1.5 h-1.5 rounded-full transition-all ${i === cur ? 'bg-primary scale-125' : 'bg-white/30 hover:bg-white/60'}`}
-                                                                    />
-                                                                `)}
-                                                                ${total > 8 ? html`<span class="text-[9px] text-white/40 ml-1">${cur + 1}/${total}</span>` : null}
-                                                            </div>
-                                                        ` : null}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                            </div>
+                            ${toastMsg ? html`
+                                <div class="text-xs text-primary/80 animate-in flex items-center gap-2">
+                                    <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>info</span>
+                                    ${toastMsg}
                                 </div>
-                            `;
-                        })() : null}
+                            ` : null}
+                        </div>
                     </section>
 
                     <!-- Domain sections (editorial list style) -->
                     <section class="w-full max-w-6xl mx-auto px-8 pb-8">
-                        <!-- Mode selector (replaces The Council divider) -->
-                        <div class="mb-3 pt-2">
-                            <p class="text-xs text-on-surface/90 uppercase tracking-[0.3em] font-bold">${t('home.questionType')}</p>
-                        </div>
-                        <!-- mobile: 3-col 紧凑卡（图标+标题），desc 仅 md+ 显示；md+: 原大卡布局 -->
-                        <div class="grid grid-cols-3 gap-2 md:gap-4 mb-6">
-                            ${[
-                                { id: 'ab',       icon: 'balance' },
-                                { id: 'values',   icon: 'diamond' },
-                                { id: 'mystical', icon: 'auto_awesome' },
-                            ].map(m => {
-                                const isActive = mode === m.id;
-                                return html`
-                                    <button
-                                        key=${m.id}
-                                        onClick=${() => setMode(isActive ? null : m.id)}
-                                        class=${`text-left md:text-left text-center p-2 md:p-5 rounded-xl md:rounded-2xl border transition-all ${
-                                            isActive
-                                                ? 'qtype-card-active border-primary/70 bg-primary/5 shadow-sm shadow-primary/10'
-                                                : 'qtype-card border-white/25 bg-surface-container/50 hover:border-white/40 hover:bg-surface-container'
-                                        }`}
-                                    >
-                                        <span class=${`material-symbols-outlined block mb-0.5 md:mb-3 transition-colors ${isActive ? 'text-primary' : 'text-on-surface/70'}`}
-                                              style=${{ fontSize: '16px' }}>${m.icon}</span>
-                                        <h3 class=${`font-headline text-[11px] md:text-lg font-bold mb-0 md:mb-1 leading-tight transition-colors ${isActive ? 'text-primary' : 'text-on-surface'}`}>${t('home.mode.' + m.id + '.title')}</h3>
-                                        <p class="hidden md:block text-xs text-on-surface-variant/60 leading-relaxed">${t('home.mode.' + m.id + '.desc')}</p>
-                                    </button>
-                                `;
-                            })}
-                        </div>
-
                         <!-- Domain directory — sticky above the carousel (moved from bottom) -->
-                        <div class="sticky top-0 z-10 flex items-center justify-start flex-wrap gap-x-8 gap-y-3 mb-0 -mx-8 px-8 pt-3.5 pb-2 bg-surface/90 backdrop-blur-xl">
+                        <div class="sticky top-0 z-10 flex items-center justify-start flex-wrap gap-x-8 gap-y-3 mb-0 -mx-8 px-8 pt-2.5 pb-2 bg-surface/90 backdrop-blur-xl">
                             ${activeDomains.map((domain, dIdx) => {
                                 const isActive = dIdx === activeDomainIdx;
                                 return html`
@@ -2861,13 +2773,10 @@
                                          ref=${(node) => { sectionRefs.current[dIdx] = node; }}
                                          class="flex flex-col gap-5 pt-2 overflow-hidden"
                                          style=${{ height: h + 'px' }}>
-                                        <!-- Domain header -->
+                                        <!-- Domain header（去掉 N° 编号，标题缩小给下方更多喘息） -->
                                         <div class="flex items-baseline justify-between">
-                                            <div class="flex items-baseline gap-4">
-                                                <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em] font-bold">N° 0${dIdx + 1}</p>
-                                                <h2 class="font-headline text-2xl font-bold text-on-surface">${t('domain.' + domain.toLowerCase()) || domain}</h2>
-                                            </div>
-                                            <div class="flex items-center gap-3 text-[11px] text-on-surface-variant/40">
+                                            <h2 class="font-headline text-base font-bold text-on-surface">${t('domain.' + domain.toLowerCase()) || domain}</h2>
+                                            <div class="flex items-center gap-2 text-[10px] text-on-surface-variant/35">
                                                 <span class="italic">${items.length} ${items.length === 1 ? t('chat.voice') : t('home.voices')}</span>
                                                 <span class="opacity-60">·</span>
                                                 <span class="uppercase tracking-widest">${dIdx + 1}/${arr.length}</span>
@@ -2880,30 +2789,35 @@
                                         <div class="flex-1 min-h-0 flex flex-nowrap items-start gap-x-5 overflow-x-auto no-scrollbar py-2 px-1">
                                             ${items.map(p => {
                                                 const isSel = selectedIds.includes(p.id);
-                                                const isPreview = previewId === p.id;
+                                                const isHot = hotIdSet.has(p.id);
                                                 return html`
                                                     <div
                                                         key=${p.id}
-                                                        onClick=${() => {
-                                                            if (previewId === p.id) toggleSelect(p.id);
-                                                            else setPreviewId(p.id);
-                                                        }}
+                                                        onClick=${() => toggleSelect(p.id)}
                                                         class=${`group shrink-0 cursor-pointer select-none w-40 h-40 md:w-56 md:h-56 rounded-xl overflow-hidden relative transition-all
                                                             ${isSel
                                                                 ? 'ring-2 ring-primary shadow-lg shadow-primary/20'
-                                                                : isPreview
-                                                                    ? 'ring-1 ring-primary/40'
-                                                                    : 'ring-1 ring-on-surface/10 hover:ring-primary/50'}`}
+                                                                : 'ring-1 ring-on-surface/10 hover:ring-primary/50'}`}
                                                         style=${p.cover_url ? {
                                                             backgroundImage: `linear-gradient(to bottom, rgba(18,17,15,0.15) 0%, rgba(18,17,15,0.55) 55%, rgba(18,17,15,0.95) 100%), url(${p.cover_url})`,
                                                             backgroundSize: 'cover',
                                                             backgroundPosition: p.cover_position || 'center top',
                                                         } : {}}
                                                     >
+                                                        ${isHot ? html`
+                                                            <span
+                                                                class="no-shine absolute top-2 left-2 z-10 text-[9px] font-black uppercase tracking-[0.25em] text-primary px-1.5 py-0.5 rounded bg-black/40 backdrop-blur-sm"
+                                                                title=${t('domain.hot')}
+                                                            >✦ ${t('domain.hot')}</span>
+                                                        ` : null}
+                                                        ${isSel ? html`
+                                                            <span class="absolute top-2 right-2 z-10 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md shadow-black/40">
+                                                                <span class="material-symbols-outlined text-on-primary" style=${{ fontSize: '13px', fontVariationSettings: "'FILL' 1, 'wght' 700" }}>check</span>
+                                                            </span>
+                                                        ` : null}
                                                         <div class=${`relative h-full flex flex-col justify-end p-3 ${p.cover_url ? '' : 'bg-surface-container-high'}`}>
-                                                            <div class="flex items-center justify-between gap-2">
+                                                            <div class="flex items-center gap-2">
                                                                 <p class=${`text-[9px] uppercase tracking-[0.25em] font-bold ${isSel ? 'text-primary' : 'text-white/60'}`}>${p.role}</p>
-                                                                ${isSel ? html`<span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>` : null}
                                                             </div>
                                                             <p class=${`font-headline text-base font-bold leading-tight mt-0.5 ${isSel ? 'text-primary' : 'text-white'}`}>${p.name}</p>
                                                             <p class="text-[10px] text-white/50 italic leading-snug line-clamp-2 mt-1">"${p.worldview}"</p>
