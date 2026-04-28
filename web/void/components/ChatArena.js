@@ -302,14 +302,21 @@
             } catch (_) {}
         };
         const [summaryLoading, setSummaryLoading] = useState(false);
-        // Timeline (A/B 对比) 和 30 天 plan 状态——只在 A/B 模式（2 角色或 2 选项）下可触发。
-        const [timelineData, setTimelineData]     = useState(null);
-        const [timelineLoading, setTimelineLoading] = useState(false);
-        const [timelineError, setTimelineError]   = useState('');
-        const [showPlanModal, setShowPlanModal]   = useState(false);
-        const [planData, setPlanData]             = useState(null);
-        const [planLoading, setPlanLoading]       = useState(false);
-        const [planWeek, setPlanWeek]             = useState(0);
+        // Timeline 渐进式状态——用户每次选 A/B 选项就往对应分支追加一个节点。
+        // timelineNodes: { id, branch:'A'|'B', branchLabel, choiceText, period, title, description, tags }[]
+        // timelineBranchLabels: 当前两条分支的语义标签（"稳定 vs 创业"），从对话/选项里推断
+        // decisionNodes: 用户每次选择产生的"决策卡"——含推断动机 + 可一键展开为完整时间线
+        const [timelineMode, setTimelineMode]               = useState(false);
+        const [timelineNodes, setTimelineNodes]             = useState([]);
+        const [timelineBranchLabels, setTimelineBranchLabels] = useState({ A: '', B: '' });
+        const [timelineNodeLoading, setTimelineNodeLoading] = useState(false);
+        const [timelineError, setTimelineError]             = useState('');
+        const [decisionNodes, setDecisionNodes]             = useState([]);
+        const [userNodeExpanded, setUserNodeExpanded]       = useState(false);
+        const [showPlanModal, setShowPlanModal]             = useState(false);
+        const [planData, setPlanData]                       = useState(null);
+        const [planLoading, setPlanLoading]                 = useState(false);
+        const [planWeek, setPlanWeek]                       = useState(0);
         const [showMoreMenu, setShowMoreMenu]   = useState(false);
         const [showToolsMenu, setShowToolsMenu] = useState(false);
         const [showVoiceMap, setShowVoiceMap]   = useState(false);
@@ -460,6 +467,10 @@
             const cached = optionsCacheRef.current[parentSessionId];
             setOptions((cached && cached.length) ? cached : (initialOptions || []));
             setSummaryData({});
+            setDecisionNodes([]);
+            setTimelineNodes([]);
+            setTimelineBranchLabels({ A: '', B: '' });
+            setTimelineMode(false);
             setIsDebating(false);
             autoStartedRef.current = false;
         }, [parentSessionId]);
@@ -872,27 +883,240 @@
             }
         };
 
-        // ── A/B Timeline + 30 天 Plan ────────────────────────────────────────
-        // 后端 /timeline 把对话解读成 2 条 path（不要求严格 2 角色），所以
-        // 只要有像样的对话就能跑——按 history 长度判定即可。
-        // /plan-30-days 同理。
+        // ── A/B 渐进式 Timeline + 30 天 Plan ────────────────────────────────
+        // 用户每次选 A/B 选项 → handleOptionChoice 记 decisionNode + 调
+        // /timeline-node 给对应分支追加 1 个节点。/plan-30-days 不变。
 
-        const generateTimeline = async () => {
-            if (timelineLoading) return;
-            setTimelineLoading(true);
-            setTimelineData(null);
+        // ── 标签推断辅助 ────────────────────────────────────────────────
+        const cleanBranchLabel = (text) => {
+            const cleaned = (text || '')
+                .replace(/^[\s"'“”‘’`]+|[\s"'“”‘’`]+$/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return cleaned.length > 42 ? `${cleaned.slice(0, 39)}...` : cleaned;
+        };
+
+        // 从用户文本里抓显式 A/B 表述（"在 X 还是 Y 之间"、"choose between X and Y"）
+        const extractExplicitBranchLabels = (text) => {
+            const src = (text || '').replace(/\s+/g, ' ').trim();
+            if (!src) return null;
+            const patterns = [
+                /(?:between|choose between|torn between)\s+(.{2,70}?)\s+(?:and|or|vs\.?|versus)\s+(.{2,70}?)(?:[.?!,;，。！？；]|$)/i,
+                /(?:one is|one offer is|option a is)\s+(.{2,70}?)\s+(?:and|while|,?\s*the other is|option b is)\s+(.{2,70}?)(?:[.?!,;，。！？；]|$)/i,
+                /(?:在|纠结|选择|考虑)?\s*(.{2,50}?)\s*(?:还是|和|与|或|vs\.?|VS|versus)\s*(.{2,50}?)(?:[，。！？；,.?!;]|$)/
+            ];
+            for (const pattern of patterns) {
+                const match = src.match(pattern);
+                if (!match) continue;
+                const a = cleanBranchLabel(match[1]);
+                const b = cleanBranchLabel(match[2]);
+                if (a && b && a !== b) return { A: a, B: b };
+            }
+            return null;
+        };
+
+        const getInferredBranchLabels = () => {
+            // 优先用 options 数组（如果恰好 2 个）
+            if ((options || []).length === 2) {
+                const a = cleanBranchLabel(options[0]);
+                const b = cleanBranchLabel(options[1]);
+                if (a && b) return { A: a, B: b };
+            }
+            // 其次扫描 situation + 最近 3 条用户消息
+            const recentUserText = history
+                .filter(m => m.personaId === 'user')
+                .slice(-3)
+                .map(m => m.text || '')
+                .join(' ');
+            return extractExplicitBranchLabels(`${context?.situation || ''} ${recentUserText}`) || { A: '', B: '' };
+        };
+
+        const ensureTimelineBranchLabels = () => {
+            const inferred = getInferredBranchLabels();
+            setTimelineBranchLabels(prev => ({
+                A: prev.A || inferred.A || '',
+                B: prev.B || inferred.B || ''
+            }));
+            return {
+                A: timelineBranchLabels.A || inferred.A || '',
+                B: timelineBranchLabels.B || inferred.B || ''
+            };
+        };
+
+        // option 文本是问句（"你为什么…"）→ 走普通对话；否则走 decision-node
+        const isQuestionOption = (text) => {
+            const s = (text || '').trim();
+            if (!s) return false;
+            if (/[?？]\s*$/.test(s)) return true;
+            return /(为什么|为何|怎么|怎样|如何|哪个|哪一个|什么|多少|是否|是不是|能不能|可不可以|要不要|该不该|会不会|有没有|你觉得|你认为|你会|what|why|how|which|when|where|should|would|could|do you|are you|can you|is it)\b/i.test(s);
+        };
+
+        // 从用户的 choice 文本里推断"他在追求什么"——画在 decisionNode 卡上
+        const inferDecisionIntent = (choiceText) => {
+            const s = (choiceText || '').trim();
+            const wants = [];
+            if (/(稳定|安全|保障|确定|可控|风险低|保底|踏实|成熟)/i.test(s)) wants.push('确定性和风险可控');
+            if (/(钱|收入|薪|现金|短期|回报|涨薪|待遇|预算)/i.test(s)) wants.push('更快看到现实回报');
+            if (/(成长|潜力|长期|未来|空间|上升|职业发展|履历)/i.test(s)) wants.push('长期成长空间');
+            if (/(团队|负责人|执行|落地|推进|协作|资源|组织)/i.test(s)) wants.push('可靠的团队与执行环境');
+            if (/(技术|数据|模型|产品|硬件|研发|壁垒|核心)/i.test(s)) wants.push('更硬的能力积累和护城河');
+            if (/(自由|自主|创业|主导|掌控|独立|创造)/i.test(s)) wants.push('更高的自主权和创造空间');
+            if (/(影响|意义|价值|使命|用户|医疗|公益|改变)/i.test(s)) wants.push('更强的意义感和外部影响');
+            if (/(学习|经验|见识|试错|探索|挑战)/i.test(s)) wants.push('学习密度和探索机会');
+            const unique = [...new Set(wants)].slice(0, 3);
+            if (unique.length === 0) return '这个选择显示你正在把模糊的偏好变成可行动的判断。';
+            return `这个选择显示你更想要：${unique.join('、')}。`;
+        };
+
+        // 进入 timeline 模式：画布出现两张空 A/B 卡，等待用户选择来填充节点
+        const enterTimelineMode = () => {
+            ensureTimelineBranchLabels();
+            setTimelineMode(true);
+            setShowVoiceMap(true);
             setTimelineError('');
+        };
+
+        // 调 /timeline-node 给指定分支追加 1 个节点（渐进式生成）
+        const generateTimelineNode = async (choiceText, branchIndex = 0, labelOverride = null, timelineOverride = null) => {
+            if (timelineNodeLoading) return;
+            const cleanChoice = (choiceText || '').trim();
+            if (!cleanChoice) return;
+            setTimelineNodeLoading(true);
+            setTimelineError('');
+            const branch = branchIndex === 1 ? 'B' : 'A';
+            const branchLabels = labelOverride || ensureTimelineBranchLabels();
+            const timelineHistory = Array.isArray(timelineOverride) ? timelineOverride : timelineNodes;
             try {
-                const payload = sessionId
-                    ? JSON.stringify({ sessionId, language: language || 'Chinese', situation: context?.situation || '' })
-                    : JSON.stringify({
-                        messages: history
-                            .filter(m => m.personaId !== 'system' && m.personaId !== 'lifee-followup')
-                            .slice(-12)
-                            .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 200) })),
-                        language: language || 'Chinese',
-                        situation: context?.situation || '',
-                    });
+                const payload = JSON.stringify({
+                    sessionId,
+                    messages: history
+                        .filter(m => m.personaId !== 'system' && m.personaId !== 'lifee-followup')
+                        .slice(-12)
+                        .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 240) })),
+                    language: language || 'Chinese',
+                    situation: context?.situation || '',
+                    choice: cleanChoice,
+                    branch,
+                    branchLabel: branchLabels[branch] || cleanChoice,
+                    step: timelineHistory.length + 1,
+                    timeline: timelineHistory.map(n => ({
+                        branch: n.branch,
+                        choice: n.choiceText,
+                        title: n.title,
+                        description: n.description,
+                    })),
+                });
+                const r = await window.fetch('/timeline-node', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload,
+                });
+                if (!r.ok) {
+                    const txt = await r.text();
+                    throw new Error(`Server ${r.status}: ${txt.slice(0, 100)}`);
+                }
+                const res = await r.json();
+                if (res?.error) throw new Error(res.error);
+                const node = res?.node || {};
+                setTimelineNodes(prev => ([
+                    ...prev,
+                    {
+                        id: `timeline-${Date.now()}-${prev.length}`,
+                        branch,
+                        branchLabel: branchLabels[branch] || '',
+                        choiceText: cleanChoice,
+                        period: node.period || `Node ${prev.length + 1}`,
+                        title: node.title || cleanChoice,
+                        description: node.description || `You chose: ${cleanChoice}`,
+                        tags: Array.isArray(node.tags) ? node.tags.slice(0, 3) : [],
+                    },
+                ]));
+            } catch (e) {
+                // fallback：起码把用户的选择记上，不要丢
+                setTimelineNodes(prev => ([
+                    ...prev,
+                    {
+                        id: `timeline-${Date.now()}-${prev.length}`,
+                        branch,
+                        branchLabel: branchLabels[branch] || '',
+                        choiceText: cleanChoice,
+                        period: `Node ${prev.length + 1}`,
+                        title: cleanChoice,
+                        description: 'This choice has been added to your path.',
+                        tags: ['choice'],
+                    },
+                ]));
+                setTimelineError(e?.message || 'Timeline node generation failed');
+                setTimeout(() => setTimelineError(''), 4000);
+            } finally {
+                setTimelineNodeLoading(false);
+            }
+        };
+
+        // 用户点底部 option 按钮：先记 decisionNode，再继续对话
+        // （只有 timelineMode 开启时才生成 timelineNode；否则就只是普通的 runRound）
+        const handleOptionChoice = async (opt, index = 0) => {
+            const cleanChoice = (opt || '').trim();
+            if (!cleanChoice) return;
+            if (isQuestionOption(cleanChoice)) {
+                await runRound(opt);
+                return;
+            }
+            const branch = index === 1 ? 'B' : 'A';
+            const labels = ensureTimelineBranchLabels();
+            const alternatives = (options || []).filter((_, i) => i !== index).map(x => cleanBranchLabel(x)).filter(Boolean);
+            setDecisionNodes(prev => ([
+                ...prev,
+                {
+                    id: `decision-${Date.now()}-${prev.length}`,
+                    branch,
+                    choice: cleanChoice,
+                    branchLabel: labels[branch] || cleanChoice,
+                    insight: inferDecisionIntent(cleanChoice),
+                    alternatives,
+                    createdAt: Date.now(),
+                },
+            ]));
+            setShowVoiceMap(true);
+            if (timelineMode) {
+                // 画布上对应分支追加节点（不阻塞 runRound）
+                generateTimelineNode(cleanChoice, index, labels);
+            }
+            await runRound(opt);
+        };
+
+        // Decision-node 卡上点 "Timeline →" → 用旧 /timeline 把这一个决策展开成完整时间线
+        const generateDecisionTimeline = async (node) => {
+            if (!node?.choice || timelineNodeLoading) return;
+            const alternative = node.alternatives?.[0]
+                || (node.branch === 'A' ? timelineBranchLabels.B : timelineBranchLabels.A)
+                || 'Alternative path';
+            const labels = { A: node.choice, B: alternative };
+            setTimelineNodeLoading(true);
+            setTimelineNodes([]);
+            setTimelineMode(true);
+            setShowVoiceMap(true);
+            setTimelineError('');
+            setTimelineBranchLabels(labels);
+            try {
+                const payload = JSON.stringify({
+                    messages: [
+                        {
+                            personaId: 'option_a',
+                            text: [
+                                `Path A decision: ${node.choice}`,
+                                node.insight ? `What this suggests the user wants: ${node.insight}` : '',
+                                `Compare this against Path B: ${alternative}`,
+                            ].filter(Boolean).join('\n'),
+                        },
+                        {
+                            personaId: 'option_b',
+                            text: `Path B decision: ${alternative}\nThis is the counterfactual path to simulate against Path A.`,
+                        },
+                    ],
+                    language: language || 'Chinese',
+                    situation: `${context?.situation || 'Major life decision'}\n\nGenerate two possible life paths after this decision node.`,
+                });
                 const r = await window.fetch('/timeline', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -905,17 +1129,65 @@
                 const res = await r.json();
                 if (res?.error) throw new Error(res.error);
                 const tl = res?.timelines || res;
-                if (tl?.option_a || tl?.option_b) {
-                    setTimelineData(tl);
-                    setShowVoiceMap(true);
-                } else {
-                    throw new Error('No timeline data returned');
-                }
+                const optionA = tl?.option_a || {};
+                const optionB = tl?.option_b || {};
+                const stamp = Date.now();
+                const nextNodes = [
+                    ...((optionA.phases || []).map((phase, idx) => ({
+                        id: `decision-timeline-a-${stamp}-${idx}`,
+                        branch: 'A',
+                        branchLabel: optionA.label || labels.A,
+                        choiceText: labels.A,
+                        period: phase.period || `A Node ${idx + 1}`,
+                        title: phase.title || labels.A,
+                        description: phase.description || '',
+                        tags: Array.isArray(phase.tags) ? phase.tags.slice(0, 3) : [],
+                    }))),
+                    ...((optionB.phases || []).map((phase, idx) => ({
+                        id: `decision-timeline-b-${stamp}-${idx}`,
+                        branch: 'B',
+                        branchLabel: optionB.label || labels.B,
+                        choiceText: labels.B,
+                        period: phase.period || `B Node ${idx + 1}`,
+                        title: phase.title || labels.B,
+                        description: phase.description || '',
+                        tags: Array.isArray(phase.tags) ? phase.tags.slice(0, 3) : [],
+                    }))),
+                ];
+                if (!nextNodes.length) throw new Error('No timeline paths returned');
+                setTimelineBranchLabels({
+                    A: optionA.label || labels.A,
+                    B: optionB.label || labels.B,
+                });
+                setTimelineNodes(nextNodes);
             } catch (e) {
-                setTimelineError(e?.message || 'Timeline generation failed');
+                setTimelineError(e?.message || 'Decision timeline generation failed');
                 setTimeout(() => setTimelineError(''), 4000);
+                const stamp = Date.now();
+                setTimelineNodes([
+                    {
+                        id: `decision-timeline-a-${stamp}`,
+                        branch: 'A',
+                        branchLabel: labels.A,
+                        choiceText: labels.A,
+                        period: 'Node 1',
+                        title: labels.A,
+                        description: 'This path follows the decision you selected.',
+                        tags: ['selected path'],
+                    },
+                    {
+                        id: `decision-timeline-b-${stamp}`,
+                        branch: 'B',
+                        branchLabel: labels.B,
+                        choiceText: labels.B,
+                        period: 'Node 1',
+                        title: labels.B,
+                        description: 'This path explores the alternative choice.',
+                        tags: ['alternative'],
+                    },
+                ]);
             } finally {
-                setTimelineLoading(false);
+                setTimelineNodeLoading(false);
             }
         };
 
@@ -1195,8 +1467,9 @@
                                 ${options.map((opt, i) => html`
                                     <button
                                         key=${i}
-                                        onClick=${() => runRound(opt)}
-                                        class="no-shine text-left px-4 py-2 text-xs font-semibold rounded-full bg-surface-container-high/70 border border-primary/25 text-primary/80 hover:text-primary hover:border-primary/60 hover:bg-surface-container transition-colors"
+                                        disabled=${timelineNodeLoading}
+                                        onClick=${() => handleOptionChoice(opt, i)}
+                                        class="no-shine text-left px-4 py-2 text-xs font-semibold rounded-full bg-surface-container-high/70 border border-primary/25 text-primary/80 hover:text-primary hover:border-primary/60 hover:bg-surface-container transition-colors disabled:opacity-40"
                                     ><span>${opt}</span></button>
                                 `)}
                             </div>
@@ -1432,8 +1705,10 @@
                 const rect = canvasRef.current?.getBoundingClientRect();
                 if (!rect) return;
                 const ids = [...voices.map(v => v.id), '__user'];
-                if (timelineData?.option_a) ids.push('__timeline_a');
-                if (timelineData?.option_b) ids.push('__timeline_b');
+                if (timelineMode) {
+                    ids.push('__timeline_a', '__timeline_b');
+                }
+                decisionNodes.forEach(n => ids.push(`__decision_${n.id}`));
                 const positions = ids.map(id => cardPos[id]).filter(Boolean);
                 if (!positions.length) {
                     setPan({ x: 0, y: 0 });
@@ -1490,12 +1765,12 @@
                                 <span>${t('chat.summary')}</span>
                             </button>
                             <button
-                                onClick=${generateTimeline}
-                                disabled=${history.length < 2 || timelineLoading}
-                                class=${`no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider flex items-center gap-1 disabled:opacity-30 ${timelineData ? 'text-secondary' : ''}`}
-                                title="Generate two scenario timelines"
+                                onClick=${enterTimelineMode}
+                                disabled=${history.length < 2 || timelineNodeLoading}
+                                class=${`no-shine px-2 h-7 rounded-md btn-ghost text-[9px] uppercase tracking-wider flex items-center gap-1 disabled:opacity-30 ${timelineMode ? 'text-secondary' : ''}`}
+                                title="Enter timeline mode — A/B 节点会随你后续的选择渐进生成"
                             >
-                                ${timelineLoading
+                                ${timelineNodeLoading
                                     ? html`<span class="material-symbols-outlined animate-spin" style=${{ fontSize: '12px' }}>progress_activity</span>`
                                     : html`<span class="material-symbols-outlined" style=${{ fontSize: '12px' }}>fork_right</span>`
                                 }
@@ -1655,80 +1930,127 @@
                                 </div>
                             </div>
 
-                            <!-- ── A/B Timeline canvas cards ── -->
-                            ${timelineData && (timelineData.option_a || timelineData.option_b)
-                                ? ['option_a', 'option_b'].map((key, ki) => {
-                                    const opt = timelineData[key];
-                                    if (!opt) return null;
-                                    const id = ki === 0 ? '__timeline_a' : '__timeline_b';
-                                    const fallback = ki === 0 ? { x: 18, y: 660 } : { x: 296, y: 660 };
-                                    const pos = cardPos[id] || fallback;
-                                    const headerBg   = ki === 0 ? 'bg-primary/10' : 'bg-secondary/10';
-                                    const labelText  = ki === 0 ? 'text-primary' : 'text-secondary';
-                                    const labelBdr   = ki === 0 ? 'border-primary/60' : 'border-secondary/60';
-                                    const labelHover = ki === 0 ? 'hover:bg-primary/10' : 'hover:bg-secondary/10';
-                                    const dot        = ki === 0 ? 'bg-primary' : 'bg-secondary';
-                                    const dotRing    = ki === 0 ? 'ring-primary/30' : 'ring-secondary/30';
-                                    const periodText = ki === 0 ? 'text-primary/70' : 'text-secondary/70';
-                                    return html`
-                                        <div
-                                            key=${key}
-                                            class="absolute w-[255px] cursor-grab active:cursor-grabbing select-none"
-                                            style=${{
-                                                left: pos.x + 'px',
-                                                top: pos.y + 'px',
-                                            }}
-                                            onMouseDown=${(e) => startCardDrag(e, id)}
-                                        >
-                                            <div class="rounded-[20px] bg-surface-container border border-outline/15 shadow-xl shadow-black/40 overflow-hidden">
-                                                <div class="flex items-center justify-between px-4 py-2 border-b border-white/10">
-                                                    <span class="text-[8px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60">
-                                                        ${t('chat.timelinesHeader') || 'Scenario Timelines'}
-                                                    </span>
-                                                    <button
-                                                        onClick=${() => setTimelineData(null)}
-                                                        onMouseDown=${(e) => e.stopPropagation()}
-                                                        class="w-5 h-5 rounded-full border border-white/15 text-on-surface-variant/50 hover:text-on-surface text-[11px] flex items-center justify-center"
-                                                        title="Close"
-                                                    >✕</button>
-                                                </div>
-                                                <div class=${`px-3 py-2 border-b border-white/10 flex items-center justify-between gap-2 ${headerBg}`}>
-                                                    <span class=${`text-[9px] font-black uppercase tracking-[0.2em] truncate ${labelText}`}>
-                                                        ${String.fromCharCode(65 + ki)}. ${opt.label || key}
-                                                    </span>
-                                                    <button
-                                                        onClick=${() => generatePlan(opt.label || '')}
-                                                        onMouseDown=${(e) => e.stopPropagation()}
-                                                        class=${`no-shine text-[7px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full border ${labelBdr} ${labelText} ${labelHover} transition-all whitespace-nowrap`}
-                                                    >Plan →</button>
-                                                </div>
-                                                <div class="py-2">
-                                                    ${(opt.phases || []).map((phase, pi) => html`
-                                                        <div key=${pi} class=${`flex gap-2 px-3 py-1.5 ${pi < opt.phases.length - 1 ? 'border-b border-white/5' : ''}`}>
-                                                            <div class="flex flex-col items-center shrink-0 pt-0.5">
-                                                                <div class=${`w-1.5 h-1.5 rounded-full ${dot} ring-2 ${dotRing}`}></div>
-                                                                ${pi < opt.phases.length - 1 ? html`<div class="w-px flex-1 bg-white/10 mt-1"></div>` : null}
-                                                            </div>
-                                                            <div class="min-w-0 pb-1">
-                                                                <div class=${`text-[7px] font-bold uppercase tracking-[0.1em] ${periodText} mb-0.5`}>${phase.period || ''}</div>
-                                                                <div class="text-[9px] font-black text-on-surface leading-snug mb-0.5">${phase.title || ''}</div>
-                                                                <div class="text-[8px] text-on-surface-variant/65 leading-relaxed mb-1">${phase.description || ''}</div>
-                                                                ${(phase.tags || []).length > 0 ? html`
-                                                                    <div class="flex flex-wrap gap-1">
-                                                                        ${(phase.tags || []).map((tag, ti) => html`
-                                                                            <span key=${ti} class=${`text-[7px] px-1.5 py-px rounded-full font-bold ${ti % 2 === 0 ? 'bg-primary/15 text-primary' : 'bg-secondary/15 text-secondary'}`}>${tag}</span>
-                                                                        `)}
-                                                                    </div>
-                                                                ` : null}
-                                                            </div>
-                                                        </div>
-                                                    `)}
-                                                </div>
+                            <!-- ── Decision Node 卡片：每次选 A/B 选项追加一张 ── -->
+                            ${decisionNodes.map((node, ni) => {
+                                const id = `__decision_${node.id}`;
+                                const fallback = {
+                                    x: 18 + (ni % 2) * 270,
+                                    y: 360 + Math.floor(ni / 2) * 150,
+                                };
+                                const pos = cardPos[id] || fallback;
+                                return html`
+                                    <div
+                                        key=${node.id}
+                                        class="absolute w-[255px] cursor-grab active:cursor-grabbing select-none"
+                                        style=${{ left: pos.x + 'px', top: pos.y + 'px' }}
+                                        onMouseDown=${(e) => startCardDrag(e, id)}
+                                    >
+                                        <div class="rounded-[20px] bg-surface-container border border-outline/15 shadow-xl shadow-black/40 overflow-hidden">
+                                            <div class="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-primary/5">
+                                                <span class="text-[8px] font-black uppercase tracking-[0.28em] text-primary">DECISION NODE</span>
+                                                <button
+                                                    onMouseDown=${(e) => e.stopPropagation()}
+                                                    onClick=${() => generateDecisionTimeline(node)}
+                                                    disabled=${timelineNodeLoading}
+                                                    class="no-shine text-[7px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full border border-secondary/60 text-secondary hover:bg-secondary/10 transition-all whitespace-nowrap disabled:opacity-40"
+                                                    title="Expand this decision into a full timeline"
+                                                >Timeline →</button>
+                                            </div>
+                                            <div class="px-4 py-3">
+                                                <div class="text-[8px] font-black uppercase tracking-[0.16em] text-primary mb-1.5">${node.branch || 'A'}</div>
+                                                <div class="text-[11px] font-black text-on-surface leading-snug">${node.choice}</div>
+                                                ${node.insight ? html`
+                                                    <div class="mt-2 px-2.5 py-2 rounded-lg bg-primary/8 border-l-2 border-primary/50 text-[9px] leading-relaxed text-on-surface/70">
+                                                        ${node.insight}
+                                                    </div>
+                                                ` : null}
+                                                ${node.alternatives?.length > 0 ? html`
+                                                    <div class="mt-2 pt-2 border-t border-white/5 text-[9px] italic text-on-surface-variant/45 leading-snug">
+                                                        Alternative: ${node.alternatives[0]}
+                                                    </div>
+                                                ` : null}
                                             </div>
                                         </div>
-                                    `;
-                                })
-                                : null}
+                                    </div>
+                                `;
+                            })}
+
+                            <!-- ── Timeline-Mode A/B 双卡：开启 timelineMode 时出现，节点随选择追加 ── -->
+                            ${timelineMode ? ['A', 'B'].map((branch, ki) => {
+                                const id = ki === 0 ? '__timeline_a' : '__timeline_b';
+                                const fallback = ki === 0 ? { x: 18, y: 660 } : { x: 296, y: 660 };
+                                const pos = cardPos[id] || fallback;
+                                const branchNodes = timelineNodes.filter(n => n.branch === branch);
+                                const latestLabel = [...branchNodes].reverse().find(n => n.branchLabel)?.branchLabel || '';
+                                const branchLabel = timelineBranchLabels[branch] || latestLabel || '';
+                                const headerBg   = ki === 0 ? 'bg-primary/10' : 'bg-secondary/10';
+                                const labelText  = ki === 0 ? 'text-primary' : 'text-secondary';
+                                const labelBdr   = ki === 0 ? 'border-primary/60' : 'border-secondary/60';
+                                const labelHover = ki === 0 ? 'hover:bg-primary/10' : 'hover:bg-secondary/10';
+                                const dot        = ki === 0 ? 'bg-primary' : 'bg-secondary';
+                                const dotRing    = ki === 0 ? 'ring-primary/30' : 'ring-secondary/30';
+                                const periodText = ki === 0 ? 'text-primary/70' : 'text-secondary/70';
+                                return html`
+                                    <div
+                                        key=${`timeline-${branch}`}
+                                        class="absolute w-[255px] cursor-grab active:cursor-grabbing select-none"
+                                        style=${{ left: pos.x + 'px', top: pos.y + 'px' }}
+                                        onMouseDown=${(e) => startCardDrag(e, id)}
+                                    >
+                                        <div class="rounded-[20px] bg-surface-container border border-outline/15 shadow-xl shadow-black/40 overflow-hidden">
+                                            <div class="flex items-center justify-between px-4 py-2 border-b border-white/10">
+                                                <span class="text-[8px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60">TIMELINE MODE</span>
+                                                <button
+                                                    onClick=${() => setTimelineMode(false)}
+                                                    onMouseDown=${(e) => e.stopPropagation()}
+                                                    class="w-5 h-5 rounded-full border border-white/15 text-on-surface-variant/50 hover:text-on-surface text-[11px] flex items-center justify-center"
+                                                    title="Exit timeline mode"
+                                                >✕</button>
+                                            </div>
+                                            <div class=${`px-3 py-2 border-b border-white/10 flex items-center justify-between gap-2 ${headerBg}`}>
+                                                <span class=${`text-[9px] font-black uppercase tracking-[0.2em] truncate ${labelText}`}>
+                                                    ${branchLabel ? `${branch}. ${branchLabel}` : `Option ${branch}`}
+                                                </span>
+                                                <button
+                                                    onClick=${() => generatePlan(branchLabel || '')}
+                                                    onMouseDown=${(e) => e.stopPropagation()}
+                                                    class=${`no-shine text-[7px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full border ${labelBdr} ${labelText} ${labelHover} transition-all whitespace-nowrap`}
+                                                >Plan →</button>
+                                            </div>
+                                            <div class="py-2">
+                                                ${branchNodes.length === 0 ? html`
+                                                    <div class="px-3 py-3 text-[9px] italic text-on-surface-variant/35 leading-relaxed">
+                                                        Choose this path in chat to reveal the next node.
+                                                    </div>
+                                                ` : null}
+                                                ${branchNodes.map((phase, pi) => html`
+                                                    <div key=${phase.id} class=${`flex gap-2 px-3 py-1.5 ${pi < branchNodes.length - 1 ? 'border-b border-white/5' : ''}`}>
+                                                        <div class="flex flex-col items-center shrink-0 pt-0.5">
+                                                            <div class=${`w-1.5 h-1.5 rounded-full ${dot} ring-2 ${dotRing}`}></div>
+                                                            ${pi < branchNodes.length - 1 ? html`<div class="w-px flex-1 bg-white/10 mt-1"></div>` : null}
+                                                        </div>
+                                                        <div class="min-w-0 pb-1">
+                                                            <div class=${`text-[7px] font-bold uppercase tracking-[0.1em] ${periodText} mb-0.5`}>${phase.period || ''}</div>
+                                                            <div class="text-[9px] font-black text-on-surface leading-snug mb-0.5">${phase.title || ''}</div>
+                                                            <div class="text-[8px] text-on-surface-variant/65 leading-relaxed mb-1">${phase.description || ''}</div>
+                                                            ${(phase.tags || []).length > 0 ? html`
+                                                                <div class="flex flex-wrap gap-1">
+                                                                    ${(phase.tags || []).map((tag, ti) => html`
+                                                                        <span key=${ti} class=${`text-[7px] px-1.5 py-px rounded-full font-bold ${ti % 2 === 0 ? 'bg-primary/15 text-primary' : 'bg-secondary/15 text-secondary'}`}>${tag}</span>
+                                                                    `)}
+                                                                </div>
+                                                            ` : null}
+                                                        </div>
+                                                    </div>
+                                                `)}
+                                                ${timelineNodeLoading && ki === 0 ? html`
+                                                    <div class="px-3 py-2 text-[8px] font-black uppercase tracking-[0.16em] text-secondary">generating node…</div>
+                                                ` : null}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }) : null}
                         </div>
                     </div>
                 </aside>
