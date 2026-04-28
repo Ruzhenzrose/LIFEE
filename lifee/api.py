@@ -441,11 +441,9 @@ def _match_role(persona_id: str, persona_name: str) -> Optional[str]:
 
 
 
-@app.get("/")
-async def root():
-    """Root redirects to /ui/ (blue-white UI). Use /void/ for the new UI."""
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/ui/", status_code=307)
+# 注：/ 直接由下方 StaticFiles 挂 web/void 处理（index.html via html=True）。
+# 之前是 307 重定向到 /void/，但既然 void 已经是主前端就没必要多一跳——
+# lifee.world 直接显示 void。/void/ 仍作为别名挂着，老链接不破。
 
 
 @app.get("/debug-env")
@@ -2242,15 +2240,15 @@ async def _stream_sse(moderator, participants, question, mod_module=None, origin
 
 
 # 静态文件：服务前端页面
+# / 直接服务 web/void（lifee.world 主前端）。/void/ 保留为别名让老链接不破。
+# /ui/ 是队友在旧 UI 上做原型/视觉改版的旁路，不是公开入口。
 _web_void_dir = Path(__file__).parent.parent / "web" / "void"
-if _web_void_dir.exists():
-    app.mount("/void", StaticFiles(directory=str(_web_void_dir), html=True), name="void-frontend")
-
 _web_ui_dir = Path(__file__).parent.parent / "web" / "ui"
 if _web_ui_dir.exists():
-    # 显式 /ui/ 路径，避免 / 重定向把 web/ui/ 给挡了——队友在 web/ui/ 上做的视觉改版可以直接预览。
     app.mount("/ui", StaticFiles(directory=str(_web_ui_dir), html=True), name="ui-frontend")
-    app.mount("/", StaticFiles(directory=str(_web_ui_dir), html=True), name="frontend")
+if _web_void_dir.exists():
+    app.mount("/void", StaticFiles(directory=str(_web_void_dir), html=True), name="void-alias")
+    app.mount("/", StaticFiles(directory=str(_web_void_dir), html=True), name="frontend")
 
 
 if __name__ == "__main__":
