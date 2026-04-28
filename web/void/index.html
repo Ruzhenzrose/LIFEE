@@ -2346,20 +2346,38 @@
             // Domain carousel — single row of square cards, horizontal scroll on overflow
             const activeDomains = DOMAIN_ORDER.filter(d => grouped[d].length > 0);
             const HEADER_H = 56;   // domain header row + gap + buffer（44 基础 + section pt-3 给 nav→标题留 12px 喘息）
-            // 手机端卡片缩到 w-40 (160px)，正好能并排两张；ROW_H 同步压到 180。
             const _isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-            const ROW_H = _isMobile ? 180 : 260;
-            const sectionHFor = () => HEADER_H + ROW_H;
-            const sectionHeights = activeDomains.map(() => sectionHFor());
-            // 桌面端 carousel 高度 = 2 个 domain section 高度，让用户一眼能看到下一个 domain
-            // 的提示。手机屏太挤就不堆叠。
             const VISIBLE_DOMAIN_COUNT = _isMobile ? 1 : 2;
 
             const carouselRef = useRef(null);
             const sectionRefs = useRef([]);
             const scrollLockRef = useRef(false);
             const [activeDomainIdx, setActiveDomainIdx] = useState(0);
+
+            // ROW_H 从轮播容器实际高度反推：(容器高 / VISIBLE_DOMAIN_COUNT) - HEADER_H。
+            // 这样 home view 不会撑出滚动条，卡片在剩余空间里自适应。
+            const [carouselBoxH, setCarouselBoxH] = useState(0);
+            const ROW_H = (() => {
+                if (carouselBoxH > 0) {
+                    const h = Math.floor(carouselBoxH / VISIBLE_DOMAIN_COUNT) - HEADER_H;
+                    return Math.max(_isMobile ? 140 : 180, Math.min(_isMobile ? 220 : 320, h));
+                }
+                return _isMobile ? 180 : 260;
+            })();
+            const sectionHFor = () => HEADER_H + ROW_H;
+            const sectionHeights = activeDomains.map(() => sectionHFor());
             const currentSectionH = sectionHFor() * VISIBLE_DOMAIN_COUNT;
+
+            // ResizeObserver: 容器尺寸变化时重新计算 ROW_H
+            useEffect(() => {
+                const el = carouselRef.current;
+                if (!el) return;
+                const measure = () => setCarouselBoxH(el.clientHeight);
+                measure();
+                const ro = new ResizeObserver(measure);
+                ro.observe(el);
+                return () => ro.disconnect();
+            }, []);
 
             // Read actual offsetTop of each section (avoids rounding drift from computed heights)
             const getOffsets = () => sectionRefs.current.map(el => el?.offsetTop ?? 0);
@@ -2630,7 +2648,7 @@
             })();
 
             return html`
-                <div class="animate-in flex flex-col w-full h-full overflow-y-auto no-scrollbar">
+                <div class="animate-in flex flex-col w-full h-full overflow-hidden">
                     <!-- Masthead -->
                     <div class="w-full max-w-6xl mx-auto px-5 md:px-8 pt-6 md:pt-8 pb-1 md:pb-1">
                         <div class="flex items-baseline justify-between border-b border-on-surface/10 pb-2 gap-3">
@@ -2742,9 +2760,9 @@
                     </section>
 
                     <!-- Domain sections (editorial list style) -->
-                    <section class="w-full max-w-6xl mx-auto px-8 pb-8">
-                        <!-- Domain directory — sticky above the carousel (moved from bottom) -->
-                        <div class="sticky top-0 z-10 flex items-center justify-start flex-wrap gap-x-8 gap-y-3 mb-0 -mx-8 px-8 pt-2.5 pb-2 bg-surface/90 backdrop-blur-xl">
+                    <section class="flex-1 min-h-0 flex flex-col w-full max-w-6xl mx-auto px-8 pb-2">
+                        <!-- Domain directory — fixed top of carousel section -->
+                        <div class="shrink-0 flex items-center justify-start flex-wrap gap-x-8 gap-y-3 mb-0 -mx-8 px-8 pt-2.5 pb-2 bg-surface/90 backdrop-blur-xl">
                             ${activeDomains.map((domain, dIdx) => {
                                 const isActive = dIdx === activeDomainIdx;
                                 return html`
@@ -2760,11 +2778,9 @@
                             })}
                         </div>
 
-                        <!-- Vertical carousel (one domain at a time, dynamic height: 1 or 2 rows)
-                             Height transition delayed by half the scroll duration so the row
-                             reveal happens AFTER we've arrived at the new domain's top. -->
-                        <div ref=${carouselRef} class="relative overflow-y-auto no-scrollbar transition-[height] duration-300 delay-150 ease-out"
-                             style=${{ scrollbarWidth: 'none', height: currentSectionH + 'px' }}>
+                        <!-- Vertical carousel — flex-1 占满剩余空间，ROW_H 动态反推。 -->
+                        <div ref=${carouselRef} class="flex-1 min-h-0 relative overflow-y-auto no-scrollbar"
+                             style=${{ scrollbarWidth: 'none' }}>
                             ${activeDomains.map((domain, dIdx, arr) => {
                                 const items = grouped[domain];
                                 const h = sectionHeights[dIdx];
@@ -2815,6 +2831,15 @@
                                                                 <span class="material-symbols-outlined text-on-primary" style=${{ fontSize: '13px', fontVariationSettings: "'FILL' 1, 'wght' 700" }}>check</span>
                                                             </span>
                                                         ` : null}
+                                                        <!-- 详情按钮：右下角，纯 icon 无圆形背景，hover 时才出现 -->
+                                                        <button
+                                                            onClick=${(e) => { e.stopPropagation(); setDetailPersonaId(p.id); }}
+                                                            class="no-shine absolute bottom-2.5 right-2.5 z-10 text-white/70 hover:text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)] transition-opacity opacity-0 group-hover:opacity-100"
+                                                            title=${t('home.readDossier') || 'View profile'}
+                                                            aria-label=${t('home.readDossier') || 'View profile'}
+                                                        >
+                                                            <span class="material-symbols-outlined" style=${{ fontSize: '16px' }}>arrow_outward</span>
+                                                        </button>
                                                         <div class=${`relative h-full flex flex-col justify-end p-3 ${p.cover_url ? '' : 'bg-surface-container-high'}`}>
                                                             <div class="flex items-center gap-2">
                                                                 <p class=${`text-[9px] uppercase tracking-[0.25em] font-bold ${isSel ? 'text-primary' : 'text-white/60'}`}>${p.role}</p>
@@ -4490,9 +4515,9 @@
                             <div class=${`flex-1 min-h-0 flex flex-col overflow-hidden ${view === 'debate' ? '' : 'hidden'}`}>
                                 ${user && hasEnteredDebate ? renderChatArena() : null}
                             </div>
-                            <!-- Non-debate views -->
-                            <div class=${`flex-1 min-h-0 overflow-y-auto no-scrollbar ${view !== 'debate' ? '' : 'hidden'}`}>
-                              <div class="w-full max-w-[1400px] mx-auto h-full">
+                            <!-- Non-debate views — Home 自己 overflow-hidden；其他页（settings/help 等）允许内部滚 -->
+                            <div class=${`flex-1 min-h-0 overflow-hidden ${view !== 'debate' ? '' : 'hidden'}`}>
+                              <div class=${`w-full max-w-[1400px] mx-auto h-full ${view === 'home' ? '' : 'overflow-y-auto no-scrollbar'}`}>
                                 ${user ? renderContent() : null}
                               </div>
                             </div>
