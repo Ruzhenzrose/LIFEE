@@ -1528,6 +1528,47 @@
                             class="absolute top-0 left-0 origin-top-left"
                             style=${{ transform: `translate(${pan.x + 40}px, ${pan.y + 40}px) scale(${scale})` }}
                         >
+                            <!-- ── 思维导图连线：从 YOU 卡底部中心拉 Bezier 到每张 path 卡顶部中心 ── -->
+                            ${pathOptions.length > 0 ? html`
+                                <svg
+                                    class="absolute top-0 left-0 pointer-events-none"
+                                    style=${{ width: '1px', height: '1px', overflow: 'visible' }}
+                                >
+                                    ${pathOptions.map((p, pi) => {
+                                        const userPosL = cardPos['__user'] || { x: 0, y: 0 };
+                                        const id = `__path_${p.id}`;
+                                        const COLS = Math.min(pathOptions.length, 3);
+                                        const col = pi % COLS;
+                                        const row = Math.floor(pi / COLS);
+                                        const fallback = { x: 18 + col * 270, y: 480 + row * 170 };
+                                        const pathPos = cardPos[id] || fallback;
+                                        // YOU 卡 255 宽 ~150 高；path 卡 255 宽。连接 YOU 底部中心 → path 顶部中心。
+                                        const x1 = userPosL.x + 127;
+                                        const y1 = userPosL.y + 150;
+                                        const x2 = pathPos.x + 127;
+                                        const y2 = pathPos.y;
+                                        const dy = Math.max(40, Math.abs(y2 - y1) / 2);
+                                        // 调色板对齐 path 卡的 6 色
+                                        const colors = ['#e8a84c', '#8a9a6c', '#c47a6c', '#f59e0b', '#10b981', '#f43f5e'];
+                                        const c = colors[pi % colors.length];
+                                        return html`
+                                            <g key=${`line-${p.id}`}>
+                                                <path
+                                                    d=${`M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`}
+                                                    stroke=${c}
+                                                    stroke-width="1.8"
+                                                    stroke-opacity="0.55"
+                                                    fill="none"
+                                                    stroke-linecap="round"
+                                                />
+                                                <circle cx=${x1} cy=${y1} r="3" fill=${c} fill-opacity="0.65" />
+                                                <circle cx=${x2} cy=${y2} r="3.5" fill=${c} fill-opacity="0.9" />
+                                            </g>
+                                        `;
+                                    })}
+                                </svg>
+                            ` : null}
+
                             ${voices.map((v, idx) => {
                                 const color = getColor(v.id);
                                 const pos = cardPos[v.id] || { x: 0, y: 0, rotate: 0 };
