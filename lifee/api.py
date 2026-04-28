@@ -443,9 +443,9 @@ def _match_role(persona_id: str, persona_name: str) -> Optional[str]:
 
 @app.get("/")
 async def root():
-    """Root redirects to /ui/ (blue-white UI). Use /void/ for the new UI."""
+    """Root → /void/（线上主前端）。/ui/ 是队友的原型旁路，公网不暴露。"""
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/ui/", status_code=307)
+    return RedirectResponse(url="/void/", status_code=307)
 
 
 @app.get("/debug-env")
