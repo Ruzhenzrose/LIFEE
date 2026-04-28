@@ -1210,7 +1210,7 @@ async def generate_path_options(req: PathOptionsRequest):
             continue
         history.append(f"{pid}: {txt[:280]}")
 
-    prompt = f"""Based on this conversation about a life decision, list 3-6 distinct possible paths the user could take. Don't be artificial — pick the number that genuinely reflects the choice space (3 if it's binary-ish, up to 6 if there's real variety).
+    prompt = f"""Based on this conversation about a life decision, list exactly 3 distinct possible paths the user could take. Pick the 3 most meaningfully different options — don't pad with marginal variants.
 
 Situation: {req.situation or 'Major life decision'}
 
@@ -1247,7 +1247,7 @@ Make labels distinct and concrete (not "保守路线 / 激进路线" — use spe
         if not isinstance(raw_paths, list) or not raw_paths:
             return {"paths": [], "error": "no paths returned"}
         paths = []
-        for i, p in enumerate(raw_paths[:6]):
+        for i, p in enumerate(raw_paths[:3]):
             if not isinstance(p, dict):
                 continue
             label = (p.get("label") or "").strip()

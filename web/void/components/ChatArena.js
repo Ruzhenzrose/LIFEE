@@ -318,7 +318,11 @@
         const [showMembersPanel, setShowMembersPanel] = useState(false);
         // Keep ~120px of chat visible so the user can always see there's a chat
         // on the left (and grab the resize handle to pull the map back).
-        const mapMaxWidth = () => Math.max(320, (typeof window !== 'undefined' ? window.innerWidth : 1280) - 120);
+        // roadmap 模式下放开 120px 留白，允许真正全屏（思维导图横向铺得开）
+        const mapMaxWidth = () => {
+            const w = typeof window !== 'undefined' ? window.innerWidth : 1280;
+            return pathOptions.length > 0 ? w : Math.max(320, w - 120);
+        };
         const [mapWidth, setMapWidth]           = useState(() => {
             try {
                 const n = Number(window.localStorage.getItem('lifee_voice_map_width'));
@@ -884,6 +888,10 @@
             setPathLoading(true);
             setPathError('');
             setShowVoiceMap(true);
+            // roadmap 模式下默认把 voice map 拉到全屏，便于看完整思维导图
+            if (typeof window !== 'undefined') {
+                setMapWidth(window.innerWidth);
+            }
             try {
                 const payload = sessionId
                     ? JSON.stringify({ sessionId, language: language || 'Chinese', situation: context?.situation || '' })
@@ -1528,7 +1536,7 @@
                             class="absolute top-0 left-0 origin-top-left"
                             style=${{ transform: `translate(${pan.x + 40}px, ${pan.y + 40}px) scale(${scale})` }}
                         >
-                            <!-- ── 思维导图连线：从 YOU 卡底部中心拉 Bezier 到每张 path 卡顶部中心 ── -->
+                            <!-- ── 思维导图连线：从 YOU 卡右侧中心拉 Bezier 到每张 path 卡左侧中心（左→右思维导图） ── -->
                             ${pathOptions.length > 0 ? html`
                                 <svg
                                     class="absolute top-0 left-0 pointer-events-none"
@@ -1537,24 +1545,30 @@
                                     ${pathOptions.map((p, pi) => {
                                         const userPosL = cardPos['__user'] || { x: 0, y: 0 };
                                         const id = `__path_${p.id}`;
-                                        const COLS = Math.min(pathOptions.length, 3);
+                                        // path 默认槽位：右侧一列（>=5 条切两列），垂直按 index 分布
+                                        const COLS = pathOptions.length >= 5 ? 2 : 1;
                                         const col = pi % COLS;
                                         const row = Math.floor(pi / COLS);
-                                        const fallback = { x: 18 + col * 270, y: 480 + row * 170 };
+                                        const ROW_PER_COL = Math.ceil(pathOptions.length / COLS);
+                                        const ROW_GAP = 150;
+                                        const startY = userPosL.y + 75 - ((ROW_PER_COL - 1) * ROW_GAP) / 2;
+                                        const fallback = {
+                                            x: userPosL.x + 360 + col * 290,
+                                            y: startY + row * ROW_GAP,
+                                        };
                                         const pathPos = cardPos[id] || fallback;
-                                        // YOU 卡 255 宽 ~150 高；path 卡 255 宽。连接 YOU 底部中心 → path 顶部中心。
-                                        const x1 = userPosL.x + 127;
-                                        const y1 = userPosL.y + 150;
-                                        const x2 = pathPos.x + 127;
-                                        const y2 = pathPos.y;
-                                        const dy = Math.max(40, Math.abs(y2 - y1) / 2);
-                                        // 调色板对齐 path 卡的 6 色
+                                        // 连接 YOU 右侧中心 → path 左侧中心
+                                        const x1 = userPosL.x + 255;
+                                        const y1 = userPosL.y + 75;
+                                        const x2 = pathPos.x;
+                                        const y2 = pathPos.y + 60;
+                                        const dx = Math.max(60, Math.abs(x2 - x1) / 2);
                                         const colors = ['#e8a84c', '#8a9a6c', '#c47a6c', '#f59e0b', '#10b981', '#f43f5e'];
                                         const c = colors[pi % colors.length];
                                         return html`
                                             <g key=${`line-${p.id}`}>
                                                 <path
-                                                    d=${`M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`}
+                                                    d=${`M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`}
                                                     stroke=${c}
                                                     stroke-width="1.8"
                                                     stroke-opacity="0.55"
@@ -1574,6 +1588,36 @@
                                 const pos = cardPos[v.id] || { x: 0, y: 0, rotate: 0 };
                                 const ava = v.avatar || '☁️';
                                 const recent = v.messages.slice(-3);
+                                // Roadmap 模式下角色卡缩成小头像，给思维导图让位
+                                if (pathOptions.length > 0) {
+                                    const userPosL = cardPos['__user'] || { x: 0, y: 0 };
+                                    // 默认槽位：YOU 卡左侧竖排，避免和右边 path 卡重叠
+                                    const miniFallback = { x: userPosL.x - 60, y: userPosL.y + idx * 52, rotate: 0 };
+                                    const miniPos = cardPos[v.id] || miniFallback;
+                                    const isAvaUrl = typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava);
+                                    return html`
+                                        <div
+                                            key=${v.id}
+                                            class="absolute cursor-grab active:cursor-grabbing select-none group"
+                                            style=${{ left: miniPos.x + 'px', top: miniPos.y + 'px' }}
+                                            onMouseDown=${(e) => startCardDrag(e, v.id)}
+                                            title=${`${v.name} · ${v.role || ''}`}
+                                        >
+                                            <div
+                                                class="w-11 h-11 rounded-full border flex items-center justify-center text-base shrink-0 overflow-hidden shadow-lg shadow-black/40 transition-transform group-hover:scale-110"
+                                                style=${{ borderColor: color.ring, backgroundColor: color.bg }}
+                                            >
+                                                ${isAvaUrl
+                                                    ? html`<img src=${ava} class="w-full h-full object-cover" />`
+                                                    : html`<span>${ava}</span>`}
+                                            </div>
+                                            <!-- 悬停显示名字气泡 -->
+                                            <div class="absolute left-12 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-surface-container/95 border border-white/10 text-[9px] font-bold uppercase tracking-widest text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                ${v.name}
+                                            </div>
+                                        </div>
+                                    `;
+                                }
                                 return html`
                                     <div
                                         key=${v.id}
@@ -1693,16 +1737,20 @@
                                 </div>
                             </div>
 
-                            <!-- ── Roadmap path 卡片：YOU 节点下方一排，每条只 label+summary+Plan ── -->
+                            <!-- ── Roadmap path 卡片：YOU 节点右侧排开（思维导图左→右） ── -->
                             ${pathOptions.map((p, pi) => {
                                 const id = `__path_${p.id}`;
-                                const COLS = Math.min(pathOptions.length, 3);
+                                const userPosL = cardPos['__user'] || { x: 0, y: 0 };
+                                // 默认槽位：YOU 节点右侧 360px 起，>=5 条时切两列，垂直按 index 分布并居中对齐 YOU
+                                const COLS = pathOptions.length >= 5 ? 2 : 1;
                                 const col = pi % COLS;
                                 const row = Math.floor(pi / COLS);
-                                // 默认槽位：在 YOU 节点（约 (220,160)）下方铺开
+                                const ROW_PER_COL = Math.ceil(pathOptions.length / COLS);
+                                const ROW_GAP = 150;
+                                const startY = userPosL.y + 75 - ((ROW_PER_COL - 1) * ROW_GAP) / 2;
                                 const fallback = {
-                                    x: 18 + col * 270,
-                                    y: 480 + row * 170,
+                                    x: userPosL.x + 360 + col * 290,
+                                    y: startY + row * ROW_GAP,
                                 };
                                 const pos = cardPos[id] || fallback;
                                 const palettes = [
@@ -1743,18 +1791,21 @@
                                 `;
                             })}
 
-                            <!-- Roadmap loading hint：YOU 卡下方临时显示 -->
-                            ${pathLoading && pathOptions.length === 0 ? html`
-                                <div
-                                    class="absolute pointer-events-none"
-                                    style=${{ left: '18px', top: '480px' }}
-                                >
-                                    <div class="px-4 py-3 rounded-2xl bg-surface-container/80 border border-white/10 backdrop-blur text-[10px] text-on-surface-variant/60 flex items-center gap-2">
-                                        <span class="material-symbols-outlined animate-spin" style=${{ fontSize: '14px' }}>progress_activity</span>
-                                        <span>Sketching paths…</span>
+                            <!-- Roadmap loading hint：YOU 卡右侧临时显示 -->
+                            ${pathLoading && pathOptions.length === 0 ? (() => {
+                                const userPosL = cardPos['__user'] || { x: 0, y: 0 };
+                                return html`
+                                    <div
+                                        class="absolute pointer-events-none"
+                                        style=${{ left: (userPosL.x + 360) + 'px', top: (userPosL.y + 60) + 'px' }}
+                                    >
+                                        <div class="px-4 py-3 rounded-2xl bg-surface-container/80 border border-white/10 backdrop-blur text-[10px] text-on-surface-variant/60 flex items-center gap-2">
+                                            <span class="material-symbols-outlined animate-spin" style=${{ fontSize: '14px' }}>progress_activity</span>
+                                            <span>Sketching paths…</span>
+                                        </div>
                                     </div>
-                                </div>
-                            ` : null}
+                                `;
+                            })() : null}
                         </div>
                     </div>
                 </aside>
