@@ -472,6 +472,19 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
+        /* placeholder 切模式时的模糊互换 */
+        @keyframes phBlurOut {
+            from { opacity: 1; filter: blur(0px); }
+            to   { opacity: 0; filter: blur(8px); }
+        }
+        @keyframes phBlurIn {
+            from { opacity: 0; filter: blur(8px); }
+            to   { opacity: 1; filter: blur(0px); }
+        }
+        /* B 方案：旧的 250ms ease-in 离开 → 间 80ms 空白 → 新的 280ms ease-out 入场 */
+        .ph-blur-out { animation: phBlurOut 250ms ease-in forwards; }
+        .ph-blur-in  { animation: phBlurIn  280ms 330ms ease-out both; }
+
         /* ── Capsule tabs ── */
         .void-tab {
             padding: 8px 20px;
@@ -633,10 +646,13 @@
             'recommend.skip':           { en: "Skip — I'll choose my own",                   zh: '跳过 · 我自己挑' },
             'home.mode.ab.title':       { en: 'Real Life',   zh: '现实' },
             'home.mode.ab.desc':        { en: "Bring the dilemma. I'll unpack it with you.", zh: '你说情况，我替你拆开来看。' },
+            'home.mode.ab.placeholder': { en: "The thing you can't decide on...", zh: '让你纠结的那件事……' },
             'home.mode.values.title':   { en: 'Philosophy',  zh: '哲学' },
-            'home.mode.values.desc':    { en: 'Rethink what you take for granted.', zh: '把那些习以为常的，再想一遍。' },
+            'home.mode.values.desc':    { en: "Don't rush to solve. Sit with the question first.", zh: '不急着解决，先把问题问清楚。' },
+            'home.mode.values.placeholder': { en: 'Something worth sitting with...', zh: '值得想很久的那个问题……' },
             'home.mode.mystical.title': { en: 'Mystical',    zh: '玄学' },
             'home.mode.mystical.desc':  { en: "When reason runs out, there's another way.", zh: '理性穷尽时，还有一条路。' },
+            'home.mode.mystical.placeholder': { en: "Something you're sensing but can't name...", zh: '感觉到了什么，但说不清……' },
 
             // Domain names
             'domain.hot':        { en: 'Hot',           zh: '热门' },
@@ -2110,6 +2126,20 @@
             }, [mode]);
             // 触屏 tap 模式 pill 时短暂显示 tooltip（桌面用 group-hover 不需要它）
             const [touchedMode, setTouchedMode] = useState(null);
+
+            // placeholder 模糊互换：cur = 当前文案，prev = 上一条（动画期间共存 ~200ms）
+            const curPlaceholder = mode ? t('home.mode.' + mode + '.placeholder') : t('home.placeholder');
+            const [prevPlaceholder, setPrevPlaceholder] = useState(null);
+            const lastPlaceholderRef = useRef(curPlaceholder);
+            useEffect(() => {
+                if (lastPlaceholderRef.current !== curPlaceholder) {
+                    setPrevPlaceholder(lastPlaceholderRef.current);
+                    lastPlaceholderRef.current = curPlaceholder;
+                    // 旧的 250ms 淡出 + 80ms 间隔 + 新的 280ms 淡入 = 610ms 全程；620ms 后清理 prev
+                    const id = setTimeout(() => setPrevPlaceholder(null), 620);
+                    return () => clearTimeout(id);
+                }
+            }, [curPlaceholder]);
             // Detail modal state (full persona profile)
             const [detailPersonaId, setDetailPersonaId] = useState(null);
             const detailPersona = detailPersonaId ? personas.find(p => p.id === detailPersonaId) : null;
@@ -2696,25 +2726,35 @@
                                     </button>
                                     <${HomeToolsMenu} />
                                 </div>
-                                <textarea
-                                    rows="1"
-                                    class="flex-1 bg-transparent text-on-surface placeholder-on-surface-variant/30 text-sm focus:outline-none resize-none leading-relaxed overflow-y-auto px-3 py-2"
-                                    placeholder=${t('home.placeholder')}
-                                    style=${{ maxHeight: '180px', scrollbarWidth: 'none' }}
-                                    value=${context.situation}
-                                    onInput=${e => {
-                                        setContext(c => ({ ...c, situation: e.target.value }));
-                                        e.target.style.height = 'auto';
-                                        e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px';
-                                    }}
-                                    onKeyDown=${e => {
-                                        // Enter → send; Shift+Enter → newline (default)
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            trySubmit();
-                                        }
-                                    }}
-                                ></textarea>
+                                <div class="relative flex-1 min-w-0">
+                                    <textarea
+                                        rows="1"
+                                        class="block w-full bg-transparent text-on-surface text-sm focus:outline-none resize-none leading-relaxed overflow-y-auto px-3 py-2"
+                                        style=${{ maxHeight: '180px', scrollbarWidth: 'none' }}
+                                        value=${context.situation}
+                                        onInput=${e => {
+                                            setContext(c => ({ ...c, situation: e.target.value }));
+                                            e.target.style.height = 'auto';
+                                            e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px';
+                                        }}
+                                        onKeyDown=${e => {
+                                            // Enter → send; Shift+Enter → newline (default)
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                trySubmit();
+                                            }
+                                        }}
+                                    ></textarea>
+                                    <!-- 自定义 placeholder：切模式时模糊互换；原生 placeholder 已去掉 -->
+                                    ${!context.situation ? html`
+                                        <div class="pointer-events-none absolute inset-0 text-sm leading-relaxed text-on-surface-variant/30 select-none">
+                                            ${prevPlaceholder && prevPlaceholder !== curPlaceholder ? html`
+                                                <span class="ph-blur-out absolute inset-0 px-3 py-2 block">${prevPlaceholder}</span>
+                                            ` : null}
+                                            <span key=${curPlaceholder} class=${`absolute inset-0 px-3 py-2 block ${prevPlaceholder && prevPlaceholder !== curPlaceholder ? 'ph-blur-in' : ''}`}>${curPlaceholder}</span>
+                                        </div>
+                                    ` : null}
+                                </div>
                                 <button
                                     disabled=${!context.situation?.trim()}
                                     onClick=${trySubmit}
@@ -2750,20 +2790,19 @@
                                                     <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>${m.icon}</span>
                                                     <span>${t('home.mode.' + m.id + '.title')}</span>
                                                 </button>
-                                                <!-- Tooltip：桌面 hover / 移动端点击 2 秒，向上飘出 -->
-                                                <div class=${`pointer-events-none absolute left-1/2 bottom-full mb-2 z-30
+                                                <!-- Tooltip：桌面 hover / 移动端点击 2 秒，向下飘出 -->
+                                                <div class=${`pointer-events-none absolute left-1/2 top-full mt-2 z-30
                                                               -translate-x-1/2 transition-all duration-150 ${
                                                               isTouched
                                                                 ? 'opacity-100 translate-y-0'
-                                                                : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'
+                                                                : 'opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'
                                                             }`}>
-                                                    <div class="px-3 py-2 rounded-lg bg-surface-container/95 border border-white/10 shadow-lg backdrop-blur-sm
-                                                                text-[11px] text-on-surface/90 max-w-[260px] w-max text-center leading-relaxed">
+                                                    <!-- 漂浮 tooltip：去三角，改用暖色微光锚点（编辑风、低存在感） -->
+                                                    <div class="px-3.5 py-2 rounded-lg bg-surface-container/90 border border-primary/15 backdrop-blur-md
+                                                                text-[11px] text-on-surface/90 max-w-[260px] w-max text-center leading-relaxed
+                                                                shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),_0_0_18px_rgba(232,168,76,0.07)]">
                                                         ${t('home.mode.' + m.id + '.desc')}
                                                     </div>
-                                                    <!-- 小三角 -->
-                                                    <div class="absolute left-1/2 top-full -translate-x-1/2 -mt-px
-                                                                w-2 h-2 rotate-45 bg-surface-container/95 border-r border-b border-white/10"></div>
                                                 </div>
                                             </div>
                                         `;
