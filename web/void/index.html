@@ -631,12 +631,12 @@
             'recommend.generatedHeader':{ en: '✦ Voices created for you',                    zh: '✦ 为你新建的角色' },
             'recommend.confirm':        { en: 'Add to My Panel & Continue',                  zh: '加入我的角色库并继续' },
             'recommend.skip':           { en: "Skip — I'll choose my own",                   zh: '跳过 · 我自己挑' },
-            'home.mode.ab.title':       { en: 'Real Life',  zh: '现实' },
-            'home.mode.ab.desc':        { en: "Real-world dilemmas. I'll ask the right questions before answering.", zh: '现实场景的纠结，我先追问几轮再回答。' },
-            'home.mode.values.title':   { en: 'Values',     zh: '价值观' },
-            'home.mode.values.desc':    { en: 'Rank what matters. See what that reveals.', zh: '为在意的事排序，看出自己真正在乎什么。' },
-            'home.mode.mystical.title': { en: 'Mystical',   zh: '玄学' },
-            'home.mode.mystical.desc':  { en: 'Not logic. Something else entirely.', zh: '不靠逻辑，靠别的。' },
+            'home.mode.ab.title':       { en: 'Real Life',   zh: '现实' },
+            'home.mode.ab.desc':        { en: "Bring the dilemma. I'll unpack it with you.", zh: '你说情况，我替你拆开来看。' },
+            'home.mode.values.title':   { en: 'Philosophy',  zh: '哲学' },
+            'home.mode.values.desc':    { en: 'Rethink what you take for granted.', zh: '把那些习以为常的，再想一遍。' },
+            'home.mode.mystical.title': { en: 'Mystical',    zh: '玄学' },
+            'home.mode.mystical.desc':  { en: "When reason runs out, there's another way.", zh: '理性穷尽时，还有一条路。' },
 
             // Domain names
             'domain.hot':        { en: 'Hot',           zh: '热门' },
@@ -2095,7 +2095,21 @@
             const selectedPersonas = personas.filter(p => selectedIds.includes(p.id));
 
             // Conversation mode (null = default multi-voice council)
-            const [mode, setMode] = useState(null);
+            // 从 localStorage 读上次选择，仅认白名单值；未知值忽略，避免脏数据。
+            const [mode, setMode] = useState(() => {
+                try {
+                    const saved = window.localStorage.getItem('lifee_home_mode');
+                    return ['ab', 'values', 'mystical'].includes(saved) ? saved : null;
+                } catch (_) { return null; }
+            });
+            useEffect(() => {
+                try {
+                    if (mode) window.localStorage.setItem('lifee_home_mode', mode);
+                    else window.localStorage.removeItem('lifee_home_mode');
+                } catch (_) {}
+            }, [mode]);
+            // 触屏 tap 模式 pill 时短暂显示 tooltip（桌面用 group-hover 不需要它）
+            const [touchedMode, setTouchedMode] = useState(null);
             // Detail modal state (full persona profile)
             const [detailPersonaId, setDetailPersonaId] = useState(null);
             const detailPersona = detailPersonaId ? personas.find(p => p.id === detailPersonaId) : null;
@@ -2713,7 +2727,7 @@
                             <!-- 模式 pill（左）+ 已选角色 pill（右）合并到同一行，节约一行垂直空间。
                                  英文标题 What's on your mind? 是两行需要这个 buffer。-->
                             <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 -mt-1 px-1 min-h-[34px]">
-                                <!-- 模式 pill：靠左 -->
+                                <!-- 模式 pill：靠左；hover 出 tooltip 显示一句解释 -->
                                 <div class="flex flex-wrap items-center gap-2">
                                     ${[
                                         { id: 'ab',       icon: 'target' },
@@ -2721,19 +2735,37 @@
                                         { id: 'mystical', icon: 'auto_awesome' },
                                     ].map(m => {
                                         const isActive = mode === m.id;
+                                        const isTouched = touchedMode === m.id;
                                         return html`
-                                            <button
-                                                key=${m.id}
-                                                onClick=${() => setMode(isActive ? null : m.id)}
-                                                class=${`no-shine flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all border ${
-                                                    isActive
-                                                        ? 'border-primary/60 bg-primary/10 text-primary shadow-sm shadow-primary/10'
-                                                        : 'border-white/15 bg-transparent text-on-surface-variant/55 hover:border-white/30 hover:text-on-surface/85'
-                                                }`}
-                                            >
-                                                <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>${m.icon}</span>
-                                                <span>${t('home.mode.' + m.id + '.title')}</span>
-                                            </button>
+                                            <div key=${m.id} class="relative group"
+                                                 onTouchStart=${() => { setTouchedMode(m.id); setTimeout(() => setTouchedMode(null), 2200); }}>
+                                                <button
+                                                    onClick=${() => setMode(isActive ? null : m.id)}
+                                                    class=${`no-shine flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all border ${
+                                                        isActive
+                                                            ? 'border-primary/60 bg-primary/10 text-primary shadow-sm shadow-primary/10'
+                                                            : 'border-white/15 bg-transparent text-on-surface-variant/55 hover:border-white/30 hover:text-on-surface/85'
+                                                    }`}
+                                                >
+                                                    <span class="material-symbols-outlined" style=${{ fontSize: '14px' }}>${m.icon}</span>
+                                                    <span>${t('home.mode.' + m.id + '.title')}</span>
+                                                </button>
+                                                <!-- Tooltip：桌面 hover / 移动端点击 2 秒，向上飘出 -->
+                                                <div class=${`pointer-events-none absolute left-1/2 bottom-full mb-2 z-30
+                                                              -translate-x-1/2 transition-all duration-150 ${
+                                                              isTouched
+                                                                ? 'opacity-100 translate-y-0'
+                                                                : 'opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'
+                                                            }`}>
+                                                    <div class="px-3 py-2 rounded-lg bg-surface-container/95 border border-white/10 shadow-lg backdrop-blur-sm
+                                                                text-[11px] text-on-surface/90 max-w-[260px] w-max text-center leading-relaxed">
+                                                        ${t('home.mode.' + m.id + '.desc')}
+                                                    </div>
+                                                    <!-- 小三角 -->
+                                                    <div class="absolute left-1/2 top-full -translate-x-1/2 -mt-px
+                                                                w-2 h-2 rotate-45 bg-surface-container/95 border-r border-b border-white/10"></div>
+                                                </div>
+                                            </div>
                                         `;
                                     })}
                                 </div>
