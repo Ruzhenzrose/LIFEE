@@ -2604,13 +2604,8 @@
                     if (n <= 1) return;
                     const dir = e.deltaY > 0 ? 1 : -1;
                     const currentIdx = idxAtScroll(el.scrollTop);
-                    // Wrap around：考虑 VISIBLE_DOMAIN_COUNT > 1 时的最大可滚 idx——
-                    // 显示 2 个 section、共 n 个时，最末 topmost 是 n-2，所以
-                    // wrap 范围是 [0, n-VISIBLE_DOMAIN_COUNT]。否则向下永远卡在
-                    // n-2 不会回到 0。
                     const maxIdx = Math.max(0, n - VISIBLE_DOMAIN_COUNT);
-                    const wrap = maxIdx + 1;
-                    const nextIdx = (currentIdx + dir + wrap) % wrap;
+                    const nextIdx = Math.max(0, Math.min(maxIdx, currentIdx + dir));
                     if (nextIdx === currentIdx) return;
                     wheelLock = true;
                     scrollLockRef.current = true;
