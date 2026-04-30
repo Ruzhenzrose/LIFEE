@@ -200,14 +200,14 @@
     <!-- 共享自 web/ui 的常量与 API helper（INITIAL_PERSONAS 等）。
          /constants.js、/api.js 之前能取到是因为根 mount 指向 web/ui，
          现在根换成 web/void 之后必须显式走 /ui/ 路径。 -->
-    <script src="/ui/constants.js?v=20260430-mystic-tarot"></script>
-    <script src="/ui/api.js?v=20260430-mystic-tarot"></script>
+    <script src="/ui/constants.js?v=20260430-mystic-png-avatars"></script>
+    <script src="/ui/api.js?v=20260430-mystic-png-avatars"></script>
 
     <!-- Void-specific component files -->
     <script src="./components/ui.js"></script>
-    <script src="./components/ChatArena.js?v=20260430-mystic-tarot"></script>
-    <script src="./components/modals.js?v=20260430-mystic-tarot"></script>
-    <script src="./components/PersonaRecommendModal.js?v=20260430-mystic-tarot"></script>
+    <script src="./components/ChatArena.js?v=20260430-mystic-png-avatars"></script>
+    <script src="./components/modals.js?v=20260430-mystic-png-avatars"></script>
+    <script src="./components/PersonaRecommendModal.js?v=20260430-mystic-png-avatars"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -874,6 +874,9 @@
             'persona.audrey-hepburn.name':       { en: 'Audrey Hepburn',    zh: '奥黛丽·赫本' },
             'persona.audrey-hepburn.role':       { en: 'ELEGANT MUSE',      zh: '优雅缪斯' },
             'persona.audrey-hepburn.worldview':  { en: "Elegance is the quiet courage to be kind, even when the world is loud.", zh: '优雅是世界喧嚣时仍选择善良的安静勇气。' },
+            'persona.coco-chanel.name':          { en: 'Coco Chanel',       zh: '可可·香奈儿' },
+            'persona.coco-chanel.role':          { en: 'FASHION REVOLUTIONARY', zh: '时尚革命者' },
+            'persona.coco-chanel.worldview':     { en: "Simplicity is the keynote of all true elegance — and the hardest thing to achieve.", zh: '简洁是真正优雅的核心——也是最难做到的事。' },
             'persona.krishnamurti.name':         { en: 'Krishnamurti',      zh: '克里希那穆提' },
             'persona.krishnamurti.role':         { en: 'THE QUESTIONER',    zh: '发问者' },
             'persona.krishnamurti.worldview':    { en: 'Truth is a pathless land. No method can lead you there.', zh: '真理是无路之国。没有任何方法能带你抵达。' },
@@ -915,6 +918,7 @@
 
             // Persona dossier — decisionStyle
             'persona.audrey-hepburn.decisionStyle': { en: "Choose the simplest graceful option: protect your dignity, keep your promise, and make one small act of kindness that moves the story forward.", zh: "选最简单也最优雅的选项：守住尊严、兑现承诺、做一件小小的善意之事，让故事往前推进一步。" },
+            'persona.coco-chanel.decisionStyle':    { en: "Strip away everything unnecessary until only the essential remains. Ask: what are you really afraid of? Then cut that too. The answer is always simpler than you think — and harder to execute.", zh: "去掉一切不必要的，直到只剩下本质。问自己：你真正害怕的是什么？然后把那个也切掉。答案永远比你以为的更简单——也更难执行。" },
             'persona.krishnamurti.decisionStyle':   { en: "Never gives answers. Only questions. Points you back to look at the problem itself, not solutions.", zh: "从不给答案，只给问题。把你引回到问题本身，而不是解决方案上。" },
             'persona.lacan.decisionStyle':          { en: "Responds to questions with questions. No comfort, no advice. Cuts through certainty to let the unconscious speak.", zh: "以问题回应问题。不给安慰，不给建议。切开你的确信，让无意识开口。" },
             'persona.buffett.decisionStyle':        { en: "Slow down, ignore noise, and ask the plain question: what is the real value here, what are the downside risks, and can you hold this choice for a long time?", zh: "慢下来，忽略噪音，问最朴素的问题：真正的价值在哪，下行风险是什么，这个选择你能长期持有吗？" },
@@ -927,6 +931,7 @@
 
             // Persona dossier — voice (first-person utterance)
             'persona.audrey-hepburn.voice':  { en: "Darling, breathe. Ask: what would look simple and honest tomorrow morning? We'll choose the small step that keeps your heart gentle — and your posture upright.", zh: "亲爱的，先呼吸。问自己：明天早上回头看，哪个选择最朴素也最真诚？我们选那个能让你心柔软、身体挺直的小小一步。" },
+            'persona.coco-chanel.voice':     { en: "Elegance is not about being noticed. It is about being remembered. Tell me what you are really trying to say — and I will help you say it with nothing to spare.", zh: "优雅不是被人注意，而是被人记住。告诉我你真正想说的是什么——我帮你用最少的东西把它说清楚。" },
             'persona.krishnamurti.voice':    { en: "Are you really asking, or seeking confirmation? Don't accept what I say — look for yourself.", zh: "你是在真的发问，还是在寻求确认？不要接受我说的——自己去看。" },
             'persona.lacan.voice':           { en: "The unconscious is structured like a language. What slips out when you speak?", zh: "无意识的结构如同一门语言。你说话时，有什么悄悄溜了出来？" },
             'persona.buffett.voice':         { en: "You do not need a brilliant move here. You need a sensible one with a margin of safety that still looks wise ten years from now.", zh: "你不需要一个绝妙的招。你需要一个带足够安全边际、十年后回头看仍然明智的选择。" },
@@ -939,6 +944,22 @@
 
             // Persona dossier — lifeContext entries (stored as JSON strings;
             // localizePersona parses and substitutes the matching array)
+            'persona.coco-chanel.lifeContext': {
+                en: JSON.stringify([
+                    { period: "Orphaned in Auvergne", detail: "Abandoned by her father at 6, raised by cold aunts among peasants and horses. Learned that pride is the only thing no one can take from you." },
+                    { period: "Rue Cambon (1910)", detail: "Opened her hat shop with Boy Capel's backing — then paid back every centime by outworking everyone. 'I owe nothing to anybody.'" },
+                    { period: "The Great Liberation (1914–1920)", detail: "Cut her hair, invented jersey fashion, shortened dresses, freed women's bodies from corsets. Fashion as social revolution." },
+                    { period: "Among Picasso, Stravinsky, Diaghilev", detail: "At the center of the European avant-garde. Financed the Ballets Russes, worked alongside the greatest artists of her age — as an equal, not a patron." },
+                    { period: "The Return (1954)", detail: "Came back to fashion at 71, dismissed by Paris — and conquered it again. Proved that style is not something you lose." }
+                ]),
+                zh: JSON.stringify([
+                    { period: "奥弗涅的孤儿岁月", detail: "六岁被父亲遗弃，由冷漠的姑母抚养，在农民与马匹中长大。她学到：骄傲是唯一没人能夺走的东西。" },
+                    { period: "康朋街 (1910)", detail: "靠波伊·卡培尔的资助开了第一家帽店——然后用无人能比的勤奋还清了每一分钱。'我不欠任何人。'" },
+                    { period: "大解放 (1914–1920)", detail: "剪短头发，发明针织衫，缩短裙摆，把女性身体从紧身衣里解放出来。时装即社会革命。" },
+                    { period: "毕加索、斯特拉文斯基、佳吉列夫的年代", detail: "欧洲先锋圈的核心人物。资助俄罗斯芭蕾舞团，与那个时代最伟大的艺术家并肩而立——是同伴，不是赞助人。" },
+                    { period: "归来 (1954)", detail: "七十一岁重返时装界，被巴黎时尚圈嘲笑——随即再度征服。证明了风格是不会失去的东西。" }
+                ])
+            },
             'persona.audrey-hepburn.lifeContext': {
                 en: JSON.stringify([
                     { period: "Carrying grace through hard years", detail: "Raised in Europe during WWII, she learned restraint, gratitude, and the art of standing tall without becoming hard." },
@@ -2051,7 +2072,7 @@
                 'krishnamurti': 'Philosophy', 'lacan': 'Philosophy', 'Simone de Beauvoir': 'Philosophy',
                 'buffett': 'Business', 'munger': 'Business', 'drucker': 'Business', 'welch': 'Business',
                 'shannon': 'Science', 'turing': 'Science', 'vonneumann': 'Science',
-                'audrey-hepburn': 'Arts',
+                'audrey-hepburn': 'Arts', 'coco-chanel': 'Arts',
             };
             const getDomain = (p) => {
                 const category = String(p.category || '').toUpperCase();
