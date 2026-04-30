@@ -389,6 +389,7 @@
         onLogin,
         initialMessages = [],
         initialOptions = [],
+        initialRoadmap = null,    // { nodes: [...], walkedIds: [...] } | null
         parentSessionId = "",
         initialMode = null,
         onSessionCreated,
@@ -453,12 +454,21 @@
             } catch (_) {}
         };
         const [summaryLoading, setSummaryLoading] = useState(false);
-        // Roadmap 模式：基于对话推出 3-6 条人生路径选项。每条只一句话，
-        // 用户感兴趣的话再点 Plan 触发 /plan-30-days 出完整方案。
-        // pathOptions: { id, label, summary }[]
+        // Roadmap 模式：基于对话推 3 条根路径，用户可对任意路径点 "Walk this →"
+        // 调 /simulate-path 让它再分叉出 3 条新路径，最深 3 层。点 Plan → 仍然
+        // 可在任意层调 /plan-30-days。
+        // pathOptions: { id, label, summary, parentId: string|null, depth: 0..3 }[]
         const [pathOptions, setPathOptions]   = useState([]);
         const [pathLoading, setPathLoading]   = useState(false);
         const [pathError, setPathError]       = useState('');
+        // 已经被 "Walk this →" 过的节点 id —— 兄弟节点变淡用
+        const [walkedPathIds, setWalkedPathIds] = useState(() => new Set());
+        // 单独跟踪每个节点的 simulate 加载态：{ [parentId]: true }
+        const [simulating, setSimulating]     = useState({});
+        // 一次 walk 会插一个 consequence 节点 + 3 条新 path（depth+1 / depth+2）。
+        // 把 walk 总次数封顶为 3 → path 最大 depth 6（root=0, walk1=2, walk2=4, walk3=6）。
+        const PATH_MAX_LEVEL = 3;
+        const pathLevelOf = (node) => Math.floor((node?.depth ?? 0) / 2);
         const [showPlanModal, setShowPlanModal] = useState(false);
         const [planData, setPlanData]         = useState(null);
         const [planLoading, setPlanLoading]   = useState(false);
@@ -466,6 +476,52 @@
         const [showMoreMenu, setShowMoreMenu]   = useState(false);
         const [showToolsMenu, setShowToolsMenu] = useState(false);
         const [showVoiceMap, setShowVoiceMap]   = useState(false);
+        // Voice map 视图状态（pan / scale / cardPos）。原本放在 VoiceMapSidebar
+        // 内部 useState，但 VoiceMapSidebar 在 ChatArena 函数体里定义，每次父组件
+        // 渲染（streaming 每个 token）都生成新函数引用 → 子组件类型变化 → 卸载重挂载
+        // → 内部 useState/useRef 全部重置，导致 streaming 时拖动/点击 voice map 失灵。
+        // 把状态提到这里，VoiceMapSidebar 改成内联调用读这些闭包，不再有 remount。
+        const vmLoadSaved = () => {
+            try { return JSON.parse(window.localStorage.getItem('lifee_voice_map_view') || '{}') || {}; }
+            catch (_) { return {}; }
+        };
+        const vmSaved = useMemo(vmLoadSaved, []);
+        const [vmPan, setVmPan] = useState(() => vmSaved.pan && typeof vmSaved.pan.x === 'number' ? vmSaved.pan : { x: 0, y: 0 });
+        const [vmScale, setVmScale] = useState(() => typeof vmSaved.scale === 'number' ? vmSaved.scale : 1.0);
+        const [vmCardPos, setVmCardPos] = useState(() => ({ ...(vmSaved.cardPos || {}) }));
+        useEffect(() => {
+            try {
+                window.localStorage.setItem('lifee_voice_map_view', JSON.stringify({ pan: vmPan, scale: vmScale, cardPos: vmCardPos }));
+            } catch (_) {}
+        }, [vmPan, vmScale, vmCardPos]);
+        // 给新出现的 persona 卡 / __user / timeline 卡填默认槽位（之前是 useState 初始化里做的）。
+        useEffect(() => {
+            const personas = selectedPersonas || [];
+            setVmCardPos(prev => {
+                const out = { ...prev };
+                let changed = false;
+                personas.forEach((p, i) => {
+                    if (!out[p.id]) {
+                        const s = CANVAS_CARD_POSITIONS[i % CANVAS_CARD_POSITIONS.length];
+                        out[p.id] = { x: s.x, y: s.y, rotate: s.rotate };
+                        changed = true;
+                    }
+                });
+                if (!out['__user']) {
+                    const userSlot = CANVAS_CARD_POSITIONS[personas.length % CANVAS_CARD_POSITIONS.length];
+                    out['__user'] = { x: userSlot.x, y: userSlot.y, rotate: userSlot.rotate };
+                    changed = true;
+                }
+                if (!out['__timeline_a']) { out['__timeline_a'] = { x: 18,  y: 660 }; changed = true; }
+                if (!out['__timeline_b']) { out['__timeline_b'] = { x: 296, y: 660 }; changed = true; }
+                return changed ? out : prev;
+            });
+        }, [(selectedPersonas || []).map(p => p.id).join(',')]);
+        const vmCanvasRef = useRef(null);
+        const vmPanRef = useRef({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
+        const vmCardRef = useRef({ id: null, startX: 0, startY: 0, origX: 0, origY: 0 });
+        // 区分点击和拖动（>3px 才算拖）。avatar 上的 onClick 据此判断该不该 toggle。
+        const vmDragMovedRef = useRef(false);
         // Roadmap 模式下点击小头像可临时展开成 summary 卡（仅当前会话，不持久化）
         const [expandedAvatars, setExpandedAvatars] = useState(() => new Set());
         const [showMembersPanel, setShowMembersPanel] = useState(false);
@@ -626,11 +682,44 @@
             const cached = optionsCacheRef.current[parentSessionId];
             setOptions((cached && cached.length) ? cached : (initialOptions || []));
             setSummaryData({});
-            setPathOptions([]);
+            // 切会话时从 initialRoadmap 恢复树；没存过就清空。
+            const rm = initialRoadmap;
+            if (rm && Array.isArray(rm.nodes) && rm.nodes.length) {
+                setPathOptions(rm.nodes);
+                setWalkedPathIds(new Set(Array.isArray(rm.walkedIds) ? rm.walkedIds : []));
+            } else {
+                setPathOptions([]);
+                setWalkedPathIds(new Set());
+            }
             setPathError('');
             setIsDebating(false);
             autoStartedRef.current = false;
         }, [parentSessionId]);
+
+        // pathOptions / walkedPathIds 改了就 PUT 给后端，节流 800ms。
+        const roadmapSaveTimerRef = useRef(null);
+        useEffect(() => {
+            const sid = sessionIdRef.current;
+            if (!sid) return;
+            if (roadmapSaveTimerRef.current) clearTimeout(roadmapSaveTimerRef.current);
+            roadmapSaveTimerRef.current = setTimeout(() => {
+                window.fetch(`/sessions/${encodeURIComponent(sid)}/roadmap`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        nodes: pathOptions,
+                        walkedIds: Array.from(walkedPathIds),
+                    }),
+                }).catch(() => {});
+            }, 800);
+            return () => {
+                if (roadmapSaveTimerRef.current) {
+                    clearTimeout(roadmapSaveTimerRef.current);
+                    roadmapSaveTimerRef.current = null;
+                }
+            };
+        }, [pathOptions, walkedPathIds]);
 
         // Absorb late-arriving initialMessages for the current session. Parent
         // (restoreSession) now flips the view before the REST call resolves, so
@@ -1132,13 +1221,172 @@
                 if (res?.error && (!res?.paths || res.paths.length < 2)) throw new Error(res.error);
                 const paths = Array.isArray(res?.paths) ? res.paths : [];
                 if (paths.length < 2) throw new Error('Not enough paths returned');
-                setPathOptions(paths);
+                // 给每条根路径打上 parentId=null, depth=0；id 加前缀避免和后续 simulate 出来的 id 冲突
+                const rootStamp = Date.now();
+                const rooted = paths.map((p, i) => ({
+                    ...p,
+                    kind: 'path',
+                    id: `r${rootStamp}_${i}`,
+                    parentId: null,
+                    depth: 0,
+                }));
+                setPathOptions(rooted);
+                setWalkedPathIds(new Set());
             } catch (e) {
                 setPathError(e?.message || 'Roadmap generation failed');
                 setTimeout(() => setPathError(''), 4000);
             } finally {
                 setPathLoading(false);
             }
+        };
+
+        // 沿 parentId 一路走到根，收集祖先链 [{label, summary}, ...]（不含 self）。
+        const buildParentChain = (nodeId, allNodes) => {
+            const chain = [];
+            const byId = Object.fromEntries(allNodes.map(n => [n.id, n]));
+            let cur = byId[nodeId];
+            if (!cur) return chain;
+            let parent = cur.parentId ? byId[cur.parentId] : null;
+            while (parent) {
+                chain.unshift({ label: parent.label, summary: parent.summary });
+                parent = parent.parentId ? byId[parent.parentId] : null;
+            }
+            return chain;
+        };
+
+        // 用户对某条 path 点 "Walk this →"：调 /simulate-path 让它再分叉出 3 条
+        const simulatePath = async (node) => {
+            if (!node || node.kind !== 'path' || pathLevelOf(node) >= PATH_MAX_LEVEL) return;
+            if (simulating[node.id]) return;
+            setSimulating(prev => ({ ...prev, [node.id]: true }));
+            setPathError('');
+            try {
+                const parentChain = buildParentChain(node.id, pathOptions);
+                const payload = sessionId
+                    ? JSON.stringify({
+                        sessionId,
+                        language: language || 'Chinese',
+                        situation: context?.situation || '',
+                        chosenPath: { label: node.label, summary: node.summary },
+                        parentChain,
+                    })
+                    : JSON.stringify({
+                        messages: history
+                            .filter(m => m.personaId !== 'system' && m.personaId !== 'lifee-followup')
+                            .slice(-10)
+                            .map(m => ({ personaId: m.personaId, text: (m.text || '').slice(0, 200) })),
+                        language: language || 'Chinese',
+                        situation: context?.situation || '',
+                        chosenPath: { label: node.label, summary: node.summary },
+                        parentChain,
+                    });
+                const r = await window.fetch('/simulate-path', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload,
+                });
+                if (!r.ok) throw new Error(`Server ${r.status}`);
+                const res = await r.json();
+                if (res?.error && (!res?.paths || res.paths.length < 2)) throw new Error(res.error);
+                const childPaths = Array.isArray(res?.paths) ? res.paths : [];
+                if (childPaths.length < 2) throw new Error('Not enough child paths');
+                const outcome = (res?.outcome || '').trim();
+                const dilemma = (res?.dilemma || '').trim();
+                const stamp = Date.now();
+                // 先插一个 consequence 节点（在被 walk 的 path 下面），再把 3 条新 path 挂到 consequence 下面
+                const consequenceNode = {
+                    id: `${node.id}_cons${stamp}`,
+                    kind: 'consequence',
+                    parentId: node.id,
+                    parentLabel: node.label,
+                    depth: node.depth + 1,
+                    outcome,
+                    dilemma,
+                };
+                const children = childPaths.map((p, i) => ({
+                    ...p,
+                    kind: 'path',
+                    id: `${consequenceNode.id}_c${i}`,
+                    parentId: consequenceNode.id,
+                    depth: node.depth + 2,
+                }));
+                // 如果之前已经为这个 node 跑过 walk，先清掉旧子树再添新的；
+                // walkedPathIds 里属于旧子树的也得一并清掉，否则会误判 fade。
+                const collectSubtreeIds = (rootId, list) => {
+                    const out = new Set();
+                    const queue = [rootId];
+                    while (queue.length) {
+                        const cur = queue.shift();
+                        for (const x of list) {
+                            if (x.parentId === cur && !out.has(x.id)) {
+                                out.add(x.id);
+                                queue.push(x.id);
+                            }
+                        }
+                    }
+                    return out;
+                };
+                const removed = collectSubtreeIds(node.id, pathOptions);
+                setPathOptions(prev => {
+                    const filtered = prev.filter(x => !removed.has(x.id));
+                    return [...filtered, consequenceNode, ...children];
+                });
+                setWalkedPathIds(prev => {
+                    const next = new Set(prev);
+                    for (const rid of removed) next.delete(rid);
+                    next.add(node.id);
+                    return next;
+                });
+                // 把这次 walk 也写进对话历史（personaId='lifee-roadmap'，role='user'）。
+                // 本地乐观插入 + 后端 /note 持久化。下次刷新这条记录还在。
+                const noteParts = [`📍 假设我走了「${node.label}」。`];
+                if (outcome) noteParts.push(`后来：${outcome}`);
+                if (dilemma) noteParts.push(`现在的问题是：${dilemma}`);
+                const noteText = noteParts.join('\n\n');
+                setHistory(prev => {
+                    const maxSeq = prev.reduce((m, x) => (typeof x.seq === 'number' && x.seq > m ? x.seq : m), 0);
+                    return [...prev, { personaId: 'lifee-roadmap', text: noteText, seq: maxSeq + 1 }];
+                });
+                const sid = sessionIdRef.current;
+                if (sid) {
+                    window.fetch(`/sessions/${encodeURIComponent(sid)}/note`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            role: 'user',
+                            content: noteText,
+                            persona_id: 'lifee-roadmap',
+                        }),
+                    }).catch(() => {});
+                }
+            } catch (e) {
+                setPathError(e?.message || 'Simulate failed');
+                setTimeout(() => setPathError(''), 4000);
+            } finally {
+                setSimulating(prev => {
+                    const next = { ...prev };
+                    delete next[node.id];
+                    return next;
+                });
+            }
+        };
+
+        // 一键问角色：用 consequence 节点的 outcome + dilemma 拼成一段用户消息，
+        // 收起 roadmap、关闭 voice map，然后跑一轮让圆桌发言。
+        const askRoundtableAbout = (consNode) => {
+            if (!consNode || consNode.kind !== 'consequence') return;
+            const parentPath = pathOptions.find(x => x.id === consNode.parentId);
+            const parentLabel = parentPath?.label || consNode.parentLabel || '';
+            const lines = [];
+            if (parentLabel) lines.push(`假设我走了「${parentLabel}」这条路。`);
+            if (consNode.outcome) lines.push(`后来：${consNode.outcome}`);
+            if (consNode.dilemma) lines.push(`现在的问题是：${consNode.dilemma}`);
+            lines.push('你们怎么看？');
+            const msg = lines.join('\n\n');
+            setShowVoiceMap(false);
+            // 用 setTimeout 让 sidebar 关闭动画先开始，再触发流式输出
+            setTimeout(() => { runRound(msg); }, 50);
         };
 
         const generatePlan = async (chosenOption = '') => {
@@ -1252,6 +1500,7 @@
             const isUser     = m.personaId === 'user';
             const isSystem   = m.personaId === 'system';
             const isFollowUp = m.personaId === 'lifee-followup';
+            const isRoadmap  = m.personaId === 'lifee-roadmap';
             const tarotInvite = parseTarotInvite(m.text);
 
             if (isSystem) {
@@ -1260,6 +1509,17 @@
                         <span class="text-[10px] text-on-surface-variant/50 bg-surface-container/60 px-4 py-1.5 rounded-full tracking-wide">
                             ${m.text}
                         </span>
+                    </div>
+                `;
+            }
+
+            // Roadmap journal note：居中、不像 user 也不像角色，专门视觉风格
+            if (isRoadmap) {
+                return html`
+                    <div key=${idx} class="flex justify-center my-3">
+                        <div class="max-w-[80%] text-[12px] leading-relaxed text-on-surface-variant/85 bg-surface-container-high/55 border border-primary/25 px-5 py-3 rounded-2xl whitespace-pre-line shadow-sm">
+                            ${m.text}
+                        </div>
                     </div>
                 `;
             }
@@ -1644,48 +1904,17 @@
             const userCount = userMessages.length;
             const userLast = userMessages[userMessages.length - 1] || '';
 
-            // Load persisted view (pan/scale/cardPos) — merge defaults for any
-            // personas that don't have saved positions yet.
-            const loadSaved = () => {
-                try { return JSON.parse(window.localStorage.getItem('lifee_voice_map_view') || '{}') || {}; }
-                catch (_) { return {}; }
-            };
-            const saved = loadSaved();
-            const [pan, setPan] = useState(() => saved.pan && typeof saved.pan.x === 'number' ? saved.pan : { x: 0, y: 0 });
-            const [scale, setScale] = useState(() => typeof saved.scale === 'number' ? saved.scale : 1.0);
-            const [cardPos, setCardPos] = useState(() => {
-                const out = { ...(saved.cardPos || {}) };
-                voices.forEach((v, i) => {
-                    if (!out[v.id]) {
-                        const s = CANVAS_CARD_POSITIONS[i % CANVAS_CARD_POSITIONS.length];
-                        out[v.id] = { x: s.x, y: s.y, rotate: s.rotate };
-                    }
-                });
-                if (!out['__user']) {
-                    const userSlot = CANVAS_CARD_POSITIONS[voices.length % CANVAS_CARD_POSITIONS.length];
-                    out['__user'] = { x: userSlot.x, y: userSlot.y, rotate: userSlot.rotate };
-                }
-                if (!out['__timeline_a']) {
-                    out['__timeline_a'] = { x: 18, y: 660 };
-                }
-                if (!out['__timeline_b']) {
-                    out['__timeline_b'] = { x: 296, y: 660 };
-                }
-                return out;
-            });
-            // Persist view changes (debounced naturally by React batching)
-            useEffect(() => {
-                try {
-                    window.localStorage.setItem('lifee_voice_map_view', JSON.stringify({ pan, scale, cardPos }));
-                } catch (_) {}
-            }, [pan, scale, cardPos]);
-
-            const canvasRef = useRef(null);
-            const panRef = useRef({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
-            const cardRef = useRef({ id: null, startX: 0, startY: 0, origX: 0, origY: 0 });
-            // 区分「点击」和「拖动」：mousedown 重置，mousemove 实际移动后置 true，
-            // 卡片上的 onClick 据此判断该不该把点击当作展开/收起。
-            const dragMovedRef = useRef(false);
+            // pan / scale / cardPos / refs 全部从 ChatArena 闭包里取——不在这里再调
+            // useState/useRef。原因：VoiceMapSidebar 在 ChatArena 函数体内定义，每次父
+            // 组件渲染都生成新函数引用 → React 视为新组件类型 → 每次 streaming token 都
+            // 卸载重挂载 → 内部 hooks 全部重置 → 鼠标拖动 / 点击全失灵。
+            const pan = vmPan, setPan = setVmPan;
+            const scale = vmScale, setScale = setVmScale;
+            const cardPos = vmCardPos, setCardPos = setVmCardPos;
+            const canvasRef = vmCanvasRef;
+            const panRef = vmPanRef;
+            const cardRef = vmCardRef;
+            const dragMovedRef = vmDragMovedRef;
 
             const onCanvasMouseDown = (e) => {
                 if (cardRef.current.id) return;
@@ -1775,6 +2004,85 @@
             };
             const reset = fitToView;
 
+            // ── 思维导图树形布局 ──────────────────────────────────────────────
+            // 以 YOU 为根，根据 pathOptions 的 parentId / depth 递归算出每个节点
+            // 默认槽位（cardPos[id] 拖动覆盖会优先生效）；x 按层 290 等距，y 按子树
+            // 高度自下而上铺开避免重叠。同时构造 (parent, child) 边列表给 SVG 用。
+            // consequence 卡因为有 outcome + dilemma 两段，普遍比 path 卡高一点；
+            // 用 kind-aware 高度给 layout 算 band，最少 150 留 padding。
+            const PATH_COL_GAP = 290;
+            const PATH_MIN_BAND = 170;
+            const cardHeightOf = (n) => (n?.kind === 'consequence' ? 180 : 130);
+            const userPosLForLayout = cardPos['__user'] || { x: 0, y: 0 };
+            const pathLayout = (() => {
+                const layout = {};
+                const byParent = { __root__: [] };
+                for (const p of pathOptions) {
+                    const k = p.parentId == null ? '__root__' : p.parentId;
+                    if (!byParent[k]) byParent[k] = [];
+                    byParent[k].push(p);
+                }
+                const computeBand = (id) => {
+                    const kids = byParent[id] || [];
+                    if (!kids.length) return PATH_MIN_BAND;
+                    return kids.reduce((s, c) => s + computeBand(c.id), 0);
+                };
+                const place = (node, x, yCenter) => {
+                    layout[node.id] = { x, y: yCenter - cardHeightOf(node) / 2 };
+                    const kids = byParent[node.id] || [];
+                    if (!kids.length) return;
+                    const totalH = kids.reduce((s, c) => s + computeBand(c.id), 0);
+                    let cursor = yCenter - totalH / 2;
+                    for (const c of kids) {
+                        const h = computeBand(c.id);
+                        place(c, x + PATH_COL_GAP, cursor + h / 2);
+                        cursor += h;
+                    }
+                };
+                const roots = byParent.__root__;
+                const rootTotalH = roots.reduce((s, r) => s + computeBand(r.id), 0);
+                let cursor = (userPosLForLayout.y + 75) - rootTotalH / 2;
+                const ROOT_X = userPosLForLayout.x + 360;
+                for (const r of roots) {
+                    const h = computeBand(r.id);
+                    place(r, ROOT_X, cursor + h / 2);
+                    cursor += h;
+                }
+                return layout;
+            })();
+            // 取节点位置：拖动过的优先 cardPos，否则用 layout
+            const pathPosOf = (node) => {
+                const id = `__path_${node.id}`;
+                const layout = pathLayout[node.id];
+                return cardPos[id] || layout || { x: userPosLForLayout.x + 360, y: userPosLForLayout.y };
+            };
+            // 兄弟里有人被走过、自己没被走 → 变淡
+            const isPathFaded = (node) => {
+                if (walkedPathIds.has(node.id)) return false;
+                return pathOptions.some(s => s.parentId === node.parentId && s.id !== node.id && walkedPathIds.has(s.id));
+            };
+            const pathPalettes = [
+                { bg: 'bg-primary/10', text: 'text-primary', bdr: 'border-primary/60', hover: 'hover:bg-primary/10', stroke: '#e8a84c' },
+                { bg: 'bg-secondary/10', text: 'text-secondary', bdr: 'border-secondary/60', hover: 'hover:bg-secondary/10', stroke: '#8a9a6c' },
+                { bg: 'bg-tertiary/10', text: 'text-tertiary', bdr: 'border-tertiary/60', hover: 'hover:bg-tertiary/10', stroke: '#c47a6c' },
+                { bg: 'bg-amber-500/10', text: 'text-amber-500', bdr: 'border-amber-500/60', hover: 'hover:bg-amber-500/10', stroke: '#f59e0b' },
+                { bg: 'bg-emerald-600/10', text: 'text-emerald-600', bdr: 'border-emerald-600/60', hover: 'hover:bg-emerald-600/10', stroke: '#10b981' },
+                { bg: 'bg-rose-500/10', text: 'text-rose-500', bdr: 'border-rose-500/60', hover: 'hover:bg-rose-500/10', stroke: '#f43f5e' },
+            ];
+            // 颜色按节点所在「分支」（root 决定）取，整条分支同色。这样
+            // 用户一眼能看出 cons + 子 path 都是某个 root 的延伸。
+            const pathColorOf = (node) => {
+                let cur = node;
+                while (cur && cur.parentId != null) {
+                    const par = pathOptions.find(p => p.id === cur.parentId);
+                    if (!par) break;
+                    cur = par;
+                }
+                const roots = pathOptions.filter(p => p.parentId == null);
+                const rootIdx = Math.max(0, roots.findIndex(p => p.id === cur.id));
+                return pathPalettes[rootIdx % pathPalettes.length];
+            };
+
             return html`
                 <aside class="h-full flex flex-col border-l border-outline/15 bg-surface-dim/40 shrink-0" style=${{ width: Math.min(mapWidth, mapMaxWidth()) + 'px' }}>
                     <!-- Archive header -->
@@ -1835,47 +2143,44 @@
                             class="absolute top-0 left-0 origin-top-left"
                             style=${{ transform: `translate(${pan.x + 40}px, ${pan.y + 40}px) scale(${scale})` }}
                         >
-                            <!-- ── 思维导图连线：从 YOU 卡右侧中心拉 Bezier 到每张 path 卡左侧中心（左→右思维导图） ── -->
+                            <!-- ── 思维导图连线：每个节点都从父节点（或 YOU）右侧拉 Bezier 到自己左侧 ── -->
                             ${pathOptions.length > 0 ? html`
                                 <svg
                                     class="absolute top-0 left-0 pointer-events-none"
                                     style=${{ width: '1px', height: '1px', overflow: 'visible' }}
                                 >
-                                    ${pathOptions.map((p, pi) => {
-                                        const userPosL = cardPos['__user'] || { x: 0, y: 0 };
-                                        const id = `__path_${p.id}`;
-                                        // path 默认槽位：右侧一列（>=5 条切两列），垂直按 index 分布
-                                        const COLS = pathOptions.length >= 5 ? 2 : 1;
-                                        const col = pi % COLS;
-                                        const row = Math.floor(pi / COLS);
-                                        const ROW_PER_COL = Math.ceil(pathOptions.length / COLS);
-                                        const ROW_GAP = 150;
-                                        const startY = userPosL.y + 75 - ((ROW_PER_COL - 1) * ROW_GAP) / 2;
-                                        const fallback = {
-                                            x: userPosL.x + 360 + col * 290,
-                                            y: startY + row * ROW_GAP,
-                                        };
-                                        const pathPos = cardPos[id] || fallback;
-                                        // 连接 YOU 右侧中心 → path 左侧中心
-                                        const x1 = userPosL.x + 255;
-                                        const y1 = userPosL.y + 75;
-                                        const x2 = pathPos.x;
-                                        const y2 = pathPos.y + 60;
+                                    ${pathOptions.map((p) => {
+                                        const childPos = pathPosOf(p);
+                                        let x1, y1;
+                                        if (p.parentId == null) {
+                                            // 根节点：起点 = YOU 右侧中心
+                                            x1 = userPosLForLayout.x + 255;
+                                            y1 = userPosLForLayout.y + 75;
+                                        } else {
+                                            const parent = pathOptions.find(n => n.id === p.parentId);
+                                            if (!parent) return null;
+                                            const parentPos = pathPosOf(parent);
+                                            x1 = parentPos.x + 255;
+                                            y1 = parentPos.y + cardHeightOf(parent) / 2;
+                                        }
+                                        const x2 = childPos.x;
+                                        const y2 = childPos.y + cardHeightOf(p) / 2;
                                         const dx = Math.max(60, Math.abs(x2 - x1) / 2);
-                                        const colors = ['#e8a84c', '#8a9a6c', '#c47a6c', '#f59e0b', '#10b981', '#f43f5e'];
-                                        const c = colors[pi % colors.length];
+                                        const c = pathColorOf(p).stroke;
+                                        const dim = isPathFaded(p);
+                                        const op = dim ? 0.18 : 0.55;
                                         return html`
                                             <g key=${`line-${p.id}`}>
                                                 <path
                                                     d=${`M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`}
                                                     stroke=${c}
                                                     stroke-width="1.8"
-                                                    stroke-opacity="0.55"
+                                                    stroke-opacity=${op}
                                                     fill="none"
                                                     stroke-linecap="round"
                                                 />
-                                                <circle cx=${x1} cy=${y1} r="3" fill=${c} fill-opacity="0.65" />
-                                                <circle cx=${x2} cy=${y2} r="3.5" fill=${c} fill-opacity="0.9" />
+                                                <circle cx=${x1} cy=${y1} r="3" fill=${c} fill-opacity=${dim ? 0.25 : 0.65} />
+                                                <circle cx=${x2} cy=${y2} r="3.5" fill=${c} fill-opacity=${dim ? 0.3 : 0.9} />
                                             </g>
                                         `;
                                     })}
@@ -2080,48 +2385,87 @@
                                 </div>
                             </div>
 
-                            <!-- ── Roadmap path 卡片：YOU 节点右侧排开（思维导图左→右） ── -->
-                            ${pathOptions.map((p, pi) => {
+                            <!-- ── Roadmap 节点：path / consequence 两种 kind 树形分层 ── -->
+                            ${pathOptions.map((p) => {
                                 const id = `__path_${p.id}`;
-                                const userPosL = cardPos['__user'] || { x: 0, y: 0 };
-                                // 默认槽位：YOU 节点右侧 360px 起，>=5 条时切两列，垂直按 index 分布并居中对齐 YOU
-                                const COLS = pathOptions.length >= 5 ? 2 : 1;
-                                const col = pi % COLS;
-                                const row = Math.floor(pi / COLS);
-                                const ROW_PER_COL = Math.ceil(pathOptions.length / COLS);
-                                const ROW_GAP = 150;
-                                const startY = userPosL.y + 75 - ((ROW_PER_COL - 1) * ROW_GAP) / 2;
-                                const fallback = {
-                                    x: userPosL.x + 360 + col * 290,
-                                    y: startY + row * ROW_GAP,
-                                };
-                                const pos = cardPos[id] || fallback;
-                                const palettes = [
-                                    { bg: 'bg-primary/10', text: 'text-primary', bdr: 'border-primary/60', hover: 'hover:bg-primary/10' },
-                                    { bg: 'bg-secondary/10', text: 'text-secondary', bdr: 'border-secondary/60', hover: 'hover:bg-secondary/10' },
-                                    { bg: 'bg-tertiary/10', text: 'text-tertiary', bdr: 'border-tertiary/60', hover: 'hover:bg-tertiary/10' },
-                                    { bg: 'bg-amber-500/10', text: 'text-amber-500', bdr: 'border-amber-500/60', hover: 'hover:bg-amber-500/10' },
-                                    { bg: 'bg-emerald-600/10', text: 'text-emerald-600', bdr: 'border-emerald-600/60', hover: 'hover:bg-emerald-600/10' },
-                                    { bg: 'bg-rose-500/10', text: 'text-rose-500', bdr: 'border-rose-500/60', hover: 'hover:bg-rose-500/10' },
-                                ];
-                                const c = palettes[pi % palettes.length];
+                                const pos = pathPosOf(p);
+                                const c = pathColorOf(p);
+                                const dim = isPathFaded(p);
+
+                                // ── consequence 卡：走 path 之后冒出来的「结果 + 下一个困境」 ──
+                                if (p.kind === 'consequence') {
+                                    return html`
+                                        <div
+                                            key=${p.id}
+                                            class=${'absolute w-[255px] cursor-grab active:cursor-grabbing select-none transition-opacity duration-200 ' + (dim ? 'opacity-30 hover:opacity-70' : 'opacity-100')}
+                                            style=${{ left: pos.x + 'px', top: pos.y + 'px' }}
+                                            onMouseDown=${(e) => startCardDrag(e, id)}
+                                        >
+                                            <div class=${'voicemap-card voicemap-card-bg rounded-[20px] border border-dashed border-on-surface/20 overflow-hidden bg-surface-container-high/30'}>
+                                                <div class=${`px-4 py-2 border-b border-outline/10 flex items-center justify-between gap-2 ${c.bg}`}>
+                                                    <span class=${`text-[8px] font-black uppercase tracking-[0.28em] ${c.text} truncate`}>WHAT HAPPENS</span>
+                                                    <button
+                                                        onMouseDown=${(e) => e.stopPropagation()}
+                                                        onClick=${() => askRoundtableAbout(p)}
+                                                        class=${`no-shine text-[7px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full border ${c.bdr} ${c.text} ${c.hover} transition-all whitespace-nowrap`}
+                                                        title="Ask the round table to weigh in on this dilemma"
+                                                    >Ask the table →</button>
+                                                </div>
+                                                <div class="px-4 py-3 space-y-2.5">
+                                                    ${p.outcome ? html`
+                                                        <div>
+                                                            <div class="text-[7px] font-black uppercase tracking-[0.25em] text-on-surface-variant/40 mb-1">Outcome</div>
+                                                            <div class="text-[11px] leading-relaxed text-on-surface/85">${p.outcome}</div>
+                                                        </div>
+                                                    ` : null}
+                                                    ${p.dilemma ? html`
+                                                        <div class="pt-2 border-t border-outline/10">
+                                                            <div class=${`text-[7px] font-black uppercase tracking-[0.25em] mb-1 ${c.text}`}>Next dilemma</div>
+                                                            <div class="text-[11px] leading-snug font-medium text-on-surface">${p.dilemma}</div>
+                                                        </div>
+                                                    ` : null}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+
+                                // ── path 卡：可选项，可 Walk → 触发 simulate，可 Plan 出 30 天方案 ──
+                                const isWalked = walkedPathIds.has(p.id);
+                                const isSimulating = !!simulating[p.id];
+                                const canWalk = pathLevelOf(p) < PATH_MAX_LEVEL;
+                                const sibs = pathOptions.filter(x => x.parentId === p.parentId && x.kind === 'path');
+                                const sibIdx = Math.max(0, sibs.findIndex(x => x.id === p.id));
+                                const lvl = pathLevelOf(p);
+                                const pathLabel = `PATH ${String.fromCharCode(65 + sibIdx)}${lvl > 0 ? '·L' + lvl : ''}`;
                                 return html`
                                     <div
                                         key=${p.id}
-                                        class="absolute w-[255px] cursor-grab active:cursor-grabbing select-none"
+                                        class=${'absolute w-[255px] cursor-grab active:cursor-grabbing select-none transition-opacity duration-200 ' + (dim ? 'opacity-30 hover:opacity-70' : 'opacity-100')}
                                         style=${{ left: pos.x + 'px', top: pos.y + 'px' }}
                                         onMouseDown=${(e) => startCardDrag(e, id)}
                                     >
-                                        <div class="voicemap-card voicemap-card-bg rounded-[20px] border border-outline/15 overflow-hidden">
-                                            <div class=${`px-4 py-2.5 border-b border-outline/15 flex items-center justify-between ${c.bg}`}>
-                                                <span class=${`text-[8px] font-black uppercase tracking-[0.28em] ${c.text}`}>PATH ${String.fromCharCode(65 + pi)}</span>
-                                                <button
-                                                    onMouseDown=${(e) => e.stopPropagation()}
-                                                    onClick=${() => generatePlan(p.label || '')}
-                                                    disabled=${planLoading}
-                                                    class=${`no-shine text-[7px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full border ${c.bdr} ${c.text} ${c.hover} transition-all whitespace-nowrap disabled:opacity-40`}
-                                                    title="Generate full 30-day plan for this path"
-                                                >Plan →</button>
+                                        <div class=${'voicemap-card voicemap-card-bg rounded-[20px] border overflow-hidden ' + (isWalked ? 'border-primary/40 ring-1 ring-primary/20' : 'border-outline/15')}>
+                                            <div class=${`px-4 py-2.5 border-b border-outline/15 flex items-center justify-between gap-2 ${c.bg}`}>
+                                                <span class=${`text-[8px] font-black uppercase tracking-[0.28em] ${c.text} truncate`}>${pathLabel}</span>
+                                                <div class="flex items-center gap-1 shrink-0">
+                                                    ${canWalk ? html`
+                                                        <button
+                                                            onMouseDown=${(e) => e.stopPropagation()}
+                                                            onClick=${() => simulatePath(p)}
+                                                            disabled=${isSimulating}
+                                                            class=${`no-shine text-[7px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full border ${c.bdr} ${c.text} ${c.hover} transition-all whitespace-nowrap disabled:opacity-40`}
+                                                            title=${isWalked ? 'Re-simulate consequences from this path' : 'Simulate consequences if you walked this path'}
+                                                        >${isSimulating ? '…' : (isWalked ? 'Re-walk' : 'Walk →')}</button>
+                                                    ` : null}
+                                                    <button
+                                                        onMouseDown=${(e) => e.stopPropagation()}
+                                                        onClick=${() => generatePlan(p.label || '')}
+                                                        disabled=${planLoading}
+                                                        class=${`no-shine text-[7px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full border ${c.bdr} ${c.text} ${c.hover} transition-all whitespace-nowrap disabled:opacity-40`}
+                                                        title="Generate full 30-day plan for this path"
+                                                    >Plan →</button>
+                                                </div>
                                             </div>
                                             <div class="px-4 py-3.5">
                                                 <div class=${`font-headline text-sm font-black leading-snug text-on-surface mb-1.5`}>${p.label || ''}</div>
@@ -2707,7 +3051,7 @@
               ` : null}
 
               <!-- ── Voice Map sidebar ── -->
-              <${VoiceMapSidebar} />
+              ${VoiceMapSidebar()}
 
               <!-- ── Members panel ── -->
               <${MembersPanel} />

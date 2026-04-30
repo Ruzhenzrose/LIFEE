@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
     deleted INTEGER NOT NULL DEFAULT 0,
     last_options TEXT NOT NULL DEFAULT '{}',       -- JSON
     last_extract_msg_count INTEGER NOT NULL DEFAULT 0,
+    roadmap_json TEXT NOT NULL DEFAULT '{}',       -- JSON: {nodes, walkedIds}
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
 );
@@ -149,6 +150,10 @@ def _init_schema(c: sqlite3.Connection) -> None:
         c.execute("ALTER TABLE users ADD COLUMN display_name TEXT NOT NULL DEFAULT ''")
     if "avatar_url" not in cols:
         c.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''")
+    # 迁移：老 db 没有 roadmap_json 列时补上
+    s_cols = {row[1] for row in c.execute("PRAGMA table_info(chat_sessions)").fetchall()}
+    if "roadmap_json" not in s_cols:
+        c.execute("ALTER TABLE chat_sessions ADD COLUMN roadmap_json TEXT NOT NULL DEFAULT '{}'")
 
 
 def now() -> int:
@@ -407,6 +412,7 @@ def session_get(session_id: str) -> dict | None:
     d = dict(r)
     d["personas"] = json.loads(d.get("personas") or "[]")
     d["last_options"] = json.loads(d.get("last_options") or "{}")
+    d["roadmap"] = json.loads(d.get("roadmap_json") or "{}")
     return d
 
 
@@ -448,12 +454,15 @@ def session_update(session_id: str, **fields: Any) -> None:
     allowed = {
         "title", "personas", "starred", "deleted",
         "last_options", "last_extract_msg_count",
+        "roadmap_json",
     }
     updates: dict[str, Any] = {}
     for k, v in fields.items():
         if k not in allowed:
             continue
         if k in ("personas", "last_options") and not isinstance(v, str):
+            v = json.dumps(v)
+        elif k == "roadmap_json" and not isinstance(v, str):
             v = json.dumps(v)
         elif k in ("starred", "deleted"):
             v = 1 if v else 0

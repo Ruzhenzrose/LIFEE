@@ -1390,7 +1390,7 @@
         // ══════════════════════════════════════════════
         function Sidebar({
             view, setView, user, onNewSession, chatSessions,
-            setChatSessions, setSessionMessages, setSessionOptions,
+            setChatSessions, setSessionMessages, setSessionOptions, setSessionRoadmap,
             sessionId, setSessionId, setSelectedIds,
             personas, onLogin, onSignOut, userAvatar,
             sidebarOpen, setSidebarOpen,
@@ -1421,6 +1421,10 @@
                     if (res?.messages) {
                         setSessionMessages(res.messages.map(m => ({ personaId: m.persona_id || m.role, text: m.content, seq: m.seq })));
                         if (setSessionOptions) setSessionOptions(Array.isArray(res.options) ? res.options : []);
+                        if (setSessionRoadmap) {
+                            const rm = res.roadmap;
+                            setSessionRoadmap(rm && Array.isArray(rm.nodes) && rm.nodes.length ? rm : null);
+                        }
                         setSessionId(s.id);
                         if (s.personas?.length && setSelectedIds) {
                             const ids = s.personas.map(pid => {
@@ -4215,6 +4219,7 @@
             useEffect(() => { if (view === 'debate') setHasEnteredDebate(true); }, [view]);
             const [sessionMessages, setSessionMessages] = useState([]);
             const [sessionOptions, setSessionOptions] = useState([]);
+            const [sessionRoadmap, setSessionRoadmap] = useState(null); // {nodes, walkedIds} | null
             const [sessionSummaries, setSessionSummaries] = useState([]);
             // Debate 设置（联网搜索/追问/最多发言/语言）。提到 App 顶层，让 home
             // 输入框旁的工具菜单和 chat 内的设置共用同一份 state，互相同步。
@@ -4495,6 +4500,7 @@
                 setSessionMessages([]);
                 setSessionSummaries([]);
                 setSessionOptions([]);
+                setSessionRoadmap(null);
                 setContext({ situation: '', landingPeriods: [] });
                 setSelectedIds([]);
                 setView('home');
@@ -4510,6 +4516,7 @@
                 setSessionMessages([]);
                 setSessionSummaries([]);
                 setSessionOptions([]);
+                setSessionRoadmap(null);
                 setView('debate');
             }, []);
 
@@ -4553,6 +4560,13 @@
                     if (res?.messages) {
                         setSessionMessages(res.messages.map(m => ({ personaId: m.persona_id || m.role, text: m.content, seq: m.seq })));
                         setSessionOptions(Array.isArray(res.options) ? res.options : []);
+                        // 兼容老 session：roadmap 字段缺/空时回退到 null
+                        const rm = res.roadmap;
+                        if (rm && (Array.isArray(rm.nodes) ? rm.nodes.length : false)) {
+                            setSessionRoadmap(rm);
+                        } else {
+                            setSessionRoadmap(null);
+                        }
                     }
                 } catch (e) { console.error('restore failed', e); }
             }, [displayPersonas]);
@@ -4576,6 +4590,7 @@
                     onLogin: () => setAuthOpen(true),
                     initialMessages: sessionMessages,
                     initialOptions: sessionOptions,
+                    initialRoadmap: sessionRoadmap,
                     parentSessionId: sessionId,
                     initialMode: sessionId ? null : initialMode,
                     onSessionCreated: (id) => {
@@ -4706,6 +4721,7 @@
                         setChatSessions=${setChatSessions}
                         setSessionMessages=${setSessionMessages}
                         setSessionOptions=${setSessionOptions}
+                        setSessionRoadmap=${setSessionRoadmap}
                         sessionId=${sessionId}
                         setSessionId=${setSessionId}
                         setSelectedIds=${setSelectedIds}

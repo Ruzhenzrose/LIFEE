@@ -1084,7 +1084,7 @@ async def cancel_generation(session_id: str):
 
 @app.get("/sessions/{session_id}/messages")
 async def get_session_messages(session_id: str):
-    """获取会话消息 + 最新 follow-up options。"""
+    """获取会话消息 + 最新 follow-up options + roadmap 树（如果存过）。"""
     import traceback
     try:
         from lifee import store as _s
@@ -1093,15 +1093,65 @@ async def get_session_messages(session_id: str):
             sess = _s.session_get(session_id)
             opts = sess.get("last_options") if sess else {}
             if not isinstance(opts, list):
-                # last_options 历史上是 list，但 session_get 会 json.loads 成 dict 时返回 {}，这里兼容
                 opts = opts.get("options", []) if isinstance(opts, dict) else []
-            return msgs, opts
-        messages, options = await asyncio.to_thread(_load)
-        return {"messages": messages, "options": options}
+            roadmap = (sess.get("roadmap") if sess else None) or {}
+            return msgs, opts, roadmap
+        messages, options, roadmap = await asyncio.to_thread(_load)
+        return {"messages": messages, "options": options, "roadmap": roadmap}
     except Exception as e:
         print(f"[sessions/{session_id}/messages] failed: {type(e).__name__}: {e}")
         traceback.print_exc()
-        return {"messages": [], "options": [], "error": f"{type(e).__name__}: {e}"}
+        return {"messages": [], "options": [], "roadmap": {}, "error": f"{type(e).__name__}: {e}"}
+
+
+class RoadmapSaveRequest(BaseModel):
+    nodes: list = []        # pathOptions 扁平树
+    walkedIds: list = []    # walkedPathIds (转 list 给 JSON)
+
+
+@app.put("/sessions/{session_id}/roadmap")
+async def save_session_roadmap(session_id: str, req: RoadmapSaveRequest):
+    """保存当前 session 的 roadmap 树。前端在 simulatePath / generateRoadmap 后调。"""
+    try:
+        from lifee import store as _s
+        if not await asyncio.to_thread(_s.session_exists, session_id):
+            return {"ok": False, "error": "session not found"}
+        payload = {"nodes": req.nodes or [], "walkedIds": req.walkedIds or []}
+        await asyncio.to_thread(_s.session_update, session_id, roadmap_json=payload)
+        return {"ok": True}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"ok": False, "error": str(e)}
+
+
+class NoteAppendRequest(BaseModel):
+    role: str = "user"
+    content: str = ""
+    persona_id: str = ""
+
+
+@app.post("/sessions/{session_id}/note")
+async def append_session_note(session_id: str, req: NoteAppendRequest):
+    """往 chat_messages 里加一条不触发 LLM 的消息。
+    Roadmap 在 Walk 之后用这个把 outcome / dilemma 落到对话历史里。"""
+    try:
+        from lifee import store as _s
+        if not await asyncio.to_thread(_s.session_exists, session_id):
+            return {"ok": False, "error": "session not found"}
+        seq = await asyncio.to_thread(
+            _s.msg_save,
+            session_id,
+            req.role or "user",
+            req.content or "",
+            seq=None,
+            persona_id=req.persona_id or None,
+        )
+        return {"ok": True, "seq": seq}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"ok": False, "error": str(e)}
 
 
 class SessionUpdateRequest(BaseModel):
@@ -1299,6 +1349,120 @@ Make labels distinct and concrete (not "保守路线 / 激进路线" — use spe
         if len(paths) < 2:
             return {"paths": paths, "error": "too few paths"}
         return {"paths": paths}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"paths": [], "error": str(e)}
+
+
+class SimulatePathRequest(BaseModel):
+    sessionId: str = ""
+    messages: list = []
+    language: str = "Chinese"
+    situation: str = ""
+    chosenPath: dict = {}        # 当前要"走下去"的那条 { label, summary }
+    parentChain: list = []       # 从根到 chosenPath 的祖先链 [{label, summary}, ...]，不含 chosenPath 自己
+
+
+@app.post("/simulate-path")
+async def simulate_path(req: SimulatePathRequest):
+    """假设用户走了 chosenPath（前面已经走过 parentChain），推 3 条紧接着会出现的新决策路径。
+    用于 Roadmap 多层分叉。深度由前端控制——本端点不感知深度。"""
+    msgs = req.messages
+    if req.sessionId and not msgs:
+        try:
+            from lifee import store as _s
+            db_msgs = await asyncio.to_thread(_s.msg_list, req.sessionId)
+            msgs = [{"personaId": m.get("persona_id") or "", "text": m.get("content", "")} for m in db_msgs]
+        except Exception:
+            pass
+
+    history = []
+    for m in (msgs or [])[-10:]:
+        pid = m.get("personaId", "")
+        txt = (m.get("text", "") or "").strip()
+        if not txt or pid in ("system", "lifee-followup", "moderator"):
+            continue
+        history.append(f"{pid}: {txt[:200]}")
+
+    chosen = req.chosenPath or {}
+    chosen_label = (chosen.get("label") or "").strip()
+    chosen_summary = (chosen.get("summary") or "").strip()
+    if not chosen_label:
+        return {"paths": [], "error": "missing chosenPath"}
+
+    chain_lines = []
+    for i, p in enumerate(req.parentChain or []):
+        if not isinstance(p, dict):
+            continue
+        lbl = (p.get("label") or "").strip()
+        smry = (p.get("summary") or "").strip()
+        if lbl:
+            chain_lines.append(f"  {i+1}. {lbl} — {smry}")
+    chain_block = "\n".join(chain_lines) if chain_lines else "  (none — this is the first decision the user made)"
+
+    prompt = f"""The user is exploring life paths. They have already committed to walking this chain of decisions, in order:
+{chain_block}
+
+Now they commit to this next decision:
+  → {chosen_label} — {chosen_summary}
+
+Assume they have lived through this path for a meaningful stretch (months to ~1-2 years). Produce three things:
+
+1. **outcome** — A concrete description of where they ended up: what their life looks like, what changed, what they got, what they lost. 2-3 sentences. Be specific and grounded, not generic.
+2. **dilemma** — The *next* major question or tension that has emerged from this outcome. One sharp question that feels alive — not "what now?" but something concrete that this exact outcome would produce.
+3. **paths** — Exactly 3 distinct concrete decisions the user could now make to address that dilemma. Each: short label (3-8 words) + one-sentence summary. Make them meaningfully different from each other.
+
+Situation: {req.situation or 'Major life decision'}
+
+Recent conversation context (for tone and constraints):
+{chr(10).join(history) or '(none)'}
+
+Rules:
+- outcome / dilemma / paths must all be specific *consequences* of having walked "{chosen_label}" — they should not make sense if the user had picked a different parent decision.
+- Don't pad with marginal variants in paths.
+
+Reply ONLY in this JSON format ({req.language}):
+{{
+  "outcome": "走过这条路一段时间后的具体结果……",
+  "dilemma": "由此自然冒出来的那个核心问题？",
+  "paths": [
+    {{ "label": "短标签", "summary": "一句话说明这条新路径" }},
+    ...
+  ]
+}}"""
+
+    try:
+        provider = _get_provider()
+        from lifee.providers.base import Message, MessageRole
+        messages_llm = [Message(role=MessageRole.USER, content=prompt)]
+        chunks = []
+        async for chunk in provider.stream(messages=messages_llm, max_tokens=900, temperature=0.55):
+            chunks.append(chunk)
+        text = "".join(chunks).strip()
+        import json as _json
+        if '```' in text:
+            text = text.split('```')[1].replace('json', '', 1).strip()
+        data = _json.loads(text)
+        if not isinstance(data, dict):
+            return {"paths": [], "error": "bad response shape"}
+        outcome = (data.get("outcome") or "").strip()
+        dilemma = (data.get("dilemma") or "").strip()
+        raw_paths = data.get("paths")
+        if not isinstance(raw_paths, list) or not raw_paths:
+            return {"paths": [], "outcome": outcome, "dilemma": dilemma, "error": "no paths returned"}
+        paths = []
+        for i, p in enumerate(raw_paths[:3]):
+            if not isinstance(p, dict):
+                continue
+            label = (p.get("label") or "").strip()
+            summary = (p.get("summary") or "").strip()
+            if not label:
+                continue
+            paths.append({"id": f"sp{i+1}", "label": label[:42], "summary": summary[:140]})
+        if len(paths) < 2:
+            return {"paths": paths, "outcome": outcome, "dilemma": dilemma, "error": "too few paths"}
+        return {"paths": paths, "outcome": outcome[:400], "dilemma": dilemma[:300]}
     except Exception as e:
         import traceback
         traceback.print_exc()
