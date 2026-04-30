@@ -222,10 +222,10 @@ var INITIAL_PERSONAS = [
         role: 'FASHION REVOLUTIONARY',
         category: 'CREATIVE',
         worldview: "Simplicity is the keynote of all true elegance — and the hardest thing to achieve.",
-        avatar: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23111111'/><g transform='translate(32,32)'><ellipse cx='0' cy='-13' rx='5.5' ry='9' fill='%23e8e0d0' transform='rotate(0)' opacity='0.92'/><ellipse cx='0' cy='-13' rx='5.5' ry='9' fill='%23e8e0d0' transform='rotate(72)' opacity='0.92'/><ellipse cx='0' cy='-13' rx='5.5' ry='9' fill='%23e8e0d0' transform='rotate(144)' opacity='0.92'/><ellipse cx='0' cy='-13' rx='5.5' ry='9' fill='%23e8e0d0' transform='rotate(216)' opacity='0.92'/><ellipse cx='0' cy='-13' rx='5.5' ry='9' fill='%23e8e0d0' transform='rotate(288)' opacity='0.92'/><circle r='4.5' fill='%23d4af37'/></g></svg>",
-        cover_url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect width='120' height='120' fill='%23111111'/><g transform='translate(60,60)'><ellipse cx='0' cy='-26' rx='11' ry='18' fill='%23e8e0d0' transform='rotate(0)' opacity='0.9'/><ellipse cx='0' cy='-26' rx='11' ry='18' fill='%23e8e0d0' transform='rotate(72)' opacity='0.9'/><ellipse cx='0' cy='-26' rx='11' ry='18' fill='%23e8e0d0' transform='rotate(144)' opacity='0.9'/><ellipse cx='0' cy='-26' rx='11' ry='18' fill='%23e8e0d0' transform='rotate(216)' opacity='0.9'/><ellipse cx='0' cy='-26' rx='11' ry='18' fill='%23e8e0d0' transform='rotate(288)' opacity='0.9'/><circle r='9' fill='%23d4af37'/></g></svg>",
+        avatar: '/void/assets/personas/chanel.jpg',
+        cover_url: '/void/assets/personas/chanel.jpg',
         cover_fit: 'cover',
-        cover_position: '50% 50%',
+        cover_position: '50% 20%',
         decisionStyle: "Strip away everything unnecessary until only the essential remains. Ask: what are you really afraid of? Then cut that too. The answer is always simpler than you think — and harder to execute.",
         lifeContext: [
             { period: "Orphaned in Auvergne", detail: "Abandoned by her father at 6, raised by cold aunts among peasants and horses. Learned that pride is the only thing no one can take from you." },
