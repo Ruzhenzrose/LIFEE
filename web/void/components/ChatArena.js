@@ -466,6 +466,8 @@
         const [showMoreMenu, setShowMoreMenu]   = useState(false);
         const [showToolsMenu, setShowToolsMenu] = useState(false);
         const [showVoiceMap, setShowVoiceMap]   = useState(false);
+        // Roadmap 模式下点击小头像可临时展开成 summary 卡（仅当前会话，不持久化）
+        const [expandedAvatars, setExpandedAvatars] = useState(() => new Set());
         const [showMembersPanel, setShowMembersPanel] = useState(false);
         const [showScrollToBottom, setShowScrollToBottom] = useState(false);
         // Keep ~120px of chat visible so the user can always see there's a chat
@@ -1681,6 +1683,9 @@
             const canvasRef = useRef(null);
             const panRef = useRef({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
             const cardRef = useRef({ id: null, startX: 0, startY: 0, origX: 0, origY: 0 });
+            // 区分「点击」和「拖动」：mousedown 重置，mousemove 实际移动后置 true，
+            // 卡片上的 onClick 据此判断该不该把点击当作展开/收起。
+            const dragMovedRef = useRef(false);
 
             const onCanvasMouseDown = (e) => {
                 if (cardRef.current.id) return;
@@ -1690,6 +1695,7 @@
                 if (cardRef.current.id) {
                     const dx = (e.clientX - cardRef.current.startX) / scale;
                     const dy = (e.clientY - cardRef.current.startY) / scale;
+                    if (!dragMovedRef.current && Math.hypot(dx, dy) > 3) dragMovedRef.current = true;
                     setCardPos(prev => ({
                         ...prev,
                         [cardRef.current.id]: { x: cardRef.current.origX + dx, y: cardRef.current.origY + dy },
@@ -1709,6 +1715,7 @@
                 e.stopPropagation();
                 const pos = cardPos[id] || { x: 0, y: 0 };
                 cardRef.current = { id, startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
+                dragMovedRef.current = false;
             };
             const onWheel = (e) => {
                 e.preventDefault();
@@ -1877,39 +1884,150 @@
 
                             ${voices.map((v, idx) => {
                                 const color = getColor(v.id);
-                                const pos = cardPos[v.id] || { x: 0, y: 0, rotate: 0 };
                                 const ava = v.avatar || '☁️';
                                 const recent = v.messages.slice(-3);
-                                // Roadmap 模式下角色卡缩成小头像，给思维导图让位
-                                if (pathOptions.length > 0) {
-                                    const userPosL = cardPos['__user'] || { x: 0, y: 0 };
-                                    // 默认槽位：YOU 卡左侧竖排，避免和右边 path 卡重叠
-                                    const miniFallback = { x: userPosL.x - 60, y: userPosL.y + idx * 52, rotate: 0 };
-                                    const miniPos = cardPos[v.id] || miniFallback;
-                                    const isAvaUrl = typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava);
-                                    return html`
-                                        <div
-                                            key=${v.id}
-                                            class="absolute cursor-grab active:cursor-grabbing select-none group"
-                                            style=${{ left: miniPos.x + 'px', top: miniPos.y + 'px' }}
-                                            onMouseDown=${(e) => startCardDrag(e, v.id)}
-                                            title=${`${v.name} · ${v.role || ''}`}
-                                        >
+                                const isAvaUrl = typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava);
+                                const inRoadmap = pathOptions.length > 0;
+                                const isExpandedMini = inRoadmap && expandedAvatars.has(v.id);
+
+                                // Summary 卡片复用现有 voicemap-card 样式；roadmap 展开和默认全卡都用同一段 markup
+                                const cardInner = html`
+                                    <div class="voicemap-card voicemap-card-bg rounded-[20px] border border-outline/15 overflow-hidden">
+                                        <!-- Header -->
+                                        <div class="flex items-center gap-2.5 px-4 pt-3 pb-2.5 border-b border-outline/10">
                                             <div
-                                                class="w-11 h-11 rounded-full border flex items-center justify-center text-base shrink-0 overflow-hidden shadow-lg shadow-black/40 transition-transform group-hover:scale-110"
+                                                class="w-8 h-8 rounded-full border flex items-center justify-center text-base shrink-0 overflow-hidden"
                                                 style=${{ borderColor: color.ring, backgroundColor: color.bg }}
                                             >
                                                 ${isAvaUrl
                                                     ? html`<img src=${ava} class="w-full h-full object-cover" />`
-                                                    : html`<span>${ava}</span>`}
+                                                    : html`<span>${ava}</span>`
+                                                }
                                             </div>
-                                            <!-- 悬停显示名字气泡 -->
-                                            <div class="absolute left-12 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-surface-container/95 border border-outline/15 text-[9px] font-bold uppercase tracking-widest text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                                ${v.name}
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface truncate">${v.name}</p>
+                                                <p class="text-[8px] font-bold uppercase tracking-[0.15em] truncate" style=${{ color: color.text }}>${v.role || ''}</p>
                                             </div>
+                                            <span class="text-[10px] font-black text-on-surface/20 shrink-0">${v.count || '—'}</span>
+                                        </div>
+
+                                        <!-- Body: summary → recent messages → empty -->
+                                        <div class="px-4 py-3 min-h-[72px] flex flex-col gap-2">
+                                            ${summaryLoading ? html`
+                                                <div class="flex items-center gap-2">
+                                                    <span class="material-symbols-outlined text-on-surface-variant/40 animate-spin" style=${{ fontSize: '12px' }}>progress_activity</span>
+                                                    <span class="text-[10px] text-on-surface-variant/35">${t('chat.summarizing')}</span>
+                                                </div>
+                                            ` : summaryData[v.id] ? html`
+                                                <div
+                                                    class="rounded-md pl-2.5 pr-2 py-2 border-l-2 bg-surface-container-high/40"
+                                                    style=${{ borderLeftColor: color.border }}
+                                                >
+                                                    <div class="text-[10px] leading-relaxed text-on-surface/80">
+                                                        <${ShinyLines}
+                                                            text=${summaryData[v.id]}
+                                                            fontStr='10px "Manrope", sans-serif'
+                                                            lineHeightPx=${16}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ` : recent.length === 0 ? html`
+                                                <p class="text-[10px] italic text-on-surface-variant/25">${t('chat.waiting')}</p>
+                                            ` : recent.map((msg, i) => {
+                                                const isLatest = i === recent.length - 1;
+                                                return html`
+                                                    <div
+                                                        key=${i}
+                                                        class=${'text-[10px] italic leading-snug pl-2 border-l-2 ' +
+                                                            (isLatest ? 'text-on-surface/75' : 'text-on-surface-variant/30')}
+                                                        style=${{ borderLeftColor: isLatest ? color.border : 'var(--msg-border-dim)' }}
+                                                    >
+                                                        <${ShinyLines}
+                                                            text=${msg || ''}
+                                                            fontStr='italic 10px "Manrope", sans-serif'
+                                                            lineHeightPx=${13}
+                                                            maxLines=${2}
+                                                        />
+                                                    </div>
+                                                `;
+                                            })}
+                                        </div>
+
+                                        <!-- Footer: worldview quote -->
+                                        <div class="px-4 py-2 border-t border-outline/10 bg-surface-container-high/40">
+                                            <p class="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface/25 truncate">
+                                                ${v.worldview ? `"${v.worldview.slice(0, 45)}"` : (v.category || '')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                `;
+
+                                // Roadmap 模式：折叠时只显示 44×44 小头像；点击展开成完整 summary 卡。
+                                // 卡片摆在让 header 里的 32×32 头像和折叠时小头像中心重合的位置——
+                                // 视觉上像是卡片从头像里长出来。再次点同一头像位置（卡上 header 头像）收起。
+                                if (inRoadmap) {
+                                    const userPosL = cardPos['__user'] || { x: 0, y: 0 };
+                                    const miniFallback = { x: userPosL.x - 60, y: userPosL.y + idx * 52, rotate: 0 };
+                                    const miniPos = cardPos[v.id] || miniFallback;
+                                    const toggleExpand = () => {
+                                        if (dragMovedRef.current) return;
+                                        setExpandedAvatars(prev => {
+                                            const next = new Set(prev);
+                                            if (next.has(v.id)) next.delete(v.id); else next.add(v.id);
+                                            return next;
+                                        });
+                                    };
+                                    if (!isExpandedMini) {
+                                        return html`
+                                            <div
+                                                key=${v.id}
+                                                class="absolute cursor-pointer select-none group z-10"
+                                                style=${{ left: miniPos.x + 'px', top: miniPos.y + 'px' }}
+                                                onMouseDown=${(e) => startCardDrag(e, v.id)}
+                                                onClick=${toggleExpand}
+                                                title=${`${v.name} · ${v.role || ''}`}
+                                            >
+                                                <div
+                                                    class="w-11 h-11 rounded-full border flex items-center justify-center text-base shrink-0 overflow-hidden shadow-lg shadow-black/40 transition-transform group-hover:scale-110"
+                                                    style=${{ borderColor: color.ring, backgroundColor: color.bg }}
+                                                >
+                                                    ${isAvaUrl
+                                                        ? html`<img src=${ava} class="w-full h-full object-cover" />`
+                                                        : html`<span>${ava}</span>`}
+                                                </div>
+                                                <div class="absolute left-12 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-surface-container/95 border border-outline/15 text-[9px] font-bold uppercase tracking-widest text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                    ${v.name}
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+                                    // 展开：把卡片放在让 header avatar(32×32, padding 16/12, border 1) 中心
+                                    // 落在小头像 (44×44) 中心的位置 → cardX = miniPos.x − 11, cardY = miniPos.y − 7
+                                    const cardX = miniPos.x - 11;
+                                    const cardY = miniPos.y - 7;
+                                    return html`
+                                        <div key=${v.id} class="contents">
+                                            <div
+                                                class="absolute w-[255px] cursor-grab active:cursor-grabbing select-none z-20"
+                                                style=${{ left: cardX + 'px', top: cardY + 'px' }}
+                                                onMouseDown=${(e) => startCardDrag(e, v.id)}
+                                            >
+                                                ${cardInner}
+                                            </div>
+                                            <!-- 透明点击区盖在 header 头像上：和折叠时小头像同位 → 再点一次收起 -->
+                                            <div
+                                                class="absolute w-11 h-11 rounded-full cursor-pointer z-30"
+                                                style=${{ left: miniPos.x + 'px', top: miniPos.y + 'px' }}
+                                                onMouseDown=${(e) => startCardDrag(e, v.id)}
+                                                onClick=${toggleExpand}
+                                                title=${`Collapse ${v.name}`}
+                                            ></div>
                                         </div>
                                     `;
                                 }
+
+                                // 默认（非 roadmap）：完整卡片，可自由拖动
+                                const pos = cardPos[v.id] || { x: 0, y: 0, rotate: 0 };
                                 return html`
                                     <div
                                         key=${v.id}
@@ -1917,74 +2035,7 @@
                                         style=${{ left: pos.x + 'px', top: pos.y + 'px', transform: `rotate(${pos.rotate}deg)`, transformOrigin: 'center center' }}
                                         onMouseDown=${(e) => startCardDrag(e, v.id)}
                                     >
-                                        <div class="voicemap-card voicemap-card-bg rounded-[20px] border border-outline/15 overflow-hidden">
-                                            <!-- Header -->
-                                            <div class="flex items-center gap-2.5 px-4 pt-3 pb-2.5 border-b border-outline/10">
-                                                <div
-                                                    class="w-8 h-8 rounded-full border flex items-center justify-center text-base shrink-0 overflow-hidden"
-                                                    style=${{ borderColor: color.ring, backgroundColor: color.bg }}
-                                                >
-                                                    ${!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
-                                                        ? html`<span>${ava}</span>`
-                                                        : html`<img src=${ava} class="w-full h-full object-cover" />`
-                                                    }
-                                                </div>
-                                                <div class="flex-1 min-w-0">
-                                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface truncate">${v.name}</p>
-                                                    <p class="text-[8px] font-bold uppercase tracking-[0.15em] truncate" style=${{ color: color.text }}>${v.role || ''}</p>
-                                                </div>
-                                                <span class="text-[10px] font-black text-on-surface/20 shrink-0">${v.count || '—'}</span>
-                                            </div>
-
-                                            <!-- Body: summary (if available) → recent messages → empty -->
-                                            <div class="px-4 py-3 min-h-[72px] flex flex-col gap-2">
-                                                ${summaryLoading ? html`
-                                                    <div class="flex items-center gap-2">
-                                                        <span class="material-symbols-outlined text-on-surface-variant/40 animate-spin" style=${{ fontSize: '12px' }}>progress_activity</span>
-                                                        <span class="text-[10px] text-on-surface-variant/35">${t('chat.summarizing')}</span>
-                                                    </div>
-                                                ` : summaryData[v.id] ? html`
-                                                    <div
-                                                        class="rounded-md pl-2.5 pr-2 py-2 border-l-2 bg-surface-container-high/40"
-                                                        style=${{ borderLeftColor: color.border }}
-                                                    >
-                                                        <div class="text-[10px] leading-relaxed text-on-surface/80">
-                                                            <${ShinyLines}
-                                                                text=${summaryData[v.id]}
-                                                                fontStr='10px "Manrope", sans-serif'
-                                                                lineHeightPx=${16}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ` : recent.length === 0 ? html`
-                                                    <p class="text-[10px] italic text-on-surface-variant/25">${t('chat.waiting')}</p>
-                                                ` : recent.map((msg, i) => {
-                                                    const isLatest = i === recent.length - 1;
-                                                    return html`
-                                                        <div
-                                                            key=${i}
-                                                            class=${'text-[10px] italic leading-snug pl-2 border-l-2 ' +
-                                                                (isLatest ? 'text-on-surface/75' : 'text-on-surface-variant/30')}
-                                                            style=${{ borderLeftColor: isLatest ? color.border : 'var(--msg-border-dim)' }}
-                                                        >
-                                                            <${ShinyLines}
-                                                                text=${msg || ''}
-                                                                fontStr='italic 10px "Manrope", sans-serif'
-                                                                lineHeightPx=${13}
-                                                                maxLines=${2}
-                                                            />
-                                                        </div>
-                                                    `;
-                                                })}
-                                            </div>
-
-                                            <!-- Footer: worldview quote -->
-                                            <div class="px-4 py-2 border-t border-outline/10 bg-surface-container-high/40">
-                                                <p class="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface/25 truncate">
-                                                    ${v.worldview ? `"${v.worldview.slice(0, 45)}"` : (v.category || '')}
-                                                </p>
-                                            </div>
-                                        </div>
+                                        ${cardInner}
                                     </div>
                                 `;
                             })}
