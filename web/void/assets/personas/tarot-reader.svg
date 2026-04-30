@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Tarot mirror portrait">
+  <defs>
+    <radialGradient id="bg" cx="48%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#4a3c86"/>
+      <stop offset="0.48" stop-color="#15172f"/>
+      <stop offset="1" stop-color="#070811"/>
+    </radialGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0d38f"/>
+      <stop offset="0.48" stop-color="#b37a31"/>
+      <stop offset="1" stop-color="#56391a"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b244f"/>
+      <stop offset="1" stop-color="#6f3e83"/>
+    </linearGradient>
+    <filter id="softGlow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="42" fill="url(#bg)"/>
+  <g opacity="0.34" stroke="#d9a64e" stroke-width="1.5" fill="none">
+    <circle cx="256" cy="252" r="170"/>
+    <circle cx="256" cy="252" r="118"/>
+    <path d="M256 82v340M86 252h340M136 132l240 240M376 132 136 372"/>
+  </g>
+
+  <g filter="url(#softGlow)">
+    <path d="M256 75c32 37 32 91 0 128-32-37-32-91 0-128z" fill="#f0c872" opacity="0.92"/>
+    <path d="M276 80c27 40 20 86-20 123 58-8 91-64 54-111-10-8-21-12-34-12z" fill="#15172f" opacity="0.78"/>
+  </g>
+
+  <g transform="translate(150 150) rotate(-8 106 136)">
+    <rect x="42" y="0" width="128" height="202" rx="16" fill="#111428" stroke="url(#card)" stroke-width="5"/>
+    <rect x="56" y="16" width="100" height="170" rx="10" fill="none" stroke="#d9a64e" stroke-width="1.8" opacity="0.72"/>
+    <path d="M106 45c33 33 33 77 0 110-33-33-33-77 0-110z" fill="none" stroke="#f0d38f" stroke-width="4"/>
+    <path d="M73 100h66M106 63v74" stroke="#f0d38f" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="106" cy="100" r="13" fill="#d9a64e"/>
+    <circle cx="106" cy="100" r="5" fill="#111428"/>
+  </g>
+
+  <path d="M138 466c22-76 66-116 118-116s96 40 118 116H138z" fill="url(#violet)"/>
+  <circle cx="256" cy="270" r="64" fill="#241d3d"/>
+  <path d="M194 278c18-41 39-61 62-61s44 20 62 61c-18 27-39 41-62 41s-44-14-62-41z" fill="#c18b49"/>
+  <path d="M222 281c10-20 21-30 34-30s24 10 34 30c-10 14-21 21-34 21s-24-7-34-21z" fill="#0f1124"/>
+  <circle cx="256" cy="281" r="11" fill="#f0d38f"/>
+
+  <g fill="#f0d38f" opacity="0.9">
+    <path d="M112 159l5 14 14 5-14 5-5 14-5-14-14-5 14-5z"/>
+    <path d="M397 235l4 12 12 4-12 4-4 12-4-12-12-4 12-4z"/>
+    <path d="M140 356l4 11 11 4-11 4-4 11-4-11-11-4 11-4z"/>
+  </g>
+</svg>
