@@ -927,6 +927,8 @@ _PERSONA_ALIASES: dict[str, str] = {
     "图灵": "turing",
     "冯·诺依曼": "vonneumann",
     "奥黛丽·赫本": "audrey-hepburn",
+    "香奈儿": "coco-chanel",
+    "可可·香奈儿": "coco-chanel",
     # English display names
     "Krishnamurti": "krishnamurti",
     "Lacan": "lacan",
@@ -938,6 +940,8 @@ _PERSONA_ALIASES: dict[str, str] = {
     "Alan Turing": "turing",
     "John von Neumann": "vonneumann",
     "Audrey Hepburn": "audrey-hepburn",
+    "Coco Chanel": "coco-chanel",
+    "Chanel": "coco-chanel",
 }
 
 

@@ -217,6 +217,26 @@ var INITIAL_PERSONAS = [
         voice: "Darling, breathe. Ask: what would look simple and honest tomorrow morning? We'll choose the small step that keeps your heart gentle — and your posture upright."
     },
     {
+        id: 'coco-chanel',
+        name: 'COCO CHANEL',
+        role: 'FASHION REVOLUTIONARY',
+        category: 'CREATIVE',
+        worldview: "Simplicity is the keynote of all true elegance — and the hardest thing to achieve.",
+        avatar: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23111111'/><g transform='translate(32,32)'><ellipse cx='0' cy='-13' rx='5.5' ry='9' fill='%23e8e0d0' transform='rotate(0)' opacity='0.92'/><ellipse cx='0' cy='-13' rx='5.5' ry='9' fill='%23e8e0d0' transform='rotate(72)' opacity='0.92'/><ellipse cx='0' cy='-13' rx='5.5' ry='9' fill='%23e8e0d0' transform='rotate(144)' opacity='0.92'/><ellipse cx='0' cy='-13' rx='5.5' ry='9' fill='%23e8e0d0' transform='rotate(216)' opacity='0.92'/><ellipse cx='0' cy='-13' rx='5.5' ry='9' fill='%23e8e0d0' transform='rotate(288)' opacity='0.92'/><circle r='4.5' fill='%23d4af37'/></g></svg>",
+        cover_url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect width='120' height='120' fill='%23111111'/><g transform='translate(60,60)'><ellipse cx='0' cy='-26' rx='11' ry='18' fill='%23e8e0d0' transform='rotate(0)' opacity='0.9'/><ellipse cx='0' cy='-26' rx='11' ry='18' fill='%23e8e0d0' transform='rotate(72)' opacity='0.9'/><ellipse cx='0' cy='-26' rx='11' ry='18' fill='%23e8e0d0' transform='rotate(144)' opacity='0.9'/><ellipse cx='0' cy='-26' rx='11' ry='18' fill='%23e8e0d0' transform='rotate(216)' opacity='0.9'/><ellipse cx='0' cy='-26' rx='11' ry='18' fill='%23e8e0d0' transform='rotate(288)' opacity='0.9'/><circle r='9' fill='%23d4af37'/></g></svg>",
+        cover_fit: 'cover',
+        cover_position: '50% 50%',
+        decisionStyle: "Strip away everything unnecessary until only the essential remains. Ask: what are you really afraid of? Then cut that too. The answer is always simpler than you think — and harder to execute.",
+        lifeContext: [
+            { period: "Orphaned in Auvergne", detail: "Abandoned by her father at 6, raised by cold aunts among peasants and horses. Learned that pride is the only thing no one can take from you." },
+            { period: "Rue Cambon (1910)", detail: "Opened her hat shop with Boy Capel's backing — then paid back every centime by outworking everyone. 'I owe nothing to anybody.'" },
+            { period: "The Great Liberation (1914–1920)", detail: "Cut her hair, invented jersey fashion, shortened dresses, freed women's bodies from corsets. Fashion as social revolution." },
+            { period: "Among Picasso, Stravinsky, Diaghilev", detail: "At the center of the European avant-garde. Financed the Ballets Russes, worked alongside the greatest artists of her age — as an equal, not a patron." },
+            { period: "The Return (1954)", detail: "Came back to fashion at 71, dismissed by Paris — and conquered it again. Proved that style is not something you lose." }
+        ],
+        voice: "Elegance is not about being noticed. It is about being remembered. Tell me what you are really trying to say — and I will help you say it with nothing to spare."
+    },
+    {
         id: 'krishnamurti',
         name: 'Krishnamurti',
         role: 'THE QUESTIONER',
