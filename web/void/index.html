@@ -2509,31 +2509,25 @@
 
             // Domain carousel — single row of square cards, horizontal scroll on overflow
             const activeDomains = DOMAIN_ORDER.filter(d => grouped[d].length > 0);
-            const HEADER_H = 56;   // domain header row + gap + buffer（44 基础 + section pt-3 给 nav→标题留 12px 喘息）
             const _isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
             const [carouselBoxH, setCarouselBoxH] = useState(0);
-            const VISIBLE_DOMAIN_COUNT = (_isMobile || (carouselBoxH > 0 && carouselBoxH < 460)) ? 1 : 2;
 
             const carouselRef = useRef(null);
             const sectionRefs = useRef([]);
             const scrollLockRef = useRef(false);
             const [activeDomainIdx, setActiveDomainIdx] = useState(0);
 
-            // ROW_H 从轮播容器实际高度反推：(容器高 / VISIBLE_DOMAIN_COUNT) - HEADER_H。
-            // 这样 home view 不会撑出滚动条，卡片在剩余空间里自适应。
-            const ROW_H = (() => {
-                if (carouselBoxH > 0) {
-                    const h = Math.floor(carouselBoxH / VISIBLE_DOMAIN_COUNT) - HEADER_H;
-                    return Math.max(_isMobile ? 128 : 150, Math.min(_isMobile ? 220 : 320, h));
-                }
-                return _isMobile ? 180 : 260;
+            // Card size responds to the real role-list height, but sections keep
+            // natural height. This avoids server/local viewport differences
+            // creating huge blank regions or half-visible domains.
+            const personaCardSize = (() => {
+                if (_isMobile) return 160;
+                if (carouselBoxH > 0 && carouselBoxH < 360) return 152;
+                if (carouselBoxH > 0 && carouselBoxH < 460) return 176;
+                return 224;
             })();
-            const sectionHFor = () => HEADER_H + ROW_H;
-            const sectionHeights = activeDomains.map(() => sectionHFor());
-            const currentSectionH = sectionHFor() * VISIBLE_DOMAIN_COUNT;
-            const personaCardSize = Math.max(_isMobile ? 120 : 144, Math.min(_isMobile ? 160 : 224, ROW_H - 16));
 
-            // ResizeObserver: 容器尺寸变化时重新计算 ROW_H
+            // ResizeObserver: 容器尺寸变化时重新计算卡片尺寸
             useEffect(() => {
                 const el = carouselRef.current;
                 if (!el) return;
@@ -2597,36 +2591,16 @@
                 if (mode !== 'mystical') return;
                 if (!activeDomains.includes('Mystical')) return;
                 requestAnimationFrame(() => goToDomainName('Mystical'));
-            }, [mode, activeDomains.length, VISIBLE_DOMAIN_COUNT]);
+            }, [mode, activeDomains.length, carouselBoxH]);
 
             useEffect(() => {
                 const el = carouselRef.current;
                 if (!el) return;
-                let wheelLock = false;
-                const wheelHandler = (e) => {
-                    if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-                    e.preventDefault();
-                    if (wheelLock) return;
-                    const n = activeDomains.length;
-                    if (n <= 1) return;
-                    const dir = e.deltaY > 0 ? 1 : -1;
-                    const currentIdx = idxAtScroll(el.scrollTop);
-                    const maxIdx = Math.max(0, n - VISIBLE_DOMAIN_COUNT);
-                    const nextIdx = Math.max(0, Math.min(maxIdx, currentIdx + dir));
-                    if (nextIdx === currentIdx) return;
-                    wheelLock = true;
-                    scrollLockRef.current = true;
-                    setActiveDomainIdx(nextIdx);
-                    const nextTop = sectionRefs.current[nextIdx]?.offsetTop ?? 0;
-                    animateScrollTo(nextTop);
-                    setTimeout(() => { wheelLock = false; scrollLockRef.current = false; }, SCROLL_DURATION + 50);
-                };
                 const scrollHandler = () => {
                     if (scrollLockRef.current) return;
                     const idx = idxAtScroll(el.scrollTop);
                     setActiveDomainIdx(prev => prev === idx ? prev : idx);
                 };
-                el.addEventListener('wheel', wheelHandler, { passive: false });
                 el.addEventListener('scroll', scrollHandler);
 
                 // Vertical mouse drag on carousel → switch domain
@@ -2682,6 +2656,7 @@
                 const vOnUp = () => {
                     if (!vDrag) return;
                     vDrag = false;
+                    if (vMoved < 6) return;
                     if (performance.now() - vLastT > 80) vVel = 0;
                     if (Math.abs(vVel) > 0.15) runVMomentum();
                     else snapToNearest();
@@ -2794,7 +2769,6 @@
                 });
 
                 return () => {
-                    el.removeEventListener('wheel', wheelHandler);
                     el.removeEventListener('scroll', scrollHandler);
                     el.removeEventListener('mousedown', vOnDown);
                     window.removeEventListener('mousemove', vOnMove);
@@ -2991,17 +2965,15 @@
                             })}
                         </div>
 
-                        <!-- Vertical carousel — flex-1 占满剩余空间，ROW_H 动态反推。 -->
+                        <!-- Vertical list — natural section heights avoid viewport-specific blank gaps. -->
                         <div ref=${carouselRef} class="flex-1 min-h-0 relative overflow-y-auto no-scrollbar"
                              style=${{ scrollbarWidth: 'none' }}>
                             ${activeDomains.map((domain, dIdx, arr) => {
                                 const items = grouped[domain];
-                                const h = sectionHeights[dIdx];
                                 return html`
                                     <div key=${domain}
                                          ref=${(node) => { sectionRefs.current[dIdx] = node; }}
-                                         class="flex flex-col gap-2 pt-3 overflow-hidden"
-                                         style=${{ height: h + 'px' }}>
+                                         class="flex flex-col gap-2 py-3">
                                         <!-- Domain header（去掉 N° 编号，标题缩小给下方更多喘息） -->
                                         <div class="flex items-baseline justify-between">
                                             <h2 class="font-headline text-base font-bold text-on-surface">${t('domain.' + domain.toLowerCase()) || domain}</h2>
@@ -3013,9 +2985,8 @@
                                         </div>
 
                                         <!-- Persona row — square cards, single row, horizontal scroll on overflow.
-                                             py-2 px-1 给选中态的 ring + shadow 留出渲染空间，不会被两层 overflow 裁掉。
-                                             卡片缩到 w-56 h-56 (224px) 配合 ROW_H=260，约 18px 上下给光晕。 -->
-                                        <div class="flex-1 min-h-0 flex flex-nowrap items-start gap-x-5 overflow-x-auto no-scrollbar py-2 px-1">
+                                             py-2 px-1 给选中态的 ring + shadow 留出渲染空间。 -->
+                                        <div data-h-row class="flex flex-nowrap items-start gap-x-5 overflow-x-auto no-scrollbar py-2 px-1">
                                             ${items.map(p => {
                                                 const isSel = selectedIds.includes(p.id);
                                                 const isHot = hotIdSet.has(p.id);
