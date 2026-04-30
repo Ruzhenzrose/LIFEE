@@ -40,6 +40,8 @@
                         'on-tertiary-container': 'rgb(var(--color-on-tertiary-container) / <alpha-value>)',
                         'outline': 'rgb(var(--color-outline) / <alpha-value>)',
                         'outline-variant': 'rgb(var(--color-outline-variant) / <alpha-value>)',
+                        /* web/ui persona-detail 蓝白品牌色 */
+                        'blue-brand': '#98A6D4',
                     },
                     fontFamily: {
                         'headline': ['"Space Grotesk"', 'sans-serif'],
@@ -913,8 +915,18 @@
             'detail.inCouncil':      { en: 'Currently at your table', zh: '已加入你的圆桌' },
             'detail.notAdded':       { en: 'Not yet added',      zh: '尚未加入' },
             'detail.close':          { en: 'Close',              zh: '关闭' },
+            'detail.back':           { en: 'Back',               zh: '返回' },
             'detail.remove':         { en: 'Remove from the table', zh: '移出圆桌' },
             'detail.add':            { en: 'Add to the table',     zh: '加入圆桌' },
+            'detail.observationTagline': { en: 'Observation over noise.', zh: '静观诸事，不听喧嚣。' },
+            'detail.inviteDebate':   { en: 'Invite to Debate',     zh: '邀请入席' },
+            'detail.inPanel':        { en: 'In Panel',             zh: '已在圆桌' },
+            'detail.cardBackground': { en: 'Card Background',       zh: '卡片背景' },
+            'detail.clickUploadBg':  { en: 'Click to upload background', zh: '点击上传背景图' },
+            'detail.useDefaultBg':   { en: 'Use default background', zh: '使用默认背景' },
+            'detail.soulWisdom':     { en: 'Soul & Wisdom',        zh: '灵魂与智慧' },
+            'detail.decisionPriorities': { en: 'Decision Priorities', zh: '决策重心' },
+            'detail.voiceLabel':     { en: 'Voice',                zh: '原声' },
 
             // Persona dossier — decisionStyle
             'persona.audrey-hepburn.decisionStyle': { en: "Choose the simplest graceful option: protect your dignity, keep your promise, and make one small act of kindness that moves the story forward.", zh: "选最简单也最优雅的选项：守住尊严、兑现承诺、做一件小小的善意之事，让故事往前推进一步。" },
@@ -2070,7 +2082,7 @@
         // ══════════════════════════════════════════════
         //  HOME VIEW
         // ══════════════════════════════════════════════
-        function HomeView({ user, context, setContext, setView, personas, customPersonas, selectedIds, setSelectedIds, setPersonas, upsertCustomPersona, startFreshDebate, chatSessions, debateSettings, setDebateSettings }) {
+        function HomeView({ user, context, setContext, setView, personas, customPersonas, selectedIds, setSelectedIds, setPersonas, upsertCustomPersona, startFreshDebate, chatSessions, debateSettings, setDebateSettings, setPersonaCoverOverrides, setPersonaAvatarOverrides }) {
             // Domain classification by persona id
             const DOMAIN_MAP = {
                 'krishnamurti': 'Philosophy', 'lacan': 'Philosophy', 'Simone de Beauvoir': 'Philosophy',
@@ -3076,6 +3088,8 @@
                         isSel=${selectedIds.includes(detailPersona.id)}
                         onClose=${() => setDetailPersonaId(null)}
                         onToggle=${() => { toggleSelect(detailPersona.id); }}
+                        setPersonaCoverOverrides=${setPersonaCoverOverrides}
+                        setPersonaAvatarOverrides=${setPersonaAvatarOverrides}
                     />` : null}
 
                     ${recommendOpen ? html`<${window.VoidPersonaRecommendModal}
@@ -3246,10 +3260,9 @@
         }
 
         // ══════════════════════════════════════════════
-        //  PERSONA DETAIL MODAL (editorial dossier)
+        //  PERSONA DETAIL MODAL (matches web/ui persona-detail: editorial card)
         // ══════════════════════════════════════════════
-        function PersonaDetail({ persona, isSel, onClose, onToggle }) {
-            // Lock body scroll + close on ESC
+        function PersonaDetail({ persona, isSel, onClose, onToggle, setPersonaCoverOverrides }) {
             useEffect(() => {
                 const prevOverflow = document.body.style.overflow;
                 document.body.style.overflow = 'hidden';
@@ -3261,100 +3274,138 @@
                 };
             }, []);
 
-            const sections = [];
-            if (persona.decisionStyle) sections.push({ label: t('detail.decisionStyle'), body: persona.decisionStyle });
-            if (persona.voice) sections.push({ label: t('detail.voice'), body: `"${persona.voice}"`, italic: true });
+            const cover = persona.cover_url;
+            const hasCover = !!(cover && typeof cover === 'string');
+            const coverFit = persona.cover_fit || 'cover';
+            const coverPosition = persona.cover_position || 'center';
+
+            const avatar = persona.avatar;
+            const avatarSquare = html`
+                <div class="w-16 h-16 rounded-3xl bg-[#FDFBF7] border border-[#F0EDEA] overflow-hidden shadow-sm flex items-center justify-center text-3xl shrink-0">
+                    ${typeof avatar === 'string' && (avatar.startsWith('http') || avatar.startsWith('data:') || avatar.startsWith('/'))
+                        ? html`<img src=${avatar} class="w-full h-full object-cover" style=${{ objectPosition: persona.avatar_position || 'center' }} alt="" loading="lazy" />`
+                        : html`<span>${avatar || '👤'}</span>`}
+                </div>
+            `;
+
+            const prioritiesIntro = persona.decisionStyle?.trim?.() ? persona.decisionStyle : (typeof window.__lifeeLocale === 'string' && window.__lifeeLocale.startsWith('zh')
+                ? '沉着、思辨，做决定前会反复权衡语境与长远影响。'
+                : 'Grounded and reflective.');
 
             return html`
-                <div class="fixed inset-0 z-50 flex items-center justify-center animate-in">
-                    <!-- Backdrop -->
-                    <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onClick=${onClose}></div>
+                <div class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 animate-in">
+                    <div class="absolute inset-0 bg-black/35 backdrop-blur-sm" onClick=${onClose}></div>
 
-                    <!-- Panel -->
-                    <div class="relative w-full max-w-3xl max-h-[90vh] mx-4 bg-surface-container/95 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col">
-                        <!-- Hero: cover + close -->
-                        <div class="relative h-[280px] shrink-0"
-                             style=${persona.cover_url ? {
-                                 backgroundImage: `linear-gradient(to bottom, rgba(18,17,15,0.15) 0%, rgba(18,17,15,0.55) 55%, rgba(28,26,22,0.95) 100%), url(${persona.cover_url})`,
-                                 backgroundSize: 'cover',
-                                 backgroundPosition: persona.cover_position || 'center',
-                             } : { backgroundColor: '#1c1a16' }}>
-                            <button
-                                onClick=${onClose}
-                                class="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 flex items-center justify-center text-white/70 hover:text-white transition-colors"
-                                aria-label="Close"
-                            >
-                                <span class="material-symbols-outlined" style=${{ fontSize: '20px' }}>close</span>
-                            </button>
-
-                            <div class="absolute left-8 bottom-6 right-8">
-                                <p class="text-[10px] text-primary uppercase tracking-[0.3em] font-bold mb-2">${persona.role || t('detail.dossier')}</p>
-                                <h2 class="font-headline text-4xl md:text-5xl font-bold text-white leading-[1.05]">${persona.name}</h2>
+                    <div class="relative isolate w-full max-w-5xl max-h-[min(90vh,920px)] overflow-hidden rounded-[36px] md:rounded-[60px]
+                        shadow-2xl border border-[#F0EDEA] bg-white flex flex-col"
+                    >
+                        ${hasCover ? html`
+                            <div class="pointer-events-none absolute inset-0 z-0">
+                                <img
+                                    src=${cover}
+                                    alt=""
+                                    class=${`w-full h-full grayscale ${coverFit === 'cover' ? 'scale-105' : ''}`}
+                                    style=${{ objectFit: coverFit, objectPosition: coverPosition }}
+                                    loading="lazy"
+                                />
+                                <div class="absolute inset-0 bg-white/85"></div>
                             </div>
-                        </div>
+                        ` : null}
+                        <div class="absolute top-0 right-0 w-32 h-32 rounded-bl-full opacity-90 pointer-events-none" style=${{ background: 'rgba(152,166,212,0.06)' }}></div>
 
-                        <!-- Body: scrollable sections -->
-                        <div class="flex-1 overflow-y-auto px-8 py-8 space-y-8 no-scrollbar">
-                            <!-- Worldview (pull quote) -->
-                            ${persona.worldview ? html`
-                                <div class="relative">
-                                    <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-[0.3em] font-bold mb-3">${t('home.worldview')}</p>
-                                    <span class="absolute -left-2 top-5 font-headline text-[72px] text-primary/20 leading-none select-none pointer-events-none">"</span>
-                                    <p class="font-headline text-xl italic text-on-surface leading-snug relative pl-6">${persona.worldview}</p>
-                                </div>
-                            ` : null}
-
-                            <!-- Prose sections -->
-                            ${sections.map((s, i) => html`
-                                <div key=${s.label}>
-                                    <div class="flex items-baseline gap-4 mb-3">
-                                        <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em] font-bold">N° 0${i + 1}</p>
-                                        <h3 class="font-headline text-sm font-bold text-on-surface/90 uppercase tracking-widest">${s.label}</h3>
-                                        <div class="flex-1 h-px bg-on-surface/8"></div>
-                                    </div>
-                                    <p class=${`text-sm leading-relaxed ${s.italic ? 'italic text-on-surface-variant' : 'text-on-surface/85'}`}>${s.body}</p>
-                                </div>
-                            `)}
-
-                            <!-- Life Context (timeline-ish) -->
-                            ${persona.lifeContext && persona.lifeContext.length ? html`
-                                <div>
-                                    <div class="flex items-baseline gap-4 mb-5">
-                                        <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em] font-bold">N° 0${sections.length + 1}</p>
-                                        <h3 class="font-headline text-sm font-bold text-on-surface/90 uppercase tracking-widest">${t('detail.lifeContext')}</h3>
-                                        <div class="flex-1 h-px bg-on-surface/8"></div>
-                                    </div>
-                                    <div class="space-y-5">
-                                        ${persona.lifeContext.map((ctx, i) => html`
-                                            <div key=${i} class="grid grid-cols-[auto_1fr] gap-6 items-start">
-                                                <p class="font-headline text-xs font-bold text-primary/70 uppercase tracking-wider w-32 shrink-0 pt-0.5">${ctx.period}</p>
-                                                <p class="text-sm text-on-surface/80 leading-relaxed">${ctx.detail}</p>
-                                            </div>
-                                        `)}
-                                    </div>
-                                </div>
-                            ` : null}
-                        </div>
-
-                        <!-- Footer: add/remove CTA -->
-                        <div class="px-8 py-5 border-t border-white/8 bg-surface-container-low/60 shrink-0 flex items-center justify-between gap-4">
-                            <p class="text-[10px] text-on-surface-variant/40 uppercase tracking-[0.3em] hidden md:block">
-                                ${isSel ? t('detail.inCouncil') : t('detail.notAdded')}
-                            </p>
-                            <div class="flex items-center gap-3 ml-auto">
+                        <div class="relative z-10 flex-1 overflow-y-auto no-scrollbar" style=${{ WebkitOverflowScrolling: 'touch' }}>
+                        <div class="p-6 md:p-12 pb-10">
+                            <div class="flex justify-between items-start mb-8 md:mb-14 gap-4">
                                 <button
+                                    type="button"
                                     onClick=${onClose}
-                                    class="text-[10px] text-on-surface-variant/60 hover:text-on-surface uppercase tracking-[0.25em] px-4 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
-                                >${t('detail.close')}</button>
-                                <button
-                                    onClick=${() => { onToggle(); onClose(); }}
-                                    class=${isSel
-                                        ? 'no-shine text-[10px] uppercase tracking-[0.25em] font-bold px-5 py-2.5 rounded-lg bg-white/5 text-on-surface hover:bg-white/10 transition-colors'
-                                        : 'no-shine text-[10px] uppercase tracking-[0.25em] font-bold px-5 py-2.5 rounded-lg btn-gradient'}
+                                    class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-black/38 hover:text-black/55 transition-colors"
                                 >
-                                    ${isSel ? t('detail.remove') : t('detail.add')}
+                                    <${Icon} name="ChevronLeft" size=${14} className="text-black/38" /> ${t('detail.back')}
                                 </button>
+                                <span class="text-[10px] uppercase font-bold tracking-[0.28em] text-black/28 text-right shrink-0">
+                                    Archive ID: ${(persona.id || '').toUpperCase()}
+                                </span>
                             </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-[minmax(0,360px)_minmax(0,1fr)] gap-8 md:gap-14 mb-10 md:mb-16">
+                                <div class="space-y-4 flex flex-col items-center md:items-start">
+                                    <div class="bg-white p-4 shadow-lg border border-[#F0EDEA] rounded-3xl overflow-hidden w-full max-w-[300px] mx-auto md:mx-0" style=${{ transform: 'rotate(-2deg)' }}>
+                                        <div class="text-[10px] font-black uppercase tracking-[0.26em] text-black/42 mb-3 text-center">${persona.name}</div>
+                                        <div class="aspect-[3/4] bg-slate-50 rounded-xl overflow-hidden relative w-full max-w-[240px] mx-auto">
+                                            ${hasCover ? html`
+                                                <img
+                                                    src=${cover}
+                                                    alt=""
+                                                    class=${`absolute inset-0 w-full h-full grayscale ${coverFit === 'cover' ? 'scale-105' : ''}`}
+                                                    style=${{ objectFit: coverFit, objectPosition: coverPosition }}
+                                                    loading="lazy"
+                                                />
+                                            ` : html`<div class="absolute inset-0 bg-gradient-to-br from-white via-[#FDFBF7] to-[#F3F1EC]"></div>`}
+                                            <div class="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent pointer-events-none"></div>
+                                        </div>
+                                        <div class="mt-4 flex items-center justify-center gap-2 flex-wrap">
+                                            ${(persona.role || '').split(' ').filter(Boolean).map((tag, i) => html`
+                                                <span key=${i} class="px-3 py-1.5 rounded-full bg-[#FDFBF7] border border-[#E8E6E0] text-[9px] font-black uppercase tracking-[0.2em] text-black/50">${tag}</span>
+                                            `)}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col justify-center space-y-4 md:space-y-6 text-center md:text-left min-w-0">
+                                    <div class="flex justify-center md:justify-start">${avatarSquare}</div>
+                                    <h2 class="text-4xl md:text-6xl font-black italic text-[#1A1A1A] tracking-tighter uppercase leading-tight [font-feature-settings:normal]">${persona.name}</h2>
+                                    <p class="text-xs md:text-sm font-bold uppercase tracking-[0.38em]" style=${{ color: '#98A6D4' }}>${persona.role}</p>
+                                    <div class="h-px w-20 mx-auto md:mx-0" style=${{ backgroundColor: 'rgba(152,166,212,0.35)' }}></div>
+                                    ${persona.worldview ? html`
+                                        <p class=”text-lg md:text-xl italic opacity-70 leading-relaxed”>
+                                            “${persona.worldview}”
+                                        </p>
+                                    ` : null}
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 mb-2 font-sans text-left">
+                                <div class="md:col-span-2 p-6 md:p-10 bg-[#FDFBF7] border-2 border-dashed rounded-3xl space-y-8" style=${{ borderColor: '#D1CEC7' }}>
+                                    <div>
+                                        <h3 class="text-[10px] font-black uppercase tracking-widest mb-6 text-black/30">${t('detail.soulWisdom')}</h3>
+                                        <h4 class="text-[10px] font-black uppercase tracking-widest mb-2 text-[#C9C6BE]">${t('detail.decisionPriorities')}</h4>
+                                        <p class="text-sm italic leading-relaxed">${prioritiesIntro}</p>
+                                    </div>
+                                    ${persona.lifeContext && persona.lifeContext.length ? html`
+                                        <div class="space-y-5 pt-1">
+                                            ${persona.lifeContext.map((item, idx) => html`
+                                                <div key=${`lc-${idx}`} class="flex gap-4">
+                                                    <span class="text-xs font-mono text-black/20 mt-0.5 shrink-0">[${idx + 1}]</span>
+                                                    <div>
+                                                        <h5 class="font-bold text-sm text-[#1A1A1A]">${item.period}</h5>
+                                                        <p class="text-xs italic text-neutral-500 leading-relaxed">${item.detail}</p>
+                                                    </div>
+                                                </div>
+                                            `)}
+                                        </div>
+                                    ` : null}
+                                </div>
+                                <div class="p-6 md:p-8 bg-white border border-[#F0EDEA] rounded-3xl shadow-sm">
+                                    <h3 class="text-[10px] font-black uppercase tracking-widest mb-8 text-center text-black/30">${t('detail.voiceLabel')}</h3>
+                                    ${persona.voice ? html`
+                                        <p class="text-xs md:text-sm italic text-neutral-600 border-l-2 border-blue-brand/20 pl-4 py-2 text-left leading-relaxed">${persona.voice}</p>
+                                    ` : html`<p class="text-xs text-black/35 italic text-center">${window.__lifeeLocale === 'zh' ? '—' : '—'}</p>`}
+                                </div>
+                            </div>
+
+                            <div class="flex justify-center pt-8 mt-8 border-t border-[#F0EDEA]">
+                                <button
+                                    type="button"
+                                    disabled=${isSel}
+                                    onClick=${() => { if (!isSel) { onToggle(); onClose(); } }}
+                                    class=${isSel
+                                        ? 'no-shine w-full md:w-auto px-10 py-4 rounded-full font-black uppercase tracking-[0.2em] text-[10px] cursor-not-allowed bg-[#E8E6E0] text-[#A8A4B0]'
+                                        : 'no-shine w-full md:w-auto px-10 py-4 rounded-full font-black uppercase tracking-[0.2em] text-[10px] transition-all shadow-xl text-white hover:brightness-105'}
+                                    style=${isSel ? {} : { backgroundColor: '#98A6D4', boxShadow: '0 18px 40px rgba(152,166,212,0.22)' }}
+                                >${isSel ? t('detail.inPanel') : t('detail.inviteDebate')}</button>
+                            </div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -4696,6 +4747,8 @@
                     chatSessions=${chatSessions}
                     debateSettings=${debateSettings}
                     setDebateSettings=${setDebateSettings}
+                    setPersonaCoverOverrides=${setPersonaCoverOverrides}
+                    setPersonaAvatarOverrides=${setPersonaAvatarOverrides}
                 />`;
             };
 
