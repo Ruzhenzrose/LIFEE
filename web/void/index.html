@@ -2511,7 +2511,8 @@
             const activeDomains = DOMAIN_ORDER.filter(d => grouped[d].length > 0);
             const HEADER_H = 56;   // domain header row + gap + buffer（44 基础 + section pt-3 给 nav→标题留 12px 喘息）
             const _isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-            const VISIBLE_DOMAIN_COUNT = _isMobile ? 1 : 2;
+            const [carouselBoxH, setCarouselBoxH] = useState(0);
+            const VISIBLE_DOMAIN_COUNT = (_isMobile || (carouselBoxH > 0 && carouselBoxH < 460)) ? 1 : 2;
 
             const carouselRef = useRef(null);
             const sectionRefs = useRef([]);
@@ -2520,17 +2521,17 @@
 
             // ROW_H 从轮播容器实际高度反推：(容器高 / VISIBLE_DOMAIN_COUNT) - HEADER_H。
             // 这样 home view 不会撑出滚动条，卡片在剩余空间里自适应。
-            const [carouselBoxH, setCarouselBoxH] = useState(0);
             const ROW_H = (() => {
                 if (carouselBoxH > 0) {
                     const h = Math.floor(carouselBoxH / VISIBLE_DOMAIN_COUNT) - HEADER_H;
-                    return Math.max(_isMobile ? 140 : 180, Math.min(_isMobile ? 220 : 320, h));
+                    return Math.max(_isMobile ? 128 : 150, Math.min(_isMobile ? 220 : 320, h));
                 }
                 return _isMobile ? 180 : 260;
             })();
             const sectionHFor = () => HEADER_H + ROW_H;
             const sectionHeights = activeDomains.map(() => sectionHFor());
             const currentSectionH = sectionHFor() * VISIBLE_DOMAIN_COUNT;
+            const personaCardSize = Math.max(_isMobile ? 120 : 144, Math.min(_isMobile ? 160 : 224, ROW_H - 16));
 
             // ResizeObserver: 容器尺寸变化时重新计算 ROW_H
             useEffect(() => {
@@ -2591,6 +2592,12 @@
                 // Wait one frame so any mode-triggered UI updates settle before measuring.
                 requestAnimationFrame(() => goToDomain(idx));
             };
+
+            useEffect(() => {
+                if (mode !== 'mystical') return;
+                if (!activeDomains.includes('Mystical')) return;
+                requestAnimationFrame(() => goToDomainName('Mystical'));
+            }, [mode, activeDomains.length, VISIBLE_DOMAIN_COUNT]);
 
             useEffect(() => {
                 const el = carouselRef.current;
@@ -3012,6 +3019,15 @@
                                             ${items.map(p => {
                                                 const isSel = selectedIds.includes(p.id);
                                                 const isHot = hotIdSet.has(p.id);
+                                                const cardStyle = {
+                                                    width: personaCardSize + 'px',
+                                                    height: personaCardSize + 'px',
+                                                    ...(p.cover_url ? {
+                                                        backgroundImage: `linear-gradient(to bottom, rgba(18,17,15,0.15) 0%, rgba(18,17,15,0.55) 55%, rgba(18,17,15,0.95) 100%), url(${p.cover_url})`,
+                                                        backgroundSize: 'cover',
+                                                        backgroundPosition: p.cover_position || 'center top',
+                                                    } : {}),
+                                                };
                                                 return html`
                                                     <div
                                                         key=${p.id}
@@ -3020,11 +3036,7 @@
                                                             ${isSel
                                                                 ? 'ring-2 ring-primary shadow-lg shadow-primary/20'
                                                                 : 'ring-1 ring-on-surface/10 hover:ring-primary/50'}`}
-                                                        style=${p.cover_url ? {
-                                                            backgroundImage: `linear-gradient(to bottom, rgba(18,17,15,0.15) 0%, rgba(18,17,15,0.55) 55%, rgba(18,17,15,0.95) 100%), url(${p.cover_url})`,
-                                                            backgroundSize: 'cover',
-                                                            backgroundPosition: p.cover_position || 'center top',
-                                                        } : {}}
+                                                        style=${cardStyle}
                                                     >
                                                         ${isHot ? html`
                                                             <span
