@@ -185,7 +185,10 @@
                 let mounted = true;
                 const init = async () => {
                     const { data } = await supabaseClient.auth.getSession();
-                    if (mounted) setUser(data?.session?.user || null);
+                    if (!mounted) return;
+                    const u = data?.session?.user || null;
+                    if (u) setUser(u);
+                    else setUser((prev) => (prev ? prev : null));
                 };
                 init();
                 const { data: sub } = supabaseClient.auth.onAuthStateChange((_event, session) => {
@@ -1090,10 +1093,10 @@
                         {(user || isGuest) ? renderContent() : (
                             <div className="min-h-screen flex items-center justify-center">
                                 <div className="text-center px-6">
-                                    <h1 className="text-4xl font-serif italic text-[#1A1A1A] mb-4">Welcome to LIFEE</h1>
-                                    <p className="text-xs uppercase tracking-[0.3em] opacity-40">Please sign in to continue</p>
+                                    <h1 className="text-4xl font-serif italic text-[#1A1A1A] mb-4">欢迎来到 LIFEE</h1>
+                                    <p className="text-xs uppercase tracking-[0.3em] opacity-40">请登录后继续</p>
 <div className="pt-6 flex flex-col items-center gap-2">
-                                        <button onClick={() => setAuthOpen(true)} className="px-8 py-4 bg-blue-brand text-white rounded-full font-bold uppercase text-xs tracking-[0.2em] shadow-xl">Sign in</button>
+                                        <button onClick={() => setAuthOpen(true)} className="px-8 py-4 bg-blue-brand text-white rounded-full font-bold uppercase text-xs tracking-[0.2em] shadow-xl">登录</button>
                                     </div>
                                 </div>
                             </div>

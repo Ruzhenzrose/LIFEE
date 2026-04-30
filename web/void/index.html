@@ -653,6 +653,25 @@
             'home.mode.mystical.title': { en: 'Mystical',    zh: '玄学' },
             'home.mode.mystical.desc':  { en: "When reason runs out, there's another way.", zh: '理性穷尽时，还有一条路。' },
             'home.mode.mystical.placeholder': { en: "Something you're sensing but can't name...", zh: '感觉到了什么，但说不清……' },
+            'home.mystic.pick':         { en: 'Choose a mystical method first.', zh: '请先选择一个玄学方向。' },
+            'home.mystic.title':        { en: 'Mystical Reading', zh: '玄学解读' },
+            'home.mystic.desc':         { en: 'Use symbols, timing and intuition as a mirror for the question.', zh: '把符号、时机与直觉当作镜子，照见问题的另一面。' },
+            'home.mystic.seal.title':   { en: 'Seal Reading', zh: '印占' },
+            'home.mystic.seal.desc':    { en: 'Read your Vedic chart with the logistics-engineering protocol.', zh: '用「物流与工程模型」解析吠陀占星命盘。' },
+            'home.mystic.seal.placeholder': { en: 'Paste your Step-1 SOP instruction here, or attach your D1 chart PDF and SAV screenshot...', zh: '在这里粘贴第一步 SOP 指令，或附上 D1 命盘 PDF 与 SAV 截图……' },
+            'home.mystic.seal.lockNote': { en: 'Auto-locked: 印占师 (Vedic analyst) will lead this thread.', zh: '已自动锁定「印占师」作为本轮主审。' },
+            'home.lockedHint':          { en: 'This voice is locked while the current mystical method is selected.', zh: '当前玄学方向锁定了这位声音，无法移除。' },
+            'home.mystic.requiredTitle': { en: 'Required chart material', zh: '需要补充的命盘资料' },
+            'home.mystic.requiredIntro': { en: 'Mystical voices need structured source material before the conversation starts.', zh: '玄学类声音需要先拿到对应资料，才能开始解读。' },
+            'home.mystic.addTemplate':  { en: 'Add template', zh: '填入模板' },
+            'home.mystic.missingToast': { en: 'Please complete the required mystical material first.', zh: '请先补全玄学角色需要的资料。' },
+            'home.mystic.readyNote':    { en: 'Looks ready', zh: '资料看起来已齐' },
+            'home.mystic.bazi.title':   { en: 'Ba Zi', zh: '八字' },
+            'home.mystic.bazi.desc':    { en: 'Look at timing, elements and rhythm from birth information.', zh: '从出生信息、五行与节律看当下处境。' },
+            'home.mystic.bazi.placeholder': { en: 'Write your birth date, time, birthplace if known, and the question...', zh: '写下出生年月日、时辰、出生地（如知道）以及想问的问题……' },
+            'home.mystic.tarot.title':  { en: 'Tarot', zh: '塔罗' },
+            'home.mystic.tarot.desc':   { en: 'Use a symbolic spread to clarify tension, hidden influence and next step.', zh: '用牌阵看清张力、隐藏影响与下一步。' },
+            'home.mystic.tarot.placeholder': { en: 'Write your question for the tarot reading...', zh: '写下你想让塔罗回应的问题……' },
 
             // Domain names
             'domain.hot':        { en: 'Hot',           zh: '热门' },
@@ -660,6 +679,7 @@
             'domain.business':   { en: 'Business',      zh: '商业' },
             'domain.science':    { en: 'Science',       zh: '科学' },
             'domain.arts':       { en: 'Arts',          zh: '艺术' },
+            'domain.mystical':   { en: 'Mystical',      zh: '玄学' },
 
             // Chat arena
             'chat.council':      { en: 'Your Roundtable', zh: '你的圆桌' },
@@ -2033,7 +2053,11 @@
                 'shannon': 'Science', 'turing': 'Science', 'vonneumann': 'Science',
                 'audrey-hepburn': 'Arts',
             };
-            const getDomain = (p) => DOMAIN_MAP[p.id] || p.category || 'Other';
+            const getDomain = (p) => {
+                const category = String(p.category || '').toUpperCase();
+                if (category === 'MYSTIC') return 'Mystical';
+                return DOMAIN_MAP[p.id] || p.category || 'Other';
+            };
 
             // Hot domain — site-wide top personas over the last 7 days.
             // Fetched from /personas/hot which aggregates chat_sessions across
@@ -2081,7 +2105,7 @@
                 ))
                 .filter(Boolean);
 
-            const DOMAIN_ORDER = ['Philosophy', 'Business', 'Science', 'Arts'];
+            const DOMAIN_ORDER = ['Philosophy', 'Business', 'Science', 'Arts', 'Mystical'];
             // 热门角色不再单独占一个 domain（避免和原 domain 重复出现），
             // 而是给原 domain 里的卡片打一个"热门"小标签。
             const hotIdSet = new Set(hotPersonas.map(p => p.id));
@@ -2102,13 +2126,10 @@
                 });
             });
 
-            const toggleSelect = (id) => {
-                setSelectedIds(prev =>
-                    prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-                );
-            };
-
-            const selectedPersonas = personas.filter(p => selectedIds.includes(p.id));
+            // Mystical sub-mode → persona auto-lock map. Currently only 印占
+            // pins the 印占师 voice; 八字/塔罗 keep free selection until those
+            // analyst personas are wired in.
+            const MYSTIC_LOCK_MAP = { seal: 'seal-master', tarot: 'tarot-reader' };
 
             // Conversation mode (null = default multi-voice council)
             // 从 localStorage 读上次选择，仅认白名单值；未知值忽略，避免脏数据。
@@ -2124,6 +2145,35 @@
                     else window.localStorage.removeItem('lifee_home_mode');
                 } catch (_) {}
             }, [mode]);
+            const [mysticType, setMysticType] = useState(null);
+            // Personas the user can't toggle off (e.g. 印占师 while 印占 is active).
+            // Each entry must remain in selectedIds until the lock is released.
+            const [lockedIds, setLockedIds] = useState([]);
+
+            useEffect(() => {
+                const lockId = mode === 'mystical' && mysticType ? (MYSTIC_LOCK_MAP[mysticType] || null) : null;
+                if (lockId) {
+                    setLockedIds(prev => (prev.length === 1 && prev[0] === lockId ? prev : [lockId]));
+                    setSelectedIds(prev => (prev.includes(lockId) ? prev : [...prev, lockId]));
+                } else {
+                    if (lockedIds.length > 0) {
+                        const releasing = lockedIds;
+                        setLockedIds([]);
+                        setSelectedIds(prev => prev.filter(x => !releasing.includes(x)));
+                    }
+                }
+                // eslint-disable-next-line react-hooks/exhaustive-deps
+            }, [mode, mysticType]);
+
+            const toggleSelect = (id) => {
+                if (lockedIds.includes(id)) return;
+                setSelectedIds(prev =>
+                    prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+                );
+            };
+
+            const selectedPersonas = personas.filter(p => selectedIds.includes(p.id));
+
             // 触屏 tap 模式 pill 时短暂显示 tooltip（桌面用 group-hover 不需要它）
             const [touchedMode, setTouchedMode] = useState(null);
 
@@ -2140,6 +2190,71 @@
                     return () => clearTimeout(id);
                 }
             }, [curPlaceholder]);
+
+            const MYSTIC_REQUIREMENTS = {
+                seal: {
+                    title: () => t('home.mystic.seal.title'),
+                    personaIds: ['seal-master'],
+                    required: () => window.__lifeeLocale === 'zh'
+                        ? ['D1 命盘 PDF 前两页或可读截图', 'SAV / Ashtakavarga 截图', '你要问的具体问题或步骤指令']
+                        : ['D1 chart PDF first two pages or readable screenshots', 'SAV / Ashtakavarga screenshot', 'Your concrete question or SOP step'],
+                    template: () => window.__lifeeLocale === 'zh'
+                        ? '【印占资料】\n1. D1 命盘：\n2. SAV 截图/数值：\n3. 当前想问的问题：\n4. 已知缺失信息：'
+                        : '[Seal Reading Material]\n1. D1 chart:\n2. SAV screenshot/values:\n3. Question:\n4. Known missing data:',
+                    isReady: (text) => {
+                        const s = text || '';
+                        return s.length > 40 && /(D1|SAV|Ashtakavarga|命盘|截图|chart|lagna|ascendant|行星|宫位|house)/i.test(s);
+                    },
+                },
+                bazi: {
+                    title: () => t('home.mystic.bazi.title'),
+                    personaIds: ['bazi-master', 'bazi', 'mystic'],
+                    required: () => window.__lifeeLocale === 'zh'
+                        ? ['出生日期（公历/农历请注明）', '出生时间或时辰', '出生地', '你要问的具体问题']
+                        : ['Birth date (specify Gregorian/lunar if relevant)', 'Birth time', 'Birthplace', 'Your concrete question'],
+                    template: () => window.__lifeeLocale === 'zh'
+                        ? '【八字资料】\n1. 出生日期：\n2. 出生时间/时辰：\n3. 出生地：\n4. 想问的问题：'
+                        : '[Ba Zi Material]\n1. Birth date:\n2. Birth time:\n3. Birthplace:\n4. Question:',
+                    isReady: (text) => {
+                        const s = text || '';
+                        return /(出生|生日|birth|born|时辰|时间|time|地点|出生地|place)/i.test(s) && s.length > 25;
+                    },
+                },
+                tarot: {
+                    title: () => t('home.mystic.tarot.title'),
+                    personaIds: ['tarot-reader', 'tarot'],
+                    required: () => window.__lifeeLocale === 'zh'
+                        ? ['一个具体问题', '问题背景或当前纠结点', '你希望看清的时间范围或选择']
+                        : ['A concrete question', 'Context or current tension', 'The timeframe or choice you want clarified'],
+                    template: () => window.__lifeeLocale === 'zh'
+                        ? '【塔罗问题】\n1. 具体问题：\n2. 背景/纠结点：\n3. 想看清的时间范围或选择：'
+                        : '[Tarot Question]\n1. Concrete question:\n2. Context/tension:\n3. Timeframe or choice:',
+                    isReady: (text) => (text || '').trim().length > 12,
+                },
+            };
+
+            const mysticMethodForPersona = (p) => {
+                if (!p) return null;
+                const id = String(p.id || '').toLowerCase();
+                const name = `${p.name || ''} ${p.role || ''}`.toLowerCase();
+                for (const [method, cfg] of Object.entries(MYSTIC_REQUIREMENTS)) {
+                    if ((cfg.personaIds || []).some(pid => pid.toLowerCase() === id)) return method;
+                }
+                if (/八字|bazi|ba zi/.test(name)) return 'bazi';
+                if (/塔罗|tarot/.test(name)) return 'tarot';
+                if (/印占|vedic|seal/.test(name)) return 'seal';
+                return String(p.category || '').toUpperCase() === 'MYSTIC' ? 'seal' : null;
+            };
+
+            const selectedMysticMethods = Array.from(new Set([
+                mode === 'mystical' ? mysticType : null,
+                ...selectedPersonas.map(mysticMethodForPersona),
+            ].filter(Boolean)));
+
+            const selectedMysticRequirements = selectedMysticMethods
+                .map(method => ({ method, ...MYSTIC_REQUIREMENTS[method] }))
+                .filter(req => req && req.title);
+
             // Detail modal state (full persona profile)
             const [detailPersonaId, setDetailPersonaId] = useState(null);
             const detailPersona = detailPersonaId ? personas.find(p => p.id === detailPersonaId) : null;
@@ -2242,6 +2357,11 @@
                 // A or B 模式：先 3 轮追问问出 A/B 是什么，再开推荐 modal。
                 if (mode === 'ab') {
                     startFollowupFlow();
+                    return;
+                }
+                // 玄学角色需要在对话中自然追问命盘/出生资料，不在首页弹硬表单。
+                if (selectedMysticRequirements.length > 0) {
+                    (startFreshDebate || (() => setView('debate')))(null);
                     return;
                 }
                 // 其他模式 / 没选模式：直接开推荐 modal 让 LLM 帮挑角色。
@@ -2465,6 +2585,13 @@
                 setTimeout(() => { scrollLockRef.current = false; }, SCROLL_DURATION + 50);
             };
 
+            const goToDomainName = (domainName) => {
+                const idx = activeDomains.indexOf(domainName);
+                if (idx < 0) return;
+                // Wait one frame so any mode-triggered UI updates settle before measuring.
+                requestAnimationFrame(() => goToDomain(idx));
+            };
+
             useEffect(() => {
                 const el = carouselRef.current;
                 if (!el) return;
@@ -2682,6 +2809,15 @@
             const today = new Date();
             const dateLocale = window.__lifeeLocale === 'zh' ? 'zh-CN' : 'en-US';
             const dateStr = today.toLocaleDateString(dateLocale, { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
+            const mysticOptions = [
+                { id: 'seal', icon: 'gesture' },
+                { id: 'bazi', icon: 'calendar_month' },
+                { id: 'tarot', icon: 'style' },
+            ];
+            const activeMystic = mysticOptions.find(item => item.id === mysticType);
+            const inputPlaceholder = activeMystic
+                ? t(`home.mystic.${activeMystic.id}.placeholder`)
+                : t('home.placeholder');
 
             // 注册第 N 天——created_at 是 Unix 秒；当天算 Day 1，之后逐日加。
             const createdAtSec = user?.created_at;
@@ -2780,7 +2916,11 @@
                                             <div key=${m.id} class="relative group"
                                                  onTouchStart=${() => { setTouchedMode(m.id); setTimeout(() => setTouchedMode(null), 2200); }}>
                                                 <button
-                                                    onClick=${() => setMode(isActive ? null : m.id)}
+                                                    onClick=${() => {
+                                                        const nextMode = isActive ? null : m.id;
+                                                        setMode(nextMode);
+                                                        if (nextMode === 'mystical') goToDomainName('Mystical');
+                                                    }}
                                                     class=${`no-shine flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all border ${
                                                         isActive
                                                             ? 'border-primary/60 bg-primary/10 text-primary shadow-sm shadow-primary/10'
@@ -4185,7 +4325,12 @@
                 let mounted = true;
                 (async () => {
                     const { data } = await supabaseClient.auth.getSession();
-                    if (mounted) setUser(data?.session?.user || null);
+                    if (!mounted) return;
+                    const u = data?.session?.user || null;
+                    // 避免竞态：此请求在挂载时即发、可能在 /auth/login 种 cookie **之前**发出，
+                    // 若晚于登录回调返回，会因「无会话」误把已有 user 清成 null → 主页空白。
+                    if (u) setUser(u);
+                    else setUser((prev) => (prev ? prev : null));
                 })();
                 const { data: sub } = supabaseClient.auth.onAuthStateChange((_event, session) => {
                     setUser(session?.user || null);

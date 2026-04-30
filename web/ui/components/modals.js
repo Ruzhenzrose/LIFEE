@@ -37,10 +37,10 @@ const AuthModal = ({ isOpen, onClose, onAuthed, onGuest }) => {
                         if (result.ok) {
                             setHumanVerified(true);
                             if (result.bypassed) {
-                                setMessage('Local preview mode: server verify skipped.');
+                                setMessage('本地预览模式：已跳过服务器验证。');
                             }
                         } else {
-                            setMessage(result.message || 'Human verification failed. Please retry.');
+                            setMessage(result.message || '人机验证失败，请重试。');
                         }
                     },
                     theme: 'light',
@@ -83,10 +83,10 @@ const AuthModal = ({ isOpen, onClose, onAuthed, onGuest }) => {
                 const { data, error } = await supabaseClient.auth.signUp({ email, password });
                 if (error) throw error;
                 setOtpSent(true);
-                setMessage('Verification code sent to your email.');
+                setMessage('验证码已发送到你的邮箱。');
             }
         } catch (err) {
-            setMessage(err?.message || 'Operation failed. Please try again.');
+            setMessage(err?.message || '操作失败，请稍后重试。');
         } finally {
             setLoading(false);
         }
@@ -97,14 +97,14 @@ const AuthModal = ({ isOpen, onClose, onAuthed, onGuest }) => {
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose}></div>
             <div className="relative w-full max-w-md bg-white rounded-[36px] shadow-2xl border border-[#F0EDEA] p-10 animate-in">
                 <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-xl font-serif italic text-[#1A1A1A]">{mode === 'login' ? 'Sign in' : 'Sign up'}</h2>
+                    <h2 className="text-xl font-serif italic text-[#1A1A1A]">{mode === 'login' ? '登录' : '注册'}</h2>
                     <button onClick={onClose} className="text-xs font-bold uppercase tracking-widest opacity-40 hover:opacity-100">
                         <Icon name="X" size={14} />
                     </button>
                 </div>
                 {!humanVerified ? (
                     <div className="flex flex-col items-center gap-4 py-6">
-                        <p className="text-sm text-neutral-500">Please verify you're human</p>
+                        <p className="text-sm text-neutral-500">请完成人机验证</p>
                         <div ref={turnstileRef}></div>
                         {message && (
                             <div className="w-full text-xs text-[#C97A7A] bg-[#FDF1F1] border border-[#F7D7D7] px-4 py-3 rounded-2xl">{message}</div>
@@ -114,37 +114,37 @@ const AuthModal = ({ isOpen, onClose, onAuthed, onGuest }) => {
                 <div className="space-y-4">
                     {otpSent ? (
                         <>
-                            <p className="text-sm text-center text-neutral-500">Enter the 6-digit code sent to <strong>{email}</strong></p>
+                            <p className="text-sm text-center text-neutral-500">请输入发送到 <strong>{email}</strong> 的 6 位验证码</p>
                             <input type="text" placeholder="000000" maxLength={6} className="w-full p-4 bg-[#FDFBF7] rounded-3xl border border-[#F0EDEA] text-center text-2xl tracking-[0.5em] font-mono" value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))} />
                             {message && (
-                                <div className={`text-xs px-4 py-3 rounded-2xl ${message.includes('sent') ? 'text-[#5a9a5a] bg-[#f1fdf1] border border-[#d7f7d7]' : 'text-[#C97A7A] bg-[#FDF1F1] border border-[#F7D7D7]'}`}>{message}</div>
+                                <div className={`text-xs px-4 py-3 rounded-2xl ${message.includes('已发送') ? 'text-[#5a9a5a] bg-[#f1fdf1] border border-[#d7f7d7]' : 'text-[#C97A7A] bg-[#FDF1F1] border border-[#F7D7D7]'}`}>{message}</div>
                             )}
                             <button onClick={handleAuth} disabled={loading || otpCode.length !== 6} className="w-full py-4 bg-blue-brand text-white rounded-full font-bold uppercase text-xs tracking-[0.2em] shadow-xl disabled:opacity-40">
-                                {loading ? 'Verifying...' : 'Verify'}
+                                {loading ? '验证中...' : '验证'}
                             </button>
-                            <button onClick={() => { setOtpSent(false); setOtpCode(''); setMessage(''); }} className="w-full text-xs uppercase tracking-[0.2em] opacity-50 hover:opacity-100">Back</button>
+                            <button onClick={() => { setOtpSent(false); setOtpCode(''); setMessage(''); }} className="w-full text-xs uppercase tracking-[0.2em] opacity-50 hover:opacity-100">返回</button>
                         </>
                     ) : (
                     <>
-                    <input type="email" placeholder="Email" className="w-full p-4 bg-[#FDFBF7] rounded-3xl border border-[#F0EDEA] transition-all focus-blue-brand" value={email} onChange={(e) => setEmail(e.target.value)} />
-                    <input type="password" placeholder="Password" className="w-full p-4 bg-[#FDFBF7] rounded-3xl border border-[#F0EDEA] transition-all focus-blue-brand" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <input type="email" placeholder="邮箱" className="w-full p-4 bg-[#FDFBF7] rounded-3xl border border-[#F0EDEA] transition-all focus-blue-brand" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <input type="password" placeholder="密码" className="w-full p-4 bg-[#FDFBF7] rounded-3xl border border-[#F0EDEA] transition-all focus-blue-brand" value={password} onChange={(e) => setPassword(e.target.value)} />
                     {message && (
                         <div className="text-xs text-[#C97A7A] bg-[#FDF1F1] border border-[#F7D7D7] px-4 py-3 rounded-2xl">{message}</div>
                     )}
                     <button onClick={handleAuth} disabled={loading || !email || !password} className="w-full py-4 bg-blue-brand text-white rounded-full font-bold uppercase text-xs tracking-[0.2em] shadow-xl disabled:opacity-40">
-                        {loading ? 'Working...' : (mode === 'login' ? 'Sign in' : 'Sign up')}
+                        {loading ? '处理中...' : (mode === 'login' ? '登录' : '注册')}
                     </button>
                     <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="w-full text-xs uppercase tracking-[0.2em] opacity-50 hover:opacity-100">
-                        {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                        {mode === 'login' ? '还没有账号？注册' : '已有账号？登录'}
                     </button>
                     </>
                     )}
                     <div className="flex items-center gap-3 my-4">
                         <div className="flex-1 h-px bg-[#E8E6E0]"></div>
-                        <div className="text-[9px] uppercase tracking-[0.2em] opacity-40">Guest</div>
+                        <div className="text-[9px] uppercase tracking-[0.2em] opacity-40">游客</div>
                         <div className="flex-1 h-px bg-[#E8E6E0]"></div>
                     </div>
-                    <button onClick={() => { onGuest?.(); }} className="w-full py-3 bg-white border border-[#E8E6E0] rounded-full font-bold uppercase text-[10px] tracking-[0.2em] hover:shadow-md">Continue as Guest</button>
+                    <button onClick={() => { onGuest?.(); }} className="w-full py-3 bg-white border border-[#E8E6E0] rounded-full font-bold uppercase text-[10px] tracking-[0.2em] hover:shadow-md">以游客身份继续</button>
                 </div>
                 )}
             </div>

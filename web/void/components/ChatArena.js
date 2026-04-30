@@ -218,6 +218,83 @@
         },
     });
 
+    const TAROT_MAJOR = [
+        '愚者', '魔术师', '女祭司', '女皇', '皇帝', '教皇', '恋人', '战车',
+        '力量', '隐士', '命运之轮', '正义', '倒吊人', '死神', '节制', '恶魔',
+        '高塔', '星星', '月亮', '太阳', '审判', '世界',
+    ];
+    const TAROT_SUITS = { '权杖': '火', '圣杯': '水', '宝剑': '风', '星币': '土' };
+    const TAROT_RANKS = ['Ace', '二', '三', '四', '五', '六', '七', '八', '九', '十', '侍从', '骑士', '皇后', '国王'];
+    const TAROT_DECK = [
+        ...TAROT_MAJOR.map((name, idx) => ({ id: `major-${idx}`, name, is_major: true })),
+        ...Object.keys(TAROT_SUITS).flatMap(suit =>
+            TAROT_RANKS.map(rank => ({ id: `${suit}-${rank}`, name: `${suit}${rank}`, suit, element: TAROT_SUITS[suit], is_major: false }))
+        ),
+    ];
+    const TAROT_SPREADS = {
+        single: { name: '单张牌', positions: [{ name: '当前指引', key: true }] },
+        three: { name: '三牌阵', positions: [{ name: '过去' }, { name: '现在', key: true }, { name: '未来', favor: true }] },
+        diamond: { name: '五牌阵', positions: [{ name: '核心', key: true }, { name: '根源' }, { name: '阻力' }, { name: '潜力' }, { name: '建议', key: true, favor: true }] },
+        moon: { name: '月亮牌阵', positions: [{ name: '新月', key: true }, { name: '上弦' }, { name: '满月', key: true }, { name: '下弦' }] },
+        horseshoe: { name: '马蹄形', positions: [{ name: '远期过去' }, { name: '近期过去' }, { name: '当前', key: true }, { name: '近期未来' }, { name: '外部影响', key: true }, { name: '建议', favor: true }, { name: '结果', key: true, favor: true }] },
+        celtic: { name: '凯尔特十字', positions: [{ name: '核心', key: true }, { name: '交叉' }, { name: '意识目标' }, { name: '根基过去' }, { name: '近期过去', key: true }, { name: '近期未来' }, { name: '自我' }, { name: '环境' }, { name: '希望与恐惧' }, { name: '结果', key: true, favor: true }] },
+    };
+    const tarotTimeFactor = () => {
+        const h = new Date().getHours();
+        if (h >= 6 && h < 12) return { key: 'morning', label: '早晨（火/风元素活跃期）', boosted: ['火', '风'] };
+        if (h >= 12 && h < 18) return { key: 'afternoon', label: '午后（水/土元素活跃期）', boosted: ['水', '土'] };
+        return { key: 'night', label: '夜晚（灵性/潜意识活跃期）', boosted: ['major'] };
+    };
+    const randomSeed = (question = '') => {
+        const bytes = new Uint32Array(2);
+        if (window.crypto?.getRandomValues) window.crypto.getRandomValues(bytes);
+        else { bytes[0] = Math.floor(Math.random() * 2 ** 32); bytes[1] = Date.now() >>> 0; }
+        return Number(BigInt(bytes[0]) << 32n | BigInt(bytes[1])) ^ question.length;
+    };
+    const makeRng = (seed) => {
+        let s = Number(seed) >>> 0;
+        return () => {
+            s = (s * 1664525 + 1013904223) >>> 0;
+            return s / 4294967296;
+        };
+    };
+    const chooseTarotSpread = (question = '') => {
+        const q = String(question).toLowerCase();
+        if (/今日|今天|daily|指引|一张|抽一张/.test(q)) return 'single';
+        if (/月|month|周期|规划/.test(q)) return 'moon';
+        if (/复杂|全面|全局|celtic|十字/.test(q)) return 'celtic';
+        if (/长期|过去|未来|走向|horseshoe|马蹄/.test(q)) return 'horseshoe';
+        if (/阻力|根源|建议|潜力|diamond|五牌/.test(q)) return 'diamond';
+        return 'three';
+    };
+    const drawTarotSpread = (spreadKey, question = '') => {
+        const spread = TAROT_SPREADS[spreadKey] || TAROT_SPREADS.three;
+        const seed = randomSeed(question);
+        const rng = makeRng(seed);
+        const time = tarotTimeFactor();
+        const pool = TAROT_DECK.map(c => ({ ...c }));
+        const cards = spread.positions.map((pos) => {
+            const weights = pool.map(card => {
+                let w = 1;
+                if (pos.key && card.is_major) w *= 60 / 28;
+                if (time.boosted.includes('major') && card.is_major) w *= 1.08;
+                if (card.element && time.boosted.includes(card.element)) w *= 1.08;
+                return w;
+            });
+            const total = weights.reduce((a, b) => a + b, 0);
+            let r = rng() * total;
+            let idx = 0;
+            for (; idx < weights.length; idx++) {
+                r -= weights[idx];
+                if (r <= 0) break;
+            }
+            const card = pool.splice(Math.min(idx, pool.length - 1), 1)[0];
+            const uprightProb = pos.favor ? 0.7 : 0.6;
+            return { position: pos.name, card: card.name, orientation: rng() < uprightProb ? '正位' : '逆位', is_major: card.is_major };
+        });
+        return { seed, spread: spreadKey, spread_name: spread.name, question, time_factor: time.key, time_label: time.label, cards };
+    };
+
     // ── Language detection ────────────────────────────────────────────────────
     const detectLang = (text) => {
         const ch = (text || '').trim()[0] || '';
@@ -225,6 +302,79 @@
         if (/[\uac00-\ud7af]/.test(ch)) return 'Korean';
         if (/[\u4e00-\u9fff]/.test(ch)) return 'Chinese';
         return 'English';
+    };
+
+    const mysticMethodForPersona = (p) => {
+        if (!p) return null;
+        const id = String(p.id || '').toLowerCase();
+        const name = `${p.name || ''} ${p.role || ''}`.toLowerCase();
+        if (id === 'seal-master' || /印占|vedic|seal/.test(name)) return 'seal';
+        if (/八字|bazi|ba zi/.test(id + ' ' + name)) return 'bazi';
+        if (/塔罗|tarot/.test(id + ' ' + name)) return 'tarot';
+        return String(p.category || '').toUpperCase() === 'MYSTIC' ? 'seal' : null;
+    };
+
+    const hasMysticMaterial = (method, text) => {
+        const s = text || '';
+        if (method === 'seal') {
+            return s.length > 80 && /(D1|SAV|Ashtakavarga|命盘|截图|pdf|chart|lagna|ascendant|行星|宫位|house)/i.test(s);
+        }
+        if (method === 'bazi') {
+            return /(出生|生日|birth|born|时辰|时间|time|地点|出生地|place)/i.test(s) && s.length > 40;
+        }
+        if (method === 'tarot') {
+            return s.trim().length > 12;
+        }
+        return true;
+    };
+
+    const buildMysticGuide = (method, personaName, lang) => {
+        const zh = lang === 'Chinese' || lang === 'zh' || window.__lifeeLocale === 'zh';
+        if (method === 'seal') {
+            return zh
+                ? [
+                    `我是${personaName || '印占师'}。这个问题我可以接，但印占不是凭一句话直接断，它需要先拿到命盘材料。`,
+                    `你先准备 2 样东西：`,
+                    `1. 用 Jagannatha Hora 下载/导出你的 Vedic Astrology 命盘 PDF，只需要前两页。`,
+                    `2. 单独截一张 SAV / Ashtakavarga 图。它通常在 PDF 第二页左上角。`,
+                    `拿到后直接发在这里；如果看不懂，就发“看不懂，请落地解释”，我会先帮你识别哪些参数缺失，再按 SOP 从 D1 → Model A/B/C → D9 一步步跑。`,
+                ].join('\n')
+                : [
+                    `I am ${personaName || 'the Vedic analyst'}. I can read this, but Seal Reading needs chart material before interpretation.`,
+                    `Please prepare two things first:`,
+                    `1. Export your Vedic Astrology chart PDF from Jagannatha Hora. The first two pages are enough.`,
+                    `2. Take a separate screenshot of SAV / Ashtakavarga, usually at the top-left of page 2.`,
+                    `Send them here. If you cannot read the chart, say "I don't understand, explain it practically" and I will identify missing parameters before running D1 → Model A/B/C → D9.`,
+                ].join('\n');
+        }
+        if (method === 'bazi') {
+            return zh
+                ? `${personaName || '八字师'}需要先知道：出生日期（注明公历/农历）、出生时间或时辰、出生地，以及你这次具体想问什么。你可以直接按这四项发给我。`
+                : `${personaName || 'Ba Zi reader'} needs your birth date, birth time, birthplace, and the concrete question. Send those four items and we can continue.`;
+        }
+        if (method === 'tarot') {
+            return zh
+                ? `${personaName || '塔罗师'}需要一个具体问题、当前背景，以及你想看清的选择或时间范围。你可以先用一句话说清楚这三点。`
+                : `${personaName || 'Tarot reader'} needs a concrete question, the context, and the choice or timeframe you want clarified. Send those in one message.`;
+        }
+        return zh ? '我需要先确认这个玄学角色所需资料，再开始解读。' : 'I need the source material for this mystical method before interpreting.';
+    };
+
+    const buildTarotInviteText = (spreadKey, question, personaName, lang) => {
+        const zh = lang === 'Chinese' || lang === 'zh' || window.__lifeeLocale === 'zh';
+        const spread = TAROT_SPREADS[spreadKey] || TAROT_SPREADS.three;
+        const intro = zh
+            ? `${personaName || '塔罗师'}会用「${spread.name}」来看这个问题。点击这张消息进入抽牌页面，亲手抽完牌后我再解读。`
+            : `${personaName || 'Tarot reader'} will use the ${spread.name} for this question. Click this message to draw the cards, then I will interpret the spread.`;
+        return JSON.stringify({
+            __lifee_tarot_invite__: {
+                spread: spreadKey,
+                spreadName: spread.name,
+                question,
+                intro,
+                positions: spread.positions.map(p => p.name),
+            },
+        });
     };
 
     // ── Main component ────────────────────────────────────────────────────────
@@ -255,6 +405,7 @@
         const [credits, setCredits]             = useState(null);
         const [showPaywall, setShowPaywall]     = useState(false);
         const [redeemCode, setRedeemCode]       = useState('');
+        const [tarotDraw, setTarotDraw]         = useState(null);
         // 4 个共享设置从 props 派生（提到 App 顶层 + localStorage 持久化），
         // 让 home 输入框旁的 + 工具菜单和 chat 内的设置面板共享同一份 state。
         // setter 包装成支持函数式更新（v => !v 之类）以兼容现有调用。
@@ -710,6 +861,53 @@
 
             try {
                 const situation = (context?.situation || '').trim();
+                const combinedInput = [situation, cleanInput].filter(Boolean).join('\n\n');
+                const tarotPersona = (selectedPersonas || []).find(p => mysticMethodForPersona(p) === 'tarot');
+                const alreadyHasTarotInvite = history.some(m => {
+                    try { return !!JSON.parse(m.text || '{}').__lifee_tarot_invite__; } catch (_) { return false; }
+                });
+                const hasTarotResult = /【塔罗抽牌结果】|\[Tarot Draw Result\]/.test(combinedInput);
+                if (tarotPersona && !hasTarotResult && !alreadyHasTarotInvite) {
+                    const spreadKey = chooseTarotSpread(combinedInput);
+                    const langForInvite = language || detectLang(combinedInput || '塔罗');
+                    setHistory(prev => {
+                        const maxSeq = prev.reduce((m, x) => (typeof x.seq === 'number' && x.seq > m ? x.seq : m), 0);
+                        return [
+                            ...prev,
+                            {
+                                personaId: tarotPersona.id,
+                                text: buildTarotInviteText(spreadKey, combinedInput, tarotPersona.name, langForInvite),
+                                seq: maxSeq + 1,
+                            },
+                        ];
+                    });
+                    setOptions([]);
+                    return;
+                }
+                const mysticGuides = [];
+                const seenMysticMethods = new Set();
+                (selectedPersonas || []).forEach((p) => {
+                    const method = mysticMethodForPersona(p);
+                    if (!method || seenMysticMethods.has(method)) return;
+                    seenMysticMethods.add(method);
+                    if (!hasMysticMaterial(method, combinedInput)) {
+                        mysticGuides.push({
+                            personaId: p.id,
+                            text: buildMysticGuide(method, p.name, language || detectLang(combinedInput || cleanInput || situation || '')),
+                        });
+                    }
+                });
+                if (mysticGuides.length > 0) {
+                    setHistory(prev => {
+                        const maxSeq = prev.reduce((m, x) => (typeof x.seq === 'number' && x.seq > m ? x.seq : m), 0);
+                        return [
+                            ...prev,
+                            ...mysticGuides.map((m, idx) => ({ ...m, seq: maxSeq + idx + 1 })),
+                        ];
+                    });
+                    setOptions([]);
+                    return;
+                }
 
                 // Language detection: use cached, else detect and persist
                 let lang = language;
@@ -982,6 +1180,29 @@
             inputFieldRef.current?.focus();
         };
 
+        const formatTarotResultMessage = (result) => {
+            const cards = (result.cards || [])
+                .map((c, idx) => `${idx + 1}. ${c.position}：${c.card}（${c.orientation}${c.is_major ? '，大阿卡纳' : ''}）`)
+                .join('\n');
+            return [
+                '【塔罗抽牌结果】',
+                `问题：${result.question || context?.situation || ''}`,
+                `牌阵：${result.spread_name}`,
+                `抽牌种子：${result.seed}`,
+                `时段因子：${result.time_label || result.time_factor}`,
+                '',
+                cards,
+                '',
+                '请塔罗师基于以上牌阵、牌位、正逆位与我的问题进行解读。请先共情，再逐牌分析，最后给出一个具体行动建议。',
+            ].join('\n');
+        };
+
+        const completeTarotDraw = (result) => {
+            setTarotDraw(null);
+            if (!result) return;
+            runRound(formatTarotResultMessage(result));
+        };
+
         // ── Render helpers ────────────────────────────────────────────────────
         // Parse a lifee-followup message's content, which is a JSON envelope
         // `{"__lifee_followup__": {intro, questions: [...]}}`. Returns null if the
@@ -996,6 +1217,18 @@
                 if (data && Array.isArray(data.questions)) return data;
             } catch (_) {}
             return null;
+        };
+
+        const parseTarotInvite = (text) => {
+            if (!text || typeof text !== 'string') return null;
+            const trimmed = text.trim();
+            if (!trimmed.startsWith('{')) return null;
+            try {
+                const parsed = JSON.parse(trimmed);
+                return parsed && parsed.__lifee_tarot_invite__ ? parsed.__lifee_tarot_invite__ : null;
+            } catch (_) {
+                return null;
+            }
         };
 
         // Parse numbered answers from a user reply ("1. 英国\n2. 独自一人") into
@@ -1017,6 +1250,7 @@
             const isUser     = m.personaId === 'user';
             const isSystem   = m.personaId === 'system';
             const isFollowUp = m.personaId === 'lifee-followup';
+            const tarotInvite = parseTarotInvite(m.text);
 
             if (isSystem) {
                 return html`
@@ -1051,6 +1285,51 @@
                                     class="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-widest"
                                 >${t('chat.copy')}</button>
                             </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (tarotInvite) {
+                const persona = (selectedPersonas || []).find(x => x.id === m.personaId) ||
+                    (window.INITIAL_PERSONAS || []).find(x => x.id === m.personaId) ||
+                    { name: m.personaId || '塔罗师', avatar: '🃏', id: m.personaId };
+                const color = getColor(m.personaId);
+                const ava = persona.avatar || '🃏';
+                return html`
+                    <div key=${idx} class="flex items-start gap-4 w-full pr-14 animate-in">
+                        <div
+                            class="w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg shrink-0 overflow-hidden"
+                            style=${{ borderColor: color.ring, backgroundColor: color.bg }}
+                        >
+                            ${!(typeof ava === 'string' && /^(https?:|\/|data:)/.test(ava))
+                                ? html`<span>${ava}</span>`
+                                : html`<img src=${ava} class="w-full h-full object-cover" />`
+                            }
+                        </div>
+                        <div class="space-y-1.5 flex-1 min-w-0">
+                            <p class="text-[10px] font-bold uppercase tracking-widest ml-1" style=${{ color: color.text }}>
+                                ${persona.name}
+                            </p>
+                            <button
+                                onClick=${() => setTarotDraw(tarotInvite)}
+                                class="no-shine text-left w-full max-w-2xl rounded-2xl border border-primary/25 bg-primary/[0.05] hover:bg-primary/[0.08] transition-colors px-5 py-4 shadow-sm"
+                            >
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <p class="text-xs uppercase tracking-[0.25em] text-primary font-bold mb-2">${tarotInvite.spreadName}</p>
+                                        <p class="text-sm text-on-surface/85 leading-relaxed whitespace-pre-wrap">${tarotInvite.intro}</p>
+                                    </div>
+                                    <span class="material-symbols-outlined text-primary/70 shrink-0" style=${{ fontSize: '22px' }}>style</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mt-3">
+                                    ${(tarotInvite.positions || []).map((pos, pi) => html`
+                                        <span key=${pos} class="text-[10px] px-2 py-1 rounded-full bg-surface-container/80 border border-white/10 text-on-surface-variant/70">
+                                            ${pi + 1}. ${pos}
+                                        </span>
+                                    `)}
+                                </div>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -1953,6 +2232,120 @@
             `;
         };
 
+        const TarotDrawOverlay = ({ invite }) => {
+            const [result, setResult] = useState(null);
+            const [revealed, setRevealed] = useState({});
+            if (!invite) return null;
+            const spread = TAROT_SPREADS[invite.spread] || TAROT_SPREADS.three;
+            const cards = result?.cards || [];
+            const allRevealed = result && cards.length > 0 && cards.every((_, idx) => revealed[idx]);
+            const startDraw = () => {
+                setResult(drawTarotSpread(invite.spread, invite.question || context?.situation || ''));
+                setRevealed({});
+            };
+            const revealCard = (idx) => {
+                if (!result) return;
+                setRevealed(prev => ({ ...prev, [idx]: true }));
+            };
+            return html`
+                <div class="fixed inset-0 z-[80] bg-surface text-on-surface flex flex-col animate-in">
+                    <div class="px-6 md:px-10 py-5 border-b border-white/10 flex items-center justify-between shrink-0">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-[0.35em] text-primary font-black mb-1">Tarot Draw</p>
+                            <h2 class="font-headline text-2xl md:text-4xl font-bold">${spread.name}</h2>
+                            <p class="text-xs text-on-surface-variant/60 mt-1 max-w-2xl">${invite.question || context?.situation || ''}</p>
+                        </div>
+                        <button
+                            onClick=${() => setTarotDraw(null)}
+                            class="w-10 h-10 rounded-full border border-white/15 text-on-surface-variant/70 hover:text-on-surface hover:border-white/35 flex items-center justify-center"
+                        >
+                            <span class="material-symbols-outlined" style=${{ fontSize: '20px' }}>close</span>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar px-6 md:px-10 py-8">
+                        <div class="max-w-6xl mx-auto space-y-8">
+                            <div class="rounded-3xl border border-primary/20 bg-primary/[0.04] p-5 md:p-6">
+                                <p class="text-sm md:text-base italic text-on-surface/80 leading-relaxed">
+                                    ${result
+                                        ? '牌已经洗好。请逐张点击翻开，留意哪一张让你停顿。'
+                                        : '请在心里默念你的问题。准备好后开始洗牌，系统会按牌阵抽取不重复的牌，并记录可复现的 seed。'}
+                                </p>
+                                ${result ? html`
+                                    <p class="text-[10px] uppercase tracking-[0.25em] text-primary/75 mt-3">
+                                        Seed ${result.seed} · ${result.time_label}
+                                    </p>
+                                ` : null}
+                            </div>
+
+                            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                                ${result ? cards.map((card, idx) => {
+                                    const isOpen = !!revealed[idx];
+                                    return html`
+                                        <button
+                                            key=${idx}
+                                            onClick=${() => revealCard(idx)}
+                                            class=${`no-shine group text-left min-h-[260px] rounded-3xl border transition-all overflow-hidden ${
+                                                isOpen
+                                                    ? 'border-primary/45 bg-surface-container shadow-lg shadow-primary/10'
+                                                    : 'border-white/10 bg-surface-container-low hover:border-primary/35'
+                                            }`}
+                                        >
+                                            <div class="h-full p-5 flex flex-col justify-between">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-[10px] uppercase tracking-[0.25em] text-primary/70 font-black">${idx + 1}. ${card.position}</span>
+                                                    <span class="material-symbols-outlined text-primary/50" style=${{ fontSize: '18px' }}>${isOpen ? 'visibility' : 'style'}</span>
+                                                </div>
+                                                ${isOpen ? html`
+                                                    <div class="text-center py-8">
+                                                        <div class="text-3xl mb-4">${card.is_major ? '✦' : '◆'}</div>
+                                                        <h3 class="font-headline text-xl font-bold text-on-surface">${card.card}</h3>
+                                                        <p class="text-xs uppercase tracking-[0.25em] text-primary mt-3">${card.orientation}</p>
+                                                        <p class="text-[10px] text-on-surface-variant/45 mt-2">${card.is_major ? 'Major Arcana' : 'Minor Arcana'}</p>
+                                                    </div>
+                                                ` : html`
+                                                    <div class="text-center py-8 opacity-70">
+                                                        <div class="w-20 h-32 mx-auto rounded-2xl border border-primary/25 bg-primary/[0.06] flex items-center justify-center">
+                                                            <span class="material-symbols-outlined text-primary/50" style=${{ fontSize: '28px' }}>auto_awesome</span>
+                                                        </div>
+                                                        <p class="text-xs text-on-surface-variant/55 mt-5">点击翻牌</p>
+                                                    </div>
+                                                `}
+                                                <div class="text-[10px] text-on-surface-variant/40 leading-relaxed">
+                                                    ${isOpen ? '这张牌会作为塔罗师解读的一部分。' : '保持问题在心里，然后翻开。'}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    `;
+                                }) : spread.positions.map((pos, idx) => html`
+                                    <div key=${idx} class="min-h-[220px] rounded-3xl border border-white/10 bg-surface-container-low p-5 flex flex-col justify-between opacity-55">
+                                        <span class="text-[10px] uppercase tracking-[0.25em] text-primary/70 font-black">${idx + 1}. ${pos.name}</span>
+                                        <div class="w-16 h-24 mx-auto rounded-2xl border border-white/10 bg-surface-container"></div>
+                                        <p class="text-xs text-center text-on-surface-variant/45">等待洗牌</p>
+                                    </div>
+                                `)}
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pb-8">
+                                <button
+                                    onClick=${startDraw}
+                                    class="btn-gradient px-8 py-4 rounded-full text-xs font-black uppercase tracking-[0.25em]"
+                                >${result ? '重新洗牌' : '开始洗牌'}</button>
+                                <button
+                                    disabled=${!allRevealed}
+                                    onClick=${() => completeTarotDraw(result)}
+                                    class=${`px-8 py-4 rounded-full text-xs font-black uppercase tracking-[0.25em] border transition-all ${
+                                        allRevealed
+                                            ? 'border-primary/50 text-primary hover:bg-primary/10'
+                                            : 'border-white/10 text-on-surface-variant/30 cursor-not-allowed'
+                                    }`}
+                                >回到对话解读</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
         // ── Main render ───────────────────────────────────────────────────────
         return html`
             <div ref=${chatRootRef} class="h-full flex flex-row overflow-hidden bg-surface text-on-surface">
@@ -2267,6 +2660,9 @@
 
               <!-- ── Members panel ── -->
               <${MembersPanel} />
+
+              <!-- ── Tarot draw page ── -->
+              <${TarotDrawOverlay} invite=${tarotDraw} />
 
 
                 <!-- ── Summary error toast ── -->

@@ -252,7 +252,7 @@ def hybrid_search(
     vector_weight: float = 0.7,
     text_weight: float = 0.3,
     candidate_multiplier: int = 4,
-    keyword_query_text: str | None = None,
+    keyword_query_text: Optional[str] = None,
     dedup_threshold: float = 0.6,
 ) -> list[SearchResult]:
     """

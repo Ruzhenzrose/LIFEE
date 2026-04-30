@@ -11,7 +11,7 @@ import os
 import sqlite3
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from .chunker import Chunk, chunk_markdown
 from .embeddings import EmbeddingProvider, GeminiEmbedding, _contains_non_english
@@ -37,7 +37,7 @@ class MemoryManager:
 
     def __init__(
         self,
-        db_path: str | Path,
+        db_path: Union[str, Path],
         embedding_provider: EmbeddingProvider,
         knowledge_lang: str = "English",
     ):

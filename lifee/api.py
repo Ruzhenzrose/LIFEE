@@ -394,22 +394,61 @@ def _get_provider():
     from lifee.config.settings import settings
     provider_name = (os.getenv("API_LLM_PROVIDER") or os.getenv("LLM_PROVIDER") or settings.llm_provider).lower()
 
+    def require_key(value: str, env_name: str) -> str:
+        if value:
+            return value
+        raise ValueError(f"Missing {env_name} for provider '{provider_name}'")
+
     if provider_name == "gemini":
         from lifee.providers import GeminiProvider
         return GeminiProvider(
-            api_key=os.getenv("GOOGLE_API_KEY") or settings.google_api_key,
+            api_key=require_key(os.getenv("GOOGLE_API_KEY") or settings.google_api_key, "GOOGLE_API_KEY"),
             model=os.getenv("LLM_MODEL") or settings.gemini_model or "gemini-2.0-flash",
         )
     elif provider_name == "claude":
         from lifee.providers import ClaudeProvider
         return ClaudeProvider(
-            api_key=os.getenv("ANTHROPIC_API_KEY") or settings.anthropic_api_key,
+            api_key=require_key(os.getenv("ANTHROPIC_API_KEY") or settings.get_anthropic_api_key() or "", "ANTHROPIC_API_KEY"),
             model=os.getenv("LLM_MODEL") or settings.claude_model or "claude-sonnet-4-20250514",
+        )
+    elif provider_name == "synthetic":
+        from lifee.providers import SyntheticProvider
+        from lifee.providers.auth import read_clawdbot_synthetic_credentials
+        return SyntheticProvider(
+            api_key=os.getenv("SYNTHETIC_API_KEY") or settings.synthetic_api_key or read_clawdbot_synthetic_credentials() or "synthetic",
+            model=os.getenv("LLM_MODEL") or settings.synthetic_model or "deepseek-v3",
+        )
+    elif provider_name == "qwen-portal":
+        from lifee.providers import QwenPortalProvider
+        from lifee.providers.auth import read_clawdbot_qwen_credentials
+        creds = read_clawdbot_qwen_credentials()
+        access_token = os.getenv("QWEN_PORTAL_ACCESS_TOKEN") or (creds.access_token if creds else "")
+        return QwenPortalProvider(
+            access_token=require_key(access_token, "QWEN_PORTAL_ACCESS_TOKEN or clawdbot qwen credentials"),
+            model=os.getenv("LLM_MODEL") or settings.qwen_portal_model or "coder-model",
+        )
+    elif provider_name == "qwen":
+        from lifee.providers import QwenProvider
+        return QwenProvider(
+            api_key=require_key(os.getenv("QWEN_API_KEY") or settings.qwen_api_key, "QWEN_API_KEY"),
+            model=os.getenv("LLM_MODEL") or settings.qwen_model or "qwen-plus",
+        )
+    elif provider_name == "ollama":
+        from lifee.providers import OllamaProvider
+        return OllamaProvider(
+            model=os.getenv("LLM_MODEL") or settings.ollama_model or "qwen2.5",
+            base_url=os.getenv("OLLAMA_BASE_URL") or settings.ollama_base_url,
+        )
+    elif provider_name in {"opencode", "opencode-zen"}:
+        from lifee.providers import OpenCodeZenProvider
+        return OpenCodeZenProvider(
+            api_key=require_key(os.getenv("OPENCODE_API_KEY") or settings.opencode_api_key, "OPENCODE_API_KEY"),
+            model=os.getenv("LLM_MODEL") or settings.opencode_model or "glm-4.7",
         )
     elif provider_name == "deepseek":
         from lifee.providers.openai_compat import DeepSeekProvider
         return DeepSeekProvider(
-            api_key=os.getenv("DEEPSEEK_API_KEY") or settings.deepseek_api_key,
+            api_key=require_key(os.getenv("DEEPSEEK_API_KEY") or settings.deepseek_api_key, "DEEPSEEK_API_KEY"),
             model=os.getenv("LLM_MODEL") or settings.deepseek_model or "deepseek-chat",
         )
     else:
@@ -501,7 +540,7 @@ from lifee import store as _store
 from lifee import auth as _auth
 
 
-def _current_user(request: Request) -> dict | None:
+def _current_user(request: Request) -> Optional[dict]:
     """从 JWT cookie 解析当前用户。返回 {id, email} 或 None。"""
     token = request.cookies.get(_auth.cookie_name(), "")
     if not token:
